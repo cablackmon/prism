@@ -12,7 +12,8 @@ jest.mock('@/lib/auth/householdAuth', () => ({
   HOUSEHOLD_COOKIE_NAME: 'kyst_household_session',
 }));
 
-import { deviceAuthDestination, GET } from '../route';
+import { GET } from '../route';
+import { requestedDeviceDestination } from '@/lib/auth/deviceHandoff';
 
 function request(query = '') {
   return new NextRequest(`https://kyst-board.fly.dev/api/household-auth/device${query}`);
@@ -37,7 +38,9 @@ describe('GET /api/household-auth/device', () => {
     const response = await GET(request(`?token=${process.env.KYST_AUTH_DEVICE_TOKEN}&next=%2Fwall.html`));
 
     expect(response.status).toBe(303);
-    expect(response.headers.get('location')).toBe('/wall.html');
+    const location = new URL(response.headers.get('location')!);
+    expect(location.origin + location.pathname).toBe('https://kyst-one.vercel.app/wall.html');
+    expect(location.searchParams.get('handoff')).toMatch(/^v1\./);
     expect(response.headers.get('set-cookie')).toContain('kyst_household_session=signed-session');
   });
 
@@ -49,7 +52,7 @@ describe('GET /api/household-auth/device', () => {
     ['?next=%2Fother', '/'],
     ['?next=%2Fwall.html', '/wall.html'],
   ])('validates destination %s', (query, expected) => {
-    expect(deviceAuthDestination(request(query))).toBe(expected);
+    expect(requestedDeviceDestination(request(query))).toBe(expected);
   });
 
   it('does not redirect when the device credential is rejected', async () => {
