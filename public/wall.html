@@ -168,7 +168,8 @@ document.addEventListener("visibilitychange", () => {
 
 // Prism has no push channel, so refresh the embedded board every 10 minutes.
 const boardFrame = document.querySelector("iframe");
-setInterval(() => { boardFrame.src = boardFrame.src; }, 10 * 60 * 1000);
+const proxyRoot = "https://kyst-wall-proxy.fly.dev/";
+setInterval(() => { boardFrame.src = proxyRoot; }, 10 * 60 * 1000);
 
 const fullscreenButton = document.getElementById("fullscreen");
 const toast = document.getElementById("toast");
@@ -238,6 +239,7 @@ let audioContext = null;
 let captureProcessor = null;
 let activeRequestId = null;
 let activeRequestMediaUrl = null;
+let pendingPlaybackRequestId = null;
 let activeRecordingBlob = null;
 let batchSubmitted = false;
 let streamingRequest = false;
@@ -284,6 +286,7 @@ function stopBatchPlayback() {
     URL.revokeObjectURL(activeRequestMediaUrl);
     activeRequestMediaUrl = null;
   }
+  pendingPlaybackRequestId = null;
 }
 
 function cancelActiveVoice(reason = "barge_in") {
@@ -658,6 +661,13 @@ async function beginRecording() {
 mic.addEventListener("click", () => {
   setChatOpen(true);
   if (recorder?.state === "recording") stopRecording();
+  else if (pendingPlaybackRequestId && pendingPlaybackRequestId === activeRequestId) {
+    pendingPlaybackRequestId = null;
+    voiceAudio.play().catch(() => {
+      pendingPlaybackRequestId = activeRequestId;
+      setVoiceState("ready", "Tap the mic once to play the answer.");
+    });
+  }
   else if (activeRequestId) {
     cancelActiveVoice("barge_in");
     beginRecording();
@@ -719,7 +729,7 @@ window.addEventListener("message", async (event) => {
     };
     try { await voiceAudio.play(); } catch {
       if (activeRequestId !== requestId) return;
-      activeRequestId = null;
+      pendingPlaybackRequestId = requestId;
       setVoiceState("ready", "Tap the mic once to play the answer.");
     }
   }
