@@ -20,12 +20,33 @@ const WIDGET_DOMAIN_MAP: Record<string, string[]> = {
   points: ['goals', 'points'],
 };
 
-export function useDashboardData(visibleWidgets?: Set<string>) {
+/**
+ * @param visibleWidgets  Which widgets are on screen. Omitted means "unknown",
+ *   which enables every data domain.
+ * @param opts.deferRest  Whether to quietly enable the remaining domains a
+ *   couple of seconds after mount. True on the dashboard, where the user may
+ *   reveal a hidden widget at any moment. False for a consumer whose widget
+ *   set cannot change while it is mounted — the screensaver — because there
+ *   the deferral just undoes the gating two seconds in and fetches data
+ *   nothing will draw, for as long as the overlay is up.
+ */
+/**
+ * When a task-source sync last ran, shared across every consumer of this hook.
+ * Deliberately module-level: it must survive a component remounting, or an
+ * overlay appearing re-triggers a provider write.
+ */
+let lastAutoSyncAt = 0;
+
+export function useDashboardData(
+  visibleWidgets?: Set<string>,
+  opts: { deferRest?: boolean } = {},
+) {
+  const { deferRest = true } = opts;
   // After a short delay, enable ALL domains (background loading for non-visible widgets)
   const [deferredEnabled, setDeferredEnabled] = useState(false);
 
   useEffect(() => {
-    if (!visibleWidgets) return; // No visibility info → all enabled already
+    if (!visibleWidgets || !deferRest) return; // No visibility info → all enabled already
     const timer = setTimeout(() => setDeferredEnabled(true), DEFERRED_LOAD_DELAY_MS);
     return () => clearTimeout(timer);
   }, []); // Only on mount
@@ -129,14 +150,13 @@ export function useDashboardData(visibleWidgets?: Set<string>) {
   } = useLayouts();
 
   // Auto-sync task sources when dashboard is visible
-  const lastAutoSyncRef = useRef<number>(0);
 
   const autoSyncTasks = useCallback(async () => {
     // Skip sync in guest/display mode — no session cookie means no write access
     if (typeof document !== 'undefined' && !document.cookie.includes('prism_session')) return;
 
     const now = Date.now();
-    if (now - lastAutoSyncRef.current < AUTO_SYNC_INTERVAL_MS) return;
+    if (now - lastAutoSyncAt < AUTO_SYNC_INTERVAL_MS) return;
 
     try {
       const res = await fetch(`/api/task-sources/sync-all?staleMinutes=${AUTO_SYNC_STALE_MINUTES}`, {
@@ -147,7 +167,7 @@ export function useDashboardData(visibleWidgets?: Set<string>) {
         if (data.synced > 0) {
           refreshTasks();
         }
-        lastAutoSyncRef.current = now;
+        lastAutoSyncAt = now;
       }
     } catch {
       // Silently fail auto-sync

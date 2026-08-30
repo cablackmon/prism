@@ -118,7 +118,21 @@ export function Screensaver() {
 
 function ScreensaverGrid() {
   const layout = useMemo(() => loadScreensaverLayout(), []);
-  const data = useDashboardData();
+
+  // Only fetch what this overlay actually draws. Called bare, the hook enables
+  // every data domain — eleven of them — while the default screensaver layout
+  // renders three, and the dashboard underneath is already fetching its own
+  // copy of all of it. The overlay used to be up for seconds at a time, so the
+  // waste was a burst; it is worth fixing on a display that is never closed.
+  //
+  // deferRest is off because the screensaver's widget set is fixed for as long
+  // as it is mounted, so the usual two-second "enable everything" catch-up has
+  // nothing to catch up on and would simply undo the gating.
+  const visibleWidgets = useMemo(
+    () => new Set(layout.filter((w) => w.visible !== false).map((w) => w.i)),
+    [layout],
+  );
+  const data = useDashboardData(visibleWidgets, { deferRest: false });
   const widgetProps = useMemo(() =>
     buildWidgetProps(
       data,
