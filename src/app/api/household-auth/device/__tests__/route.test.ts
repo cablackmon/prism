@@ -45,7 +45,7 @@ describe('GET /api/household-auth/device', () => {
   });
 
   it.each([
-    ['', '/'],
+    ['', '/wall.html'],
     ['?next=%2F%2Fevil.example%2Fwall.html', '/'],
     ['?next=https%3A%2F%2Fevil.example%2Fwall.html', '/'],
     ['?next=%2Fwall.html%3Fmode%3Dunsafe', '/'],
