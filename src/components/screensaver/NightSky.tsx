@@ -151,8 +151,8 @@ export function NightSky({ events, loading }: Props) {
   const next = upcoming[0];
   const time = now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
   const date = now.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
-  return <div className={`fixed inset-0 overflow-hidden text-white ${night ? 'brightness-[.42]' : ''}`} data-testid="night-sky" data-night={night}>
-    <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" aria-hidden="true" />
+  return <div className="fixed inset-0 overflow-hidden text-white" data-testid="night-sky" data-night={night}>
+    <canvas ref={canvasRef} className={`absolute inset-0 h-full w-full ${night ? 'brightness-[.42]' : ''}`} aria-hidden="true" />
     <div className="pointer-events-none absolute inset-x-[7vw] bottom-[8vh] flex items-end justify-between gap-10 text-white/90 [text-shadow:0_2px_22px_rgba(0,0,0,.9)]">
       <div>
         <time className="block text-[clamp(4rem,9vw,11rem)] font-extralight leading-none tracking-[-.06em]" dateTime={now.toISOString()}>{time}</time>
