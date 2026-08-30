@@ -91,19 +91,18 @@ export function useIdleDetection(initialTimeout?: number) {
     setIsIdle(true);
   }, []);
 
+  // Dismissal is registered ALWAYS — including in a PWA, and including when
+  // the timeout is "Never".
+  //
+  // The screensaver can be opened deliberately from the toolbar button, which
+  // dispatches 'prism:screensaver' and is not gated on either condition. When
+  // this effect skipped registration, that button had no counterpart: nothing
+  // anywhere could clear isIdle, so an installed app was stuck on the
+  // screensaver until it was force-closed. The auto-idle TIMER below is still
+  // skipped on a PWA, which is the documented intent (a phone has no idle
+  // state, and auto-locking someone out of their own device is wrong) — but
+  // that intent never implied "cannot be dismissed".
   useEffect(() => {
-    if (timeout <= 0 || isPWA) return;
-
-    // Mousemove/scroll only reset the idle timer, they don't dismiss the screensaver
-    const moveEvents = ['mousemove', 'scroll'] as const;
-    moveEvents.forEach((e) => window.addEventListener(e, resetTimer));
-
-    // Click/key/touch dismiss the screensaver AND reset the timer — EXCEPT when
-    // the interaction targets an opt-in "keep-alive" control (e.g. the calendar
-    // view switcher), so those can be operated in place without exiting the
-    // screensaver. Checking the native event target covers portaled controls
-    // (like the view popover, which renders under <body>) that stopPropagation
-    // on the React tree would miss.
     const maybeDismiss = (e: Event) => {
       const target = e.target as Element | null;
       if (target && typeof target.closest === 'function' && target.closest('[data-screensaver-keep]')) {
@@ -112,16 +111,29 @@ export function useIdleDetection(initialTimeout?: number) {
       dismissIdle();
     };
     const dismissEvents = ['mousedown', 'keydown', 'touchstart'] as const;
-    dismissEvents.forEach((e) => window.addEventListener(e, maybeDismiss));
+    // Passive: none of these call preventDefault, and a non-passive touchstart
+    // on window makes the browser wait on JS before it can scroll. Every other
+    // activity hook in the codebase already does this.
+    dismissEvents.forEach((e) => window.addEventListener(e, maybeDismiss, { passive: true }));
+    return () => {
+      dismissEvents.forEach((e) => window.removeEventListener(e, maybeDismiss));
+    };
+  }, [dismissIdle]);
+
+  useEffect(() => {
+    if (timeout <= 0 || isPWA) return;
+
+    // Mousemove/scroll only reset the idle timer, they don't dismiss the screensaver
+    const moveEvents = ['mousemove', 'scroll'] as const;
+    moveEvents.forEach((e) => window.addEventListener(e, resetTimer, { passive: true }));
 
     resetTimer();
 
     return () => {
       moveEvents.forEach((e) => window.removeEventListener(e, resetTimer));
-      dismissEvents.forEach((e) => window.removeEventListener(e, maybeDismiss));
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [resetTimer, dismissIdle, timeout, isPWA]);
+  }, [resetTimer, timeout, isPWA]);
 
   // Listen for custom screensaver activation event
   useEffect(() => {
