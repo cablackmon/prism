@@ -10,6 +10,7 @@ import { logActivity } from '@/lib/services/auditLog';
 import { logError } from '@/lib/utils/logError';
 import { MIN_PIN_LENGTH, MAX_PIN_LENGTH, DEFAULT_PIN_LENGTH } from '@/lib/constants';
 import { isSetupComplete } from '@/lib/setup';
+import type { PublicMemberField } from './publicShape';
 
 interface FamilyMemberResponse {
   id: string;
@@ -25,22 +26,49 @@ interface FamilyMemberResponse {
 }
 
 /** Display-only shape returned to unauthenticated callers (no UUIDs). */
-interface PublicFamilyMemberResponse {
-  id: ''; // empty — never a real UUID; loginIndex is the login token
+type PublicFamilyMemberResponse = {
+  /** Always '' — never a real UUID; loginIndex is the login token. */
+  id: '';
   loginIndex: number;
   name: string;
-  // Role isn't sensitive (just parent/child/guest) and callers like the
-  // Settings PIN gate need it to filter to parents-only *before* the user
-  // has authenticated — omitting it previously made every member look like
-  // a parent (see the unauthenticated branch's `!m.role` fallback).
+  /**
+   * Not sensitive on its own — the avatars on screen already show who is a
+   * parent — and the Settings PIN gate needs it to filter before the user has
+   * authenticated.
+   */
   role: 'parent' | 'child' | 'guest';
   color: string;
   avatarUrl: string | null;
-  hasPin: boolean;
-  /** Per-member PIN length (4/5/6). Not sensitive — the login pad needs it
-   *  to know how many digits to expect before the user has authenticated. */
+  /**
+   * Per-member PIN length. The login pad needs it to know how many digits to
+   * expect before anyone has authenticated.
+   *
+   * This IS a small disclosure — it tells an observer how many digits to watch
+   * for — but the pad cannot render its dots or auto-submit without it.
+   * Removing it means changing three hand-rolled pads, not this endpoint.
+   */
   pinLength: number;
-}
+};
+
+// Every key above must appear in PUBLIC_MEMBER_FIELDS and vice versa. Adding a
+// field to one without the other fails here, which is the point: the list is
+// what the disclosure test reads, so it cannot drift from what is served.
+type _FieldsMatch = PublicMemberField extends keyof PublicFamilyMemberResponse
+  ? keyof PublicFamilyMemberResponse extends PublicMemberField
+    ? true
+    : ['field in response but not in PUBLIC_MEMBER_FIELDS']
+  : ['field in PUBLIC_MEMBER_FIELDS but not in response'];
+const _fieldsMatch: _FieldsMatch = true;
+void _fieldsMatch;
+
+/**
+ * Deliberately NOT in the unauthenticated response: `hasPin`.
+ *
+ * It names which members are undefended, which is precisely the thing worth
+ * knowing before choosing who to target, and it is not visible on the display
+ * the way names, faces and roles already are. Every consumer of it lives in
+ * /settings or /setup, both of which read the authenticated branch below.
+ */
 
 export async function GET(request: NextRequest) {
   try {
@@ -95,16 +123,20 @@ export async function GET(request: NextRequest) {
           .from(users)
           .orderBy(users.sortOrder, users.createdAt);
 
-        const members: PublicFamilyMemberResponse[] = results.map((user, index) => ({
-          id: '' as const,
-          loginIndex: index,
-          name: user.name,
-          role: user.role as 'parent' | 'child' | 'guest',
-          color: user.color,
-          avatarUrl: user.avatarUrl,
-          hasPin: !!user.pin,
-          pinLength: user.pinLength,
-        }));
+        const members: PublicFamilyMemberResponse[] = results.map((user, index) => {
+          // The type is keyed off PUBLIC_MEMBER_FIELDS, so adding a property
+          // here without adding it to that list is a compile error — and that
+          // list is what the disclosure test asserts against.
+          return {
+            id: '' as const,
+            loginIndex: index,
+            name: user.name,
+            role: user.role as 'parent' | 'child' | 'guest',
+            color: user.color,
+            avatarUrl: user.avatarUrl,
+            pinLength: user.pinLength,
+          };
+        });
 
         return { members, total: members.length };
       }, 600);
