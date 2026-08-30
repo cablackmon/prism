@@ -7,6 +7,15 @@ import {
   HOUSEHOLD_COOKIE_NAME,
 } from '@/lib/auth/householdAuth';
 
+const DEFAULT_DESTINATION = '/';
+const WALL_DESTINATION = '/wall.html';
+
+export function deviceAuthDestination(request: NextRequest): string {
+  return request.nextUrl.searchParams.get('next') === WALL_DESTINATION
+    ? WALL_DESTINATION
+    : DEFAULT_DESTINATION;
+}
+
 export async function GET(request: NextRequest) {
   const configuredToken = process.env.KYST_AUTH_DEVICE_TOKEN;
   const suppliedToken = request.nextUrl.searchParams.get('token') || '';
@@ -20,7 +29,7 @@ export async function GET(request: NextRequest) {
 
   const response = new NextResponse(null, {
     status: 303,
-    headers: { location: '/', 'cache-control': 'no-store' },
+    headers: { location: deviceAuthDestination(request), 'cache-control': 'no-store' },
   });
   response.cookies.set(
     HOUSEHOLD_COOKIE_NAME,
