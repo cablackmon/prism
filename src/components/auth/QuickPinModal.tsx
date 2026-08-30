@@ -27,6 +27,7 @@ import { Button } from '@/components/ui/button';
 import { UserAvatar } from '@/components/ui/avatar';
 import { useFamily } from '@/components/providers';
 import { DEFAULT_PIN_LENGTH } from '@/lib/constants';
+import { pinErrorMessage } from '@/lib/utils/pinErrorMessage';
 
 /**
  * FAMILY MEMBER TYPE
@@ -188,7 +189,11 @@ export function QuickPinModal({
           // Refresh FamilyProvider so member IDs + roles reflect the now-authenticated session
           window.dispatchEvent(new Event('prism:auth-changed'));
         } else {
-          setError('Incorrect PIN');
+          // Read the body rather than assuming a wrong PIN: a lockout returns
+          // 403 while the CORRECT PIN is being refused, and saying "incorrect"
+          // there sends someone hunting for a problem that isn't theirs.
+          const body = await response.json().catch(() => null);
+          setError(pinErrorMessage(response.status, body));
           setIsShaking(true);
           setTimeout(() => setIsShaking(false), 500);
           setPin([]);
