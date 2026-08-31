@@ -30,7 +30,11 @@ function getLastActivity(): number {
   if (typeof window === 'undefined') return Date.now();
   const stored = localStorage.getItem(LAST_ACTIVITY_KEY);
   const timestamp = stored !== null ? Number(stored) : NaN;
-  return Number.isFinite(timestamp) ? timestamp : Date.now();
+  if (Number.isFinite(timestamp)) return timestamp;
+
+  const now = Date.now();
+  localStorage.setItem(LAST_ACTIVITY_KEY, String(now));
+  return now;
 }
 
 export function useIdleDetection(initialTimeout?: number) {

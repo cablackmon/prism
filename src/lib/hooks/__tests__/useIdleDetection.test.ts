@@ -193,13 +193,18 @@ describe('useIdleDetection', () => {
     }));
 
     localStorage.setItem('prism-last-activity', 'yesterday');
-    const { result } = renderHook(() => useIdleDetection(5));
+    const first = renderHook(() => useIdleDetection(5));
 
-    expect(result.current.isIdle).toBe(false);
-    act(() => jest.advanceTimersByTime(4999));
-    expect(result.current.isIdle).toBe(false);
+    expect(first.result.current.isIdle).toBe(false);
+    expect(Number(localStorage.getItem('prism-last-activity'))).toBe(Date.now());
+    act(() => jest.advanceTimersByTime(4000));
+    first.unmount();
+
+    const second = renderHook(() => useIdleDetection(5));
+    act(() => jest.advanceTimersByTime(999));
+    expect(second.result.current.isIdle).toBe(false);
     act(() => jest.advanceTimersByTime(1));
-    expect(result.current.isIdle).toBe(true);
+    expect(second.result.current.isIdle).toBe(true);
   });
 
   it('preserves the idle deadline across fullscreen lifecycle noise', () => {
