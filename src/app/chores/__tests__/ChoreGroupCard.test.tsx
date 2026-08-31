@@ -51,7 +51,7 @@ describe('ChoreGroupCard action safety', () => {
     const edit = screen.getByRole('button', { name: 'Edit Clean Dog Pads' });
     const remove = screen.getByRole('button', { name: 'Delete Clean Dog Pads' });
     expect(edit.parentElement).toBe(remove.parentElement?.parentElement);
-    expect(edit.parentElement?.className).toContain('gap-x-11');
+    expect(edit.parentElement?.className).toContain('gap-11');
     expect(edit.parentElement?.className).toContain('flex-wrap');
   });
 });
