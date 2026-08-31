@@ -60,12 +60,14 @@ export function useIdleDetection(initialTimeout?: number) {
   }, []);
 
   // Reset idle timer on user activity (restarts countdown)
-  const resetTimer = useCallback(() => {
+  const resetTimer = useCallback((recordActivity = true) => {
     if (timerRef.current) clearTimeout(timerRef.current);
-    // Update last activity for away mode tracking
-    updateLastActivity();
+    if (recordActivity) updateLastActivity();
+    else if (localStorage.getItem(LAST_ACTIVITY_KEY) === null) updateLastActivity();
     if (timeout > 0) {
-      timerRef.current = setTimeout(() => setIsIdle(true), timeout * 1000);
+      const elapsed = recordActivity ? 0 : Math.max(0, Date.now() - getLastActivity());
+      const remaining = Math.max(0, timeout * 1000 - elapsed);
+      timerRef.current = setTimeout(() => setIsIdle(true), remaining);
     }
   }, [timeout]);
 
@@ -96,7 +98,15 @@ export function useIdleDetection(initialTimeout?: number) {
 
     // Mousemove/scroll only reset the idle timer, they don't dismiss the screensaver
     const moveEvents = ['mousemove', 'scroll'] as const;
-    moveEvents.forEach((e) => window.addEventListener(e, resetTimer));
+    // Edge kiosk mode reports display-mode: fullscreen and can emit passive
+    // mousemove noise with untouched glass. Check the media query per event so
+    // runtime fullscreen transitions cannot leave stale listener behavior.
+    // Scroll remains activity in every display mode.
+    const onPassiveMovement = (event: Event) => {
+      if (event.type === 'mousemove' && window.matchMedia('(display-mode: fullscreen)').matches) return;
+      resetTimer();
+    };
+    moveEvents.forEach((e) => window.addEventListener(e, onPassiveMovement));
 
     // Click/key/touch dismiss the screensaver AND reset the timer — EXCEPT when
     // the interaction targets an opt-in "keep-alive" control (e.g. the calendar
@@ -114,10 +124,13 @@ export function useIdleDetection(initialTimeout?: number) {
     const dismissEvents = ['pointerdown', 'mousedown', 'keydown', 'touchstart'] as const;
     dismissEvents.forEach((e) => window.addEventListener(e, maybeDismiss));
 
-    resetTimer();
+    // The wall wrapper reloads its iframe every ten minutes. In fullscreen,
+    // preserve the persisted human-activity deadline across that remount so a
+    // fifteen-minute screensaver can still expire.
+    resetTimer(!window.matchMedia('(display-mode: fullscreen)').matches);
 
     return () => {
-      moveEvents.forEach((e) => window.removeEventListener(e, resetTimer));
+      moveEvents.forEach((e) => window.removeEventListener(e, onPassiveMovement));
       dismissEvents.forEach((e) => window.removeEventListener(e, maybeDismiss));
       if (timerRef.current) clearTimeout(timerRef.current);
     };
@@ -126,19 +139,27 @@ export function useIdleDetection(initialTimeout?: number) {
   // Kiosk announcements commonly navigate/refresh the page or bring a hidden
   // page back to the foreground. Exit immediately so their UI is never covered.
   useEffect(() => {
-    const wake = () => { forcedRef.current = false; setIsIdle(false); resetTimer(); };
-    const onVisibility = () => wake();
-    window.addEventListener('pageshow', wake);
-    window.addEventListener('popstate', wake);
-    window.addEventListener('hashchange', wake);
-    window.addEventListener('prism:announce', wake);
-    document.addEventListener('visibilitychange', onVisibility);
+    const wake = (recordActivity: boolean) => {
+      forcedRef.current = false;
+      setIsIdle(false);
+      resetTimer(recordActivity || !window.matchMedia('(display-mode: fullscreen)').matches);
+    };
+    // Edge fullscreen kiosk can emit lifecycle events without human input, so
+    // those preserve the existing deadline. Navigation and announcements are
+    // deliberate activity and get a fresh interval so their UI stays visible.
+    const onLifecycleWake = () => wake(false);
+    const onDeliberateWake = () => wake(true);
+    window.addEventListener('pageshow', onLifecycleWake);
+    window.addEventListener('popstate', onDeliberateWake);
+    window.addEventListener('hashchange', onDeliberateWake);
+    window.addEventListener('prism:announce', onDeliberateWake);
+    document.addEventListener('visibilitychange', onLifecycleWake);
     return () => {
-      window.removeEventListener('pageshow', wake);
-      window.removeEventListener('popstate', wake);
-      window.removeEventListener('hashchange', wake);
-      window.removeEventListener('prism:announce', wake);
-      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('pageshow', onLifecycleWake);
+      window.removeEventListener('popstate', onDeliberateWake);
+      window.removeEventListener('hashchange', onDeliberateWake);
+      window.removeEventListener('prism:announce', onDeliberateWake);
+      document.removeEventListener('visibilitychange', onLifecycleWake);
     };
   }, [resetTimer]);
 

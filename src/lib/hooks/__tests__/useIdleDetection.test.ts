@@ -42,6 +42,16 @@ describe('useIdleDetection', () => {
 
   afterEach(() => {
     jest.useRealTimers();
+    (window.matchMedia as jest.Mock).mockImplementation((query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: jest.fn(),
+      removeListener: jest.fn(),
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      dispatchEvent: jest.fn(),
+    }));
   });
 
   it('returns isIdle=false initially', () => {
@@ -98,6 +108,125 @@ describe('useIdleDetection', () => {
     act(() => {
       jest.advanceTimersByTime(1000);
     });
+    expect(result.current.isIdle).toBe(true);
+  });
+
+  it('ignores passive mousemove noise in fullscreen display mode', () => {
+    (window.matchMedia as jest.Mock).mockImplementation((query: string) => ({
+      matches: query === '(display-mode: fullscreen)',
+      media: query,
+      onchange: null,
+      addListener: jest.fn(),
+      removeListener: jest.fn(),
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      dispatchEvent: jest.fn(),
+    }));
+
+    const { result } = renderHook(() => useIdleDetection(5));
+
+    act(() => {
+      jest.advanceTimersByTime(4000);
+      window.dispatchEvent(new Event('mousemove'));
+      jest.advanceTimersByTime(1000);
+    });
+
+    expect(result.current.isIdle).toBe(true);
+  });
+
+  it('still treats scroll as activity in fullscreen display mode', () => {
+    (window.matchMedia as jest.Mock).mockImplementation((query: string) => ({
+      matches: query === '(display-mode: fullscreen)',
+      media: query,
+      onchange: null,
+      addListener: jest.fn(),
+      removeListener: jest.fn(),
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      dispatchEvent: jest.fn(),
+    }));
+
+    const { result } = renderHook(() => useIdleDetection(5));
+
+    act(() => {
+      jest.advanceTimersByTime(4000);
+      window.dispatchEvent(new Event('scroll'));
+      jest.advanceTimersByTime(1000);
+    });
+
+    expect(result.current.isIdle).toBe(false);
+  });
+
+  it('preserves the fullscreen deadline across a remount', () => {
+    (window.matchMedia as jest.Mock).mockImplementation((query: string) => ({
+      matches: query === '(display-mode: fullscreen)',
+      media: query,
+      onchange: null,
+      addListener: jest.fn(),
+      removeListener: jest.fn(),
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      dispatchEvent: jest.fn(),
+    }));
+
+    localStorage.setItem('prism-last-activity', String(Date.now()));
+    const first = renderHook(() => useIdleDetection(5));
+
+    act(() => jest.advanceTimersByTime(4000));
+    first.unmount();
+    const second = renderHook(() => useIdleDetection(5));
+    act(() => jest.advanceTimersByTime(1000));
+
+    expect(second.result.current.isIdle).toBe(true);
+  });
+
+  it('preserves the idle deadline across fullscreen lifecycle noise', () => {
+    (window.matchMedia as jest.Mock).mockImplementation((query: string) => ({
+      matches: query === '(display-mode: fullscreen)',
+      media: query,
+      onchange: null,
+      addListener: jest.fn(),
+      removeListener: jest.fn(),
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      dispatchEvent: jest.fn(),
+    }));
+
+    const { result } = renderHook(() => useIdleDetection(5));
+
+    act(() => {
+      jest.advanceTimersByTime(4000);
+      window.dispatchEvent(new Event('pageshow'));
+      document.dispatchEvent(new Event('visibilitychange'));
+      jest.advanceTimersByTime(1000);
+    });
+
+    expect(result.current.isIdle).toBe(true);
+  });
+
+  it('grants announcements a fresh deadline in fullscreen display mode', () => {
+    (window.matchMedia as jest.Mock).mockImplementation((query: string) => ({
+      matches: query === '(display-mode: fullscreen)',
+      media: query,
+      onchange: null,
+      addListener: jest.fn(),
+      removeListener: jest.fn(),
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      dispatchEvent: jest.fn(),
+    }));
+
+    const { result } = renderHook(() => useIdleDetection(5));
+    act(() => jest.advanceTimersByTime(5000));
+    expect(result.current.isIdle).toBe(true);
+
+    act(() => {
+      window.dispatchEvent(new Event('prism:announce'));
+      jest.advanceTimersByTime(4999);
+    });
+    expect(result.current.isIdle).toBe(false);
+
+    act(() => jest.advanceTimersByTime(1));
     expect(result.current.isIdle).toBe(true);
   });
 
