@@ -15,6 +15,7 @@ describe('device handoff', () => {
   });
 
   it('accepts only the exact wall path', () => {
+    expect(requestedDeviceDestination(new Request('https://kyst-board.fly.dev/x'))).toBe('/wall.html');
     expect(requestedDeviceDestination(new Request('https://kyst-board.fly.dev/x?next=%2Fwall.html'))).toBe('/wall.html');
     expect(requestedDeviceDestination(new Request('https://kyst-board.fly.dev/x?next=https%3A%2F%2Fevil.test'))).toBe('/');
   });

@@ -31,7 +31,8 @@ function nonce(): string {
 
 export function requestedDeviceDestination(request: Request): '/' | typeof WALL_DESTINATION {
   const value = new URL(request.url).searchParams.get('next');
-  return value === WALL_DESTINATION ? WALL_DESTINATION : '/';
+  if (value === null || value === WALL_DESTINATION) return WALL_DESTINATION;
+  return '/';
 }
 
 export async function createDeviceHandoff(
