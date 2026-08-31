@@ -51,7 +51,7 @@ export function ChoresView() {
     showAddModal, setShowAddModal,
     editingChore, setEditingChore,
     filteredChores,
-    completeChore, toggleEnabled, deleteChore, editChore, undoCompletion,
+    completeChore, confirmDisableChore, toggleEnabled, deleteChore, editChore, undoCompletion,
     inlineAddChore,
     enabledCount, dueCount,
     confirmDialogProps,
@@ -246,7 +246,13 @@ export function ChoresView() {
         {editingChore && (
           <ChoreModal chore={editingChore} onClose={() => setEditingChore(null)}
             onDelete={() => handleDeleteFromModal(editingChore.id)}
-            onSave={(chore) => saveEditedChore(editingChore.id, chore)}
+            onSave={async (chore) => {
+              if (editingChore.enabled && chore.enabled === false) {
+                const shouldDisable = await confirmDisableChore(editingChore);
+                if (!shouldDisable) return;
+              }
+              await saveEditedChore(editingChore.id, chore);
+            }}
             familyMembers={familyMembers} />
         )}
 

@@ -180,6 +180,15 @@ export function useChoresViewData() {
     }
   };
 
+  const confirmDisableChore = useCallback((chore: Chore) => {
+    const assignee = chore.assignedTo?.name || 'Unassigned';
+    return confirm(
+      `Disable “${chore.title}”?`,
+      `Assigned to: ${assignee}. This chore will stop appearing as active and cannot be completed until it is enabled again.`,
+      { confirmLabel: 'Disable chore', variant: 'destructive' }
+    );
+  }, [confirm]);
+
   const toggleEnabled = async (choreId: string) => {
     const chore = chores.find((c) => c.id === choreId);
     if (!chore) return;
@@ -187,12 +196,7 @@ export function useChoresViewData() {
     if (!user) return;
     if (user.role !== 'parent') { toast({ title: 'Only parents can enable or disable chores', variant: 'warning' }); return; }
     if (chore.enabled) {
-      const assignee = chore.assignedTo?.name || 'Unassigned';
-      const shouldDisable = await confirm(
-        `Disable “${chore.title}”?`,
-        `Assigned to: ${assignee}. This chore will stop appearing as active and cannot be completed until it is enabled again.`,
-        { confirmLabel: 'Disable chore', variant: 'destructive' }
-      );
+      const shouldDisable = await confirmDisableChore(chore);
       if (!shouldDisable) return;
     }
     try {
@@ -308,7 +312,7 @@ export function useChoresViewData() {
     showAddModal, setShowAddModal,
     editingChore, setEditingChore,
     filteredChores,
-    completeChore, toggleEnabled, deleteChore, editChore, undoCompletion,
+    completeChore, confirmDisableChore, toggleEnabled, deleteChore, editChore, undoCompletion,
     inlineAddChore,
     enabledCount, dueCount,
     confirmDialogProps,
