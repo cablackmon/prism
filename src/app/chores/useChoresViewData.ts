@@ -180,12 +180,25 @@ export function useChoresViewData() {
     }
   };
 
+  const confirmDisableChore = useCallback((chore: Chore) => {
+    const assignee = chore.assignedTo?.name || 'Unassigned';
+    return confirm(
+      `Disable “${chore.title}”?`,
+      `Assigned to: ${assignee}. This chore will stop appearing as active and cannot be completed until it is enabled again.`,
+      { confirmLabel: 'Disable chore', variant: 'destructive' }
+    );
+  }, [confirm]);
+
   const toggleEnabled = async (choreId: string) => {
     const chore = chores.find((c) => c.id === choreId);
     if (!chore) return;
     const user = await requireAuth("Who's updating this chore?");
     if (!user) return;
     if (user.role !== 'parent') { toast({ title: 'Only parents can enable or disable chores', variant: 'warning' }); return; }
+    if (chore.enabled) {
+      const shouldDisable = await confirmDisableChore(chore);
+      if (!shouldDisable) return;
+    }
     try {
       const response = await fetch(`/api/chores/${choreId}`, {
         method: 'PATCH',
@@ -200,10 +213,17 @@ export function useChoresViewData() {
   };
 
   const deleteChore = async (choreId: string) => {
+    const chore = chores.find((c) => c.id === choreId);
+    if (!chore) return;
     const user = await requireAuth("Who's deleting this chore?");
     if (!user) return;
     if (user.role !== 'parent') { toast({ title: 'Only parents can delete chores', variant: 'warning' }); return; }
-    if (!await confirm('Delete this chore?', 'Are you sure you want to delete this chore?')) return;
+    const assignee = chore.assignedTo?.name || 'Unassigned';
+    if (!await confirm(
+      `Delete “${chore.title}”?`,
+      `Assigned to: ${assignee}. This cannot be undone. Deleting this chore permanently erases its completion history and removes those points from derived point totals and goals.`,
+      { confirmLabel: 'Delete chore', variant: 'destructive' }
+    )) return;
     try {
       const response = await fetch(`/api/chores/${choreId}`, { method: 'DELETE' });
       if (!response.ok) throw new Error('Failed to delete chore');
@@ -292,9 +312,9 @@ export function useChoresViewData() {
     showAddModal, setShowAddModal,
     editingChore, setEditingChore,
     filteredChores,
-    completeChore, toggleEnabled, deleteChore, editChore, undoCompletion,
+    completeChore, confirmDisableChore, toggleEnabled, deleteChore, editChore, undoCompletion,
     inlineAddChore,
     enabledCount, dueCount,
-    confirmDialogProps,
+    confirm, confirmDialogProps,
   };
 }

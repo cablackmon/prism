@@ -67,7 +67,7 @@ export function ChoreItem({
   return (
     <div
       className={cn(
-        'flex items-center gap-4 p-4 rounded-lg border border-border bg-card/85 backdrop-blur-sm',
+        'flex flex-wrap items-center gap-4 p-4 rounded-lg border border-border bg-card/85 backdrop-blur-sm',
         'hover:border-seasonal-accent hover:ring-2 hover:ring-seasonal-accent/50 transition-all group',
         !chore.enabled && 'opacity-50',
         isPendingApproval && 'bg-amber-100/85 dark:bg-amber-950/85 border-amber-500/30'
@@ -170,36 +170,39 @@ export function ChoreItem({
         )}
       </div>
 
-      {/* Actions */}
-      <div className="flex items-center gap-1">
-        <div className="flex items-center gap-1">
-          <span className="text-xs text-muted-foreground mr-1">
-            {chore.enabled ? 'Enabled' : 'Disabled'}
-          </span>
-          <Switch
-            checked={chore.enabled}
-            onCheckedChange={onToggleEnabled}
-          />
-        </div>
-
+      {/* Edit is deliberately isolated from destructive chore controls. */}
+      <div className="mt-3 flex w-full flex-wrap items-center justify-end gap-11 shrink-0">
         <Button
-          variant="ghost"
-          size="icon"
+          variant="outline"
+          size="sm"
           onClick={onEdit}
-          className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+          className="h-14 min-w-[5.5rem] gap-2"
           aria-label="Edit chore"
         >
           <Edit2 className="h-4 w-4" />
+          Edit
         </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onDelete}
-          className="h-8 w-8 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-          aria-label="Delete chore"
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+
+        <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-1.5" aria-label="Chore controls">
+          <label className="flex min-h-14 items-center gap-2 rounded-md px-2 text-xs text-muted-foreground">
+            <span>{chore.enabled ? 'Enabled' : 'Disabled'}</span>
+            <Switch
+              checked={chore.enabled}
+              onCheckedChange={onToggleEnabled}
+              aria-label={`${chore.enabled ? 'Disable' : 'Enable'} ${chore.title}`}
+            />
+          </label>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onDelete}
+            className="h-14 min-w-14 gap-2 px-3 text-destructive hover:text-destructive"
+            aria-label={`Delete ${chore.title}`}
+          >
+            <Trash2 className="h-4 w-4" />
+            <span className="sr-only sm:not-sr-only">Delete</span>
+          </Button>
+        </div>
       </div>
     </div>
   );

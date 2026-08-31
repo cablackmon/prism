@@ -118,6 +118,7 @@ export function Dashboard({
     setShowAddModal: () => {},
     setEditingChore,
     deleteChore: () => {},
+    confirm: confirmAction,
   });
 
   const layout = useDashboardLayout(data.layouts, slug);
@@ -463,7 +464,7 @@ export function Dashboard({
               familyMembers={familyMembers}
               onClose={() => setEditingChore(null)}
               onSave={async (updated) => {
-                await saveEditedChore(editingChore.id, updated);
+                await saveEditedChore(editingChore, updated);
               }}
             />
           </Suspense>
