@@ -196,7 +196,11 @@ function showToast(message) {
     updateFullscreenButton();
   }, 2400);
 }
+function notifyBoardActivity() {
+  boardFrame.contentWindow?.postMessage({ type:"kyst-user-activity" }, "https://kyst-wall-proxy.fly.dev");
+}
 async function toggleFullscreen() {
+  notifyBoardActivity();
   try {
     if (fullscreenElement()) {
       const exit = document.exitFullscreen || document.webkitExitFullscreen;
@@ -659,6 +663,7 @@ async function beginRecording() {
 }
 
 mic.addEventListener("click", () => {
+  notifyBoardActivity();
   setChatOpen(true);
   if (recorder?.state === "recording") stopRecording();
   else if (pendingPlaybackRequestId && pendingPlaybackRequestId === activeRequestId) {
@@ -674,7 +679,10 @@ mic.addEventListener("click", () => {
   }
   else beginRecording();
 });
-chatClose.addEventListener("click", () => setChatOpen(false));
+chatClose.addEventListener("click", () => {
+  notifyBoardActivity();
+  setChatOpen(false);
+});
 
 window.addEventListener("message", async (event) => {
   if (event.origin !== "https://kyst-wall-proxy.fly.dev" || event.source !== boardFrame.contentWindow) return;

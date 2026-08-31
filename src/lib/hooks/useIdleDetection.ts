@@ -30,9 +30,9 @@ function getLastActivity(): number {
   if (typeof window === 'undefined') return Date.now();
   const stored = localStorage.getItem(LAST_ACTIVITY_KEY);
   const timestamp = stored !== null ? Number(stored) : NaN;
-  if (Number.isFinite(timestamp)) return timestamp;
-
   const now = Date.now();
+  if (Number.isFinite(timestamp) && timestamp <= now) return timestamp;
+
   localStorage.setItem(LAST_ACTIVITY_KEY, String(now));
   return now;
 }
@@ -140,6 +140,18 @@ export function useIdleDetection(initialTimeout?: number) {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, [resetTimer, dismissIdle, timeout, isPWA]);
+
+  // Controls rendered by the kiosk wrapper sit outside this iframe, so their
+  // pointer events cannot reach the listeners above. The wrapper forwards a
+  // narrow activity message after its own mic/chat/fullscreen interactions.
+  useEffect(() => {
+    const onWrapperActivity = (event: MessageEvent) => {
+      if (event.source !== window.parent || event.data?.type !== 'kyst-user-activity') return;
+      dismissIdle();
+    };
+    window.addEventListener('message', onWrapperActivity);
+    return () => window.removeEventListener('message', onWrapperActivity);
+  }, [dismissIdle]);
 
   // Kiosk announcements commonly navigate/refresh the page or bring a hidden
   // page back to the foreground. Exit immediately so their UI is never covered.

@@ -207,6 +207,45 @@ describe('useIdleDetection', () => {
     expect(second.result.current.isIdle).toBe(true);
   });
 
+  it('repairs a future fullscreen activity timestamp before preserving it', () => {
+    (window.matchMedia as jest.Mock).mockImplementation((query: string) => ({
+      matches: query === '(display-mode: fullscreen)',
+      media: query,
+      onchange: null,
+      addListener: jest.fn(),
+      removeListener: jest.fn(),
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      dispatchEvent: jest.fn(),
+    }));
+
+    localStorage.setItem('prism-last-activity', String(Date.now() + 60_000));
+    const { result } = renderHook(() => useIdleDetection(5));
+
+    expect(Number(localStorage.getItem('prism-last-activity'))).toBe(Date.now());
+    act(() => jest.advanceTimersByTime(4999));
+    expect(result.current.isIdle).toBe(false);
+    act(() => jest.advanceTimersByTime(1));
+    expect(result.current.isIdle).toBe(true);
+  });
+
+  it('grants trusted kiosk wrapper interactions a fresh deadline', () => {
+    const { result } = renderHook(() => useIdleDetection(5));
+
+    act(() => {
+      jest.advanceTimersByTime(4000);
+      window.dispatchEvent(new MessageEvent('message', {
+        source: window.parent,
+        data: { type: 'kyst-user-activity' },
+      }));
+      jest.advanceTimersByTime(4999);
+    });
+    expect(result.current.isIdle).toBe(false);
+
+    act(() => jest.advanceTimersByTime(1));
+    expect(result.current.isIdle).toBe(true);
+  });
+
   it('preserves the idle deadline across fullscreen lifecycle noise', () => {
     (window.matchMedia as jest.Mock).mockImplementation((query: string) => ({
       matches: query === '(display-mode: fullscreen)',
