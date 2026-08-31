@@ -203,11 +203,13 @@ function showToast(message) {
   }, 2400);
 }
 function notifyBoardActivity() {
+  // The iframe may have completed its initial load before this late script
+  // registered the load handler, so always make an optimistic delivery.
+  boardFrame.contentWindow?.postMessage({ type:"kyst-user-activity" }, "https://kyst-wall-proxy.fly.dev");
   if (!boardLoaded) {
     pendingBoardActivity = true;
     return;
   }
-  boardFrame.contentWindow?.postMessage({ type:"kyst-user-activity" }, "https://kyst-wall-proxy.fly.dev");
 }
 boardFrame.addEventListener("load", () => {
   boardLoaded = true;

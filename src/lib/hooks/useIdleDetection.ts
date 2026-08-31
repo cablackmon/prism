@@ -7,6 +7,7 @@ const STORAGE_KEY = 'prism-screensaver-timeout';
 const AWAY_MODE_STORAGE_KEY = 'prism-away-mode-timeout';
 const LAST_ACTIVITY_KEY = 'prism-last-activity';
 const DEFAULT_TIMEOUT = 0;
+const KYST_WRAPPER_ORIGIN = 'https://kyst-wall-proxy.fly.dev';
 
 function getStoredTimeout(): number {
   if (typeof window === 'undefined') return DEFAULT_TIMEOUT;
@@ -146,7 +147,11 @@ export function useIdleDetection(initialTimeout?: number) {
   // narrow activity message after its own mic/chat/fullscreen interactions.
   useEffect(() => {
     const onWrapperActivity = (event: MessageEvent) => {
-      if (event.source !== window.parent || event.data?.type !== 'kyst-user-activity') return;
+      if (
+        event.source !== window.parent ||
+        event.origin !== KYST_WRAPPER_ORIGIN ||
+        event.data?.type !== 'kyst-user-activity'
+      ) return;
       // Wrapper controls are already completed gestures, not the pointerdown
       // that initiated forceIdle inside this document. Clear the force guard,
       // dismiss immediately, and grant the interaction a complete deadline.

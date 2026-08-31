@@ -236,6 +236,7 @@ describe('useIdleDetection', () => {
       jest.advanceTimersByTime(4000);
       window.dispatchEvent(new MessageEvent('message', {
         source: window.parent,
+        origin: 'https://kyst-wall-proxy.fly.dev',
         data: { type: 'kyst-user-activity' },
       }));
       jest.advanceTimersByTime(4999);
@@ -253,6 +254,7 @@ describe('useIdleDetection', () => {
       result.current.forceIdle();
       window.dispatchEvent(new MessageEvent('message', {
         source: window.parent,
+        origin: 'https://kyst-wall-proxy.fly.dev',
         data: { type: 'kyst-user-activity' },
       }));
     });
@@ -261,6 +263,22 @@ describe('useIdleDetection', () => {
     act(() => jest.advanceTimersByTime(4999));
     expect(result.current.isIdle).toBe(false);
     act(() => jest.advanceTimersByTime(1));
+    expect(result.current.isIdle).toBe(true);
+  });
+
+  it('ignores wrapper activity messages from an unexpected origin', () => {
+    const { result } = renderHook(() => useIdleDetection(5));
+
+    act(() => {
+      jest.advanceTimersByTime(4000);
+      window.dispatchEvent(new MessageEvent('message', {
+        source: window.parent,
+        origin: 'https://example.com',
+        data: { type: 'kyst-user-activity' },
+      }));
+      jest.advanceTimersByTime(1000);
+    });
+
     expect(result.current.isIdle).toBe(true);
   });
 
