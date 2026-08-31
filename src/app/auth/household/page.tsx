@@ -50,7 +50,8 @@ export default function HouseholdLoginPage() {
     <main className="flex min-h-screen items-center justify-center bg-background px-4 text-foreground">
       <section className="w-full max-w-sm rounded-2xl border bg-card p-8 shadow-xl">
         <div className="mb-7 flex flex-col items-center text-center">
-          <Image src="/logo-prism.png" alt="Prism" width={72} height={72} priority />
+          <Image src="/kyst-emblem.svg" alt="" width={72} height={72} priority />
+          <p className="mt-3 text-sm font-semibold tracking-[0.32em] text-primary">KYST</p>
           <h1 className="mt-4 text-2xl font-semibold">Blackmon Family Board</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Enter the household password to continue.

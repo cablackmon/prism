@@ -38,7 +38,7 @@ export function ImportTextModal({ onClose, onParsed }: ImportTextModalProps) {
         <div className="space-y-3 py-2">
           <p className="text-sm text-muted-foreground">
             Paste OCR&apos;d text from a recipe photo (iOS Live Text, Google Lens, etc.).
-            Prism will split it into title, ingredients, and instructions for you to
+            KYST will split it into title, ingredients, and instructions for you to
             review before saving.
           </p>
 

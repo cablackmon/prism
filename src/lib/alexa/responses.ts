@@ -25,7 +25,7 @@ export function speak(text: string, opts: { card?: string } = {}): AlexaResponse
     shouldEndSession: true,
   };
   if (opts.card) {
-    response.card = { type: 'Simple', title: 'Prism', content: opts.card };
+    response.card = { type: 'Simple', title: 'KYST', content: opts.card };
   }
   return { version: '1.0', response };
 }

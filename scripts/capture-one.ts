@@ -69,7 +69,7 @@ async function loginAsAlex(page: any) {
   await page.waitForFunction(
     () => {
       const text = document.body.innerText.trim();
-      if (!text || text === 'Prism') return false;
+      if (!text || text === 'KYST') return false;
       if (/Loading[\s\w]*\.\.\./i.test(text)) return false;
       return true;
     },

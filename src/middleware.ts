@@ -183,6 +183,6 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     '/api/:path*',
-    '/((?!api|_next/static|_next/image|favicon.ico|manifest.json|sw.js|workbox-|icons/|logo-prism.png).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|manifest.json|sw.js|workbox-|icons/|kyst-emblem.svg|logo-prism.png).*)',
   ],
 };

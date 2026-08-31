@@ -23,7 +23,7 @@ export function DemoBanner() {
     >
       <span aria-hidden="true">★</span>
       <span>
-        Prism Demo &middot; Read-only &middot; Resets daily at midnight UTC
+        KYST Demo &middot; Read-only &middot; Resets daily at midnight UTC
       </span>
       <a
         href="https://github.com/sandydargoport/prism"

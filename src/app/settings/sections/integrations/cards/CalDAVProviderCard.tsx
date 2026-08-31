@@ -89,14 +89,14 @@ export function CalDAVProviderCard({ onChange, forceSubSectionOpen }: Props) {
           id="caldav-tasks"
           label="Reminders / tasks"
           icon={<ListTodo className="h-4 w-4" />}
-          summary="VTODO items sync into Prism Tasks (read-only)"
+          summary="VTODO items sync into KYST Tasks (read-only)"
           forceOpen={forceSubSectionOpen === 'caldav-tasks'}
         >
           <div className="text-sm text-muted-foreground space-y-2">
             <p>
               CalDAV-backed task lists appear in the regular Tasks view. Note:
               iCloud accounts return placeholder VTODOs for Reminders lists
-              that have migrated to CloudKit (most modern accounts) — Prism
+              that have migrated to CloudKit (most modern accounts) — KYST
               filters those out automatically.
             </p>
             <Link

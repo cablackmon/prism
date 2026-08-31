@@ -9,7 +9,7 @@ export async function handleGetTodayTasks(): Promise<AlexaResponse> {
   } catch (err) {
     if (err instanceof VoiceApiError) {
       logError('[alexa] getTasksToday failed', err);
-      return speak("Sorry, I couldn't reach Prism right now.");
+      return speak("Sorry, I couldn't reach KYST right now.");
     }
     throw err;
   }
