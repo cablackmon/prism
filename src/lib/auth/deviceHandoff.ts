@@ -1,18 +1,17 @@
-const encoder = new TextEncoder();
-
 export const WALL_DESTINATION = '/wall.html';
 export const WALL_WRAPPER_URL = 'https://kyst-one.vercel.app/wall.html';
 export const WALL_PROXY_AUDIENCE = 'https://kyst-wall-proxy.fly.dev';
 export const DEVICE_HANDOFF_TTL_SECONDS = 60;
 
 function base64Url(value: string | Uint8Array): string {
-  const bytes = typeof value === 'string' ? encoder.encode(value) : value;
+  const bytes = typeof value === 'string' ? new TextEncoder().encode(value) : value;
   let binary = '';
   for (const byte of bytes) binary += String.fromCharCode(byte);
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
 }
 
 async function sign(payload: string, secret: string): Promise<string> {
+  const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
     'raw',
     encoder.encode(secret),

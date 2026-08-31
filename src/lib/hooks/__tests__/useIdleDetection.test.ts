@@ -42,6 +42,16 @@ describe('useIdleDetection', () => {
 
   afterEach(() => {
     jest.useRealTimers();
+    (window.matchMedia as jest.Mock).mockImplementation((query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: jest.fn(),
+      removeListener: jest.fn(),
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      dispatchEvent: jest.fn(),
+    }));
   });
 
   it('returns isIdle=false initially', () => {
@@ -98,6 +108,216 @@ describe('useIdleDetection', () => {
     act(() => {
       jest.advanceTimersByTime(1000);
     });
+    expect(result.current.isIdle).toBe(true);
+  });
+
+  it('ignores passive mousemove noise in fullscreen display mode', () => {
+    (window.matchMedia as jest.Mock).mockImplementation((query: string) => ({
+      matches: query === '(display-mode: fullscreen)',
+      media: query,
+      onchange: null,
+      addListener: jest.fn(),
+      removeListener: jest.fn(),
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      dispatchEvent: jest.fn(),
+    }));
+
+    const { result } = renderHook(() => useIdleDetection(5));
+
+    act(() => {
+      jest.advanceTimersByTime(4000);
+      window.dispatchEvent(new Event('mousemove'));
+      jest.advanceTimersByTime(1000);
+    });
+
+    expect(result.current.isIdle).toBe(true);
+  });
+
+  it('still treats scroll as activity in fullscreen display mode', () => {
+    (window.matchMedia as jest.Mock).mockImplementation((query: string) => ({
+      matches: query === '(display-mode: fullscreen)',
+      media: query,
+      onchange: null,
+      addListener: jest.fn(),
+      removeListener: jest.fn(),
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      dispatchEvent: jest.fn(),
+    }));
+
+    const { result } = renderHook(() => useIdleDetection(5));
+
+    act(() => {
+      jest.advanceTimersByTime(4000);
+      window.dispatchEvent(new Event('scroll'));
+      jest.advanceTimersByTime(1000);
+    });
+
+    expect(result.current.isIdle).toBe(false);
+  });
+
+  it('preserves the persisted deadline across a remount in browser display mode', () => {
+    localStorage.setItem('prism-last-activity', String(Date.now()));
+    const first = renderHook(() => useIdleDetection(5));
+
+    act(() => jest.advanceTimersByTime(4000));
+    first.unmount();
+    const second = renderHook(() => useIdleDetection(5));
+    act(() => jest.advanceTimersByTime(1000));
+
+    expect(second.result.current.isIdle).toBe(true);
+  });
+
+  it('treats a malformed fullscreen activity timestamp as fresh activity', () => {
+    (window.matchMedia as jest.Mock).mockImplementation((query: string) => ({
+      matches: query === '(display-mode: fullscreen)',
+      media: query,
+      onchange: null,
+      addListener: jest.fn(),
+      removeListener: jest.fn(),
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      dispatchEvent: jest.fn(),
+    }));
+
+    localStorage.setItem('prism-last-activity', 'yesterday');
+    const first = renderHook(() => useIdleDetection(5));
+
+    expect(first.result.current.isIdle).toBe(false);
+    expect(Number(localStorage.getItem('prism-last-activity'))).toBe(Date.now());
+    act(() => jest.advanceTimersByTime(4000));
+    first.unmount();
+
+    const second = renderHook(() => useIdleDetection(5));
+    act(() => jest.advanceTimersByTime(999));
+    expect(second.result.current.isIdle).toBe(false);
+    act(() => jest.advanceTimersByTime(1));
+    expect(second.result.current.isIdle).toBe(true);
+  });
+
+  it('repairs a future fullscreen activity timestamp before preserving it', () => {
+    (window.matchMedia as jest.Mock).mockImplementation((query: string) => ({
+      matches: query === '(display-mode: fullscreen)',
+      media: query,
+      onchange: null,
+      addListener: jest.fn(),
+      removeListener: jest.fn(),
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      dispatchEvent: jest.fn(),
+    }));
+
+    localStorage.setItem('prism-last-activity', String(Date.now() + 60_000));
+    const { result } = renderHook(() => useIdleDetection(5));
+
+    expect(Number(localStorage.getItem('prism-last-activity'))).toBe(Date.now());
+    act(() => jest.advanceTimersByTime(4999));
+    expect(result.current.isIdle).toBe(false);
+    act(() => jest.advanceTimersByTime(1));
+    expect(result.current.isIdle).toBe(true);
+  });
+
+  it('grants trusted kiosk wrapper interactions a fresh deadline', () => {
+    const { result } = renderHook(() => useIdleDetection(5));
+
+    act(() => {
+      jest.advanceTimersByTime(4000);
+      window.dispatchEvent(new MessageEvent('message', {
+        source: window.parent,
+        origin: 'https://kyst-one.vercel.app',
+        data: { type: 'kyst-user-activity' },
+      }));
+      jest.advanceTimersByTime(4999);
+    });
+    expect(result.current.isIdle).toBe(false);
+
+    act(() => jest.advanceTimersByTime(1));
+    expect(result.current.isIdle).toBe(true);
+  });
+
+  it('dismisses forced idle and grants wrapper activity a fresh deadline', () => {
+    const { result } = renderHook(() => useIdleDetection(5));
+
+    act(() => {
+      result.current.forceIdle();
+      window.dispatchEvent(new MessageEvent('message', {
+        source: window.parent,
+        origin: 'https://kyst-one.vercel.app',
+        data: { type: 'kyst-user-activity' },
+      }));
+    });
+    expect(result.current.isIdle).toBe(false);
+
+    act(() => jest.advanceTimersByTime(4999));
+    expect(result.current.isIdle).toBe(false);
+    act(() => jest.advanceTimersByTime(1));
+    expect(result.current.isIdle).toBe(true);
+  });
+
+  it('ignores wrapper activity messages from an unexpected origin', () => {
+    const { result } = renderHook(() => useIdleDetection(5));
+
+    act(() => {
+      jest.advanceTimersByTime(4000);
+      window.dispatchEvent(new MessageEvent('message', {
+        source: window.parent,
+        origin: 'https://example.com',
+        data: { type: 'kyst-user-activity' },
+      }));
+      jest.advanceTimersByTime(1000);
+    });
+
+    expect(result.current.isIdle).toBe(true);
+  });
+
+  it('preserves the idle deadline across fullscreen lifecycle noise', () => {
+    (window.matchMedia as jest.Mock).mockImplementation((query: string) => ({
+      matches: query === '(display-mode: fullscreen)',
+      media: query,
+      onchange: null,
+      addListener: jest.fn(),
+      removeListener: jest.fn(),
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      dispatchEvent: jest.fn(),
+    }));
+
+    const { result } = renderHook(() => useIdleDetection(5));
+
+    act(() => {
+      jest.advanceTimersByTime(4000);
+      window.dispatchEvent(new Event('pageshow'));
+      document.dispatchEvent(new Event('visibilitychange'));
+      jest.advanceTimersByTime(1000);
+    });
+
+    expect(result.current.isIdle).toBe(true);
+  });
+
+  it('grants announcements a fresh deadline in fullscreen display mode', () => {
+    (window.matchMedia as jest.Mock).mockImplementation((query: string) => ({
+      matches: query === '(display-mode: fullscreen)',
+      media: query,
+      onchange: null,
+      addListener: jest.fn(),
+      removeListener: jest.fn(),
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      dispatchEvent: jest.fn(),
+    }));
+
+    const { result } = renderHook(() => useIdleDetection(5));
+    act(() => jest.advanceTimersByTime(5000));
+    expect(result.current.isIdle).toBe(true);
+
+    act(() => {
+      window.dispatchEvent(new Event('prism:announce'));
+      jest.advanceTimersByTime(4999);
+    });
+    expect(result.current.isIdle).toBe(false);
+
+    act(() => jest.advanceTimersByTime(1));
     expect(result.current.isIdle).toBe(true);
   });
 
@@ -183,6 +403,24 @@ describe('useIdleDetection', () => {
       jest.advanceTimersByTime(2000);
     });
 
+    expect(result.current.isIdle).toBe(true);
+  });
+
+  it('starts a fresh deadline when re-enabled after being disabled', () => {
+    localStorage.setItem('prism-last-activity', String(Date.now()));
+    const { result } = renderHook(() => useIdleDetection(0));
+
+    act(() => jest.advanceTimersByTime(10_000));
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent('prism:screensaver-timeout-change', { detail: 5 })
+      );
+    });
+
+    expect(Number(localStorage.getItem('prism-last-activity'))).toBe(Date.now());
+    act(() => jest.advanceTimersByTime(4999));
+    expect(result.current.isIdle).toBe(false);
+    act(() => jest.advanceTimersByTime(1));
     expect(result.current.isIdle).toBe(true);
   });
 
