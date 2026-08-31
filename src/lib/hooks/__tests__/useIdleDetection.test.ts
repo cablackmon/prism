@@ -246,6 +246,24 @@ describe('useIdleDetection', () => {
     expect(result.current.isIdle).toBe(true);
   });
 
+  it('dismisses forced idle and grants wrapper activity a fresh deadline', () => {
+    const { result } = renderHook(() => useIdleDetection(5));
+
+    act(() => {
+      result.current.forceIdle();
+      window.dispatchEvent(new MessageEvent('message', {
+        source: window.parent,
+        data: { type: 'kyst-user-activity' },
+      }));
+    });
+    expect(result.current.isIdle).toBe(false);
+
+    act(() => jest.advanceTimersByTime(4999));
+    expect(result.current.isIdle).toBe(false);
+    act(() => jest.advanceTimersByTime(1));
+    expect(result.current.isIdle).toBe(true);
+  });
+
   it('preserves the idle deadline across fullscreen lifecycle noise', () => {
     (window.matchMedia as jest.Mock).mockImplementation((query: string) => ({
       matches: query === '(display-mode: fullscreen)',

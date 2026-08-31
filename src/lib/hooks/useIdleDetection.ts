@@ -147,11 +147,16 @@ export function useIdleDetection(initialTimeout?: number) {
   useEffect(() => {
     const onWrapperActivity = (event: MessageEvent) => {
       if (event.source !== window.parent || event.data?.type !== 'kyst-user-activity') return;
-      dismissIdle();
+      // Wrapper controls are already completed gestures, not the pointerdown
+      // that initiated forceIdle inside this document. Clear the force guard,
+      // dismiss immediately, and grant the interaction a complete deadline.
+      forcedRef.current = false;
+      setIsIdle(false);
+      resetTimer();
     };
     window.addEventListener('message', onWrapperActivity);
     return () => window.removeEventListener('message', onWrapperActivity);
-  }, [dismissIdle]);
+  }, [resetTimer]);
 
   // Kiosk announcements commonly navigate/refresh the page or bring a hidden
   // page back to the foreground. Exit immediately so their UI is never covered.
