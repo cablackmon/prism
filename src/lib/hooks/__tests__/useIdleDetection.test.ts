@@ -180,6 +180,28 @@ describe('useIdleDetection', () => {
     expect(second.result.current.isIdle).toBe(true);
   });
 
+  it('treats a malformed fullscreen activity timestamp as fresh activity', () => {
+    (window.matchMedia as jest.Mock).mockImplementation((query: string) => ({
+      matches: query === '(display-mode: fullscreen)',
+      media: query,
+      onchange: null,
+      addListener: jest.fn(),
+      removeListener: jest.fn(),
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      dispatchEvent: jest.fn(),
+    }));
+
+    localStorage.setItem('prism-last-activity', 'yesterday');
+    const { result } = renderHook(() => useIdleDetection(5));
+
+    expect(result.current.isIdle).toBe(false);
+    act(() => jest.advanceTimersByTime(4999));
+    expect(result.current.isIdle).toBe(false);
+    act(() => jest.advanceTimersByTime(1));
+    expect(result.current.isIdle).toBe(true);
+  });
+
   it('preserves the idle deadline across fullscreen lifecycle noise', () => {
     (window.matchMedia as jest.Mock).mockImplementation((query: string) => ({
       matches: query === '(display-mode: fullscreen)',

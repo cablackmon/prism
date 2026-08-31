@@ -29,7 +29,8 @@ function updateLastActivity() {
 function getLastActivity(): number {
   if (typeof window === 'undefined') return Date.now();
   const stored = localStorage.getItem(LAST_ACTIVITY_KEY);
-  return stored !== null ? Number(stored) : Date.now();
+  const timestamp = stored !== null ? Number(stored) : NaN;
+  return Number.isFinite(timestamp) ? timestamp : Date.now();
 }
 
 export function useIdleDetection(initialTimeout?: number) {
