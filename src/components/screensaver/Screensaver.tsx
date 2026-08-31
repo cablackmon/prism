@@ -56,8 +56,14 @@ export function Screensaver() {
   }, [isIdle]);
 
   useEffect(() => {
-    staticNightSkyLoaded.current = false;
-    if (!isIdle) return;
+    if (!isIdle) {
+      // Reset between activations, while the iframe cannot be rendered. Doing
+      // this after a new idle activation can erase an onLoad from a cached
+      // iframe before the fallback timeout effect observes it.
+      staticNightSkyLoaded.current = false;
+      setStaticNightSkyAvailable(null);
+      return;
+    }
 
     const controller = new AbortController();
     const nightSkyUrl = new URL('/screensaver/nightsky.html', window.location.href).href;
