@@ -44,6 +44,7 @@ export function Screensaver() {
   const [visible, setVisible] = useState(false);
   const [staticNightSkyAvailable, setStaticNightSkyAvailable] = useState<boolean | null>(null);
   const frameLoadTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const staticNightSkyLoaded = useRef(false);
 
   useEffect(() => {
     if (isIdle) {
@@ -55,6 +56,7 @@ export function Screensaver() {
   }, [isIdle]);
 
   useEffect(() => {
+    staticNightSkyLoaded.current = false;
     if (!isIdle) return;
 
     const controller = new AbortController();
@@ -82,7 +84,11 @@ export function Screensaver() {
 
     // Chromium does not dispatch iframe `error` for a CSP-blocked document.
     // Fall back if the frame never confirms a real load for any reason.
-    frameLoadTimeout.current = setTimeout(() => setStaticNightSkyAvailable(false), 5_000);
+    // A cached frame can load before this passive effect runs, so do not arm a
+    // timeout after onLoad has already confirmed the document.
+    if (!staticNightSkyLoaded.current) {
+      frameLoadTimeout.current = setTimeout(() => setStaticNightSkyAvailable(false), 5_000);
+    }
     window.addEventListener('securitypolicyviolation', handleSecurityPolicyViolation);
 
     return () => {
@@ -93,6 +99,7 @@ export function Screensaver() {
   }, [isIdle, staticNightSkyAvailable]);
 
   const confirmStaticNightSkyLoaded = () => {
+    staticNightSkyLoaded.current = true;
     if (frameLoadTimeout.current) clearTimeout(frameLoadTimeout.current);
     frameLoadTimeout.current = null;
   };
