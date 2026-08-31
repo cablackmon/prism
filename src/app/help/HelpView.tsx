@@ -158,7 +158,7 @@ const Ul = ({ children }: { children: React.ReactNode }) => (
 function GettingStarted() {
   return (
     <>
-      <P>Prism is a free, self-hosted family dashboard that brings together calendars, tasks, chores, shopping lists, meals, photos, and more into one shared hub.</P>
+      <P>KYST is a free, self-hosted family dashboard that brings together calendars, tasks, chores, shopping lists, meals, photos, and more into one shared hub.</P>
       <H2>First-Time Setup</H2>
       <Ul>
         <Li><strong>Add family members</strong> in Settings &gt; Family Members</Li>
@@ -176,7 +176,7 @@ function GettingStarted() {
 function Roles() {
   return (
     <>
-      <P>Prism has two roles: <strong>Parent</strong> and <strong>Child</strong>.</P>
+      <P>KYST has two roles: <strong>Parent</strong> and <strong>Child</strong>.</P>
       <H3>Parents can:</H3>
       <Ul>
         <Li>Manage settings, family members, and integrations</Li>
@@ -229,8 +229,8 @@ function DashboardHelp() {
 
       <H2>Import, Export &amp; Community Layouts</H2>
       <Ul>
-        <Li><strong>Community gallery</strong>: Click <strong>Community</strong> in the editor toolbar to browse layouts shared by other Prism users. Search by name and filter by <strong>orientation</strong> (Landscape/Portrait, pre-set to the dashboard you&apos;re editing), preview each as a thumbnail, then <strong>Apply layout</strong> to drop it onto a new dashboard.</Li>
-        <Li><strong>Share</strong>: Submit your own layout (More &gt; Share). Fill in the details and submit; Prism opens a pre-filled submission, and once it&apos;s approved your layout appears in the gallery.</Li>
+        <Li><strong>Community gallery</strong>: Click <strong>Community</strong> in the editor toolbar to browse layouts shared by other KYST users. Search by name and filter by <strong>orientation</strong> (Landscape/Portrait, pre-set to the dashboard you&apos;re editing), preview each as a thumbnail, then <strong>Apply layout</strong> to drop it onto a new dashboard.</Li>
+        <Li><strong>Share</strong>: Submit your own layout (More &gt; Share). Fill in the details and submit; KYST opens a pre-filled submission, and once it&apos;s approved your layout appears in the gallery.</Li>
         <Li><strong>Export</strong>: Copy your current layout as JSON to share it directly (More &gt; Export)</Li>
         <Li><strong>Import</strong>: Paste a layout JSON to load someone else&apos;s design (More &gt; Import)</Li>
         <Li><strong>Reset</strong>: Revert unsaved edits back to the last saved layout (More &gt; Reset)</Li>
@@ -276,7 +276,7 @@ function CalendarHelp({ isMobile }: { isMobile: boolean }) {
         <Li><strong>Set display names</strong>: customize how a calendar appears in the UI</Li>
         <Li><strong>Change colors</strong>: override the default color for any calendar</Li>
       </Ul>
-      <P>Google Calendar is <strong>two-way</strong>: events you add, edit, or delete in Prism are pushed back to the connected Google calendar. (Old <strong>Settings &gt; Connected Accounts</strong> and <strong>Settings &gt; Calendars</strong> links redirect to these locations.)</P>
+      <P>Google Calendar is <strong>two-way</strong>: events you add, edit, or delete in KYST are pushed back to the connected Google calendar. (Old <strong>Settings &gt; Connected Accounts</strong> and <strong>Settings &gt; Calendars</strong> links redirect to these locations.)</P>
 
       <H2>Calendar Groups &amp; Columns</H2>
       <P>In Day and List views, events are organized into <strong>columns by calendar group</strong>. Groups are created automatically based on your calendar assignments:</P>
@@ -324,14 +324,14 @@ function TasksHelp() {
       </Ul>
       <H2>Removed tasks are held for review</H2>
       <P>
-        If a task disappears from the app you sync with, Prism keeps it and shows a
+        If a task disappears from the app you sync with, KYST keeps it and shows a
         <strong> Review</strong> button on the Tasks page. A parent chooses to delete it
         or keep it as a local task. If a lot vanish at once — the shape of a connection
         problem rather than someone tidying up — nothing is flagged and the sync says why,
         so a bad connection cannot quietly empty your list.
       </P>
       <P>
-        Deleting a task in Prism also removes it from the app it syncs with. Your view
+        Deleting a task in KYST also removes it from the app it syncs with. Your view
         settings — grouping, sorting and show-completed — are remembered between visits.
       </P>
     </>
@@ -426,14 +426,14 @@ function BirthdaysHelp() {
   return (
     <>
       <H2>Where birthdays come from</H2>
-      <P>You don&apos;t enter birthdays into Prism. It reads them from the calendars and contacts you already keep, so they stay correct in one place.</P>
+      <P>You don&apos;t enter birthdays into KYST. It reads them from the calendars and contacts you already keep, so they stay correct in one place.</P>
       <Ul>
-        <Li><strong>Your calendars</strong> — any all-day event with &quot;birthday&quot; or &quot;anniversary&quot; in the title, on any connected calendar (Google, iCloud/CalDAV, iCal subscription, or a local Prism calendar)</Li>
+        <Li><strong>Your calendars</strong> — any all-day event with &quot;birthday&quot; or &quot;anniversary&quot; in the title, on any connected calendar (Google, iCloud/CalDAV, iCal subscription, or a local KYST calendar)</Li>
         <Li><strong>Your contacts</strong> — the birthday field on iCloud/CardDAV contacts. Tick &quot;contact birthdays&quot; when connecting iCloud; this is how iPhone birthdays arrive</Li>
         <Li><strong>Google Contacts</strong> — Google&apos;s own generated birthday calendar</Li>
       </Ul>
-      <H2>Adding one Prism can&apos;t find</H2>
-      <P>Put it on a calendar and Prism picks it up on the next sync. Your own local Prism calendar works fine for this.</P>
+      <H2>Adding one KYST can&apos;t find</H2>
+      <P>Put it on a calendar and KYST picks it up on the next sync. Your own local KYST calendar works fine for this.</P>
       <Ul>
         <Li>Make it an <strong>all-day</strong> event. A timed event is treated as something happening near a birthday, not the birthday itself</Li>
         <Li>Put the person&apos;s name and the word <strong>birthday</strong> in the title: <em>Grandma&apos;s Birthday</em></Li>
@@ -441,11 +441,11 @@ function BirthdaysHelp() {
       </Ul>
       <H2>Anniversaries and milestones</H2>
       <P>Anniversaries work the same way — include the word <strong>anniversary</strong> in the title.</P>
-      <P>Milestones have no obvious keyword, so Prism looks for the shape instead: an all-day event that <strong>repeats every year</strong> and carries a <strong>year</strong> in the title, like <em>Ana and Ben (2005)</em>.</P>
+      <P>Milestones have no obvious keyword, so KYST looks for the shape instead: an all-day event that <strong>repeats every year</strong> and carries a <strong>year</strong> in the title, like <em>Ana and Ben (2005)</em>.</P>
       <P>If you keep a calendar where <em>everything</em> is a life event, open <strong>Manage calendars</strong> and turn on <strong>&quot;Treat every all-day event here as a birthday or milestone&quot;</strong>. Then titles need no keyword at all.</P>
       <H2>Removing one</H2>
-      <P>Deleting a birthday in Prism keeps it deleted — it won&apos;t reappear on the next sync, even though the calendar event still exists. Delete the calendar event too if you want it gone everywhere.</P>
-      <H2>What Prism ignores</H2>
+      <P>Deleting a birthday in KYST keeps it deleted — it won&apos;t reappear on the next sync, even though the calendar event still exists. Delete the calendar event too if you want it gone everywhere.</P>
+      <H2>What KYST ignores</H2>
       <P>Read-only calendars you subscribe to (school terms, public holidays) are skipped, so things like &quot;No School — Martin Luther King&apos;s Birthday&quot; don&apos;t become family birthdays. Titles such as &quot;birthday party&quot; or &quot;prep for Sam&apos;s birthday&quot; are ignored too, since they describe something happening near a birthday rather than the day itself.</P>
     </>
   );
@@ -483,7 +483,7 @@ function PhotosHelp() {
         <Li><strong>Slideshow</strong>: Auto-rotating display for screensaver and away mode</Li>
         <Li><strong>Sources</strong>: Local uploads, OneDrive, or Immich. Synced sources refresh automatically about every 30 minutes</Li>
         <Li><strong>Tag for:</strong> In the lightbox, toggle where each photo may appear: <strong>Wallpaper</strong>, <strong>Gallery</strong>, and/or <strong>Screensaver</strong></Li>
-        <Li><strong>Bulk select</strong> (desktop): Select many photos to show in / remove from Prism at once</Li>
+        <Li><strong>Bulk select</strong> (desktop): Select many photos to show in / remove from KYST at once</Li>
         <Li><strong>Below-HD indicator</strong>: A resolution dot flags low-resolution photos so you can filter them out of wallpapers</Li>
       </Ul>
       <P>Manage sources and set a static wallpaper or screensaver in Settings &gt; Photos.</P>
@@ -534,7 +534,7 @@ function ScreensaverHelp() {
 function SettingsHelp({ isMobile }: { isMobile: boolean }) {
   return (
     <>
-      <P>Configure Prism to fit your family&apos;s needs. Open Settings from the navigation to find these sections:</P>
+      <P>Configure KYST to fit your family&apos;s needs. Open Settings from the navigation to find these sections:</P>
       <H3>Family Members</H3>
       <P>Add, edit, or remove members. Set names, colors, avatars, and roles.</P>
       <H3>Security</H3>
@@ -569,7 +569,7 @@ function SettingsHelp({ isMobile }: { isMobile: boolean }) {
       <H3>Backups &amp; Data</H3>
       <P>Create, download, and restore database backups.</P>
       <H3>Activity Log</H3>
-      <P>Review a log of significant actions taken in Prism.</P>
+      <P>Review a log of significant actions taken in KYST.</P>
     </>
   );
 }
@@ -579,13 +579,13 @@ function IntegrationsHelp() {
     <>
       <P>Everything connects from one place: <strong>Settings &gt; Integrations</strong>, shown as provider cards.</P>
       <H2>Google Calendar</H2>
-      <P>Connect in Settings &gt; Integrations (Google card). <strong>Two-way sync</strong>: events you add, edit, or delete in Prism are pushed back to the connected Google calendar.</P>
+      <P>Connect in Settings &gt; Integrations (Google card). <strong>Two-way sync</strong>: events you add, edit, or delete in KYST are pushed back to the connected Google calendar.</P>
       <H2>Microsoft To Do</H2>
       <P>Bidirectional sync for Tasks, Shopping Lists, and Wish Lists, with newest-wins conflict resolution. Connect the Microsoft card, then turn on sync per-list inside that card.</P>
       <H2>Google Tasks</H2>
       <P>An alternative task provider. Connect Google Tasks from the Google card and map it to a task list.</P>
       <H2>Apple iCloud / CalDAV</H2>
-      <P>Connect iCloud (or any CalDAV server) for calendars, Reminders, and optional contact birthdays. See the <strong>Apple iCloud (CalDAV)</strong> help section for setup. Read-only for edits, but deleting a single (non-recurring) synced event in Prism now removes it upstream too.</P>
+      <P>Connect iCloud (or any CalDAV server) for calendars, Reminders, and optional contact birthdays. See the <strong>Apple iCloud (CalDAV)</strong> help section for setup. Read-only for edits, but deleting a single (non-recurring) synced event in KYST now removes it upstream too.</P>
       <H2>Kroger / Mariano&apos;s Cart</H2>
       <P>Push your shopping list to your online Kroger / Mariano&apos;s cart. See the <strong>Kroger / Mariano&apos;s Cart</strong> help section.</P>
       <H2>Gmail Bus Tracking</H2>
@@ -597,7 +597,7 @@ function IntegrationsHelp() {
       <H2>Weather</H2>
       <P>Works out of the box via <strong>Open-Meteo</strong>. No API key needed. Set your location by ZIP / postal code in Settings &gt; General. OpenWeatherMap is optional (set <code>WEATHER_PROVIDER=openweather</code> plus a key).</P>
       <H2>Home Assistant &amp; Voice API</H2>
-      <P>Control Prism by voice via Home Assistant, Alexa skills, or Node-RED. See the <strong>Home Assistant &amp; Voice API</strong> help section.</P>
+      <P>Control KYST by voice via Home Assistant, Alexa skills, or Node-RED. See the <strong>Home Assistant &amp; Voice API</strong> help section.</P>
     </>
   );
 }
@@ -605,9 +605,9 @@ function IntegrationsHelp() {
 function PwaHelp() {
   return (
     <>
-      <P>Install Prism as an app on your device for quick access without opening a browser.</P>
+      <P>Install KYST as an app on your device for quick access without opening a browser.</P>
       <H3>iOS (Safari)</H3>
-      <P>Open Prism in Safari &gt; tap <strong>Share</strong> &gt; <strong>Add to Home Screen</strong> &gt; <strong>Add</strong>.</P>
+      <P>Open KYST in Safari &gt; tap <strong>Share</strong> &gt; <strong>Add to Home Screen</strong> &gt; <strong>Add</strong>.</P>
       <H3>Android (Chrome)</H3>
       <P>Open in Chrome &gt; tap <strong>Menu</strong> &gt; <strong>Install app</strong>.</P>
       <H3>Desktop (Chrome/Edge)</H3>
@@ -664,9 +664,9 @@ function RecipesHelp() {
       <P>A recipe library you can scale, shop from, and drop onto the meal planner.</P>
       <H2>Adding Recipes</H2>
       <Ul>
-        <Li><strong>Import from URL</strong>: Paste a recipe web address and Prism pulls in the details</Li>
+        <Li><strong>Import from URL</strong>: Paste a recipe web address and KYST pulls in the details</Li>
         <Li><strong>Import from Paprika</strong>: Upload a Paprika export file</Li>
-        <Li><strong>Paste text</strong>: Paste raw recipe text and Prism structures it</Li>
+        <Li><strong>Paste text</strong>: Paste raw recipe text and KYST structures it</Li>
         <Li><strong>Add manually</strong>: Fill in the form, including an optional photo</Li>
         <Li><strong>Sync from Tandoor / Mealie</strong>: Connect a server with a read-only API token; the review screen pre-selects adds and updates while removals are opt-in, and re-syncing is safe to repeat</Li>
       </Ul>
@@ -716,7 +716,7 @@ function BusHelp() {
       <P>Track school-bus arrival times from FirstView email alerts and show them on the dashboard.</P>
       <Ul>
         <Li><strong>Connect Gmail</strong>: In Settings &gt; Bus Tracking, connect the Gmail account that receives FirstView emails (optionally set a Gmail label to narrow the search)</Li>
-        <Li><strong>Discover routes</strong>: Prism scans for FirstView emails and creates the routes it finds, each with its stop</Li>
+        <Li><strong>Discover routes</strong>: KYST scans for FirstView emails and creates the routes it finds, each with its stop</Li>
         <Li><strong>Bus Tracker widget</strong>: Add the Bus Tracker widget to a dashboard to see predicted arrival times</Li>
       </Ul>
     </>
@@ -749,7 +749,7 @@ function CalDAVHelp() {
       <H2>What syncs</H2>
       <Ul>
         <Li>Calendars and events; Reminders (as tasks); optional contact <strong>birthdays</strong></Li>
-        <Li>Read-only for creates and edits, but <strong>deleting a single (non-recurring) synced event in Prism removes it from the source too</strong>. This is destructive upstream. Recurring series only delete locally.</Li>
+        <Li>Read-only for creates and edits, but <strong>deleting a single (non-recurring) synced event in KYST removes it from the source too</strong>. This is destructive upstream. Recurring series only delete locally.</Li>
       </Ul>
     </>
   );
@@ -771,7 +771,7 @@ function KrogerHelp() {
 function VoiceApiHelp() {
   return (
     <>
-      <P>Control and read Prism by voice through Home Assistant, Alexa skills, or Node-RED via the built-in Voice API.</P>
+      <P>Control and read KYST by voice through Home Assistant, Alexa skills, or Node-RED via the built-in Voice API.</P>
       <Ul>
         <Li><strong>Generate a token</strong> in Settings &gt; Security</Li>
         <Li><strong>Pick a scope</strong>: Choose <strong>Voice API only (recommended)</strong> for Alexa / Home Assistant; it reaches the Voice API plus read-only REST sensors, not writes. Full access (legacy) is broader</Li>

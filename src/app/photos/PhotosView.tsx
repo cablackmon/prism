@@ -43,7 +43,7 @@ export function PhotosView() {
   // lightweight mobile/PWA toolbar, so it's hidden there.
   const isMobile = useIsMobile();
 
-  // Multi-select "remove from Prism" mode
+  // Multi-select "remove from KYST" mode
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
@@ -137,9 +137,9 @@ export function PhotosView() {
     const ids = Array.from(selectedIds);
     if (ids.length === 0) return;
     const ok = await confirm(
-      `Remove ${ids.length} photo${ids.length === 1 ? '' : 's'} from Prism?`,
-      'This removes them from Prism only — your OneDrive/source photos are never touched, and synced photos stay removed instead of re-downloading.',
-      { confirmLabel: 'Remove from Prism' },
+      `Remove ${ids.length} photo${ids.length === 1 ? '' : 's'} from KYST?`,
+      'This removes them from KYST only — your OneDrive/source photos are never touched, and synced photos stay removed instead of re-downloading.',
+      { confirmLabel: 'Remove from KYST' },
     );
     if (!ok) return;
     setDeleting(true);
@@ -152,7 +152,7 @@ export function PhotosView() {
       if (!res.ok) throw new Error('Request failed');
       const data = await res.json();
       toast({
-        title: `Removed ${data.deleted ?? ids.length} photo${(data.deleted ?? ids.length) === 1 ? '' : 's'} from Prism`,
+        title: `Removed ${data.deleted ?? ids.length} photo${(data.deleted ?? ids.length) === 1 ? '' : 's'} from KYST`,
         variant: 'success',
       });
       exitSelectMode();
@@ -339,7 +339,7 @@ export function PhotosView() {
                 disabled={selectedIds.size === 0 || deleting}
               >
                 <Trash2 className="h-4 w-4 mr-1" />
-                {deleting ? 'Removing…' : 'Remove from Prism'}
+                {deleting ? 'Removing…' : 'Remove from KYST'}
               </Button>
             </div>
           </div>

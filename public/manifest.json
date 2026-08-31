@@ -1,6 +1,6 @@
 {
-  "name": "Prism - Family Dashboard",
-  "short_name": "Prism",
+  "name": "KYST - Family Dashboard",
+  "short_name": "KYST",
   "description": "Your family's digital home - manage calendars, tasks, shopping lists, and more",
   "start_url": "/",
   "display": "standalone",

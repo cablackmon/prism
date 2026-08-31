@@ -29,7 +29,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { PrismIcon } from '@/components/ui/PrismIcon';
 import { useTranslations } from 'next-intl';
 import { ALL_NAV_ITEMS } from '@/lib/constants/navItems';
 import { useHiddenPages } from '@/lib/hooks/useHiddenPages';
@@ -136,11 +135,11 @@ export function SideNav({ user, onLogout, onLogin, uiHidden, className }: SideNa
       >
         {/* HEADER WITH LOGO */}
         <div className={cn('flex items-center h-12 [@media(pointer:coarse)]:h-16 px-2', expanded ? 'justify-start' : 'justify-center')}>
-          <Link href="/" className="flex items-center gap-2" aria-label="Prism home">
+          <Link href="/" className="flex items-center gap-2" aria-label="KYST home">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 overflow-hidden">
-              <PrismIcon size={24} />
+              <Image src="/kyst-emblem.svg" alt="" width={28} height={28} priority />
             </div>
-            {expanded && <span className="font-semibold text-lg">Prism</span>}
+            {expanded && <span className="font-semibold text-lg">KYST</span>}
           </Link>
         </div>
 
@@ -261,4 +260,3 @@ export function SideNav({ user, onLogout, onLogin, uiHidden, className }: SideNa
     </>
   );
 }
-

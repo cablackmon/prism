@@ -72,7 +72,7 @@ export function PendingTaskDeletionsModal({
         <div className="space-y-3 py-1 flex-1 min-h-0 flex flex-col">
           <p className="text-sm text-muted-foreground">
             These tasks were removed from the app they sync with, and held for review.{' '}
-            <span className="font-medium text-foreground">Delete</span> removes them from Prism too.{' '}
+            <span className="font-medium text-foreground">Delete</span> removes them from KYST too.{' '}
             <span className="font-medium text-foreground">Keep</span> turns each one into a{' '}
             <span className="inline-flex items-center gap-1 font-medium text-foreground">
               <Home className="h-3 w-3" />local task
@@ -129,7 +129,7 @@ export function PendingTaskDeletionsModal({
           </Button>
           <Button variant="outline" onClick={() => act('keep')} disabled={busy || selected.size === 0}>
             <Home className="h-4 w-4 mr-1.5" />
-            Keep {selected.size} in Prism
+            Keep {selected.size} in KYST
           </Button>
           <Button variant="destructive" onClick={() => act('delete')} disabled={busy || selected.size === 0}>
             Delete {selected.size}

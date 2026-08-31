@@ -40,7 +40,7 @@ export function MapboxStep({ onNext, onBack }: MapboxStepProps) {
           <CardTitle>Travel Map</CardTitle>
         </div>
         <CardDescription>
-          Prism includes an interactive globe for tracking places your family has visited and wants
+          KYST includes an interactive globe for tracking places your family has visited and wants
           to visit. It uses Mapbox, which has a generous free tier (50,000 map loads/month).
         </CardDescription>
       </CardHeader>
