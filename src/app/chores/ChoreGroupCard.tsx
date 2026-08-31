@@ -138,27 +138,35 @@ export function ChoreGroupCard({
               {chore.pointValue} pts
             </Badge>
           )}
+        </div>
+      </div>
+      <div className="mt-2 flex items-center justify-end gap-11 border-t border-border/60 pt-2">
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-14 min-w-[5.5rem] gap-2"
+          aria-label={`Edit ${chore.title}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit();
+          }}
+        >
+          <Settings className="h-4 w-4" />
+          Edit
+        </Button>
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-1">
           <Button
             variant="ghost"
             size="sm"
-            className="h-6 w-6 p-0 opacity-50 hover:opacity-100"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit();
-            }}
-          >
-            <Settings className="h-3 w-3" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive"
+            className="h-14 min-w-14 gap-2 px-3 text-destructive hover:text-destructive"
+            aria-label={`Delete ${chore.title}`}
             onClick={(e) => {
               e.stopPropagation();
               onDelete();
             }}
           >
-            <Trash2 className="h-3 w-3" />
+            <Trash2 className="h-4 w-4" />
+            Delete
           </Button>
         </div>
       </div>
