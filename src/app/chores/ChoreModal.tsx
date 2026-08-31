@@ -232,6 +232,7 @@ export function ChoreModal({
               <Switch
                 checked={enabled}
                 onCheckedChange={setEnabled}
+                aria-label={`${enabled ? 'Disable' : 'Enable'} ${chore.title}`}
               />
               <label className="text-sm font-medium">
                 {enabled ? 'Enabled' : 'Disabled'}
