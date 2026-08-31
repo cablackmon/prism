@@ -141,13 +141,13 @@ export function ChoreGroupCard({
         </div>
       </div>
       <div
-        className="mt-2 flex flex-wrap items-center justify-end gap-11 border-t border-border/60 pt-2"
+        className="mt-2 flex flex-col gap-11 border-t border-border/60 pt-2"
         onClick={(event) => event.stopPropagation()}
       >
         <Button
           variant="outline"
           size="sm"
-          className="h-14 min-w-[5.5rem] gap-2"
+          className="h-14 w-full gap-2"
           aria-label={`Edit ${chore.title}`}
           onClick={(e) => {
             e.stopPropagation();
@@ -157,11 +157,11 @@ export function ChoreGroupCard({
           <Settings className="h-4 w-4" />
           Edit
         </Button>
-        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-1">
+        <div className="w-full rounded-lg border border-destructive/30 bg-destructive/5 p-1">
           <Button
             variant="ghost"
             size="sm"
-            className="h-14 min-w-14 gap-2 px-3 text-destructive hover:text-destructive"
+            className="h-14 w-full gap-2 px-3 text-destructive hover:text-destructive"
             aria-label={`Delete ${chore.title}`}
             onClick={(e) => {
               e.stopPropagation();

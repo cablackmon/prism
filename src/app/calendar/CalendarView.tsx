@@ -256,11 +256,13 @@ export function CalendarView() {
   const { recipes } = useRecipes();
   const { lists: taskLists } = useTaskLists();
 
+  const { confirm: confirmChoreEdit, dialogProps: choreEditConfirmDialogProps } = useConfirmDialog();
   const { saveEditedChore } = useChoreModals({
     refreshChores: refreshAllChores,
     setShowAddModal: () => {},
     setEditingChore,
     deleteChore: () => {},
+    confirm: confirmChoreEdit,
   });
 
   const handleOverlayItemClick = useMemo(
@@ -673,11 +675,13 @@ export function CalendarView() {
             familyMembers={familyMembers}
             onClose={() => setEditingChore(null)}
             onSave={async (updated) => {
-              await saveEditedChore(editingChore.id, updated);
-              await refreshBuckets();
+              const saved = await saveEditedChore(editingChore, updated);
+              if (saved) await refreshBuckets();
             }}
           />
         )}
+
+        <ConfirmDialog {...choreEditConfirmDialogProps} />
 
         {editingTask && (
           <TaskModal

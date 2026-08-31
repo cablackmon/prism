@@ -51,14 +51,14 @@ export function ChoresView() {
     showAddModal, setShowAddModal,
     editingChore, setEditingChore,
     filteredChores,
-    completeChore, confirmDisableChore, toggleEnabled, deleteChore, editChore, undoCompletion,
+    completeChore, toggleEnabled, deleteChore, editChore, undoCompletion,
     inlineAddChore,
     enabledCount, dueCount,
-    confirmDialogProps,
+    confirm, confirmDialogProps,
   } = useChoresViewData();
 
   const { saveNewChore, saveEditedChore, handleDeleteFromModal } = useChoreModals({
-    refreshChores, setShowAddModal, setEditingChore, deleteChore,
+    refreshChores, setShowAddModal, setEditingChore, deleteChore, confirm,
   });
 
   // Defaults to the flat/ungrouped list — group-by-person previously opened
@@ -247,14 +247,7 @@ export function ChoresView() {
           <ChoreModal chore={editingChore} onClose={() => setEditingChore(null)}
             onDelete={() => handleDeleteFromModal(editingChore.id)}
             onSave={async (chore) => {
-              if (editingChore.enabled && chore.enabled === false) {
-                const shouldDisable = await confirmDisableChore({
-                  ...editingChore,
-                  ...chore,
-                });
-                if (!shouldDisable) return;
-              }
-              await saveEditedChore(editingChore.id, chore);
+              await saveEditedChore(editingChore, chore);
             }}
             familyMembers={familyMembers} />
         )}

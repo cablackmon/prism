@@ -221,7 +221,7 @@ export function useChoresViewData() {
     const assignee = chore.assignedTo?.name || 'Unassigned';
     if (!await confirm(
       `Delete “${chore.title}”?`,
-      `Assigned to: ${assignee}. This cannot be undone and may affect the history and points context connected to this chore.`,
+      `Assigned to: ${assignee}. This cannot be undone. Deleting this chore permanently erases its completion history and removes those points from derived point totals and goals.`,
       { confirmLabel: 'Delete chore', variant: 'destructive' }
     )) return;
     try {
@@ -315,6 +315,6 @@ export function useChoresViewData() {
     completeChore, confirmDisableChore, toggleEnabled, deleteChore, editChore, undoCompletion,
     inlineAddChore,
     enabledCount, dueCount,
-    confirmDialogProps,
+    confirm, confirmDialogProps,
   };
 }
