@@ -1,5 +1,12 @@
 import type { CalendarEvent } from '@/types/calendar';
-import { auroraPalette, moonPhase, nightSkyEvents, tomorrowEvents } from '../nightSkyUtils';
+import {
+  auroraPalette,
+  isExpectedNightSkyFrameUrl,
+  isExpectedNightSkyResponse,
+  moonPhase,
+  nightSkyEvents,
+  tomorrowEvents,
+} from '../nightSkyUtils';
 
 const event = (id: string, start: string): CalendarEvent => ({
   id,
@@ -43,5 +50,40 @@ describe('Night Sky schedule model', () => {
   it('computes known new and full moon illumination', () => {
     expect(moonPhase(new Date('2000-01-06T18:14:00Z')).illumination).toBeCloseTo(0, 4);
     expect(moonPhase(new Date('2000-01-21T12:36:00Z')).illumination).toBeCloseTo(1, 2);
+  });
+});
+
+describe('Night Sky static asset probe', () => {
+  const expectedUrl = 'https://kyst-board.fly.dev/screensaver/nightsky.html';
+
+  it('accepts a successful response from the exact asset URL', () => {
+    expect(isExpectedNightSkyResponse({ ok: true, redirected: false, url: expectedUrl }, expectedUrl)).toBe(true);
+  });
+
+  it('rejects a followed redirect even when its final response is successful', () => {
+    expect(isExpectedNightSkyResponse({
+      ok: true,
+      redirected: true,
+      url: 'https://kyst-board.fly.dev/auth/household?next=%2Fscreensaver%2Fnightsky.html',
+    }, expectedUrl)).toBe(false);
+  });
+
+  it('rejects a successful response from an unexpected final URL', () => {
+    expect(isExpectedNightSkyResponse({
+      ok: true,
+      redirected: false,
+      url: 'https://kyst-board.fly.dev/auth/household',
+    }, expectedUrl)).toBe(false);
+  });
+
+  it('accepts an iframe that finished on the exact Night Sky asset URL', () => {
+    expect(isExpectedNightSkyFrameUrl(expectedUrl, expectedUrl)).toBe(true);
+  });
+
+  it('rejects an iframe redirected to the household login after the probe', () => {
+    expect(isExpectedNightSkyFrameUrl(
+      'https://kyst-board.fly.dev/auth/household?next=%2Fscreensaver%2Fnightsky.html',
+      expectedUrl,
+    )).toBe(false);
   });
 });
