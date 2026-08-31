@@ -5,6 +5,13 @@ export const NIGHT_START_HOUR = 21;
 export const NIGHT_END_HOUR = 6;
 export const NIGHT_SKY_WINDOW_DAYS = 14;
 
+export function isExpectedNightSkyResponse(
+  response: Pick<Response, 'ok' | 'redirected' | 'url'>,
+  expectedUrl: string,
+): boolean {
+  return response.ok && !response.redirected && response.url === expectedUrl;
+}
+
 export function isNightSkyNight(date: Date): boolean {
   const forced = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('nightSkyMode') : null;
   if (forced === 'night') return true;

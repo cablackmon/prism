@@ -12,7 +12,7 @@ import { CssGridDisplay } from '@/components/layout/grid/CssGridDisplay';
 import { CalendarPrefsScopeContext } from '@/lib/hooks/useCalendarWidgetPrefs';
 import { loadScreensaverLayout } from './screensaverStorage';
 import { NightSky } from './NightSky';
-import { NIGHT_SKY_IDLE_SECONDS } from './nightSkyUtils';
+import { isExpectedNightSkyResponse, NIGHT_SKY_IDLE_SECONDS } from './nightSkyUtils';
 
 /**
  * Wrapper classes that make any dashboard widget legible as a screensaver
@@ -58,8 +58,9 @@ export function Screensaver() {
     if (!isIdle) return;
 
     const controller = new AbortController();
+    const nightSkyUrl = new URL('/screensaver/nightsky.html', window.location.href).href;
     fetch('/screensaver/nightsky.html', { cache: 'no-store', signal: controller.signal })
-      .then((response) => setStaticNightSkyAvailable(response.ok))
+      .then((response) => setStaticNightSkyAvailable(isExpectedNightSkyResponse(response, nightSkyUrl)))
       .catch((error: unknown) => {
         if (!(error instanceof DOMException && error.name === 'AbortError')) {
           setStaticNightSkyAvailable(false);
