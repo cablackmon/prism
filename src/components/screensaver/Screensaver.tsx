@@ -12,7 +12,11 @@ import { CssGridDisplay } from '@/components/layout/grid/CssGridDisplay';
 import { CalendarPrefsScopeContext } from '@/lib/hooks/useCalendarWidgetPrefs';
 import { loadScreensaverLayout } from './screensaverStorage';
 import { NightSky } from './NightSky';
-import { isExpectedNightSkyResponse, NIGHT_SKY_IDLE_SECONDS } from './nightSkyUtils';
+import {
+  isExpectedNightSkyFrameUrl,
+  isExpectedNightSkyResponse,
+  NIGHT_SKY_IDLE_SECONDS,
+} from './nightSkyUtils';
 
 /**
  * Wrapper classes that make any dashboard widget legible as a screensaver
@@ -111,7 +115,21 @@ export function Screensaver() {
     };
   }, [isIdle, staticNightSkyAvailable]);
 
-  const confirmStaticNightSkyLoaded = () => {
+  const confirmStaticNightSkyLoaded = (event: React.SyntheticEvent<HTMLIFrameElement>) => {
+    const expectedUrl = new URL('/screensaver/nightsky.html', window.location.href).href;
+    try {
+      const frameUrl = event.currentTarget.contentWindow?.location.href;
+      if (!frameUrl || !isExpectedNightSkyFrameUrl(frameUrl, expectedUrl)) {
+        setStaticNightSkyAvailable(false);
+        return;
+      }
+    } catch {
+      // The asset is same-origin. Losing access means the frame did not finish
+      // on the expected Night Sky document, so retain the React fallback.
+      setStaticNightSkyAvailable(false);
+      return;
+    }
+
     staticNightSkyLoaded.current = true;
     if (frameLoadTimeout.current) clearTimeout(frameLoadTimeout.current);
     frameLoadTimeout.current = null;

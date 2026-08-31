@@ -1,6 +1,7 @@
 import type { CalendarEvent } from '@/types/calendar';
 import {
   auroraPalette,
+  isExpectedNightSkyFrameUrl,
   isExpectedNightSkyResponse,
   moonPhase,
   nightSkyEvents,
@@ -73,5 +74,16 @@ describe('Night Sky static asset probe', () => {
       redirected: false,
       url: 'https://kyst-board.fly.dev/auth/household',
     }, expectedUrl)).toBe(false);
+  });
+
+  it('accepts an iframe that finished on the exact Night Sky asset URL', () => {
+    expect(isExpectedNightSkyFrameUrl(expectedUrl, expectedUrl)).toBe(true);
+  });
+
+  it('rejects an iframe redirected to the household login after the probe', () => {
+    expect(isExpectedNightSkyFrameUrl(
+      'https://kyst-board.fly.dev/auth/household?next=%2Fscreensaver%2Fnightsky.html',
+      expectedUrl,
+    )).toBe(false);
   });
 });

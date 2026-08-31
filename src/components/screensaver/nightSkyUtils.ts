@@ -12,6 +12,10 @@ export function isExpectedNightSkyResponse(
   return response.ok && !response.redirected && response.url === expectedUrl;
 }
 
+export function isExpectedNightSkyFrameUrl(frameUrl: string, expectedUrl: string): boolean {
+  return frameUrl === expectedUrl;
+}
+
 export function isNightSkyNight(date: Date): boolean {
   const forced = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('nightSkyMode') : null;
   if (forced === 'night') return true;
