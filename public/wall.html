@@ -155,7 +155,6 @@ async function grabWakeLock() {
   try { wakeLock = await navigator.wakeLock.request("screen"); } catch (e) {}
 }
 document.getElementById("start").addEventListener("click", async () => {
-  notifyBoardActivity();
   try { await audio.play(); } catch (e) {}
   try { await voiceAudio.play(); voiceAudio.pause(); voiceAudio.currentTime = 0; } catch (e) {}
   await grabWakeLock();
@@ -170,12 +169,7 @@ document.addEventListener("visibilitychange", () => {
 // Prism has no push channel, so refresh the embedded board every 10 minutes.
 const boardFrame = document.querySelector("iframe");
 const proxyRoot = "https://kyst-wall-proxy.fly.dev/";
-let boardLoaded = false;
-let pendingBoardActivity = false;
-setInterval(() => {
-  boardLoaded = false;
-  boardFrame.src = proxyRoot;
-}, 10 * 60 * 1000);
+setInterval(() => { boardFrame.src = proxyRoot; }, 10 * 60 * 1000);
 
 const fullscreenButton = document.getElementById("fullscreen");
 const toast = document.getElementById("toast");
@@ -202,23 +196,7 @@ function showToast(message) {
     updateFullscreenButton();
   }, 2400);
 }
-function notifyBoardActivity() {
-  // The iframe may have completed its initial load before this late script
-  // registered the load handler, so always make an optimistic delivery.
-  boardFrame.contentWindow?.postMessage({ type:"kyst-user-activity" }, "https://kyst-wall-proxy.fly.dev");
-  if (!boardLoaded) {
-    pendingBoardActivity = true;
-    return;
-  }
-}
-boardFrame.addEventListener("load", () => {
-  boardLoaded = true;
-  if (!pendingBoardActivity) return;
-  boardFrame.contentWindow?.postMessage({ type:"kyst-user-activity" }, "https://kyst-wall-proxy.fly.dev");
-  pendingBoardActivity = false;
-});
 async function toggleFullscreen() {
-  notifyBoardActivity();
   try {
     if (fullscreenElement()) {
       const exit = document.exitFullscreen || document.webkitExitFullscreen;
@@ -681,7 +659,6 @@ async function beginRecording() {
 }
 
 mic.addEventListener("click", () => {
-  notifyBoardActivity();
   setChatOpen(true);
   if (recorder?.state === "recording") stopRecording();
   else if (pendingPlaybackRequestId && pendingPlaybackRequestId === activeRequestId) {
@@ -697,10 +674,7 @@ mic.addEventListener("click", () => {
   }
   else beginRecording();
 });
-chatClose.addEventListener("click", () => {
-  notifyBoardActivity();
-  setChatOpen(false);
-});
+chatClose.addEventListener("click", () => setChatOpen(false));
 
 window.addEventListener("message", async (event) => {
   if (event.origin !== "https://kyst-wall-proxy.fly.dev" || event.source !== boardFrame.contentWindow) return;

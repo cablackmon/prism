@@ -157,18 +157,7 @@ describe('useIdleDetection', () => {
     expect(result.current.isIdle).toBe(false);
   });
 
-  it('preserves the fullscreen deadline across a remount', () => {
-    (window.matchMedia as jest.Mock).mockImplementation((query: string) => ({
-      matches: query === '(display-mode: fullscreen)',
-      media: query,
-      onchange: null,
-      addListener: jest.fn(),
-      removeListener: jest.fn(),
-      addEventListener: jest.fn(),
-      removeEventListener: jest.fn(),
-      dispatchEvent: jest.fn(),
-    }));
-
+  it('preserves the persisted deadline across a remount in browser display mode', () => {
     localStorage.setItem('prism-last-activity', String(Date.now()));
     const first = renderHook(() => useIdleDetection(5));
 
@@ -236,7 +225,7 @@ describe('useIdleDetection', () => {
       jest.advanceTimersByTime(4000);
       window.dispatchEvent(new MessageEvent('message', {
         source: window.parent,
-        origin: 'https://kyst-wall-proxy.fly.dev',
+        origin: 'https://kyst-one.vercel.app',
         data: { type: 'kyst-user-activity' },
       }));
       jest.advanceTimersByTime(4999);
@@ -254,7 +243,7 @@ describe('useIdleDetection', () => {
       result.current.forceIdle();
       window.dispatchEvent(new MessageEvent('message', {
         source: window.parent,
-        origin: 'https://kyst-wall-proxy.fly.dev',
+        origin: 'https://kyst-one.vercel.app',
         data: { type: 'kyst-user-activity' },
       }));
     });

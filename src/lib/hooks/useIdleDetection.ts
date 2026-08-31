@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useIsPWA } from './useIsPWA';
+import { WALL_WRAPPER_URL } from '@/lib/auth/deviceHandoff';
 
 const STORAGE_KEY = 'prism-screensaver-timeout';
 const AWAY_MODE_STORAGE_KEY = 'prism-away-mode-timeout';
 const LAST_ACTIVITY_KEY = 'prism-last-activity';
 const DEFAULT_TIMEOUT = 0;
-const KYST_WRAPPER_ORIGIN = 'https://kyst-wall-proxy.fly.dev';
+const KYST_WRAPPER_ORIGIN = new URL(WALL_WRAPPER_URL).origin;
 
 function getStoredTimeout(): number {
   if (typeof window === 'undefined') return DEFAULT_TIMEOUT;
@@ -130,10 +131,11 @@ export function useIdleDetection(initialTimeout?: number) {
     const dismissEvents = ['pointerdown', 'mousedown', 'keydown', 'touchstart'] as const;
     dismissEvents.forEach((e) => window.addEventListener(e, maybeDismiss));
 
-    // The wall wrapper reloads its iframe every ten minutes. In fullscreen,
-    // preserve the persisted human-activity deadline across that remount so a
-    // fifteen-minute screensaver can still expire.
-    resetTimer(!window.matchMedia('(display-mode: fullscreen)').matches);
+    // A document remount is not human activity. Always preserve the persisted
+    // deadline so the deployed wall wrapper's ten-minute iframe reload cannot
+    // restart a fifteen-minute screensaver countdown, regardless of how Edge
+    // reports display mode inside the iframe.
+    resetTimer(false);
 
     return () => {
       moveEvents.forEach((e) => window.removeEventListener(e, onPassiveMovement));
