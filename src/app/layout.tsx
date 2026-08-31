@@ -101,15 +101,15 @@ const inter = Inter({
 export const metadata: Metadata = {
   // Title configuration
   // 'default' is used when no page-specific title
-  // 'template' is used with page titles: "Calendar | Prism"
+  // 'template' is used with page titles: "Calendar | KYST"
   title: {
-    default: 'Prism - Family Dashboard',
-    template: '%s | Prism',
+    default: 'KYST - Family Dashboard',
+    template: '%s | KYST',
   },
 
   // Description for search engines and social sharing
   description:
-    'Prism is a self-hosted family dashboard. Sync calendars, manage chores, plan meals, and stay organized—without giving your data to commercial services.',
+    'KYST is a self-hosted family dashboard. Sync calendars, manage chores, plan meals, and stay organized—without giving your data to commercial services.',
 
   // Keywords for SEO
   keywords: [
@@ -123,10 +123,10 @@ export const metadata: Metadata = {
   ],
 
   // Author information
-  authors: [{ name: 'Prism Community' }],
+  authors: [{ name: 'KYST Community' }],
 
   // App name (used when added to home screen)
-  applicationName: 'Prism',
+  applicationName: 'KYST',
 
   // Generator (what built this site)
   generator: 'Next.js',
@@ -144,6 +144,8 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: '/icons/icon.svg', type: 'image/svg+xml' },
+      { url: '/icons/favicon-16.png', type: 'image/png', sizes: '16x16' },
+      { url: '/icons/favicon-32.png', type: 'image/png', sizes: '32x32' },
       { url: '/icons/icon-192.png', type: 'image/png', sizes: '192x192' },
     ],
     apple: '/icons/apple-touch-icon.png',
@@ -153,15 +155,15 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    siteName: 'Prism',
-    title: 'Prism - Family Dashboard',
+    siteName: 'KYST',
+    title: 'KYST - Family Dashboard',
     description: 'Your family\'s digital home',
   },
 
   // Twitter Card metadata (for Twitter/X sharing)
   twitter: {
     card: 'summary_large_image',
-    title: 'Prism - Family Dashboard',
+    title: 'KYST - Family Dashboard',
     description: 'Your family\'s digital home',
   },
 };

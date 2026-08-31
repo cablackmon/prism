@@ -89,7 +89,7 @@ export function TaskIntegrationsSection({
     }
   };
 
-  // Task-specific: new connection flow (no pre-selected Prism list)
+  // Task-specific: new connection flow (no pre-selected KYST list)
   const [selectedMsListForNew, setSelectedMsListForNew] = useState<{ id: string; name: string } | null>(null);
   const [showPrismListPickerModal, setShowPrismListPickerModal] = useState(false);
   const [newPrismListName, setNewPrismListName] = useState('');
@@ -411,7 +411,7 @@ export function TaskIntegrationsSection({
                 className="gap-1 text-muted-foreground"
                 title={
                   'Google will not accept this address as a sign-in redirect. ' +
-                  'Reopen Prism on a public https address, or on localhost (an SSH tunnel works), ' +
+                  'Reopen KYST on a public https address, or on localhost (an SSH tunnel works), ' +
                   'and Connect will work here. Otherwise use "Connect without a public URL ' +
                   '(advanced)" on the Google card, which needs no redirect address at all.'
                 }
@@ -505,8 +505,8 @@ export function TaskIntegrationsSection({
         onSelect={handleSelectMsListOverride}
         title={integration.listSelectionProvider === 'google_tasks' ? 'Select Google Tasks List' : 'Select Microsoft To-Do List'}
         description={integration.listSelectionProvider === 'google_tasks'
-          ? 'Choose which Google Tasks list to sync with your Prism list'
-          : 'Choose which Microsoft To-Do list to sync with your Prism list'}
+          ? 'Choose which Google Tasks list to sync with your KYST list'
+          : 'Choose which Microsoft To-Do list to sync with your KYST list'}
         loadingText={integration.listSelectionProvider === 'google_tasks'
           ? 'Loading lists from Google Tasks...'
           : 'Loading lists from Microsoft To-Do...'}
@@ -601,7 +601,7 @@ export function TaskIntegrationsSection({
         description="Select a different list to sync with"
       />
 
-      {/* Prism List Picker Modal (for new connections) */}
+      {/* KYST List Picker Modal (for new connections) */}
       <Dialog open={showPrismListPickerModal} onOpenChange={(open) => {
         if (!open) {
           setShowPrismListPickerModal(false);
@@ -613,13 +613,13 @@ export function TaskIntegrationsSection({
       }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Choose Prism List</DialogTitle>
+            <DialogTitle>Choose KYST List</DialogTitle>
           </DialogHeader>
           <div className="py-4">
             <p className="text-sm text-muted-foreground mb-4">
               Syncing with <strong>{selectedMsListForNew?.name}</strong> from{' '}
               {integration.listSelectionProvider === 'google_tasks' ? 'Google Tasks' : 'Microsoft To-Do'}.
-              Where should these tasks go in Prism?
+              Where should these tasks go in KYST?
             </p>
 
             <div className="space-y-4">

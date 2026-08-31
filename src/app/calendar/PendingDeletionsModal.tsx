@@ -19,7 +19,7 @@ import { formatDisplayTime, toDisplayDate } from '@/lib/utils/timeFormat';
 /**
  * Deletes-only review (#171 Stage 3). Lists events the sync found removed from
  * their source and held instead of deleting. The user Deletes (remove from
- * Prism too) or Keeps (retain as a local event) the selected ones.
+ * KYST too) or Keeps (retain as a local event) the selected ones.
  */
 export function PendingDeletionsModal({
   pending,
@@ -66,7 +66,7 @@ export function PendingDeletionsModal({
         <div className="space-y-3 py-1 flex-1 min-h-0 flex flex-col">
           <p className="text-sm text-muted-foreground">
             These events were removed from their source calendar and held for review.{' '}
-            <span className="font-medium text-foreground">Delete</span> removes them from Prism too.{' '}
+            <span className="font-medium text-foreground">Delete</span> removes them from KYST too.{' '}
             <span className="font-medium text-foreground">Keep</span> transfers each one to your{' '}
             <span className="inline-flex items-center gap-1 font-medium text-foreground">
               <Home className="h-3 w-3" />local calendar

@@ -1,0 +1,1534 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>KYST — Night Sky Prototype v6 Bold</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #02030e; }
+    body { font-family: system-ui, sans-serif; }
+    canvas { display: block; width: 100%; height: 100%; }
+    .label {
+      position: fixed;
+      left: 50%;
+      bottom: clamp(28px, 4.2vh, 64px);
+      transform: translateX(-50%);
+      color: rgba(217, 240, 255, .42);
+      font: 500 clamp(9px, .68vw, 15px)/1.4 system-ui, sans-serif;
+      letter-spacing: .42em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      pointer-events: none;
+      text-shadow: 0 0 18px rgba(72, 167, 215, .35);
+    }
+    .debug {
+      display: none;
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      color: #b9efff;
+      font: 12px/1.5 ui-monospace, monospace;
+      background: rgba(2, 5, 20, .72);
+      border: 1px solid rgba(116, 215, 255, .2);
+      border-radius: 8px;
+      padding: 8px 10px;
+      pointer-events: none;
+    }
+    body.show-debug .debug { display: block; }
+    @media (prefers-reduced-motion: reduce) { .label { opacity: .72; } }
+  </style>
+</head>
+<body>
+  <canvas id="sky" aria-label="Animated night sky with the face-in-the-moon KYST emblem decorated by constellation stars"></canvas>
+  <div class="label">KYST · NIGHT SKY</div>
+  <div class="debug" id="debug"></div>
+
+  <script>
+  (() => {
+    'use strict';
+
+    const query = new URLSearchParams(location.search);
+    // Production is intentionally quiet. Reviewers can opt into the compressed
+    // schedule with ?demo=1 (demoMode=1 remains as a backwards-compatible alias).
+    const DEMO_CAPTURE = query.get('demo') === '1' || query.get('demoMode') === '1';
+    window.NIGHTSKY_DEMO_MODE = DEMO_CAPTURE;
+
+    // Primary degradation control: 0.35 (low) → 1.0 (default) → 1.5 (dense).
+    // It changes particle counts only; the emblem and aurora stay intact.
+    const PARTICLE_SCALE = Math.max(0.25, Math.min(2,
+      Number(new URLSearchParams(location.search).get('particleScale')) || 1));
+    window.PARTICLE_SCALE = PARTICLE_SCALE;
+
+    const CONFIG = Object.freeze({
+      dprCap: 1.25,
+      starDensity: 0.000072,
+      minStars: 220,
+      maxStars: 900,
+      twinkleAmount: 0.34,
+      emblemViewportScale: 0.78,
+      emblemBreathAmount: 0.014,
+      emblemBreathSeconds: 7.5,
+      symbolOpacity: 0.34,
+      symbolBrightness: 1.08,
+      contourLineOpacity: 0.58,
+      driftPixels: 8,
+      driftSeconds: 31,
+      auroraOpacity: 0.16,
+      auroraSpeed: 0.045,
+      cometPeriodSeconds: 17,
+      cometVisibleSeconds: 2.7,
+      cometStartSeconds: 3.1,
+      livingEmblem: Object.freeze({
+        // The approved v3 uses 1.0× of the pose delta. This comparison build
+        // extrapolates the exact same geometry rig instead of replacing it.
+        subtleReferenceAmplitude: 1.0,
+        boldTurnAmplitude: 2.75,
+        sweepNearAmplitude: 2.15,
+        sweepFarAmplitude: -2.05,
+        turnSeconds: 1.65,
+        holdSeconds: 2.15,
+        returnSeconds: 1.65,
+        sweepTurnSeconds: 1.55,
+        sweepAcrossSeconds: 2.65,
+        sweepHoldSeconds: .85,
+        sweepReturnSeconds: 1.75,
+        // V5 keeps the v3 timing, but drives fixed, approved pose morphs from the
+        // comet's current screen-space direction. Canvas Y grows downward, so a
+        // negative pitch bearing means the comet is above the eye (chin up).
+        cometGazeTurnSeconds: 1.50,
+        cometGazeHoldSeconds: 4.65,
+        cometGazeReturnSeconds: 2.00,
+        cometVisibleStartSeconds: .12,
+        cometVisibleSeconds: 6.00,
+        cometLookLagSeconds: .085,
+        // A deliberately unhurried S-curve for gaze acquisition. Once the
+        // attack completes, the approved v5 tracking lag resumes unchanged.
+        cometGazeAttackSeconds: 1.35,
+        cometYawTurnRadians: .559,
+        // Preserve the approved v3 pitch extrema as hard anatomical clamps.
+        cometUpPitchRadians: -.593,
+        cometDownPitchRadians: .558,
+        // Production cadence: stillness is the baseline. Subtle head motion
+        // every 60-90s; big events (bold turn / look-around / comet gaze)
+        // every 20-40min with a hard 10min floor so nothing lands back-to-back.
+        subtleMinIntervalSeconds: 60,
+        subtleMaxIntervalSeconds: 90,
+        bigMinIntervalSeconds: 20 * 60,
+        bigMaxIntervalSeconds: 40 * 60,
+        bigMinSeparationSeconds: 10 * 60,
+        // Subtle events reuse the approved v3 turn envelope; the shift variant
+        // moves at a fraction of the reference pose delta.
+        subtleTurnSeconds: 1.65,
+        subtleHoldSeconds: 2.15,
+        subtleReturnSeconds: 1.65,
+        minorShiftAmplitude: 0.45,
+        // ?demo=1 review cadence: everything within the first minute.
+        demoFirstSubtleDelaySeconds: 1.8,
+        demoFirstBigDelaySeconds: 6.0,
+        demoSubtleMinIntervalSeconds: 3.70,
+        demoSubtleMaxIntervalSeconds: 4.00,
+        demoBigMinIntervalSeconds: 9.0,
+        demoBigMaxIntervalSeconds: 12.0,
+        demoBigMinSeparationSeconds: 2.0,
+        idleSwayAmount: 0.018,
+        contourWakeAmount: 0.82
+      })
+    });
+    window.NIGHTSKY_CONFIG = CONFIG;
+    window.NIGHTSKY_MOTION_DIAL = Object.freeze({
+      subtleReference: CONFIG.livingEmblem.subtleReferenceAmplitude,
+      boldTurn: CONFIG.livingEmblem.boldTurnAmplitude,
+      sweepNear: CONFIG.livingEmblem.sweepNearAmplitude,
+      sweepFar: CONFIG.livingEmblem.sweepFarAmplitude
+    });
+
+    // V3 remains symbol-first. The real winner PNG is drawn before these stars.
+    // Coordinates are normalized against the 930×930 symbol crop in SYMBOL_RENDER.
+    const SYMBOL_RENDER = Object.freeze({
+      cropX: 160, cropY: 70, cropWidth: 930, cropHeight: 930,
+      blendMode: 'screen', opacity: CONFIG.symbolOpacity
+    });
+    window.SYMBOL_RENDER = SYMBOL_RENDER;
+
+    // V3 keeps the crescent immobile and procedurally morphs only the silhouette.
+    // Both explicit poses are exported beside this file as emblem-constellation.json.
+    const GEOMETRY = {
+      points: [
+        ['m00',.805,.155],['m01',.640,.072],['m02',.430,.060],['m03',.225,.210],
+        ['m04',.075,.430],['m05',.105,.700],['m06',.330,.915],['m07',.620,.975],
+        ['m08',.944,.671],['m09',.800,.890],['m10',.560,.925],['m11',.330,.820],
+        ['m12',.165,.610],['m13',.170,.365],['m14',.380,.145],['m15',.650,.080],
+        ['h00',.186,.444],['h01',.269,.452],['h02',.269,.310],['h03',.410,.322],
+        ['h04',.337,.201],['h05',.457,.249],['h06',.538,.127],['h07',.614,.210],
+        ['h08',.688,.168],['h09',.764,.287],
+        ['p00',.742,.366],['p01',.755,.446],['p02',.742,.514],['p03',.775,.560],
+        ['p04',.745,.587],['p05',.739,.624],['p06',.720,.677],['p07',.677,.688],
+        ['j00',.616,.703],['j01',.705,.738],['j02',.626,.797],['j03',.697,.866],
+        ['j04',.656,.900],['j05',.419,.639]
+      ],
+      pose2: [
+        ['m00',.805,.155],['m01',.640,.072],['m02',.430,.060],['m03',.225,.210],
+        ['m04',.075,.430],['m05',.105,.700],['m06',.330,.915],['m07',.620,.975],
+        ['m08',.944,.671],['m09',.800,.890],['m10',.560,.925],['m11',.330,.820],
+        ['m12',.165,.610],['m13',.170,.365],['m14',.380,.145],['m15',.650,.080],
+        ['h00',.187,.444],['h01',.267,.452],['h02',.266,.311],['h03',.403,.324],
+        ['h04',.329,.204],['h05',.448,.250],['h06',.528,.131],['h07',.604,.212],
+        ['h08',.678,.171],['h09',.750,.290],
+        ['p00',.728,.369],['p01',.740,.447],['p02',.727,.514],['p03',.756,.558],
+        ['p04',.730,.585],['p05',.727,.622],['p06',.711,.675],['p07',.674,.688],
+        ['j00',.613,.703],['j01',.704,.738],['j02',.626,.797],['j03',.697,.866],
+        ['j04',.656,.900],['j05',.417,.639]
+      ],
+      edges: [
+        ['m00','m01'],['m01','m02'],['m02','m03'],['m03','m04'],
+        ['m04','m05'],['m05','m06'],['m06','m07'],['m07','m08'],
+        ['m08','m09'],['m09','m10'],['m10','m11'],['m11','m12'],
+        ['m12','m13'],['m13','m14'],['m14','m15'],['m15','m00'],
+        ['h00','h01'],['h01','h02'],['h02','h03'],['h03','h04'],
+        ['h04','h05'],['h05','h06'],['h06','h07'],['h07','h08'],['h08','h09'],
+        ['p00','p01'],['p01','p02'],['p02','p03'],['p03','p04'],
+        ['p04','p05'],['p05','p06'],['p06','p07'],
+        ['j05','j00'],['j00','j01'],['j01','j02'],['j02','j03'],['j03','j04']
+      ]
+    };
+    window.EMBLEM_GEOMETRY = GEOMETRY;
+
+    const canvas = document.getElementById('sky');
+    const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
+    const debugNode = document.getElementById('debug');
+    const TAU = Math.PI * 2;
+    const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const motionFactor = reducedMotion ? 0.25 : 1;
+    const captureOffsetSeconds = Number(query.get('t')) || 0;
+    const captureEvent = query.get('event');
+    const captureEventFixed = query.has('eventT');
+    const captureEventTime = Math.max(0, Number(query.get('eventT')) || 0);
+    window.__NIGHTSKY_CAPTURE_TIME = captureEventTime;
+    const hideLivingComet = query.get('hideComet') === '1';
+    if (query.has('debug')) document.body.classList.add('show-debug');
+
+    let width = 1;
+    let height = 1;
+    let dpr = 1;
+    let emblemSize = 1;
+    let emblemLeft = 0;
+    let emblemTop = 0;
+    let backgroundGradient;
+    let vignetteGradient;
+    let emblemLineGradient;
+    let emblemFillGradient;
+    let auroraGradientA;
+    let auroraGradientB;
+    let resizeQueued = false;
+
+    let starCount = 0;
+    let starX = new Float32Array(0);
+    let starY = new Float32Array(0);
+    let starDepth = new Float32Array(0);
+    let starPhase = new Float32Array(0);
+    let starRate = new Float32Array(0);
+    let starTint = new Uint8Array(0);
+
+    const pointCount = GEOMETRY.points.length;
+    const pointPhase = new Float32Array(pointCount);
+    const pointRate = new Float32Array(pointCount);
+    const pointSize = new Float32Array(pointCount);
+    const pointIndex = Object.create(null);
+    const pose1X = new Float32Array(pointCount);
+    const pose1Y = new Float32Array(pointCount);
+    const pose2X = new Float32Array(pointCount);
+    const pose2Y = new Float32Array(pointCount);
+    const currentX = new Float32Array(pointCount);
+    const currentY = new Float32Array(pointCount);
+    const CRESCENT_IDS = Object.freeze([
+      'm00','m01','m02','m03','m04','m05','m06','m07',
+      'm08','m09','m10','m11','m12','m13','m14','m15'
+    ]);
+    const SILHOUETTE_IDS = Object.freeze([
+      'h00','h01','h02','h03','h04','h05','h06','h07','h08','h09',
+      'p00','p01','p02','p03','p04','p05','p06','p07',
+      'j00','j01','j02','j03','j04','j05'
+    ]);
+    const HEAD_IDS = Object.freeze([
+      'h00','h01','h02','h03','h04','h05','h06','h07','h08','h09',
+      'p00','p01','p02','p03','p04','p05','p06','p07'
+    ]);
+    const BODY_IDS = Object.freeze([
+      'p07','j00','j01','j02','j03','j04','j05'
+    ]);
+    // The solid painting is warped over these same silhouette vertices during
+    // the down pose. V5 only moved its clipping mask, leaving the pixels planted
+    // while the contour stars travelled. The up treatment is already approved
+    // and intentionally remains untouched.
+    // These are the exact v3 34°-up / 32°-down contour poses, frozen as
+    // morph targets. TURN_* applies the same approved pitch to the approved
+    // pose2 head turn. V5 only interpolates among these shapes; it never rotates
+    // live face geometry.
+    const APPROVED_COMET_POSES = Object.freeze({
+      up: Object.freeze([
+        [0.117171,0.746704],[0.190471,0.706953],[0.111114,0.589197],
+        [0.234747,0.520350],[0.106589,0.460805],[0.232926,0.433548],
+        [0.231917,0.287110],[0.341326,0.313467],[0.379220,0.237282],
+        [0.508748,0.293493],[0.534653,0.371300],[0.590142,0.430376],
+        [0.617363,0.494031],[0.670436,0.513735],[0.660647,0.552891],
+        [0.679212,0.587657],[0.698496,0.647683],[0.671144,0.681222]
+      ]),
+      down: Object.freeze([
+        [0.395712,0.239949],[0.461886,0.290684],[0.537074,0.170223],
+        [0.650333,0.255061],[0.652474,0.113762],[0.728856,0.218020],
+        [0.862168,0.157414],[0.882692,0.268066],[0.967706,0.271619],
+        [0.969169,0.412809],[0.908676,0.468178],[0.877345,0.542926],
+        [0.830311,0.593728],[0.833949,0.650224],[0.794203,0.657244],
+        [0.768989,0.682726],[0.726265,0.710669],[0.680824,0.695513]
+      ]),
+      turnUp: Object.freeze([
+        [0.118000,0.746145],[0.188812,0.708071],[0.109185,0.591703],
+        [0.230060,0.525921],[0.101632,0.467764],[0.226022,0.439407],
+        [0.225860,0.296016],[0.334151,0.320714],[0.372604,0.245359],
+        [0.498815,0.303804],[0.524720,0.381611],[0.578262,0.439588],
+        [0.604924,0.502414],[0.653562,0.522695],[0.647091,0.559615],
+        [0.668027,0.592441],[0.689550,0.649909],[0.668237,0.681962]
+      ]),
+      turnDown: Object.freeze([
+        [0.396560,0.240479],[0.460190,0.289625],[0.533999,0.169483],
+        [0.643335,0.253051],[0.644099,0.112071],[0.720692,0.214103],
+        [0.851567,0.155512],[0.873150,0.264467],[0.957634,0.268869],
+        [0.955704,0.407942],[0.895211,0.463310],[0.864090,0.535832],
+        [0.817586,0.585786],[0.818890,0.638467],[0.782538,0.647605],
+        [0.759690,0.674881],[0.718947,0.705061],[0.677906,0.694817]
+      ])
+    });
+    const starSprites = [];
+    let cometSprite;
+    let randomState = 0x4e4f5821;
+
+    const emblemImage = new Image();
+    emblemImage.decoding = 'async';
+    const emblemTexture = document.createElement('canvas');
+    emblemTexture.width = emblemTexture.height = 930;
+    let emblemImageReady = false;
+    // Keep the approved painted emblem self-contained for kiosk/media deployment.
+    // The full-resolution PNG remains the preferred development source; this
+    // visually lossless-at-display-size WebP is the final fallback when the HTML
+    // is copied without sibling assets.
+    const embeddedEmblemDataUrl = 'data:image/webp;base64,UklGRqp6AABXRUJQVlA4IJ56AACQJwOdASrmBOYEPmEwlkgkIyUhItK4oKAMCWdu+/NP6X+fC+vrhf9vCwQz+/fxCVkv37yEFR/pz91/hf8x/y/Ik7b3/+9/tz/g/3g+g3hXrp8e/cf8N/sP7d+2Py68eut/qO+QLxr9f/5v+L/K75l/8n/rexr+Mf5D/0f479//oB/h/81/3n+A/yX7M/GR6qf8N/3Py3+AP9l/zv7Y+91/u/3A91f+i/3f7e/7P5Av7f/t//1/wff59RT94fYG/qf/N/9nrs/uf/0vlM/rX/E/cj4Fv2V//f7qfAB/8fa4/gH/Y69frn/sv8T7C/jf7//xvN38a9wD3S+NnBnax/KvzV/X9cX+D3o/QbUF/Hv57/mPmW45kAP6j/efR++481/7v1Af7z6b96LQJ/qXnIaMX0n/g+wb+w/p3e2L92faO/dURHRn6Kg5J53gq9O4EGO1ybhl7oihq9meHkFKPx5jwS90nXCVtAFe8xzQ8gpR+iwCak8K/5BSj1OSed4Ze4GWrAtnjY2NjgKxCFHqOiGoebzMqWS90dBu2d/UGZJua+sO7Q/5T04+tcM/Mys4Ze6OSJ/4MPNy35Junxah5jqw/ynkyJ0EoPOaVo+Sa0rdEIUvco9jjbwK/JN0+IF5jrAVjY4B/5aa+F5uW/MqTc188GFpPSw3188Gt3CFLiWg3Z1eh/yTWu4Sf5T1FsNQaKxvyWR6k62O2dQSg9JsaXm8zO3oJs2NAYd2ZLI7pwu6Ww/45NjjbzzEWG+l5jGdvQUWiGqsGVJyvSyN3gk5NjS8xjPO8JUKYsu7T2WAAVareiM/sG+Y/82/w5hnPtrsMg6GaPb+ziENDkCrpLDUEn+SjdcWKlGJZHqOSN3gk5YcHxahbwH/lfjSt3vS59murtSuEY33KPwjVOElgaAcdP4Q7UX5EN+D9cLWlvPjtIZVhAyWS9ai2GpRiTlemBu2uE9QShCJRxAdMdlzraCAdX/2wB//fTOvIix6giwC5YagKVmvYFg1y0cq1wbme31ZOLLzGMqWFUJNLInQaIKWwYW75Jua+dQZmVkuByvZsfODUHeLL0Vd3fgFIDVR3lo53iLVI1EokT1iYLJiYQ74YJ2LxJAFVhKYTGK7C5HHsk5RrDnAyo6FEM5Qec0u6T/JNaVpRLfya0rR8k1pWj5Js1tbvCQrrh5WsQ1VSy6Dh/89Jp/xO3dyOWu3FZaw2HckjfEGhsBTg6nYgkbAaNzhBWj5JrS7pP+WANEA7qMSwk1pWk85sA6BoU1D65tbMKZdjqJP/79v+KkVY2ft+0fJNa/DKrsYlAdfmR7TA/A6VrIv1pd0n+Sa13V5ksj0nXcJbGxB6ThxpLIMXBIVctlRKuoHtftlJlpJRCQWaXa8A7ZKRxgwRK+i49Y8vFaPkopqbUt95ovrq5xfwQVo/G8Vo/LALpjvHew/yTZrpeY7AWBrPmHB+L3lsA8ne+445xd5/b/JNaVHOkXWUoV9bJ76Km0bhmRYJZL3RuuqCFNHcJbD/JNaVo+Sa13CT/lppZG7wZUSBT66VciwG1PEBWLq0TSlCUbrYcRSubfGytmY5x3hn00GRumAjG4hIrlqQdlHXq4VE/yTWlaPkmtdw0V+Sbmu4Sg9JwZFH2UoRudymJKFESsDGgCbQYjGdCqy1e11xF4gdRt3Rhq3kLdFYwzJZC44s0Nfpy8JlRJjtHWuElma/VK9wjF7KxrTWypOt9K0fJNaVo+Sa0u7MysmCiyLK0fqygMmb5UN4vxOfaMUk5XHCvKFmHj5W3NwYsjAKIqGSB38DNogtJ/6jo19Qoz/ESTd7jzkPYqbb/MhWLXo/iIzjSzxcEmqXBvNGbCTWl3Sf5JrSt0P8k2ew1KMZUm5p6XvEpF6WjP7dvbZPYSy5y6t3J2n0+s4MQwk3CrJHcoZRz+btUJqqmajfV5gESv7rTJzfkKNS9Kq0rR8k1pWj5JrStH45F0rR8k1pW6GgtuLUuv+Z2QZtZ8GXJ3GMZQFxqitSXxLDu7nRX/U6zXSs5Tcf70e+2Br6mb/iJwXKxhqxYMZUm5pWj5JrStHypKNdK0nnNdwk0JlpCeRXzYQ2N+RUxiWEmaNheItm1zn/hDq7zStHyTWx8utqblM969+4RDF/8GFo+SbPixgwtHynqJdK3e2lzJBu5HpWKghjUqU+7zs39JZdB4DMcHG6n0fJNaXmMS3izp/4XMmZV+SbprpWj5UlGx2W6T/KknStHaK4J7scDOibrrDz1dJM0bC+16glvDd67W0IhaUKXuUhNebOiIf0Fhq+XzQn4XCwPYMSzd3UCtNfHcJQelhwfECtHyTWl3QrBpeur2OyQr8ObtTnHKNTgOpAMrmC325ws8LLvC0ZB86vgGaLmQOuHVR7ujQi9CT2r4e6T/lppZE/6leh/43it0P+OQ9JCh1nKAy0IoyE7crBJX5HD79DH39XvJiMVJm1zNrOthjS34Y3Y5NHb15Mck2nrwVpl6Tc7wjLxEFYAc2NZnQPSw313UYys4STWlaPkm1EG7H8TfX4rPcdHwR0a4uajZxDLePwEf/FguLEoOc4XduU9TzhS9amTqevJsybEC+yS1DzeZJyvTA3Huk/yTWlcAz0m7Be4+DrcL9aPko2ZbKBExbAEezjqkayeNNerVRcWqsn9pkzP7WRBH2s9arfMys3CvYLixg11TZ6a6Vu+E0BSvy1t5TfafIbto+Rpj5kE5gsOpvrhHGdcWdQTBQK8ct41IwFRa1V7lquazuO6kxbV5CWcqe7Rk2GoJQelhwbHZM4YnQSf5JnRe8ix7MhESfltgm7/p1N5kTPS0pmgPFVL6DMyKRc7t/WF7N97HP6VK667elYslODPCvdIetoQWz0KpwL9VJXqA5uGxoNT1+KLeHIn/UEn+VKOg3i8UGZJyvSNu5ZppcRPtFw5qTgWSK+Pcs8n1utGKTJ5UZBEgdQSyr76FEygp8eN/W6ibXXSNcLf80AIwUDXSiy8/fPaCbk0Em6ypexn+MqAL6CJfcA4JvcohCoKR3b449piWEmtdwlCETMK0nnVGGMU7msAKgoK4GLQAyPrSvWv18l7Wfzq71lF1/GRuGH0LHJPtnRf/3Rfs3m8/AdmnrFm+9jYDrccxuFkDRuUxA4sO2Ng94Nt2ien9NbEAHaYRhXU1/AVDfqAmiU8hPSES5vCcJs9ePofm9FgKw/45OLFQS4CsgBtyXQD08aMy6FGZpt4YdPVkFV08At/rtcMKVuilvLue7efyADtZA548jqiJOi3WVyOJ22BiH7y7v/yEd/TQjjg6frcsT+G7uzHVTeY8+ZAmfVjS2h1KION7Rh5YY2QJNZM9RqlUtLbUxZ15ncUrHB5zS83of8p6cK0nnNK4LtH5z6uMAze7dONmJEQczSqqhucMPS4MbxCtmiP3BkQRUdpUi0k6slkAQXTWQ6+zNffCHMuD7uFxKWAcEhXN3fQs8r73VeN67xgMk5DhLDkf7fAvmR8kQplKNgijDqsgAn8hy9X/eeAXzMqWS9ZMigS1AJuaXdLfgQoV7NtA9bIKplRHul7VrqK15lArVDM/qWcwWDqZbPR0UcUds2et5zb0tFD6hZQDgvmXlX/tk1QR+gmWkni5C8tFiFoVPOHkcz6/yNakaOBxX22Z5mX5LvIYk3NK0fKenCt3yTk4WjuooZVmucES0oIN9cdHe3Yl+UAKVokTzedqMGy79NmH9qZHrLEQgIJskQE1pa0Dcvx0Ht36qSdDTW3gIB5/cr1nLelkbAcSEDGGjHhytyOU02FWalHP+SbNjst2ZlSbmlaPkmsN+Yxj114+Ac48DCTKo5RWsmKyN1wp0e7X8dKpkN6bDOiRRh1f27xu3NtWaz/b5gZ5PtGuyDgINOpcKuVUHkQfyxGJ3Co2bHZNJ5zXzv6g0P+VKOSJ0EaddrNwjKZWnnJU/WoQGJt8y+6aUX0ofO6JQRuvRQj9JxjY+uUGM1inKvyWBGEQxebxDEf/2cGVJua+tbvfksl6ygZwYd0tecKlPjRqXjd4ovc7ZsIHzRPnUNxraVCuxvy38A9+J/QflwhIth6Jr8rytNoBelTOCCqkwJeBn+r1yu89VJSws8ylra3fwCKghcLQvnNrr4oi/wqiNwhFQqBmpRjO3rtNfC7pP8p5BR5Ihp/yWqHavrcZPzZOACxgA2LyvA49mpFtxP/peAFa5+ztY7IgsG4U26XS8y9bIcOburDtSCryWvGmVFmm4xn9qkNB9BuEIk2eyfxA6xKkxCWxEHFSyPUnTHZc3mZWcdv5RZFl5hyw2T8c6afzeXJpXAb1mFJZWG0V0TvDsYjBoWybkheYGv6RKB2vNAo4QE/VpDD/lgDIsRFVUj2zn18Ei+06EKXujoNx8x1YhCI+LLulB5zFGS867dyXSQauvANYMQHRwH6kb8iKoIAPyJkYTmXTkDPRUQNmDKg3/PgTzdWGSe3G0fJNYd3MRBdsOdXDPzJNzXzqCUIUvco1188GrJ/lORJxnN4UpCWT804Ll9GvvQyGCY+PvUKLpeIO9nSR4x2A8k5fJM9VX1yUQbAH1GFgrR8k1ovWJ6Ti/VwmNhjTCoUxburlsQhFT4nEC8x0D0nIoFq9UUJCZJn7yO+JSAB9gDkLBG/TqyEuMGxqCQUCosZjQPjQTYYswXjpD4Ju64K968G8nQWwvTTRJSB5Mzt3suvQQQ9WMR4ElStHynlCAK0oUvdJ1sdnVy35uSbgWpNUgVdD7myQPwMW7gbbQJ1BQ/0QP39hAVaJP7TWYvJ1avWC6UC2VvFFKqkPRxG/iqiq4rZYYjw6blY8XfKZUOF+KiDmgCkR93hKhnH1qwScsQHWx2zqDMlkdyWRblDGpiT4yBdvGMd3tNIEOtlqm1qxZMqFvvSnsHb+ASlS+fkxODKOBpV0LRpqca3Wsf1nuW3gF+0gCiyKMab5qsjf/PsU3nFfYf2FLut9Z731MUuMYD+WjhlwFfknOHCXzfW+sPN5mdvQTWlaPknJOQroKraVX8C92Vz7GdNgzzswTOAe7zj+3qtChaPj4g+Ja0z45plc/DA+sPIbp/uYG0TUE0rk2pT6wkh01FDDK82VZv6rn+R58V/PGhOVaMdTk4gXomR+yaY5nvTdSCqEpwa6Vo+SbNjOf7WLkf3OyVkW2KkNeifWq/zAlwzYavSK+nU8pyI/5+BGrikOePG3Un33vC+d5O6GmqXZk07cEOr5D1DVQVC8GcKk3T2G/oL0rY+haaVK4/5Js+LGDefUEn+SbPY4g3PBtIjzDWfK5aFyyygzzKYb5PF3GLFZQV6bazJ1MQVryIToqxl3CgTf4VNsgZljXhG+JeYhWqi/vxXWrZDDim+W0Rp4IawDJuaXdLWF7490kMHnIG47HcJP+WmviHCT/JNa+eMcvU2uD6lxEZ2T8IR2Ubj7UNEB9akcXX6sez9SwVgo1XJUdBtmsMRJ7bL6EwsvQncmF9E62coxUfcFaTw477Ao2PJR0TDEfyRS2qatu+Swp+ba9F7KluQZEfLpW6H+Sa187+/wYd0n+SYOj0QJImESFNqi1GI3B9RTSfKk3GK3YGH82FlKxjSy7CUF515wFi8gSD4+vvPX//7yk6oIWpV/nbeLrNo9/pHj4ZxdpWjmXX/bG5AT3xiA0KOLeoenxArQMviEXZjOqf7DNSuo7MCCpRiTc13UYypOTZPi1EC5TW3jFmbeeSf6NXPLzCtPblLYPDOn8u8jHUlvqtmwkqlK9Nw8Xrnv4I4U3H5ZoWO74O3eT34mf/Rp9f5p4TV0ayKJPCW4+dZLLppZSmsUYDZ7Ykb5zS8xiSifJu8DZw1iaxqwmT+DGAfWFo+VKORZW8CwFfm5Jatb+Aem0F1gOE5VtAumKmGqcgeAx9jejLzM3/tkXs2EQleqPPn/5ay+CVQN9ih4P6Np01ZIu0UNN1ULT3TB+9F2YJrStJ3BNkb9ACAtSo0A9krcj+3itHypKPiDuEn+VJR8WodrMG8etPx0TeWy15cCgstWlpFDQ7tkcfNwOIGrxe/xQiOKeO5MWYC8w02MjelM1OXQoLV9yfYnGFkxbunyUYeifx+cOVGIYuFmD2GoMyWR3KEAVuiEIqhKb6VvomO0CH21QsW1WLSbkgSj6vu334pOu+Tk9//ZGMLShSjn/IwwHZCUFpStn7nrKb2M7+5hrbb0GZChFX2oi/QNovtV9reK0oUuFaVpQr3tCYZNjP/BqwZW4+9Pn1Z2hQPV0nKvtfknSiGRXOg2fmhua7hmSb0nuU2AjeiJKIEDqFgqsGs6lCpyVafOpaf6C83bApQjSM3TY7x2/yTWu5HJ/lSUa67hKEKM7fY8RlHwheiCHrf1uWFOGerpOlbo35JhKErmvch3dFv7GnTS8AngnqXRpSaHwWF118NklJjEsj1HQZqCXAViEIqFQhqrBJua/CcRVQfhYDfGrh/ZUwpWF/UQPdXwn+SiyROl+GBLKuYCohELxQ1+IEhKufPtqwiCMU35h93DF4YxhJrXcNFfkm6bHZN4D/ko3XEH1qwbQxnsqY39W/yS90mS8TlJ/54oEtWGXwhZBLCUozCn8WYOrNmmf6xv0+l4/GGXwfxKue06mDcZ6cJ/lSjkjd5VjgIIRU98Xm9EEKXrUjImPB440M2z00nYOIFFGUlLyXHSvntQRr5vVy11AByy054gP/MjWVnhQbZpv/ggiPO2W2zJhWj5Js2O8hUUHnNdw0QQiTZ8QfWrKwD/0Q1vf6HbfQgVhxn9LJvVhfmjJZD0YbqVLDg8JMbI2UUzZx47ItA4OINYx3OOsITx5WyxLjF/yuxmorYjmfPcKz+h1VM98ZAJWEn+SbNdd1HQQiqEmwWw39SjEnLDfXdRz/kasqjPo653jd8HleWqA8ZG1bLbo4wdPuNTffKYV/CdYxREdwk/ynpwvMYlkepOthqUYk3NfWrKB6ThdLpcpm9Dgqeu4BsVFod7SfzG/f4NWT+0JT4+EC+6Xff62dKwu1V4wrk1pWj5Uo6IYqDRYCvzKk5NjSt0P8k2ew39QSf5Gan9gSvmUhMxJapdyfP4yBOsWOyYXdRt3T/73x/c7p7/eovd3Ib/yTZ8QK0oUvdJoXm8zO4sJsa7hof8lG6XS7pbGw/yUY92AydVtAdYPlIpJ19Yd2ZJua7hogek4WjuoxJuaVo+SjaFcB7omxpWlFSa0rdEHpOMJxVk/5KNoVuiDzmlaUKPUmhebzJN0113VyfvKwNctyG1k+el69aFAu7tfhXJU8cqVaZUmp4N5C7LMDUoDEmAVNcY7V+yWRY0bOjiNh87fu7y+8Kvaz6jnvl6SpnZQOno//28Eao82VmhVn1D4t6coGF5e7NOnxah5jGVnDL1pwreBA8pLF/aoaMOftG6OZg4VC2Sxsy3Pi5LEjGOH9wgtDEEUxPVTNF90L3uMefzp5yC+f4qQUv+47ok6w/4DneOxgwgjeUwiRTnp8qd5jWho8pMyqIFNdMvAa1vifRDSvQFX+ZUSguhT04Vo/LTYJdLzeZlZt80m6FduD70cJ9QLhHbgsNHvaeJUKYpVxBEdYWJAXbsM09DzDqG10cdlJP4QviT2SQx0EhVpb6APOz8eGNCIH2XIwt0acVoRmL0x6BN59asGVkwpSaPrDu0P+SaYWCvszLEKGguSjvxUaI7RQRGnTZohs9jBB8rc5Vl9hg+vA0RbO04QM7bc4diVx2z2wuBxnTQwCwhxvbSgqk5S3Qb21+/Rt05FL8GhKDMk3G/2VUyTk4XWxxt4FYf5TyYsvN5khwXepzEqP4R+pp5LYO1TgvqRtOxjKzcEfG5qY/igLCc7pM4BOaXb513cP/k3D2er2s+lX0ly7EYPqQf42lFo+U8TUeyjBfexsP+N59asGeVWXlsP+Wp/ohiNMGJWJziPTOjLajYaLM0SXdag0VgvWOU2nfNAwWLrE5+Tg9TJ8SEyj7qfdtwEn+SSl8GUEKXEtENVu3/G8Vo/K/Gu4ZeqUElq2Zf3k6CeAFqiTKvpVxXN3s9ELvAsndbc5Yb4QkrNAZTeN3tYM7Mup0mpXPs6BtA+9NmkVc+Miw/yTTgGfpwtiEKXE2juGisbEIUuFaVueswZSeRXc9mdYth6XAWlCMDVh0ow+kNk+s4mu6NzR4h+x41ZIPgyPliZWRbuEaEYQzFgGg4xZW94XH9up5qlxIjy3STWkF7ySsOEOKujS8Rg9SdbHbOpR1fksl7k6Vo+TYg9Uq5YGmDL9nbOpTId0Iv6gmF0TdC/Q09kwEk1pXGzm/gnzqV6H/JNaXmMSbmu4Sf5JrSqji0fGNAYW6H+U9OO5HKel6cK0fJRZFu4ShCj1J0ulbvmdvQUeNSCcmSwk1ruo6wED0sP9BmoJP8k1pW6IQ6BnsNQSf5Uo6DcfMc/5KLRAFbwLAViFLVKOf8qUmj54NWCTc0rShS9acd1cn/G8VuiD0r2CXStHypSaFbwH/bZiTt67TYLYagk/ypJ0rR8k2fFi/wa3exvyWEmz4gVo+VKTpdd1cn/LU/yROg0Vh/xvFaPxvFaPkosiy7pQhEmzXXcJP+WqA+crVNgXYZDHwx8GXAWIHRBmbj4Y+F38OpbBSwUsFLBSwUsFLBSwUqPlHzBSnXAAP79UOo/obk4ap596B27yxko8NBpH0n4syr1YAWAGSQAAAAAAApgAAAAAT+2AAAAAAAGLQH496QbQAAAAAACy7CMEpgAAAAbpo3590qhaDybi6gAAuYuvH9B1P7GVC67eCPRlwDMWNpYhqL1GuOa1gFE/9vxn11gRsb7U46Bs9YCTklTqT8stEZdYjDPPDSYaQ7Dvobmae73Fw8TfAG4fVtr8D4bqzEnxdS6PVdrsBjKEkcO4rqazaCo10gemFplhGewrKKmpjBrg9i4lcKJcDTAmsxVfXbyT4/rhV8imCvq/DTiiQu6AXFAAXHQPlXXj/1H2WYaiaqx8lD5dEWY7ymEssCmlPMyeAnQpkL+j6EFQX4EsHIngf3MCSblOGLhXGwjnsMbBL5Yl0+kjEagrMdvwF4m+YoobjHVb8O3rrC8AHhJ8ddG8ydavY3eQ9y6Qbf9JH8nKm3fmhlLec+gsrQo0Ko9YU/5KidoJWmhianmUYxaFQ1EqS0afqIqakUZ1BsjNJj8D6TFMhy/qZaIS8NqpFdMGvHJFn+I2d2Tco1tbB3MOy7Sb/VmChaOpZIHub7/qiQKAeEJOCEzTPxdhefyapgXN2XRDnpVYNELrH5fpQKgB8lPpyRb4XIzHWUZiAUX6TkGOoXkD9J+ECDQ2MeWh9dwt2odH7OK3cKyKHKJJDKEABlro8PlxxTyet+L+OcPCfIU03UlDUu07As6OlAlTLVjXkcRhiCo1ZNRhnexxKgKqSyQq8Y32FT3X8eOdhkpNOSxOAZX2ZMtF6YshBSvHrx6UA4TjkoTZaxyABCwgK2/gDF5mBCzaRVEl3zdhn/jIwSIahWg5w9x/VSmNsWSv4EuZzwBfYWxokUBRkV2+BLfdRWEoMtkqIZAToPCgab0OfOcwbuNtlVtJhWhXM328ITqn0nRoYdv11ZvZMuBcMlsm/sc8GvAuTrfxbZuXsrlmQJ0VP2pWN/mNFLoGWSkRmJ5MiufNCctyj1tusaIOfA/tzZGjW3WpITUFukXsD0UQIKdwJ/VPNEwMBbEczpLOmZ16StiEgt3C9/8VjoMb5eSW1nXdJ7GIp1O6DEi9w5ZAvVW341jvVciatEi3sQPy8l+p6K/MSAo5pFNNOkmq9tbU4NbNiR/ZVPSwiaQqvU9UYkk+Qqvs6zBHY6bdi1mVJ9Z04C6VRGPTuQNqZavW6WmeeS5z4KE5L0ALvabwU6pVlCqR6M1d6jvI5ppYQYCmt4snnhy6aOgrqTvngAvbIhe+aw0GiDwBAPIAAYgPu7/d39paB3zIZn+vwf+u+aEASgCQ1Z3onYx6GkOoO7KjM5cea6BygZdhdShI2JSJmo3e1AymtByL8nGUsTNRRE3Z924nM3cUqR0tXg+hOwDiiygh8s2QfGwovWuYG/UMUM4t94q5bqfCk6xYRGDTkd6D2Xz7iv7CzLvc49/+JSvPBkWDUIx6ZCWuTPQCMHNkSECvDDujjfC/UW9X2y+RZILme5jYs6lyMBB7DfQU/mQ7izcUkXf3TaHCj+dm85r130P+qU0/Tk4FR8BH7l3yQR9gKzwYaHQOWz7zwgF5N97SX4gEAEAgAACI23Q1QzqFIyUPm9EfyHbXkgnOeAT1s/lzeG7sq23g+uXa3nN/YH8YBRK2qXA65DvB2Eii0qTVdBrCYAtzgLVl05rsrD+cpqkwS0j7wvge/Eg6hB+Sw9t7Lpy4zPZel4CURAe+0CI76SpWzw9Uylwkk6+Xg1khyKe13Pf+9DqDuPbXItYDcrdA/uAy6G9gWxHr3cMi2v8rO3ZQayThbfHWX/LDPgiuBIGCL19xXcbaCnzFCrYKsqM14CW7ipuVvFm3JissJhi1Ylj+iiPJNtVm4eq/ENM/fS/290TeelwgErgAADc9KNkzdQIQdC3RpS06iLdkYJmOx19XdXHaHrr8IBd+9LxDyLu2vWB1DIAzOwBk2MJqU4Ck0KgkyB8DwxJ4vRCYVLCzzpqf5ulb8NTUnQLkPzDLQz7au9icN+0c6ZoTH5/lMOvvEnygRtS/zM13BicSArPdjVR+EXnlI+G62bs+5Fy57Vqg+0ltTX/lC9p//bkVNvgW10s6LfQlO9SM84xT2srfueAnZkx+yj6Rb2sVg1GgmVduor4yL9RTy976NISn3Oc9OfjFsrE9M8jR9g5BdXD9XnrzR81yisiZeGRms/4GiUlA4wJ2S1Iu1CRyAA6LUS63W4UYJ3B0DuE47z9nAz9Z0bsyEILiwfb94mB7KCujyZPIxK4OZdEY8r/3+RNOo7J8z3skFX6e1VgOEdoJ4EGjqxWn9MlD/xe46D90qxBabHADgWCvSqLv5FoZJayV73O1BQjeb11gYflKCHhhLAj2RYdcla59Yarz3KRqR5SiBFQURVz0VjjgC1yETU2yx/jqvwS81Fa43H2p+pJIJifsqrS21OrOHpFE1GIl0Kyo1B88xnnChMKRNnHD1yFZ32D1KASHzAAA4IXLpS6uKgS63jyW3GU/7y19iSaxObREFdF2ycW0kFFTJq8cwrV64QsTPObLVI2csTudC/Jzw/cZWGojecVxwI0Zaonsrx7LU1gImSBthW0sWdeniaEduV/G98kVUuOLP6bufNLKOKjLXGjTxLhTp/97fapfcOVDXtxS8lXuQK8GIYXCwdlol57EwFFqJqBj84JN920teBtzvvVX2rCGEZhDncfsIW4Thnp22chpjGP26ykZNx5Qsh9kTGYJMj8hofnCj28ModIGcQWaeYbr8nSQt/KevDos5H0pGKHsBWAAvoNjsF8MHcTV69kIXQxp5K50dKo/7Vx/OHppZ9BG66PJlPQa2MehaQAUQYMG5DahN13cihjh1CPIaBJO8dlESnbhDxEaqFYiDySgDBa1NFBpPW9wdlAK3A4MuDO0LffIxEhXSjq2OS7RfhsGKvRojtU3o1gMH2WP4EgZfKNH2VFle+BkD7JkYqalGeaEl3/iNZrVuF/l5HT5sUcpoEiEbHw+8pzGjxy1krdM3Ox/XkNNDTTG1DYJre3BuhmEWcCzDcZdBWjCIWrmQ3NmaD9k/hWL5t9ynxfkV77/qoBNVgGtGJwygvzpVn4W/1MMCgloCVIY1iNEvY6/KWiYvsAzhnYkoNcgplTzLLokFSpb7OfnsWVc0FUefg+Nm+85nWtkhckpdhupGQgRAe2/l8z5MFtTv5eETcjx4WRPmNTlpMKnsy88dgduadlJPkeV7IsNCCX8oehEPV6kGoABatQCKbRFiTZRW7uZeBycWsnQMbZIZX0578h30vVLuJiFlVRxHDqKCoCLbQj3dQCtZBcnTb4lAa8W1/5RoNdweJNNXxEaqFYiDw+Pn4yMLmizU6pZrx8LjVqo/9UDmqdgclSQ2ALqcPYub3dQzPhbgW8AkA3bT4wySr6JhXrH8sfKgLMkqpah+z3A5Qd27yJYkYBXsdvD7frdYOSrbP2/3bRxQAXtkcpRyY9XSvaHszjC6Y+wjfXl1sCnEPuKIPs592Y9xNorNeP/OQwZ7MsjSB3JwKNsuA4t1rRo5m4c+UjqgM/y77+FoswV344p5q2AQGblzp4frQ4dQySiu9OLzspZv7z0kWGG4yo3Iw7+LKkcgEr1cos1b4GW4NZLXBPMNg5biC/YWBKWduyiNpKVwxnv/Y9M2OHMLSEsn8hrxnXxapKBnm3DvElxtKIzCg5G4C3T/LI5aheWYGvyce1Bz8S7iYfue/AD9dEskB018br+hpleQQImi9OJe8CgwG/MOqhwyPTKTIPrmVr9R2ABBqTwJAydfQ5b9BMjqQy2O45uGBGWaF+PTyD0L+jHqnXfwzfMjJbzMMi7QRhz6dliItRlHRYmXrvkdESnbhDcYz8M4bHpEfxW4LuYezQlaxjIOf5QwMpV3YHDKAAAr9ryxCJZUKTYP+5Jhcm11DH0W9yXja6iVWovYtVPAtDxG9Q5ydQMhj3E71OT7gr33CddfxhvNB8XbuQJh+BpsgDZifma++1HwP+92Xf/FxtZq8k3h4udO/SjnvVWsMQ+0l27lbhjDdENcjW7ZSkZ1BfJSS4AAOMCy+v9kzZfRI5hiGYcKQSGTsd9CrQbTFwNEtUxwZYyAP4c87aIRrACT/kM8GX4qz6QkCBtnr/YwBQXKkY7IPg+mp6Weug61Tx+/gUp8X/PxjoXNvaH4HUUpEjuRz7V/fRTQZeYtT/jp2q4fJ0gdKZccsOUTWYTSM3pVVVmuwVTyLeAhDACNhdkqm2eZJL+8uApuWP7FM6E1lO0hLID+13v5lQPNvPbZZQpQvRvtWih5EC5LKMumUkE2/JFglZ5hJY3rBVmtmjrRhNvaTQR59Buii4b/+MaQ3peKy5hx+Ofi0iGIAAI5acHA+rJSDMagEvA5OLVy+VijpmE65Iuo0KPaBYOY/2HLaVoWQCLEzSDRnLf38buCLNCBWAbQlfn3srC+dazV/q5CTXs4VAdomNrx7ELGW05NE41IzKxdTOlSo4OAXQznNGiYRrIBxRhN8v9X8ypBIaj7XmQJRkE85yOYea7x2uIg0nOH32i5FgAA4ftZBxlTCUQFpvB9xSC+k2F9vDdTLb+KIMYYa/XgAAAFcMOiiwVHHAc+4zD3GwLLrz7R3uje1usYdrx11vPuHW39GA0/k9TqdFPBqM80fNjVmLpmSmWPJ24LWhDS06ZAST2pEVxl3ZFDFUYS6eqBwZcnZ3fGsWWt83MLrtzEDcx8mdm6fW0R6yPX0FkJAJKxp/DnavoXRoD86pDqHmTEFDAMPbjBC/Ib90ajrAWXWgAAAvK+IHnyttWflCT46PQ09ILKSZ4Df4H1AfdRBmfCOhipuhHEc15Qb5vStU1tT8B3omyGoL1ILzsCj0lBZYAtJwVnCY6i9HnG2vxE2dkyuRCsKNWlHb5h+PVtiEwkytAlnrAPisXU5jcWHG/yI/DRAABonaWWTdWd0KwB1wwuyRNkbgoNPIzhXa/+DIgB7XDbVWs8145B9S12Jvqfl71U6MP8VJiFHOMSV+p4xOYielU8lKu4n7vAWkuvV/izP2MsXJwQ8co338cLzt0J1mrtB0eNxS8jpzwPRhMUqLrKkEY3SbziqzDzYcc9sViKOvJDRyt2rOZ+d0A+HhVeu3OT29QAAcRh0rJbyvNxVwj0Npu/A57lu9iwR4+AnHUtNLF54B+yFAvSHSdcX7/2OMZ+KsszP1RWXLR5Tkb54e0S+hibbUiMJjsfehxRbkIz39ASbM4ebJbaUBhnZ97XDXYun8yhGA11WI8pLj68FvmpoSUJAsdR7p/kxMUVEqPU939mNAYArKOtx4Lf5+zSfVGhZi+WQtOusvRfWpZV/iWSBUwy1JvADFPgqbVnMGY0kTn57e9eE/JemtFVypLRJ4eKt2m3yXMc3P4k2oRczg19Qz0yUOE7Tgk6Lyy0V683EeXow7J9elxpqRTMLawpegAALoJgUBQK9zz9QR/x8GhcxpVX56ppvoiRlOIak+qekJnaSjvsF0Vaewrt4RpW4Gc4kMgrjLIVc2l2bx7XRRNKAmqrukDFXQZDphxtQJrZBU/VZoaTydkAzU6yFz87PxdI8ciNeY95eW66Kiu05zuBxpKqXTVxrlIj78Xwo7/lPp7gogj3e+rjUtNPYXQ+AzJ0fgjO6TG5tBiNfuyrd3JvS5rd2PrtHtUBGv3QNcmQPCrPlXC46LC89chCaoEusm+1P2o9rebN/Egng3YhtWAqpEWIBXHqDvdiIIPrWf84tNxVNt3dIk+26JJIcE6TaS9fWleC2zR2lrSA3KG9bENlCMd9fabbBxiMRXophx3dOo8wy9t9PYvppQkSmuz3Dq8vYAAAtgZm7oeAd7b58EpxcB1JGznbKOVjPdbfLOBxlO5p43+5gF3Z51ldBlcqFTkSMlsR/DpdmtPQ1aijk+qbszZrBQogeh6YiudKIgaInkL79f++2VCc8m5M9oIt1eE9TlFr3ZzKszUWJr8+G1t1F88lZqjN6Spg/vgklR3z4CvILqtfKHeyBvZVQLOMybvq7A1GNQKeVZZOktESs8z+KEIeGtlj6G0dgDWQ+hKD+y0Y550FhmGtMkbep6nXfKc7QDfn0Sk2/GqguMjvoQMsAhWjcoGQEwJiVb7rvDckIjjI+Ss9OMByT8Pa3hufwes0/ZUyL/heK5fFL0jQXAx2KkBZN8C124M7P7Hqt9pzUGilzuGLL6s1GwXTJcP5GRrbYw9mFMqlHCSu5LWly+7r6BaG6rzWICU0SPriIBB7N+QbZU8UeRj5+tjESCZEayc03GDVDUTJttTuvQpMfm1mNw9cm9XEIMB3amvVSR7RpaHdh1PYib9AR7PyZYPNhkVOPOspcMZuWm0cc/4uMRldg3+gweDD7lwbGBTt98DzpL9xXGJZTyjw7Eo/7H5eFktm7xhZC1VaidwZPrGrAPpw22jF15sXLvX/RQvFK1o6RRlDA5nRBHk7MwLREjKnc8kPWXUv8wlgVtQ+ZyLoAseWmqhk3UrwCvsCYH9QHQL0Pp/WhpQRjIHeLrr/cz9odJxkEkw9YqdK0suduLnlmtErw6eEr+n9oFgBYaXOUpszHoiZ+9gzSaCVUxAO0p6+7lIk2DLT/27LszeeWk6QqktC+cgvgWDKyDMxC0zmvEIKrX3AYmjymMPQAdX9qsFZeshTW6Ex8rhR3AZFxuRGcjTj/FhHsDPIklh/bevavt/qlu14vSvlhQTO5IybPAaiU2OdA0SDKAHouQ4MGVkDI+RGIvdS6rOAwWzcx4130FCanFWPeK4KdNgcbHQHbGyV5s03hZwMhwWiq1Yu95bAJddtPERLS64f/22oy1fUPSY842J8LVOtoShfwUNyZGL6IEfzf757zMYmBFn3mmH2rYAABBKgyBdCHJSkBpi9GTLrcfXlbDgHfJDEaYAmfK8HdFF7f2YRy45R9jipUy4RIPNVVLqRG4fEr+X56C6DWVKr2JhuYf54LsbnuJyeb+HWdfmra2RGFVZOPc23mkAs71xxAek2tKGzmz/IH5yh98KjFQiwz8eU4pwwX3sKfZyK0tX5qxIwCZckpp088omkt3fA9AQq6OF/ocjci05uwRtZxLGkRBOCoTywFZ7DVPhT5NaS3K+jZ0qQbNrwL3mrM+CcZONz7uc+AGK9D8wy0a79+v9NstLObOsYuRx4dladtV0Hj0QngjkSybYqkey33JfxFdOnKl1xgtprItC+QzTRGs4K+na/lkZCRnI+Wgp1MI2D5GV+70c2z9IUSNxosMsT2SNi/Iro3U0I6+bVOOxxSmcWGKdksfdH/WiTCpok1vEf8b1ZkGdYdMWl60fbdm6dizEa348S4cJ7HjXiRxXAOX2D9WygxPFWi4U0tARSQceJbxLc5Cqyu7948x/fNV8/LFoc5tem0v3EFxGbRDcGf0qti2xRs4hUs4I/BZsknGJCACEVt/0onNT64AUw9lOdqa8QqNq11EVjoq6AdA//FeDRU1FSTzOukLmZ4yaWVwM1qpJ+cXJQreiDu8ldLAufnjPcVBLoaboPkOa+H68Q9Ufk3C+w/14h6o/1HPMB3OAlEu9pX7zkHc/4EMhpAY0JiPIih8yFfFKY+iTfP/Gi79hVLWUox7B413Ciib47LE9r8EACx6atgjTRjm2BaBNGXPxNst5zjtQo4V3+/l8FGfhC30Fw6OWhj6NLXczcajeKqjP6GP0hCitpgU/PD8xHQ0gzwdt1DaEyji5UY7E2BNWLMFw4tz1f88cXKeJk8lJs3VujGy/0M0TKglsVkOudYdggtg8WAGRTbpvCABSa6f8dRV8s+2M1AHFycdGpqClZC6TOEcBHxOsYjfeHNnbWYuGzEMk87nO6D6KEXdrVjnWXqLcIMNcKmqlh8n7qVNThMcwZHktvnYJZ4ICqfcR8gmdPh/VwJzwiK2ZRwxMFadh+o5g4df0IomJDNG/l7+xZLoAAebO/nQhYzwLulcHVRE2iLURnCsvlXybgN9Hn/CUC860nCRcDHhYXBSpAj7ZUe0b6g5E4u2qrvU+z0zYZtCKdAbjGS3ML3f4lZIGrJxQlTvua3iABlMCW+ljcVWv9bWgYBk+2vxPkSAo6HbGukktzSpUw9jRIOO5Ti68VI51e18Hewm7hvv6qeFvGx8UYgQpNBtzkKGUO/ITensGNAFd+nIAAjYYB6debTTfBX77+UmJVpguMSLu4NhFZ3Bqfy733NE1Xll7aKip0YuMqi8Qxrd/Oqbt9aPd50KPFHFyomscAijMXlAnuJ1rHh8QRrYgHo3XVTrB+5hT8hmMBi2kB+JhTalEXN7So5WRvkPTZNAiFU9W5zuiYbShEhTP7FPfHePWbE5eXIEwYxW3vC+W9+4VFuPRHXJI3QH0S7tXkfq/wX/iMagj6A4TUh7j7vCYA9MeInFf3H/EQiOPMOsrO5Ft3FzA2cTiBozlg1SI3DRb8nQ8Ay41DTBruxEVckqCilZGuPxM/LAfuRYbRZux7qnpRqjbE32EywoOD1wmK6WLVd1ELQIG+lNJnZM0bse6p6TS9IwNzR7FREkxc7qPOc6cX+VIJB97bZ6NnGYmMWhtNv4b8YmdCIKA2NI8OJZ+HDDNhovn+W1x8RaU2O7pgHhGacyTKSzp/TwrgIzVh3H5vIUHXhSO38C5cudNOkb/LCiq3VLKM43v40bDJ0O/5QHEsSZJq1GeiNjWIR/GaXW3vSxqEvAUZzkghvjf3zDIkMRqgDdqUD8ZKOTMcZF5qVeKHrjWP6bNDiKOtPSXBUIxPrIZJj1RXsv7ZymyV302AJPDjNBBpxRL616NntVlAYZufzmRTdyNlmLJ0+l5bTA+fO85gs6OfJQ53GfhMG6rgjD8sTRMlMPqmohPBHILPmg3YBBhoMQzS5vDELNkwm3N/N8iot8p3Vl2ABs17iAz62G1vXo1FjF5T9dL2J33vuvUR1XjEGJ7GvA34R0uMpdju/H8rEzZLkLk/MO/CZqqgcVMbkSDRRdQ6ImOCXPcRGqhawvKFEf1+++0aP8BdvrzkLBqHOL57Qi9ejzOHTVpASIsxosZP43FRGmVkys9cYHF0GBdXarhyjrMcHnKzdDl9oWlwQN4cJC2Cset2vki4tzuu89jjovX+qqp6/NHHm9rwHinluhJyX+LlM+G2nUYLjD6JFe5kZNhKH3lmc+rs7ul5wnFhArsjxD20fAoddm/l8vi/HMJV+UKiTZ6Lk1++6Vee3VasmTpIy1NjrNa+5V/GvKbaX/0t6pHCSmiXduNqR8wjm73EcrMlRHZP/xXHKYIvUtQpTaaoOsoP+//qqFcZqO4BlYR/2QcLO4F0yGyLHMh3pxIwe8D9nExIXPXtG3ekNcMNhAE2Oco+7UJfynu2a8/0TdYkxoqqYmdN/IrCBqLQJVtnmwVc8zzs47gTHDn9iW73VnS2pVVru36SLmyDAk8toHpKeOOHJnp6qNwgoAen4MzWoIAaWRly/cf6o9Xmc8DpwAGAULv1DPG/29dGU9OFtFVRGNe6UJNsw7QjQkfIFt3WABaB5JAliWYhTBxjOY7V8CfKP3CT+oo81A8OXDIjUS4P7SXMK1jHuOj6p+bd64C4LKhNCgqUGUzVDS4FXtSxzjgDce2NR3JgZZIo/jZhDl9l9nGDCO0+CaaY/RYXflyENqc07fBgbJdCZVRuG92zgv+r/4FVb2xba3VwpeJdURvOK0UPxwbEOmtH8eAOPt+P+Oh39vIzpwxUqHQg365yfoA/pZR+kNpWUSA8zv2I3bpF1o+R3c/5fpBld8ihloYVrU20DZEQnHB2vMf6/vzKMxgCh0GIWC9rRULNoEaSWjlieUIsvSsw6vO0/bQRI0ruzZa5eLNTBgrMPBObAtymQmUl3K3mwF4dmHIupSTpK1kM90Q7QqxmXE6Ho2Tn2Y8zX/fasVBH7mT5d04ArA5ev86tOAoPz/KFFLu2n5icEzVcrfNJi2vtgp5qgA4gqhIhZ7qpGPCNFGyqtgSYIALs7GeoAYeLrKYNZF5Pixn5BvtOL3ImNhppRXJ8zYiGnUJWMVX9MRZ3nwzFGO1BY8G1IqeCha6El1lrKAEcR05Sn+s/M8eC3J6kab/sjnfNJ/j5Sn5kC8wGACkOK0OWT/AiVSjc1TA4HSIAMpcfJlHSgIKvd0yMovqeU8J8FkCh3Fyg2qGszuKX1RBTsm8E8Q1qg0+K48JGgp9gDsZvdbfi/ojyDVh4cIseNh/oUTNB2ChhxB3a4mFgnztktmIaSE6WLAmYo4+kw940vKbVOBqw3pjAsam4osfWK1HiZnewRnJA97RRTYBhjCWm7AnVdCzPHYG06+9/WR25VxUtFW0IoXC9zqmUDOct3L9+6yj7HXLoNzLuvC8o+4GU+lQp+D2cBYifiS2QndxE8E5V9wloxxlgq8wyQU8QhG40MCy/pHipol9lVMksavgIdJ0S/oDYd9Aclg6STZrnFnG3KhG2Pwq7fNtuqaSQYIOP3kGBw00+w5GTS2bvAhoBdHHIzspvEA1kWuC8cYPldmJTOHQcscsZ9t+QRFTI4wdVIi4iy3Ez1bvFuoQebmlsOosiLcSc8BuUrSFSwNq6516FWHFPtT70gjN0fnKPfqzlgKkTMQ+3ZZGiYMTFpo/hUqWp7X/RfgerOui9MlH15Tql7Itoackn4vv41ML6T/UlXx+ItMO+cYQ6izEVy5/ygeXd/fGfoKYAMVu8ntW0nZBYINGrflivmIwJq3iMURubR/zxagGrGPDp/pJZD+/2yiz4sQITCCLCMT5ZabtQA71MOnXJJRC6Lp2BtuEgIoacdH0UP9DCZamsPJmaiSDIRS3kRg+/f6FxBoAX4itSID1JX5wGjnSkSfiPaW+sovgXMgbb2J+a2RxmAwX8Eg8qDXuYgD3I3U3DVl4KFxuuV733leUhmea0LOq2m2T2K2SnHkHjF2eGKXl5gZ7i6y+8N9gTAqesje4KwTuXWZZ/npQ5QoidtOhUsTbnk8t7lQhql4gUylUaQe5RgSPzlEThTID7VJCIormvOiZ4mk5PBzttMHm7SmnXQ2OKRNzS9miUrL9VaZrZd+kBm51StypUMng3EY4qh3QCjyDfqzlnw1JEUQnY2J63lOOK8KqdBRk7TaacHK80TOemc0LZUuuspwsbDtI3gqie36gxFIHRPrK1lYOGI7yC/Kc7k4/YzsOMFzMHN8rL64Hs8C/pB7OqunaFhco9reIJHcajfJHZNUr1C4iG8N8pDqNl8QklekQNcDKMeDvJU9bC4AqVBEwkR/T/wtviL1Yv/nmYQjEN1D7KZcX8BuejPXrVGrvDdf9Cs7G0fMVyL+HpczfQtimCXzXjTxhzncOjIU7jNQqPPLx9fWYwr8jzEsf61RNMamUKlKX+jL3tHTMuaO79UyrqQdZj4cSi9LXT+hU80wPuFtebzi3Bh97KgyQFTfiADL90zQ6fwpCiYKadn5YwWBDtEbV3riO7+8PcK6clwrdvRD7dAr4udetGndBoNHrH7Tks10oHOauclYvpUMdMwAAfc7si7VNNsgd3wrAANbjjwRKVop7A6g+biLZBvlPVlv73j0xSxh7bpVoW7Lmc3AKtPB3nwwIlk3Z4tTRlppjOwUI8bzfvdi104LaHRI7ZBeOipaLE8/jtmI6qpNus9BLKB1tbqCfNPQyISd9hd4CkFtIcYIvYPxbLKkr6MmQdoKuf0eF7j5fY7qnnzLWDtqBiPsdcvKMF1SBf3tb5sJiig6s4wu+D0xupr6eaKhN2Llf6eA0QyDyuwI0h+SNfvm2gvNQyMoEwuHbDeGj5HU48/EbOTtwhilZOSvezkB5rdWS3+7RHr4/4J8LUxxF1C6SHcjd6NCrQ4/aWrSdc8g/sJAdQrJR+cbFYsqyrO9oyL5Dr01Jyawb3q2xCMP30AbJf0Q9TLNKdjqj/lEdEmy/RKy8H41gc6x/EH/ysqKPQglBDYXkQufBTybNkQTNUbJL81RRTA+MECmUOR1La1Vj4dj9xgZkxzrAQ9wdrD3tP4jMQ/MFvEoPog87cHTyWMWwEoXpe+pndHeloik8jLPk9TdCqgoiGGyZytVhbc85ePqRh/dp9HcBteRscdyacNw9zCDncGcMKyRbD9/b0M2ifOrv9ApzIGmYIbHtR5xXR1dBNqopa+KtH5RhrqjKvrp4jqgPgRL+PA1F8OpnE7tNhzfT/4h9D/G6H1rWrTVE59U8RAz42lAeSnSEEF+5YBzmMW4uzuPgczRU37L3iSFfpRdqOApX0HaFpBj+oAGeOVKofoX/H4r3YZ7KVdu1Qkxn7PPG+ppqBTSOn3x53vjXLjM9skKu3XQBW+8VOZyEyCRjoGCQkxvaYmi0IWjqt5Aot2xQyFGgypEdRyNPv0AXsyvyA5TvaK77+ub0/c+PnkFvMjhz0sgmCrjm5BlYF61lwloH56w7Bi6cY3kbffSUNPYFrxmfqqHVkHx2MhcrBHORn4qKmVMr7iMKnhD8/OWmPqbeXuBRoINwsSUqXmkuEw5D353lcmI+MGWYzuvH+5P5ZO8u04oi2isQpOTkI/q6qMe80pVZIFRnUei+YR+V6RuIbqjaqi5WexLVXUbOjEWmBNeVjas5bfooE3bYYJInU7i8YRvyHlcyxx6tCgPGJvRy0wBe4LQmB5E9wUhFowlZxl39BXtpcR1tCrufomJRFVh7P41400aPv+aDb7bwWNtLAAAADW4CPEgVLoTGFXvFHWfyMxYQpiSmvRHgbnGkpaW39UBTlnG4Bw1q36j+lgvKKSEt6kta/6WbDuG0Q32JXNsoOUDgy4CUirzcDWU6uuCDUnx74+4lJbO9fu9XR1fNd7bIS+EWkMMmDp2Job+nCgoqJfRJ/YRWpX7S7Oh+q0KL8CnsMmIENtNzZodqpHV2VQMJOaecrNWSU/1Nk8uqZa1CdFAf15jXX51vpDBKn0pYktagHw9jlhHpXLChlmn7KFER78J2qMgzVnBjTgr6jBfC/VdnnXw8BRnv025FtQk50LryJ7pzrRaTuA1X66lTsFOm7togsvUFTfk6czJHDJ824F9KWT0Ip5ApHrusvEnW3ACUFWC1TqzAualcG1HI7Nv+pXqAzK2yK6RQwAAZY0FhV2q1YSTma+LuyHdIJd8AXBMu/y3BrKJuJQVUZxVVbEPH9QHPkPB+tHZsqk8KpuII0ypd3jf+HwSdP4pkdimK7gq3ZGoe2Pve9JqH7P23LtmfkP1C8L2/J073qXw4fivmRRT8OG71j406UQiFA2D9tybcdnz54gqqMAPVT6Tmwafz9BgJdaVCFL5TFIX5UEzfXT4z0d6DGYpAD4jHnLCTh5PU0MQONmeKsTRMnKS0wtKjyhgdXUvg3kjtSRBbUyMTz11nV/oDTajSgzVFxAdk9nhmwLCbMf6PmfQcVBoeTUMAwJYY4+3oIPXHitj+c3tm1kvwBbJ9BSZCJlZIVobIxVhzulF563VZD0KV6JsJpT55IY7hbRVi/9sllGXjTeGyvTKmrgspJ4J51tDRbn/lBCScKyDkkHm/9ZhojeSH9oiGa1RPfTI8cM7VcFDJLPO2YrMeLrrFYn5Q4vJLIm9pZqrnSOq05mnTVuDZ1eh1J6GD5AQxXS1vv4F6xHde+Fvoc0FLvAZJoF6dutp9McrddNi/xJk3VfHXkcElNQa7jlC0lwVrFhqhxKk2w3TJK19LQ5itcb3yF8S44tqngnbM8ygCV9HU9TkBW//2KgeI8zD0hIY+v6OMxXdp5/niE5GqYpviJFoYTUKO77wqapMC6/tB6HsiRB4YvpaC2QpU1eYaOUP3SajH8L+zwnglTcnHTSFqx/V+MCgO25/x4tyboAwN82Z2vynbkU+u7z0kV2EgAJzYqrR5Gm3NEB9kydAGPjnfMkLI7JkkXSAvDxx3DxH8u54TMBqrPt2G6wUNhQrmK+pKD7vCco6O9Rk4j7iBOd2uuvOtj44rxVbFdmaG2nxkOozEgFqaNkfp4hZKTumGOMqzrjbL8b7HQTYmWRHYkEyEKNgJe7Ms2cOd4IIvuoqeu4UCR+pFF6P/PXyC8GvSjELPIfs691iAGYo3wrEciDQanAi6Ep9+XTteMiNH7y+FKUlAszWL8fn22YkIKISc2K8azuOLnPlIcG1GQT+aeUQGHzJHakHXba7lkEFhSfQ3hK8jtC+2HkXYp7KvQViek4lr/a6q5MAX/XpFR/+xjrRSb6XXZAgcpJleSLmplN1nQs7rlb+e73yPUrPKwxJzA92O/oCkNQvP3auqVIiGp+dt9ByLRnvXD0aqLX01O/IBwMeSkIHmmAAuVKm/lKXHFvrA2mGkNMmtfBYnmhDUuT3FQ3zEoWTAcwIVy82bOH5FjT1OHnVfMh577ZgP5B6Ou+VtNPXMAXEr78sB4Y7XBlluDOs7I56ypcJxNXR0iWpwv1uQZzDcwBDoMEXW9zD3lgrMoEwVXc1QA7QenkcdnXOdZoCQkpz1H/wQxlZwLm1J7tiCVJLbvuTMzWN5ZNjVClr3VKklNWHYQTtUYz51UT1JMh8MCNZseyDSpUsfpqdVl4sdpFztonrJ1s+41oJ7u6XZ2hNUzfcJ0KDDJpRmbtpHth4YoyMdC1a4hnXfbemXXBu0dZ+4r0UR1x481EkcARRl3QYddJFdGh/Fpm42FcMgAu5nntXe8cDvQxZ+Uv2lHglfFjqy/daZ09Fk5FfmLOHoloXme0mTSV6IrQnAJ9hK+RwqT3HR182IKldqtVRpQlyC+2Lsouxe8OWYJLROzl3GegwHr0p8gPRoH+IXmgLHhexryjH0Cb6aOLCf/GNViucwmduTsd6QN/PC2kUcjwZ4jWpspgQR5Eq6d2r/vNAO8oTrgn6yIAH+qtVQFL3yNNEx48genynearJRaHrxeR8FTt9WL9r709LRLPW7XlFw8BdbxC0Vd8SPmFXcxI4IIr+WY5dUOAgswgsy+QcsJR1dBJzyoZQbXccvRHrWVzI1+VfYml+57atD0aC/CYqdZ52n6+WjtON+dm7nnWWnIHNp6D0Zeos1NJH06ZbwiO2M31ac4IbpUJJJx//sa4l0TPW1Oaf9NySrqNnNAl7Vpq19F/Y1ry/iM7R9gFhPXXIm8+zauACSumVJg7eGxMqByeLRDGey3iQjgNMC/VDCLAnCxdQJoaUDWIbXkf1yg3ByINrqHRLOY2g2QCxEjHuAbBISBWaURTGT9xsL/4AZOG+QAAACJnjP1df8ulHlvh7Mf7LFidpl5JlgM79AoVW5JMIDqLYcbRM11gOOlEemTMgXfvP9IvYh2URQFavEBAUvIGBSr6sr1mMjIZHvoFXSsodzuYQg1boFJvx5zvpJ6fkBCk27mD8fOCzWAGeRLAEPzknyW0QjECFOSOdT0SQn2D8ViQeUHSOQ8xkW7aT021gFR+xqPCPSPrTqb6LjxVOZtdXVIktZc0juYIZSCXxvAdGH0njb/HGpnY6Bw0BkVKOD6Q+26YTaRbvyf0WJfNLmFE8xlHt7o5N8GEkfCaDJb41pcRYDFZZf80t4DwUn0vxLbBWfH4FOd/C1TYNoO3bemPsO2PXt7k30Z/vYlcxj1MCaIvF3YtmmOnyW0nYw4krduLHbVmlNcJzraUArqVcJUZYZPJNKrUG0oydvdoTpEbXmm5FCIGrJJPyY9vf4+rRjwnugARJO7hZ4DI+bryW55BZ7i8pOWWWw/5E1EQHrKNv9cUwZcDAO7yejQZ/VLjarQ7EwBFQLrf8+sOmVrIj5RBrZB+n6XS5S/2zNd4kYpLJ2ojcwZ/wXiBVsvwPf1lOgcQ38cPVltkfsCqMOoRHvwM9ch370qwmNXvg4HiTE/e3JACp0eh1DSPXEmqWWOycrqvrHW9JP+vF93/0l6oWR01TaeVQVuj7T1yBTt3p9vN87nAcJft186imB+9aodhMG2ra1mFC9KlD1eitvGeKxTkO3M8X8Jw6kvT1DnF/iQ9JhussjcnrCMAKDGBIaFbTCPphXAXF/EGd+gdyuUVdL5fHshHG+BeiL/IDHDTTltAX1EMgCwLdqa+aOPxNbQfvGpkHETK2hEQepnFy3wbeTG3QDfkS2wT++lEX8l5H3EQipjz9iUAgiHnXXgNDiP+mds3QmEHD0YwNgQMnglpxJ2NIfsZeFqVQCZjzI++5jXQBqIUyKE0SocJrArxvtypWaFgv862gcNWt8/6o97fwm5XDTbqisNw6yevMCvxnBf3Rv0ZdWXMCBPVlfmzJQ1DiiU5Gtc35/RsACXRj7tt3ODODJTCjfaSUYcU/99Fq1JRxQK2dMuzaxZG16X9a8hk5ICVIJWgBU2JYcJqkxWBlwySAg9CvC8NIZUmOO4aQIQPfQcQFDHrYvKu47HPZCPmbsXkd/hl51cWjL0f1wxuHM8+C89GqN+3FDd5p2RUoz1Uk1gnfeu7Zft2A1v0meerj9xekar11OZdRvkH/HCQVZK95Xb/zFWsoM7xekH15Ylzlo7RcYWA5Q7aZtSXux+qEL77kMLTafzO/0Th5p+t5qgbeNGpSzExF2WgzR43tr0W11wYwVgxE6sZXLnSqWsiq4SFBiKaNBIL4mbixPlZRjLYHgmu9WwuW8igDqsiZ+HJt5XILvczWL09zJtpI1cEciLaCFeL7u+BWen3+RWIvocFMgrn69GbQv6Tp4kxRtmcZDRiWIBSdv7Z+RJIGF3oP8u6qGvWp8Xwr9cj30Xo53ydDz2sNaG/NCyPRuBXOYWhfNt322sw3nJfnCeKQjeMQcIQ2GeNV695ADJaClTxWf0ZjjQOueDy+yJzedZELxvzUSZP0J132ixzGRqL7vFrkpZKRnERS0owpp3cnAzaugSdjigNwuEsV27kxcx4Gi4z9BISwgUQXHVhTvUkv34ecOpnDTlKpvqgFCud8jyx9ibzeIN19J9UkX3dPsSsmM235iuwA4jbtd1+xPzCC+R9AelNBE1zOJjndHiNjdiIfSd6Xn5eUQSTh8RYZBGUGBpAGJ45tUHMfmsRqnjzW5Gn6ae+qT/EkwfdulP4wPnxObiph0L7wrDjWOHX11yG0vHANu6qGnkaSwmuvtiP0AG+gUNn7g6cS72A+D7thKQ4+G1I4cW6ZVgio0S0xJku+2LaqjvnO5h8Zd7iyPRHSdgbvB+zpfTtvusBeO84Qb6p/2T+ZKLcOmoXIcf/891Fh101+I8PFEb9HDrh6MgSIwOLyc6S7SlfykUXREoSmbtz0TSKwqQXBpvEwYWBQcpILmNb+OLY6qbmIUF17aon1rnX/ZzdoeTDwzft4rEBL10TWwpBytjbk9ET7+YggepuiIeRnKy9cYMWrKUWr5qdKUKvQ+UgWQGo1dRbAVkly8ZZ+EDu34WjX5c7otzjXrZ0++gR66fLPtzkvPSX5kKBHKeAJN1atoPj/WGLGyI7uqhkyoOXn8XEs+at9slR9LbeKC8wQUFm9bUYok4O1NgVjCdTzB7NnqbJ0Cfw25LTgLGIncaNl7VqeqavkM/qIoGgIjtfR10plUtXQt3K4XM7QPCLX5osJZsbUUacqX9vB6lI4Vyiuth3ZpI3AOx3xjJPotlYjcuATrtjaDqAs0P+7ofUkd05hRhlQwcl/wPxHXAw1UHXEmLR/JEzlyUq9mIKcWprEpU7zXTDMebthkg8tmntFSOGxbBq2Enfzx4iETDrliv9lFqf51gu4dS93RL3QBxAk7PqOeq4qkcJyfEUYk1Z5xUAdxsdcifm6iUJDEnooCvlCFttzOMdG9oUbQmmHWSl620eB9gpOECmqMA5GGWndyddWDx555tLKwPE99n0OvRywpJXqRy804PuCqNgZQIKIud531zjWD6CvlW52emf7TJS7FR0Yc46imOY0QpOW6bVy7D6lW4YvVbYiVKI9P11MrMwBI8vXVVUhFYkAbCTRjH8e8zTAryY2opbMdw7ujWK8cJKc56q2H2T6oC4Y5naQoN3sIyybmutWbg1l89SO5u9oC4AcjL0XP/Uu5CCTs5Zt5xuwveKXqziqRVeOInCPjgG04AS4bv7iuQapXfkS8jxU8G/znwxinqjVFtaU2FvxCMb3ohMMurtMLFjYMiSxpTXQNCnBvez1Evu4Hij1jokNTermYSycFQD5ts/VRh9kPeoDV8DjrzYpWEOP2vl7u68NeKL34LtS8BuUWjV9f6gFy8SUElZqPIj47cfiTqsaSNMR1yBVy/xpmRy8md1BdFi33TEmxZUf7h8qbFqRWMIoRMC2KavzdI6abCGb002R6oPpEj9Jk3UpFSrqkkfQi253sc1Yc4l8kT3gMlXqJsNg1xVji/Uk09Ne9AGaKUzlt1SdMsbsTC428uJoIrkXw2aZnU5919jJHm6zhrh2gSq5Hsq2mdH1Rm7bsFpkaPbDygR/V2v4JR5WBT80bMMtrjcV+n33tX6t2tV/gGA05LiTOtP83GGGiYfOLjIGyZSrqpPAkKSRJ+7jpb62S28cXGq6wuMVBAYbDdU0IHLTx0tGBApEjXWSWR7j0HlFmnVT507fedhveY6MESt3FW6Jk0qpwSc8VkjvLzt44+j5WXabjvP3di7eBTYdmLO0MKAxic3hfxXdAIN6R72IiXB9E1egHXblJifWG4W/Oa8CleUGyqmFSoPqqTt5NESU1WG1ztCwT8jls8TLngv5W24h42SNbh+gylR+uWuG0RbXQ+ZLYpnND7DpZ6IgMOh9JQTGaUYq6t+IJMie2Y+EK1EGvQFZjXRRIM+qGDnTVqCsR1moguxbeuXRDjPRDjCE61kgNBDkF5iclpZNoADhwCKIdeUpJS4eHPqZAqp+AjaOV6cdOnU9MHFEXBQB6+bhf7P7H0N2amx0S9tVBvlNy15zXskBh+f8hFSwawZYt7kRn169t47aOdxrmXy7qH60zYHJPogGaYX5sy9hpBVY66GLlQsFhQ+huHfIr+rFYGMYvFTvNlsSsceq3p3RwMLSWUATMIQka1Kv31SaJwJiwc+jPA+1lvWG0KoPxHlrdIoDqeuYOgzK3JiVpTgHsiq7olBB9V30x/B5lCV/CN4L20AlwNyI4mlksWVbvGVkm+aTwXtJ7FkpMaCc5IRADzE+GpxsbH1zqME8tkQSZ6vOKEzmYevQwT2NoUEvuW0OWjZngwCLfKybZuIEnILafC2OvUfxtoyUwX1h7yiP/onmlVxluvlQQYpjhQ5hrfsQC227m7ocdP3DKzSaUy2ac0bwlWNG1Hhg6/eOSKNf/1KpJpPExOKzXndLJhUtkECmAgF51OB9jQcb3o/9VpDQfRyPDfYKFEUV3cVdBG/686ndbZqa9yMyGWmIQVeDamHccuZSzdHRxs046xceBJTs/jziMyUi+CmAxc6MSDBl/fwF8MGKps9ccPQdUxGoiYHaZcUcOtH5NWCFaGXEj4LXXPJl9QF+WLyLB36Pa0BSusbycKE+/EaBJvvH4lzXJY6ceW4Cp8j5zUafLT97ybbhAJnbiCLtR9loXjRMS9XQyxmFh5WMKyUtBeJ86rHZpv8V1J4sVncARGW+ipyxOSIDPqT5iy4VI4/IYAJQdkHn8QZUxhYyEewjWqehEQ3nIAemjp/oUXVQ9yKc17h2X2bkWIe0DN+XdCLCR04MOy4eiFQxfeDRswVre8PK/QslUcOkZpF6O9EV87Ok9uQWRfHtYVYu4vRNZDS02YYeS4jN3u5e103A8Ix7+GOR60Gb4G/SYKNQLiiIAhNiFWgOTNmP3n6eXcXXUCnhGoIlvoqVW6sp0k82RX9WJYeYMRQ8E9HW3A5IL8BqzQonB0tsem5YV34VrWScm6OmSskZoTOvZnfm7jAxvvQ7jbTqnNz70/sP0SKxAWKgcyl5Fg8FWotLGUulrOYrXZezbuPvOMByy5NZylh8CU7FV9hp3MBiYq3V/yv8NNJwcabR4lRDPG0zy9vFCSRSguXqTUP5KCNPJJvz4N6XA0EiUh0kcQjGgatVDJTgW+Ykwn3IxwIQm/u4nGz7xdenFLq5bYS6loAmfiCmNi3m7AqVwD37nd0C8z8CHCtiPLHjWi0oNpCjEb4uhsXq8H43M4ihOcr+RmcnHUR68mZv4UKCyuNkfPg2H2gwNLEBbRzgGYGILMExNJM1Kryr4YkMqYtnkz9HgrZ0ue1fk+fsDYNrRfuloozBCBcekqNpXFJWI0HQzqRWv1zev3jYWIHWNqMIWRs7svMOJhWzXqOaYiV39wGub079i188pwCmPayJHA5uc75ElbnsG+7nTq6PulQD+GzbqaUM333uu8mzj8IhSMnwpbgdd7UCvK/RyoHHbweZtpanJnj7WHjuheH8q1c7xLSMckl9wiEaYu3gzd6PELYVPNbRmK+b096Xg1LhKBsAVsSfIRNTMForz3xPvEKgfuTj4VkgGisMpROztP44vvpzp7IboCoJPno0DfRMCeRQQ2LE5NSy4HIAUK5WjtPFhUnz9mUoOTuGnn3nqEOcSOJed9eH9BIJXY9WSGVdpyq3w04D2eVYvW+/KR7qBfMlvIaYKuTPQShY5NUS3kOCQIOURK7sW0FdTo6TdJjZXVAXIex6vElBJpnBXbtPiMQp06eCERMZagCjlKzWXjgdBEiRNSfEgXDQ+s5FpBgCwLwmJav+/U1mk3o3KPnjqF0ox7cAXbQ20kx/YKXKuHASormgBwQSsBn+fYrP5O19z6KvqvYQ347mEFXUnusCJCCcR7LxtxRNFQ/1Dn3m5C5xzNzZ84LkrwVS5ZtblE1r6zr7KfunEkKMK0GTUIipzRcUAQVSnnbf+kKk2S2iI24Pr6p11pU3YFC5XxA7KALRKLVaFZ65AbjRYrTQjS8s3UJL5HGIAvkB5lcnqKf1keTQ5c5+EVNolOs3NzjqN8kgD+3EA7qh4QjkvBdsBFlkHlzSP8CeEJu64ijyyAMie6vxNODPYhWzbnM5OtIdXAs6u8EvcV0si4hKQAoyxhYIEF+JFFCk83PM0kpofzrFtGJ+Ly1GKuRY96mkF9ZvuPsh8lzYHQEaloG6n1Yow1hC3uM5Yh8+hMysdRKLwRMiYOm3r6T9BS1G054KJBZPrZIdD/W+tGviUQEV9CesUDJvfXe5OFY2LSff7zrYsidLjYJD31r5db9HoWRlDLDWjfv0DnRp75Hk78fipBIX+fC2IfhAHaGMBvZ5hvBUbwdE9zmUH8KqtccCUaOHR73MG58pPFldSFHSIwvwQv5pchghExTAsF/NLkfN8dzx9s1yJkJEgs6aMvcTub0zH35X/X11whfvKEkiJxny8cCsZsScS1JhkCDZoKUKHFymjMHZNw8JWmuE2Bn5MIUnvrxb3zPzdxiM78o8oYqeOTThoJCcq1RJuM8yrK0bmLOAdad7Ks2Wco8vmVb75zY/ozgA7y/JEnu0fNvqzx2uSvL9FDy4H+EUwIe1lHW0L5IH/hPsmb+E9X3pV/DQLpQPyDlgaMwbcLhRivOJbzTudKPrs5BakDbhXkwY+rk1LwDqpHAnrVOrsZBoGIuOu2RWYqvMrqvxKeCUWxGo9GAXjJUC/ADgajDf7YS7oaXj5EyU9NZ2jo5OznDRmPIV2Nw2jJgkTkL3G9yJVvYf1GOt7FSVUZPihZZ8r8dNe+ysuZRjhxPmMUBx5LMwBHtFqSnORAEth15AJxNyGEyFNDgyt/yTqtVFfgULGK5L+AH+at+pw7ZdkNbKl6gBsvCPdmrYh3ySowdy56OHDL6YP9LqK6d5B6iD9GfLgiEcQVtnRx+/Nuqp7sof2SDbuzMG//S69vOMhQNa4gAADzwL2PDL0arjdU1B9h6GqXHyT2ZfLjxPEekmX7UUkUmooOn1z83wCCZgdtfrSX+bYO0/2bpB6pCgMbsuziTsngV6icqHZZTem9R0dmLNAR+IE0MvCA386Lk63d5Wj8koygmR9veg1rojOK7Wdpli34+PTSweg86EdqHAbw2uu/aZlqGvtrwD70Za4h7c9MhrFovsZNQa8BMu3zeM1UzV6HANlqLebUz4QK5hxGslu95f0CLw44rJt2nVgszhIOwWub25rRqD8N5Jrgy/7beNeXCs8K7WJ8n1SYLB6MRfiAYzzei3O1CuD/me0vBz8aQmt/OnZ0GzF0rZxbB+Cl+AYrzqxNy9+cnHl9xK5rfRzwp8LAO+DkB9gPc8yoaA/qwJPzuAK3j70E7uTubKybco3cHqTJi4p2Rll0JvGLxdvjJJWXIexSb6lRJKcObALBLnvCj1yNYHLR5VSW6pRBFxaA/TRLtwCLXLwL06pYqmwnIZ1NlfVgONHQcHkunx3QwqpLdRYhZ69L0SKukpMdHlKNH4DwmUiA/SOSgZMyM8+3asvHci3s6g+pK+LNPQgXUPksi+GQp+Q+JkRhs4wuGZfi9UpgBcGXvBCIL8r/qktiuBB2uFUYVnnlyiuagDDGFNeoMlvR6F4f9ZiGuJpvY85TxeOesBiKOhWVpY5lfg9CECJf1zkjBuVQP6YPLHZSb8DlqkR6DgIdWqVKbv8/HBvSmDsk5ti8QtcHgTfK0ZBs5O2uzT2Sj7f/651in2b9LAGAukyTJFC+vuB535HbBVh1wA37dUVnqEFw0hEstQXyZlhndkZwDuZuTG1NQtznsbVnK5VH9JDEDxtFx7gL3bOfM6FELtAfq7I30W80BdtOWpBWaj0BV1oPpOCie7gx0RkE/kKMGaN+tiZSWrp+JlKGcACswoE0N35dKVtXsQAHWAAvjH5IZlkS+VtWNb9dL4PovTH+wAYTL7iUxDmIx93yR6LdYzdrq4lLYGtJHNdPy8hAis+I1UjHSKG249u9M2K0M61iVSt1EtYvPAA3m1E9os276AWQwXb8Ln99fZsZiAoarfdV6nHT1UVATtLMqMH4TkG2CVDus6HQ+27l92Ntih+lMs5v4grf203ZaEXyr87fGLf9yNQk68Gu8HtzTwMBhem3qO5Cl+aHOLWClmj17SqaLgzDb0Yku+ipnp/BsoGhxenCKR4oVdJEiV5H9nSVMW2yuXZF7f4hQle8wJLQl5exz6SILDzc0WgbRLMA6VLxIQLMgEXLZKuRzXv2nt3sj4SkqvMeKo4tCaY84YSS2FMtqKqioq+pP1yBL8J1gVCvMDe4LlFHTyaEWLsWCEdxwoCjQ3kBRMHx7WJogit3rd4CBpwTn8vV/OXAI6TrHVSrgr+85EaevC5pgfT8Ma8eCo2/pm0litxbovDpXaZ7Ug6gzNNCDkqLWI5b6mcZRe7L+YUPvp5Q8HYQf5hfMm1MKmZvFX5cqAdp6QUNX+IBhjRGi6VmTYPj2lXKNt7v+Awo5HDmZf7aTJ+qZaypfqK/Mxq+EPtznhpOjOUeZRNh6I5Fg+ixOUdrXSy6XsRkiX99A2EBgMDWpPMYNrjeUoGbLzTY0vFuFjr2qGSJD1xb4aMWuzua3Jpb3OdMHkPwEa0wA6pB28QJ6QINoluCykZiTzojKguqUgBvQ0lKKq+dziARDKfgdAWD72H1RznqzPFRYuH5Y92jMLfcwFl4sFeAka5ygcIcyzjVFHF9Lllv7M6g8k1sKMG6K2UJDS8y2eIFsMVZ2tZVblVVECYRNTGDC3rVXOBkpDxXLtcwqay8IR15NZseB4QywkZ3fxYa4BMZSFlrSukJgNF357yo2lvOU0cHcUapu2O1mOPhN3thOGJzitnLWj5vAtkdPSFF4b3U9clOyeoQ+E2AAZEAT2ooOgftTfEN9oWAfWdFCZYtGemJggE/UAxG9fV+yfyBQg0u70wi/2MMveJ+ADjrzCUkq5XVLF1RxP1GdkoG9In1QVH5qCA0lTcoJQre+iamWo9/3TKnJ6sh5uspw5nX+wI0C0Br35G62q7y2BBAOXOYbM9tJ5fXE54kBTzYuWRn+FtNAk0h2kbpjZehzcy/5oCuoXstUdlEWmftANcEisjwCvAdvSxXtAyUeb+lBPfNVWH6Mr4s0Mvne3OOPtQV5L1HVojqrijc/7q7bpwc/1PeK4/9GLtrar12iwbRUr1bnAdgwSxfAd5F2Y+O5Phqc59LstKh7UvwN67IHZB1InH/Cenn30yUgTo5acgV2L0zDl5lGbFWptjwRitTCqNbSahMJFva6vCfU0I3N1uEka13NZCtj+PBcOh4/1dNiLs26pMFs6nBE69Lh5k4/7HWiJigdZ9Oys3bxLBcGdVocWeYfRGZmW7QtsWihD8N7GXXtRTogwOMkrIWqj/iN/toKrpZWCe564n589bzJipEvhwFZ3ntexlKsnm1MHs9fNH3tP6OZo70YpeqGouwTTMvdr5ciy6imAUbgGnxbqTwiia499w4VSMIxdOMvA5S4ZW8VPKT1NWbXmuqqYI3onp/PYFsWPowRjyoB8aQDFJJrr3LGKSVWtPWAOH99y1SsEC8hhDACLfMKm+ecZEf4e3NcC9J2bXlQwvqVKYh3fzUcFchHk1K8GcNOdr/RnS7UeRG1zAqcRnzfC65G0mL64dQuzipJiDrnay2K8G0FAAAALwCBeBTZRojfnbmnX3n1PzQDAfedRV0HCHOL6dA2ioLmUQSgIioQlojifbZZh+4vyttp1ZbV0OOveP/XWHI4ORB/oD7uqu0aXNs2FDx86sCL4SZ+Z5REntYF8CoWtbxMXuMuV158uuAR1K5YUMy9RTuyQcZPcpODmcKz0mKaCHgflBzUSym18H/QiHb6JiqySVNLXMSAAmIFP4J6Ts98b3Z3mdmA5juMM1vJUGRTIexi5HHclZUpuEBA8gRgq0oM74efo6RAvr1uBimqbZ1ZWqvkfZak2U6XIex9/h+0J502zoHW8z/xR52pgAW/xSiUgobRE68PMNdGAwT4MRDKUqWVdJeJjyOZoawZGVTn2aDQVqUZotg3nTpUo96+3wFR4HZC3ZsZlDMp4oLbl8waSm7AVVyk0eOL+yAbm5GH96Y8lk2BDhgD7rIQ+m7r8nq/yWeQa93X7lJEwMaRL5ZTXsvRc8RTeDaP2ADtAudyXBW91rq7K5UhJjDMIJnzrbX8rTCefjQZDH882ZpZIYQwG5IYQwGfS92IpGgzs+xf5h4g7mXosN1S6KZzWwdsT78g/OjhFo4MTh7BMx6Vv11f0z7fr1WAtLlD0jYtJdfFmjhV6VSjejEqm66TUn/3ZixbfySyH1OLcYlRQAC2bDFYFYQBHPNxcaQt7LDlpskiuv/LQbUBNfydZPJo4uwTyZW/SZ54VH1IL6lrtwJpqOw49yuxRgMJSA0VyfHZs/Z6CwxuW/vccpX3TSdCKuBowjncNWggr+ohPtzrjZuwGDfKI6/4LWS7w36SanK6TzUc6Sfke3MXNsHDnVmmtNa6LFdStppsM3Dpe0Ke1XRDkLFdKZEP/KaMAjH24k8TDQ+e42Yc23JBWO4POiILOepRxsB0woDHRAISN5gz+zlS2dlj52v8fEJNnb3lFCupwjJ66IqRByMYynUdfo86mITxz17a4msssNqDPfldaKG2KxNWfyKBoRb1CLyKEDFyq4BU6VSXBVqjFoev8+sJCKqQmDXg/Z0v5cNWSLWVCFlmT8rn2VDyV9ZirYNn8WdZ1VC6R6lYm++nA8XNvS0TdGZGLq+cJJT3fvlDyUKogCeo+S/z1OsWXMgpx9ZVh49w8a3VrEUOjlx5p3NSLDIZZmmCAuzojOw4eBKJbyl5DeOeUF3XBp4BkSZlh4B9AkCdBtOAAAADqDoNSZ7YWbwotgbptUcOEe7uxPGrYzyZBl7iWkOAbklDKJg+EjpfwyytBBdieA2CaUvrwqRvDNfiJAQWJQ6A6k1W5KVxuwAG2D8PP5K7I+tRcRvpYX6FBGi8QGgHxc40mEtizEdPpIwsqLF9R+SJUHaSb75qr2EYD4sr5cL2eFr3fMzY+8CCMNgemmse1cVch/DGPEl/3n+CdznHFsUogOKQIDZHML+uZsBXi9FvmT4TIzJ8j4fyVtqQSbcEV4M1vuWpBk4Oaux8PDHEt2Tj3RiNebGIz33kCyflnqA3Oj+wokDAu6xh2C8/DR6Vd3SLQS2faLsxF2d3CpAMqehw8UND4IqXLuUCmfjwb3/he2xJFSGQqKhgeWQMje1jEGWniuNsY+qk33vszNHzllt9GoIq7kbjQtaVXRwliue/cIRwo6VxgUMzTXN47RgTmqEbY/Di1zFSohgQBIkAlLwljbetkDDFR85Cmtair0+NoDMa+8IAfKLaHRej8DStiZ/4DGSLMqBFzbQcN+jWDgO4WHbrJCCHNi/8e57SZu11eyimZxsXZWfcOKKLGYDmPFMuMJTrtgSbQDjmOpqXcVfJK8RSLEHowZ/Wmf8ytz+73/WyYMqe7zVd1+Hv4tr+amV0Pkgilm9lncDsY9z5I2YZIJYzDyfBqF9S+lbgF5LUJOIYxMK9ljHC5R8ACinY+cPT4M1Kws506IXNbRabKmjrUZklVKuLDawwa+KN9lLLoaZGufabUhYuODKbxAwhBJgJL9WEp/GhvMMDIzm9w1JLP6cUp8CFkmwZacSWVneyT/y00npqQNVqdnKS0rLpUcnYpoQf1io40dawn9pJ0F7N8FUOCEqwofRhVDgf9johZm0hF3Wg1IHNv3GINvg6SXsBFq7TdkcUTz2O/SKCSJAGpgBLdJ81xR9ri9MQmsD1aDcijM1Gf9ZgTCyoOA1IUHcG4Nxjp9BBmZddSGfT/91G7dkiFsWS9CCiTjXhacwuv8ANi4cgMU4X4XkR5FW1ps1UoQaF2MjbBb0tglj1XNZm+hnlp/6vTJzvlTubTaiLsCS8d+vbRBenNkqA+HK12l9ZGzjJNyeOJD05P/r8bxma/A6FLUXdycvlVImcRHWEkU5cLJOhIzxKxny+Hv4X2CxZtnlc7vkXFiMOSSicxB761ctGDMkCYB5esqXCcTVJXNzqrAd+iF46fGWh4OPtn6EBU2dS9V3ZF3qpNkamsDmMn4KFPbyCEaKhRiH42w/qugZmkAuaBsCqNc+PApTR5ZC18VWA4xTpUgjyIpmEc5swYfpVMGT/RgqSmgaCMllFV34J4fLSez6SQ5YtHFD/PwkGNmeYzTFrcfgoWpAVXjmT93ETlR8QauaiAuMrkEAHLQ/LThx2ielwCCX3JRfmsv8LGz2aspTtproYFPISIIZhvEJ/4Z8TPnQRSp8QLP/3chFKKDXuPEmMybgg7yGIk9UDp90WrD+NAcYJcbQjd1YTVKZugWnzfgfg3VZqWujvOcGFkds8n/T5jOkOtTpKPUpQvG/BjynTqr8v8yOJNLI59HvSYcfPXEudSXLrXIncK56/narTd5iP768mVHjqJAVjL/mm1r88ecI+wYihxxHr8lup+g0qEY4drGHM7OvO3PXPnD+PBZt9YxWBQFCGIZeRieED0lM2WedBstmn/EhiMl7SpfJClY0IuftKi211tdfKfzviZJLpw0+o9tqVFA1SrpJIF/UhxTwSdjJUFLVbtTdL6B4WCqifvv/t7oVVTZMaTF6yxi5HIay6pkFc3Lyh1jU+b5wHy+Hc066Oz7AD4rjR908CLTL5jgeN0wm10px4ncMtbPTw6xq4eYeDHPXuE7aTFuffl5AINaK3e0X6pZ0hNC9RKvx04yQAV6YQKIj4KNMLBClWrIp3EY5oncsnsDC8NfDE+VJkD6uOPGKClYCi22lg+rClxFeh5S5Sl/RCuC+BqrUhaHT8GDIaWrVdwP9QxGpbVl1PQa5gxoGtv8PMPMEJH5+NbzpGtdZNKYzp5T852VWaFypvOXp8X61YogeLMV1eWR5SbEAd5iuSkWO3MVzxUNs1u4ArYPxhm0J4ez/H2XYiO6MDd1ohExxB7eGs22gPKoDsMOQRqgO3Qg051z0R8xpInNKqoP3rzjxMkR5PvGMru5JOC28UaeswFzmh7YjuBjxEU5cmhYHBr/w1Da7G5MgDnr0fyoFWrrc1L0i7bn4ogmwH91ZqtdpfP6veUSjY+q+VBWgToM+la8NLIjoos62F/RcSJlluXlssty/FvmhaDAmBvBoEdjpyrqMfwARglMcDjnSEwxcVPh2g71K5PaEWOOpklJFpmUc2Kp9ipqrT6rvdqoYKuKOlnXpHGEnwsTIgMAAANgAAS2bMl3ZpQywRvvQEPuo7K+vJD2mtI77uSV2vkDbreHaxRbh3w1YAg4SYfVImYmA7SqyKVzsBc6hh8jjlKkWF2mGBb7hfYlKGi0fVaBMQi0jcH2zr1vbcTd0366+G3ke2zJFlubGQBLnuwtcq8A3tJCScdvKuKOvM+T8OjcQPFt2WXf43wm2wxtn23ukRtAjaoRsczSfr0t1SFYUUWUfzMZLroOKMALekuLPXGaXvo74B0TK2p5jPqLBF65zw2UgX4UaO2/qE5gnHoGf9XplTFV8n+/u5W2K+5crmMXLwIoIoT6FfPShdxliny7wU5Ns2aL2cCLRZk5B/S4vetoeD+q1DwgrBc9I3vTxtJulSHSNNM9MLGAEmAygbx777jlcb8+FVL5gap+euGO04XMiQiEzHRnl8k18RHB84N+yilMYalvpzQLJXrsgdnacTEvsNLhEBfAAwMAAAAlMAAAXXs2JjPwVjC9Pqq85N0WH3cwgeoBrcio0/v9ImIT+2tQBAgK9fu/tX5A4wJ5eN9lw1FbDYBh3za4nq/EmWhy2WD6YQMe0jUrKuHol3vDMLgmBT2bxI65u2qvK698K2UJB8/rP2FhyNN7+jeVXTtCK/IfBYZKmlo+BItZlfspAOacmAAAACGAAAGUDJm22f/pRz3BMYkqyczMFW0cg6fY1wNuiV0jQTegiH/HWRccFHwZlVF7AjVkHRzNlRiSsfQaIxPknxKziMoXy3tyYKplrX2xF5ihe9Af0wIe9Fc2Ye55MKzdSxIPcpHERWbuvJw2wi6oXMPm30XELDJEwrQRd+KtrlxT2O5dS8DB4je3RBywfQ0KAFLB0li3zE/rWhOXPrz4liNWftfufP7STOL+FUmqCdyWRbAAAABWsgR+gAAPWT0K/8rblNY8WcUKiGDeFK1QLtSFVGfPuU1IZL3fXnIyckbU+hrdXIixGJ40a0WaUH3JLqwCnsW+6kNB8PRCdklLz4RMajjqVxuHbqx9BFZOKndOcDTUwXOxWIcgP8h1IJ8LjBHPtoQWAUPvGmcsljcABKZAyd1QC0oRbYOQ8SUfn9GHMzbUjf8iQzfaQ4UKePP9XgMW5bCkKJZOEAAAA/HAMSBhHSkiAAAAAAxpYYAVurKiICCw6O/+zrdu/HHayvYj0BfS3xc/1rHsIie3X8YLAntiCgfQeV5FpYodFh6AvvYJyBi/rHZsXCo2Yjc7kWTvbbVuEvCOvzFb20kwuHZ0sXOpHqMK4fpZfDRZorJHYRpNht9qXhZzqO8uGOLOkyCU3F4aAiijRQgcucc/LN68HJuh/nPGqR2Niyro7byn9db7kBJq4SkCKXrft38s9/D7LGpZfmJXMVxKdfgdcA347XYMqcTXg9xbD/iPM/e30hcVcwIHaFMIetGKfR8mCcwcSkAPyRvpOy+ahLisH3oIEe1N8jGWARaUOiXZsz6nCOFQvACH+s3NbWXP4MepOi5p8sMvZXw8o7/F+OwDCclt8hXIB1OLnq7tw3XzE3lSm4uxeD47G2Wu9a3hAap0N9X0l6mNi8Wr1Cq2H7i+x5lxFEpQI3H5YNO6Dwg8ZrJevYfOYtr+X+8Xjd8iDe8MadrJ4Rkn3jZtDz+2e2I0t6NJY5//MhRrwHPjA7joXw6XIpcl80JbcKcsOqS4Ya/Y2cSx3PAAEsHGyFmtUma269mnIv/Tfc54U12ahLm95ksyPtvwtQyUuH9VxYLjo8XhNp53tH8GSZ9DoDO4eFr//F53/9TK4XaqQHn4ArDa1ch6uDOszp4ESMGkQ+GGv2NjjRRSWJt3VxL8c2gVb43CasLIe16aOqF4GYCqP4jFTpGbkfV3tGD9qBwL4uUGsWZ2LzgSNrd7L+nYVHf4K1apvpVWMSWdgp7g4xu9T36BoudOuIIeDvLVRYrsduyo3jJwg0z5O5rXiUHdMKg53wy9y7Xo1cXp8O+NpqDqZ3w0pgtLkOoJscoq3kM2igKuLEmtsHDoL3PEsD4e3QWxaiZbqw2u9POibHUxi5lilTJm0cBhAeZ8LouZH2uIUEymBVrq5/VoqmY6BVI9D1TkFuYJZ3BO76IbP3GgSUTh7LO90+aOCy7GHKuYinTaCqE1+X/jeJ06JCARFwiT02OGAjWa9eqNoHC8sPizOUcFkKD7zcB18Cl1giCboMz5/5d/gIC33XNZH4Iz1DC2pH3x+4ss5n6Ed1M4nch5nemGkQSee+NuVY/9BHzU0T+BPCx04aojLg04k4WObbY1F2tiBx5B1nXg2OsIbaiT7UCsd5Qunu2TDajAxkB/3z/LJZydq5TtpctChnRJ1caJzqhxCvzl0/LU59oCmYmvq3v4UPg9wTf7zqKeSRHeLZn0ope5zvwH7wSL6CZIIl+j9VRekEAMRETAgMsl00HFMP3G7B/7XNN2T+n2O2IjOXT1VmdNTCynv7iaueFILe0nutDFc0jdRERw1GtWVMKZwtb/51rM71tq1VgagA4hDP998xqtO6FPppGztYDz0ipXHP2be1vl0Gc1URbvNn1t0vkfFn4ytmfE+5z0751xv2AoI9h2fccRb06c5R/AygWqSPbQkvIm5zWw5y+AJVEAAAl6n4ET6j3F/D8IzfdMNwaWXdPjfHFyBfOSkWhNQBOKnPOfEYYUrzKR28s3xbGPDvN9eSC+SlLZtn89JK+xVdI3ZtGVwj6uHehCGjXNYrJt+a40j7D/+N/JZyzM1K94DOIzjQaebbkBeXbvTJojbK8oDqyybymORhUWBoCR/UoGKmbncJccZGiTarvp2BH/OqljZov4rrZHyGq3mT7YEyP2Mvc0j02JoMK1hu/TAuZelX4BCzDEhy1BGWiS2AMDYj5vXGDb6RPPcG/JVdQxDqHP8PuYXKJOwrEmcYAAiH8XdLJtfWZIxmroZ+keVKu/2ZeJmw9P7f/3Azbszv8Lv9OUvUhct1qabyI+BFiK/nNaQBS+oR0to/ZOMiEFNg0xjKpnQ6VN4hmXUjZcUG8zCU0gn0mH+eA6j4vUfLP4tqzjpGmfiMOwQJXhEEigPhFnZY4+0I8Ufop9ZbuVrVa6Rkhay0mjYgiNU8MBtbXhmGsAWsXMBCVKuWX0uk9K9/gXGgTYqr0c7b6zdiuM/8Gina7By+tuiDmvP9F5zfNxrFvcEmK1GorW8W385c4Y+bgijncJZ2FAYKrOm5aKuBqWnZGE4fkXpilGN3Pi+EEk+FapHNkt+r4OdLtp+B12SvSGwnSs565BUyR/lM2qVJl/uI+U5UX3UyCdsM4Mf+GmJnCz4z7L74a7RNgc2cm+MMEWkItl9mskIQuBWCBZEWczF+OGwIUv1uEfKqlug4sF2RlOq3RybfbGgZHZkIShvMhNDbjKeZAn0MNelA7WZ6AyiVbpQDEJ9MNMf/DV5lORIdPhQKQB9B2gx52lrOsMEE0Pqg8DzlsaRDrkxcVb18IB38Hz62tZBC1Qc8TfJlF4GqKVk/d9YrBjx16271J4eh6Z9qArPBqfjUTTsq8nvRwP47Gaz9Hq5jsf26AcPd9/ayN50hxzihduR8tUP4WnNDzwXR4sHG/R1tPncPacOcVneswncp3kU4xDZwRxwGa7cl2IOb+NYoZzJArbsn8DTmDNFPCDwRyDSwP74lLzUPbkGEy0yMSoSc7MxP5UnqdXNu1drdPzIOpW84/gceUKt9y+1rR1sGGN2wNnjvLJapTK795lk73am3qvys82jF1Y4d8RrSCo5sBjdDpVuhPL+t0bqn+SVPN+8jdVxv1OuGQV9hna6QfRF7ZYtHdLFt0/O18nNnv2HUSZKQIoWB1XdEV0jDwWt2nU3aeyDZDSmO/5t8PyobdZopIP8k4Z2n7IZHQzjte6vyOZDyuMjAdY99XBW3DE8KO2giCLEAGz48k41VCICMAwV5d1aCfC5sjyX0OcVLwkfBPLX6RaiUSZ/So2w0J9O0f/nC+2nwASku0WROtX5keMacrKdKtTbxp4BSsPZjobQVyeZJVTCkZdFTKrWqLrnief2PMz96qKXYLQ6EnUhPUpD8rJTzqyt3/vzaFLKd8nh81DB78PoANv5J8pD6eN5zKHm9YRXkxwFAHiNahLC6XxROXJNwYxd9xj9qZf5Fi4ZtesDN3vSvtdDH2AmkXfJ2HAJlEeGIw82+7BTmXlUN8dWtW5pvZtdyppoovuwXABW67KY62LRJQmQQvEzqVMH7twC6jzN2uvrWAFoz7ACukLyyhl6gpc2Z6elNnjtH/FLkuGKasXERvGngGHaruS7O2JhF+zgHaIO0VAR1PvOyF/Gm2k/OYbiCkQAb0gAmrso//iVQxm1Qkrfp0j/AGDyuStwzk/jl1uxVDttXdUXvsjzhHlMuWFtb5Ojmi20yyVCVhVsDlv635G7wnxrulmxUmxcU5kYp5t2tPMkk8077kI8HoBhSUcKFJ/nYUqFmhbU/RN9B1KDHTfDL+c7fQIlethbs3/K33ECj3Ztb79mn655BnSm3+Huz8itqdrPp5ciLTG4tgKiN1tqFKfjD13Ouv7KNxSaKLpdP83a9uloS1kjZuDPds+uX2HdJQjAyEYuRCDqE0N2zv5wVsz7IxM09xMMgcMPAsd/gphU0lg3lsi2Wu/XV6XJalIAEbpAMpJkOylRBRY+ozY+sv0/W1O37FmUn57V/ZN4CSViV98XtLeFhJN+jd5HLnk8ZKsreDx92obVLuTJ+r4uFhd03VV+/x7pMSLIUkG+arA/26QsGjK4hIuK7OD/asuOhoQYY3nN0qopRXpOMO+Ah7+2ziCmgXSLDEAvyIUrLa4HgZIk9f76/NGwkfttKjCYf2WKssr8wEz6mLut5lb1L3ZKCwIUke80SVXgelawycE7IrTAa0/0lpPcXxCgmYv7Egaqd2x1CFxKIHgW7bzWN9ijK+S+EQCV0/Mjfjhi9rcMcY8TXD82vc+KUqjb/w6yT2W8tycxVMBeP2D/q5QWVmcxwbhDBwijedEdqfPmGvKXV9Hl9/DPD/cme2jxg09tnoZrm/0GqlFWjyO75HMxgBz8l/dWeQPMtNKkmVizdg/EJSpp3Wz8rQHiZot8+1nCZ3lbq3GGQZdyp9pWyw7cQMBKvAFr/m45vSAkhtAJMxAs0kADXwAB/QB8j2SNoUuEU4PudoBzTAAAAUodFo61sdokIAAAAAA3ujAAAAAAAAAI5AAG01IAAAAJpBxhHpXPAqElVRNEAAABQAewAA';
+    const emblemImageCandidates = location.pathname.includes('/outbox/')
+      ? ['./kyst-emblem-WINNER.png', '../kyst-emblem-WINNER.png', embeddedEmblemDataUrl]
+      : ['../kyst-emblem-WINNER.png', './kyst-emblem-WINNER.png', embeddedEmblemDataUrl];
+    function loadEmblemImage(index) {
+      if (index >= emblemImageCandidates.length) return;
+      emblemImage.onload = () => {
+        const textureCtx = emblemTexture.getContext('2d');
+        textureCtx.filter = 'brightness(' + CONFIG.symbolBrightness + ') saturate(1.12) contrast(1.05)';
+        textureCtx.drawImage(emblemImage,
+          SYMBOL_RENDER.cropX, SYMBOL_RENDER.cropY,
+          SYMBOL_RENDER.cropWidth, SYMBOL_RENDER.cropHeight,
+          0, 0, emblemTexture.width, emblemTexture.height);
+        emblemImageReady = true;
+      };
+      emblemImage.onerror = () => loadEmblemImage(index + 1);
+      emblemImage.src = emblemImageCandidates[index];
+    }
+    loadEmblemImage(0);
+
+    // Calendar-event constellations drift behind the hero mark. Their low contrast
+    // keeps the event layer atmospheric instead of competing with the logo.
+    const BACKGROUND_CONSTELLATIONS = [
+      { x:.13, y:.23, scale:.82, phase:.2, points:[[0,.22],[.19,0],[.50,.11],[.72,.02],[1,.28],[.76,.50],[.44,.43],[.18,.68]], edges:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7]] },
+      { x:.79, y:.19, scale:.63, phase:2.1, points:[[0,.52],[.22,.20],[.50,.30],[.72,0],[1,.18],[.81,.47],[.56,.65],[.27,.61]], edges:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[2,6]] },
+      { x:.83, y:.72, scale:.72, phase:4.0, points:[[0,.18],[.22,0],[.43,.24],[.68,.12],[1,.38],[.76,.64],[.48,.52],[.18,.78]], edges:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[2,6]] }
+    ];
+
+    function random() {
+      randomState ^= randomState << 13;
+      randomState ^= randomState >>> 17;
+      randomState ^= randomState << 5;
+      return (randomState >>> 0) / 4294967296;
+    }
+
+    for (let i = 0; i < pointCount; i++) {
+      pointIndex[GEOMETRY.points[i][0]] = i;
+      pose1X[i] = currentX[i] = GEOMETRY.points[i][1];
+      pose1Y[i] = currentY[i] = GEOMETRY.points[i][2];
+      pose2X[i] = GEOMETRY.pose2[i][1];
+      pose2Y[i] = GEOMETRY.pose2[i][2];
+      pointPhase[i] = random() * TAU;
+      pointRate[i] = 0.55 + random() * 0.75;
+      pointSize[i] = 2.2 + random() * 2.2;
+    }
+
+    function makeStarSprite(tint) {
+      const sprite = document.createElement('canvas');
+      sprite.width = sprite.height = 32;
+      const s = sprite.getContext('2d');
+      const glow = s.createRadialGradient(16, 16, 0, 16, 16, 15);
+      glow.addColorStop(0, tint);
+      glow.addColorStop(.09, tint);
+      glow.addColorStop(.24, tint.replace('1)', '.42)'));
+      glow.addColorStop(1, tint.replace('1)', '0)'));
+      s.fillStyle = glow;
+      s.fillRect(0, 0, 32, 32);
+      s.fillStyle = '#ffffff';
+      s.fillRect(15.5, 10, 1, 12);
+      s.fillRect(10, 15.5, 12, 1);
+      return sprite;
+    }
+
+    function makeCometSprite() {
+      const sprite = document.createElement('canvas');
+      sprite.width = 260;
+      sprite.height = 32;
+      const s = sprite.getContext('2d');
+      const trail = s.createLinearGradient(0, 0, 260, 0);
+      trail.addColorStop(0, 'rgba(88,170,255,0)');
+      trail.addColorStop(.68, 'rgba(110,216,255,.12)');
+      trail.addColorStop(.94, 'rgba(208,252,255,.62)');
+      trail.addColorStop(1, 'rgba(255,255,255,1)');
+      s.fillStyle = trail;
+      s.beginPath();
+      s.moveTo(0, 15.5);
+      s.quadraticCurveTo(205, 9, 260, 16);
+      s.quadraticCurveTo(205, 23, 0, 16.5);
+      s.fill();
+      const head = s.createRadialGradient(255, 16, 0, 255, 16, 10);
+      head.addColorStop(0, '#fff');
+      head.addColorStop(.22, 'rgba(213,250,255,.95)');
+      head.addColorStop(1, 'rgba(93,194,255,0)');
+      s.fillStyle = head;
+      s.fillRect(244, 5, 21, 22);
+      return sprite;
+    }
+
+    starSprites.push(
+      makeStarSprite('rgba(208,235,255,1)'),
+      makeStarSprite('rgba(173,225,255,1)'),
+      makeStarSprite('rgba(213,198,255,1)')
+    );
+    cometSprite = makeCometSprite();
+
+    function rebuildStarfield() {
+      // Resize-stable seed keeps deterministic captures and prevents orientation changes
+      // from visibly reshuffling the sky.
+      randomState = 0x53544152;
+      starCount = Math.round(Math.max(CONFIG.minStars,
+        Math.min(CONFIG.maxStars, width * height * CONFIG.starDensity)) * PARTICLE_SCALE);
+      starX = new Float32Array(starCount);
+      starY = new Float32Array(starCount);
+      starDepth = new Float32Array(starCount);
+      starPhase = new Float32Array(starCount);
+      starTint = new Uint8Array(starCount);
+      for (let i = 0; i < starCount; i++) {
+        starX[i] = random() * width;
+        starY[i] = random() * height;
+        const depth = Math.pow(random(), 2.2);
+        starDepth[i] = depth;
+        starPhase[i] = random() * TAU;
+        starRate[i] = .24 + random() * 1.05;
+        starTint[i] = (random() * 3) | 0;
+      }
+    }
+
+    function resize() {
+      resizeQueued = false;
+      dpr = Math.min(devicePixelRatio || 1, CONFIG.dprCap);
+      width = Math.max(1, Math.round(innerWidth * dpr));
+      height = Math.max(1, Math.round(innerHeight * dpr));
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+      }
+      emblemSize = Math.min(width, height) * CONFIG.emblemViewportScale;
+      emblemLeft = (width - emblemSize) * .5;
+      emblemTop = (height - emblemSize) * .44;
+
+      backgroundGradient = ctx.createRadialGradient(
+        width * .51, height * .43, 0,
+        width * .51, height * .43, Math.max(width, height) * .74);
+      backgroundGradient.addColorStop(0, '#0a1530');
+      backgroundGradient.addColorStop(.36, '#070d23');
+      backgroundGradient.addColorStop(.74, '#030617');
+      backgroundGradient.addColorStop(1, '#01020a');
+
+      vignetteGradient = ctx.createRadialGradient(
+        width * .5, height * .45, Math.min(width, height) * .20,
+        width * .5, height * .45, Math.max(width, height) * .68);
+      vignetteGradient.addColorStop(0, 'rgba(0,0,0,0)');
+      vignetteGradient.addColorStop(.62, 'rgba(0,0,8,.12)');
+      vignetteGradient.addColorStop(1, 'rgba(0,0,8,.62)');
+
+      auroraGradientA = ctx.createLinearGradient(0, 0, width, 0);
+      auroraGradientA.addColorStop(0, 'rgba(24,192,214,0)');
+      auroraGradientA.addColorStop(.20, 'rgba(20,200,203,.34)');
+      auroraGradientA.addColorStop(.48, 'rgba(69,121,225,.27)');
+      auroraGradientA.addColorStop(.72, 'rgba(123,76,218,.23)');
+      auroraGradientA.addColorStop(1, 'rgba(76,63,210,0)');
+      auroraGradientB = ctx.createLinearGradient(0, 0, width, 0);
+      auroraGradientB.addColorStop(0, 'rgba(82,69,215,0)');
+      auroraGradientB.addColorStop(.28, 'rgba(93,71,221,.18)');
+      auroraGradientB.addColorStop(.58, 'rgba(19,207,190,.28)');
+      auroraGradientB.addColorStop(1, 'rgba(18,185,209,0)');
+
+      ctx.setTransform(emblemSize, 0, 0, emblemSize, emblemLeft, emblemTop);
+      emblemLineGradient = ctx.createLinearGradient(.16, .14, .84, .86);
+      emblemLineGradient.addColorStop(0, 'rgba(163,151,255,.74)');
+      emblemLineGradient.addColorStop(.48, 'rgba(122,197,255,.72)');
+      emblemLineGradient.addColorStop(1, 'rgba(75,239,222,.76)');
+      emblemFillGradient = ctx.createLinearGradient(.22, .18, .79, .86);
+      emblemFillGradient.addColorStop(0, 'rgba(116,96,236,.19)');
+      emblemFillGradient.addColorStop(.52, 'rgba(59,142,217,.14)');
+      emblemFillGradient.addColorStop(1, 'rgba(26,207,190,.18)');
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+      rebuildStarfield();
+    }
+
+    function drawBackgroundStars(seconds) {
+      const parallaxX = Math.sin(seconds * .018 * motionFactor) * width * .0013;
+      const parallaxY = Math.cos(seconds * .014 * motionFactor) * height * .0010;
+      for (let i = 0; i < starCount; i++) {
+        const depth = starDepth[i];
+        const pulse = .66 + CONFIG.twinkleAmount * Math.sin(
+          starPhase[i] + seconds * starRate[i] * motionFactor);
+        const size = (.7 + depth * 2.4) * dpr;
+        const spriteSize = size * (5.0 + depth * 2.5);
+        ctx.globalAlpha = (.22 + depth * .73) * pulse;
+        ctx.drawImage(starSprites[starTint[i]],
+          starX[i] + parallaxX * depth - spriteSize * .5,
+          starY[i] + parallaxY * depth - spriteSize * .5,
+          spriteSize, spriteSize);
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    function drawBackgroundConstellations(seconds) {
+      const base = Math.min(width, height) * .16;
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+      ctx.lineWidth = .72 * dpr;
+      for (let c = 0; c < BACKGROUND_CONSTELLATIONS.length; c++) {
+        const item = BACKGROUND_CONSTELLATIONS[c];
+        const driftX = Math.sin(seconds * .025 * motionFactor + item.phase) * 18 * dpr;
+        const driftY = Math.cos(seconds * .019 * motionFactor + item.phase) * 11 * dpr;
+        const size = base * item.scale;
+        const left = width * item.x + driftX;
+        const top = height * item.y + driftY;
+        ctx.strokeStyle = 'rgba(111,164,228,.20)';
+        ctx.globalAlpha = .42 + .10 * Math.sin(seconds * .18 + item.phase);
+        ctx.beginPath();
+        for (let i = 0; i < item.edges.length; i++) {
+          const edge = item.edges[i];
+          const a = item.points[edge[0]];
+          const b = item.points[edge[1]];
+          ctx.moveTo(left + a[0] * size, top + a[1] * size);
+          ctx.lineTo(left + b[0] * size, top + b[1] * size);
+        }
+        ctx.stroke();
+        for (let i = 0; i < item.points.length; i++) {
+          const p = item.points[i];
+          const twinkle = .52 + .30 * Math.sin(seconds * (.35 + i * .015) + item.phase + i);
+          const spriteSize = (5.5 + (i % 3) * 1.2) * dpr;
+          ctx.globalAlpha = .28 * twinkle;
+          ctx.drawImage(starSprites[(i + c) % 3],
+            left + p[0] * size - spriteSize * .5,
+            top + p[1] * size - spriteSize * .5,
+            spriteSize, spriteSize);
+        }
+      }
+      ctx.restore();
+    }
+
+    function traceAuroraBand(seconds, offset, amplitude, thickness, gradient) {
+      const phase = seconds * CONFIG.auroraSpeed * motionFactor + offset;
+      const baseY = height * (.19 + offset * .018);
+      const segments = 48;
+      ctx.beginPath();
+      ctx.moveTo(-width * .08, baseY);
+      for (let i = 0; i <= segments; i++) {
+        const x = width * (i / segments * 1.16 - .08);
+        const wave = Math.sin(i * .23 + phase * 2.1) * amplitude +
+          Math.sin(i * .071 - phase * 1.4) * amplitude * .58;
+        ctx.lineTo(x, baseY + wave);
+      }
+      for (let i = segments; i >= 0; i--) {
+        const x = width * (i / segments * 1.16 - .08);
+        const wave = Math.sin(i * .23 + phase * 2.1) * amplitude +
+          Math.sin(i * .071 - phase * 1.4) * amplitude * .58;
+        const veil = thickness * (.50 + .50 * Math.sin(i * .12 + phase));
+        ctx.lineTo(x, baseY + wave + thickness + veil);
+      }
+      ctx.closePath();
+      ctx.fillStyle = gradient;
+      ctx.fill();
+    }
+
+    function drawAurora(seconds) {
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+      ctx.globalAlpha = CONFIG.auroraOpacity;
+      traceAuroraBand(seconds, .0, height * .026, height * .088, auroraGradientA);
+      ctx.globalAlpha = CONFIG.auroraOpacity * .70;
+      traceAuroraBand(seconds, 1.9, height * .019, height * .065, auroraGradientB);
+      ctx.restore();
+    }
+
+    function drawComet(seconds) {
+      const livingCometActive = (livingEventKind === 'comet-up' ||
+        livingEventKind === 'comet-down') &&
+        (livingStartSeconds >= 0 || captureEvent === livingEventKind);
+      if (livingCometActive) return;
+      // The ambient 17s background comet is review-only. In production the
+      // only comets are the scheduled gaze events, so catching one is rare.
+      if (!DEMO_CAPTURE) return;
+      const period = CONFIG.cometPeriodSeconds;
+      const local = seconds % period;
+      const start = CONFIG.cometStartSeconds;
+      const end = start + CONFIG.cometVisibleSeconds;
+      if (local < start || local > end) return;
+      const raw = (local - start) / CONFIG.cometVisibleSeconds;
+      const eased = raw * raw * (3 - 2 * raw);
+      const x = width * (-.03 + eased * 1.02);
+      const y = height * (.12 + eased * .42);
+      const opacity = Math.sin(raw * Math.PI) * .82;
+      const cometScale = Math.max(.72, Math.min(1.65, width / 1920));
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+      ctx.globalAlpha = opacity;
+      ctx.translate(x, y);
+      ctx.rotate(.39);
+      ctx.scale(cometScale, cometScale);
+      ctx.drawImage(cometSprite, -260, -16);
+      ctx.restore();
+    }
+
+    const SUBTLE_EVENT_KINDS = Object.freeze(['subtle-turn', 'subtle-shift']);
+    const BIG_EVENT_KINDS = Object.freeze([
+      'bold-turn', 'look-around', 'comet-up', 'comet-down'
+    ]);
+    const DEMO_BIG_EVENT_KINDS = Object.freeze([
+      'comet-up', 'comet-down', 'look-around', 'bold-turn'
+    ]);
+    let livingStartSeconds = -1;
+    let livingNextSubtleSeconds = DEMO_CAPTURE
+      ? CONFIG.livingEmblem.demoFirstSubtleDelaySeconds
+      : randomSubtleGap(Math.random);
+    let livingNextBigSeconds = DEMO_CAPTURE
+      ? CONFIG.livingEmblem.demoFirstBigDelaySeconds
+      : randomBigGap(Math.random);
+    let livingPhase = 'still';
+    let livingEventCount = 0;
+    let livingEventKind = 'subtle-turn';
+    let livingEventClass = 'none';
+    let livingLastSubtleKind = '';
+    let livingLastBigKind = '';
+    let livingLastBigStartSeconds = -Infinity;
+    let demoBigIndex = 0;
+    const livingEventLog = [];
+    let livingGlow = 0;
+    let livingPitch = 0;
+    let livingCometProgress = -1;
+    let livingCometOpacity = 0;
+    let livingLookTargetYaw = 0;
+    let livingLookTargetPitch = 0;
+    let livingLookErrorRadians = 0;
+    let livingCometX = 0;
+    let livingCometY = 0;
+    let livingEyeX = 0;
+    let livingEyeY = 0;
+    let livingPlantedMaxDelta = 0;
+    let livingPitchUpWeight = 0;
+    let livingPitchDownWeight = 0;
+    let gazeYawWeightState = 0;
+    let gazePitchState = 0;
+    let gazeLastLocal = -1;
+    let gazeLastKind = '';
+
+    function smoothInOutCubic(value) {
+      const t = Math.max(0, Math.min(1, value));
+      return t * t * (3 - 2 * t);
+    }
+
+    function randomRange(minimum, maximum, random = Math.random) {
+      return minimum + random() * (maximum - minimum);
+    }
+
+    function randomSubtleGap(random = Math.random) {
+      const timing = CONFIG.livingEmblem;
+      const min = DEMO_CAPTURE
+        ? timing.demoSubtleMinIntervalSeconds : timing.subtleMinIntervalSeconds;
+      const max = DEMO_CAPTURE
+        ? timing.demoSubtleMaxIntervalSeconds : timing.subtleMaxIntervalSeconds;
+      return randomRange(min, max, random);
+    }
+
+    function randomBigGap(random = Math.random) {
+      const timing = CONFIG.livingEmblem;
+      const min = DEMO_CAPTURE
+        ? timing.demoBigMinIntervalSeconds : timing.bigMinIntervalSeconds;
+      const max = DEMO_CAPTURE
+        ? timing.demoBigMaxIntervalSeconds : timing.bigMaxIntervalSeconds;
+      return randomRange(min, max, random);
+    }
+
+    function bigMinSeparation() {
+      const timing = CONFIG.livingEmblem;
+      return DEMO_CAPTURE
+        ? timing.demoBigMinSeparationSeconds : timing.bigMinSeparationSeconds;
+    }
+
+    function chooseDifferentKind(kinds, previous, random = Math.random) {
+      const choices = kinds.filter(kind => kind !== previous);
+      return choices[Math.floor(random() * choices.length)];
+    }
+
+    function recordLivingEvent(seconds) {
+      livingEventLog.push(Object.freeze({
+        timeSeconds: Number(seconds.toFixed(3)),
+        eventClass: livingEventClass,
+        kind: livingEventKind
+      }));
+      window.NIGHTSKY_EVENT_LOG = livingEventLog;
+    }
+
+    function startLivingEvent(seconds, eventClass, kind) {
+      livingStartSeconds = seconds;
+      livingEventClass = eventClass;
+      livingEventKind = kind;
+      livingEventCount++;
+      if (eventClass === 'big') {
+        livingLastBigKind = kind;
+        livingLastBigStartSeconds = seconds;
+        livingNextBigSeconds = Infinity;
+      } else {
+        livingLastSubtleKind = kind;
+        livingNextSubtleSeconds = Infinity;
+      }
+      recordLivingEvent(seconds);
+    }
+
+    function startDueLivingEvent(seconds) {
+      const bigReady = seconds >= livingNextBigSeconds &&
+        seconds - livingLastBigStartSeconds >= bigMinSeparation();
+      if (bigReady) {
+        const kind = DEMO_CAPTURE
+          ? DEMO_BIG_EVENT_KINDS[demoBigIndex++ % DEMO_BIG_EVENT_KINDS.length]
+          : chooseDifferentKind(BIG_EVENT_KINDS, livingLastBigKind);
+        startLivingEvent(seconds, 'big', kind);
+        return;
+      }
+      if (seconds >= livingNextSubtleSeconds) {
+        startLivingEvent(seconds, 'subtle', chooseDifferentKind(
+          SUBTLE_EVENT_KINDS, livingLastSubtleKind));
+      }
+    }
+
+    function finishLivingEvent(seconds) {
+      if (livingEventClass === 'big') {
+        livingNextBigSeconds = Math.max(
+          livingLastBigStartSeconds + randomBigGap(),
+          livingLastBigStartSeconds + bigMinSeparation());
+        // A small motion that became due during a rare event gets a fresh gap,
+        // avoiding two authored moves back-to-back.
+        if (livingNextSubtleSeconds <= seconds) {
+          livingNextSubtleSeconds = seconds + randomSubtleGap();
+        }
+      } else {
+        livingNextSubtleSeconds = Math.max(
+          seconds, livingStartSeconds + randomSubtleGap());
+      }
+      livingStartSeconds = -1;
+      livingEventClass = 'none';
+    }
+
+    function mix(a, b, amount) {
+      return a + (b - a) * amount;
+    }
+
+    function livingEventDuration(kind) {
+      const timing = CONFIG.livingEmblem;
+      if (kind === 'subtle-turn' || kind === 'subtle-shift') {
+        return timing.subtleTurnSeconds + timing.subtleHoldSeconds +
+          timing.subtleReturnSeconds;
+      }
+      if (kind === 'bold-turn') {
+        return timing.turnSeconds + timing.holdSeconds + timing.returnSeconds;
+      }
+      if (kind === 'look-around') {
+        return timing.sweepTurnSeconds + timing.sweepAcrossSeconds +
+          timing.sweepHoldSeconds + timing.sweepReturnSeconds;
+      }
+      return timing.cometGazeTurnSeconds + timing.cometGazeHoldSeconds +
+        timing.cometGazeReturnSeconds;
+    }
+
+    function seededRandom(seed) {
+      let state = seed >>> 0;
+      return () => {
+        state += 0x6D2B79F5;
+        let value = state;
+        value = Math.imul(value ^ value >>> 15, value | 1);
+        value ^= value + Math.imul(value ^ value >>> 7, value | 61);
+        return ((value ^ value >>> 14) >>> 0) / 4294967296;
+      };
+    }
+
+    function simulateLivingTimeline(hours = 1, seed = 20260830) {
+      const random = seededRandom(seed);
+      const events = [];
+      const endSeconds = Math.max(0, hours) * 3600;
+      const timing = CONFIG.livingEmblem;
+      let nextSubtle = randomRange(timing.subtleMinIntervalSeconds,
+        timing.subtleMaxIntervalSeconds, random);
+      let nextBig = randomRange(timing.bigMinIntervalSeconds,
+        timing.bigMaxIntervalSeconds, random);
+      let lastSubtle = '';
+      let lastBig = '';
+      let lastBigStart = -Infinity;
+      while (Math.min(nextSubtle, nextBig) <= endSeconds) {
+        const eventClass = nextBig <= nextSubtle ? 'big' : 'subtle';
+        let now = eventClass === 'big' ? nextBig : nextSubtle;
+        let kind;
+        if (eventClass === 'big') {
+          now = Math.max(now, lastBigStart + timing.bigMinSeparationSeconds);
+          kind = chooseDifferentKind(BIG_EVENT_KINDS, lastBig, random);
+          lastBig = kind;
+          lastBigStart = now;
+        } else {
+          kind = chooseDifferentKind(SUBTLE_EVENT_KINDS, lastSubtle, random);
+          lastSubtle = kind;
+        }
+        if (now > endSeconds) break;
+        events.push(Object.freeze({
+          timeSeconds: Number(now.toFixed(3)), eventClass, kind
+        }));
+        const finished = now + livingEventDuration(kind);
+        if (eventClass === 'big') {
+          nextBig = Math.max(
+            now + randomRange(timing.bigMinIntervalSeconds,
+              timing.bigMaxIntervalSeconds, random),
+            lastBigStart + timing.bigMinSeparationSeconds);
+          if (nextSubtle <= finished) {
+            nextSubtle = finished + randomRange(timing.subtleMinIntervalSeconds,
+              timing.subtleMaxIntervalSeconds, random);
+          }
+        } else {
+          nextSubtle = Math.max(finished,
+            now + randomRange(timing.subtleMinIntervalSeconds,
+              timing.subtleMaxIntervalSeconds, random));
+          // A big event due during this short motion begins when it settles.
+          if (nextBig < finished) nextBig = finished;
+        }
+      }
+      return events;
+    }
+    window.NIGHTSKY_SIMULATE_TIMELINE = simulateLivingTimeline;
+    window.NIGHTSKY_EVENT_LOG = livingEventLog;
+
+    function livingCometPosition(progress, up) {
+      const size = Math.max(.85, Math.min(1.55, emblemSize / 720));
+      const tail = 182 * size;
+      const headMargin = 30 * size;
+      // The source art faces screen-right, so screen-left is her back. Both V5
+      // passes enter at that back edge; the already-approved top traverse is
+      // unchanged, while the bottom traverse is deliberately flipped from v3.
+      const startX = -headMargin;
+      const endX = width + tail + headMargin;
+      const baseY = emblemTop + emblemSize * (up ? .045 : .985);
+      const arc = Math.sin(progress * Math.PI) * emblemSize * .018;
+      return {
+        x: mix(startX, endX, progress),
+        y: baseY + (up ? -arc : arc),
+        startX, endX, tail, size
+      };
+    }
+
+    function clamp(value, minimum, maximum) {
+      return Math.max(minimum, Math.min(maximum, value));
+    }
+
+    function resetCometGazeState(kind, local) {
+      gazeYawWeightState = 0;
+      gazePitchState = 0;
+      gazeLastLocal = local;
+      gazeLastKind = kind;
+    }
+
+    function updateCometGaze(local, kind) {
+      const timing = CONFIG.livingEmblem;
+      const cometRaw = (local - timing.cometVisibleStartSeconds) /
+        timing.cometVisibleSeconds;
+      const up = kind === 'comet-up';
+      const progress = smoothInOutCubic(clamp(cometRaw, 0, 1));
+      const comet = livingCometPosition(progress, up);
+      const headX = emblemLeft + emblemSize * .735;
+      const headY = emblemTop + emblemSize * .435;
+      const dx = comet.x - headX;
+      const dy = comet.y - headY;
+      // SCREEN-SPACE HAND CHECK: above => dy < 0 => pitchBearing < 0 =>
+      // targetPitch < 0 => positive up-pose weight. This is chin-UP.
+      const pitchBearing = Math.atan2(dy, Math.max(emblemSize * .10, Math.abs(dx)));
+      let targetPitch = clamp(pitchBearing, timing.cometUpPitchRadians,
+        timing.cometDownPitchRadians);
+      // The rest profile already faces screen-right. The approved pose2 morph is
+      // therefore needed only when the comet is behind her, to screen-left.
+      const leftness = clamp((headX - comet.x) / (emblemSize * .72), 0, 1);
+      let targetYawWeight = smoothInOutCubic(leftness);
+      let trackingWeight = smoothInOutCubic((local -
+        timing.cometVisibleStartSeconds) / timing.cometGazeAttackSeconds);
+      if (cometRaw < 0) trackingWeight = 0;
+      if (cometRaw > 1) {
+        trackingWeight = 1 - smoothInOutCubic((local -
+          (timing.cometVisibleStartSeconds + timing.cometVisibleSeconds)) /
+          timing.cometGazeReturnSeconds);
+      }
+      trackingWeight = clamp(trackingWeight, 0, 1);
+      targetYawWeight *= trackingWeight;
+      targetPitch *= trackingWeight;
+
+      if (gazeLastKind !== kind || local < gazeLastLocal) {
+        resetCometGazeState(kind, local);
+      }
+      const dt = gazeLastLocal < 0 ? 1 / 60 : clamp(local - gazeLastLocal, 1 / 240, .10);
+      const response = 1 - Math.exp(-dt / timing.cometLookLagSeconds);
+      gazeYawWeightState += (targetYawWeight - gazeYawWeightState) * response;
+      gazePitchState += (targetPitch - gazePitchState) * response;
+      gazeLastLocal = local;
+
+      livingCometProgress = cometRaw >= 0 && cometRaw <= 1 ? progress : -1;
+      livingCometOpacity = cometRaw >= 0 && cometRaw <= 1
+        ? Math.min(1, cometRaw / .08, (1 - cometRaw) / .08) : 0;
+      livingCometX = comet.x;
+      livingCometY = comet.y;
+      livingLookTargetYaw = -targetYawWeight * timing.cometYawTurnRadians;
+      livingLookTargetPitch = targetPitch;
+      livingLookErrorRadians = Math.hypot(
+        (targetYawWeight - gazeYawWeightState) * timing.cometYawTurnRadians,
+        targetPitch - gazePitchState);
+      livingPitch = clamp(gazePitchState, timing.cometUpPitchRadians,
+        timing.cometDownPitchRadians);
+      livingPitchUpWeight = clamp(-livingPitch / -timing.cometUpPitchRadians, 0, 1);
+      livingPitchDownWeight = clamp(livingPitch / timing.cometDownPitchRadians, 0, 1);
+      livingGlow = trackingWeight * (.82 + .18 * Math.sin(progress * Math.PI));
+      livingPhase = trackingWeight > .02
+        ? (up ? 'look-at-comet-up' : 'look-at-comet-down')
+        : (up ? 'settling-from-upward-gaze' : 'settling-from-downward-gaze');
+      return clamp(gazeYawWeightState, 0, 1);
+    }
+
+    function seekCometGaze(local, kind) {
+      // Deterministic proof renders need the same accumulated smoothing state as
+      // real playback, not a single filter update made at the requested instant.
+      resetCometGazeState(kind, 0);
+      const step = 1 / 60;
+      for (let sample = 0; sample < local; sample += step) {
+        updateCometGaze(sample, kind);
+      }
+      return updateCometGaze(local, kind);
+    }
+
+    function livingPoseAt(seconds) {
+      const timing = CONFIG.livingEmblem;
+      livingPitch = 0;
+      livingPitchUpWeight = 0;
+      livingPitchDownWeight = 0;
+      livingCometProgress = -1;
+      livingCometOpacity = 0;
+      livingLookTargetYaw = 0;
+      livingLookTargetPitch = 0;
+      livingLookErrorRadians = 0;
+
+      if (captureEvent === 'comet-up' || captureEvent === 'comet-down') {
+        livingEventKind = captureEvent;
+        livingEventCount = 1;
+        // Supplying eventT freezes every layer for deterministic proof frames.
+        // Omitting it plays the full sequence in real time for motion capture.
+        const local = captureEventFixed
+          ? Math.max(0, Number(window.__NIGHTSKY_CAPTURE_TIME) || 0)
+          : seconds;
+        if (local <= livingEventDuration(captureEvent)) {
+          return captureEventFixed
+            ? seekCometGaze(local, captureEvent)
+            : updateCometGaze(local, captureEvent);
+        }
+        livingPhase = 'still';
+        livingGlow = 0;
+        return 0;
+      }
+
+      if (livingStartSeconds < 0) startDueLivingEvent(seconds);
+      if (livingStartSeconds < 0) {
+        livingPhase = 'still';
+        livingGlow = 0;
+        return 0;
+      }
+
+      const local = seconds - livingStartSeconds;
+      if (livingEventKind === 'subtle-turn' || livingEventKind === 'subtle-shift') {
+        const amplitude = livingEventKind === 'subtle-turn'
+          ? timing.subtleReferenceAmplitude : timing.minorShiftAmplitude;
+        if (local < timing.subtleTurnSeconds) {
+          const amount = smoothInOutCubic(local / timing.subtleTurnSeconds);
+          livingPhase = livingEventKind === 'subtle-turn'
+            ? 'subtle-head-turn' : 'minor-pose-shift';
+          livingGlow = amount * .28;
+          return amplitude * amount;
+        }
+        if (local < timing.subtleTurnSeconds + timing.subtleHoldSeconds) {
+          const hold = (local - timing.subtleTurnSeconds) / timing.subtleHoldSeconds;
+          livingPhase = 'subtle-hold';
+          livingGlow = .24 + .04 * Math.sin(hold * Math.PI);
+          return amplitude * (1 +
+            Math.sin(hold * TAU) * timing.idleSwayAmount * .4);
+        }
+        const returnStart = timing.subtleTurnSeconds + timing.subtleHoldSeconds;
+        if (local < returnStart + timing.subtleReturnSeconds) {
+          const amount = smoothInOutCubic((local - returnStart) /
+            timing.subtleReturnSeconds);
+          livingPhase = 'subtle-settle';
+          livingGlow = .28 * (1 - amount);
+          return amplitude * (1 - amount);
+        }
+      } else if (livingEventKind === 'bold-turn') {
+        if (local < timing.turnSeconds) {
+          const amount = smoothInOutCubic(local / timing.turnSeconds);
+          livingPhase = 'turning-to-room';
+          livingGlow = amount;
+          return timing.boldTurnAmplitude * amount;
+        }
+        if (local < timing.turnSeconds + timing.holdSeconds) {
+          const hold = (local - timing.turnSeconds) / timing.holdSeconds;
+          livingPhase = 'holding-room-gaze';
+          livingGlow = .82 + .18 * Math.sin(hold * Math.PI);
+          return timing.boldTurnAmplitude *
+            (1 + Math.sin(hold * TAU) * timing.idleSwayAmount);
+        }
+        const returnStart = timing.turnSeconds + timing.holdSeconds;
+        if (local < returnStart + timing.returnSeconds) {
+          const amount = smoothInOutCubic((local - returnStart) / timing.returnSeconds);
+          livingPhase = 'returning-from-room';
+          livingGlow = 1 - amount;
+          return timing.boldTurnAmplitude * (1 - amount);
+        }
+      } else if (livingEventKind === 'look-around') {
+        const acrossStart = timing.sweepTurnSeconds;
+        const holdStart = acrossStart + timing.sweepAcrossSeconds;
+        const returnStart = holdStart + timing.sweepHoldSeconds;
+        if (local < acrossStart) {
+          const amount = smoothInOutCubic(local / timing.sweepTurnSeconds);
+          livingPhase = 'sweeping-near';
+          livingGlow = amount;
+          return timing.sweepNearAmplitude * amount;
+        }
+        if (local < holdStart) {
+          const amount = smoothInOutCubic((local - acrossStart) / timing.sweepAcrossSeconds);
+          livingPhase = 'sweeping-across';
+          livingGlow = .78 + .22 * Math.sin(amount * Math.PI);
+          return mix(timing.sweepNearAmplitude, timing.sweepFarAmplitude, amount);
+        }
+        if (local < returnStart) {
+          const hold = (local - holdStart) / timing.sweepHoldSeconds;
+          livingPhase = 'holding-far-gaze';
+          livingGlow = .78 + .14 * Math.sin(hold * Math.PI);
+          return timing.sweepFarAmplitude;
+        }
+        if (local < returnStart + timing.sweepReturnSeconds) {
+          const amount = smoothInOutCubic((local - returnStart) / timing.sweepReturnSeconds);
+          livingPhase = 'settling-from-sweep';
+          livingGlow = .78 * (1 - amount);
+          return timing.sweepFarAmplitude * (1 - amount);
+        }
+      } else {
+        const cometPose = updateCometGaze(local, livingEventKind);
+        if (local < livingEventDuration(livingEventKind)) return cometPose;
+      }
+
+      finishLivingEvent(seconds);
+      livingPhase = 'still';
+      livingGlow = 0;
+      livingPitch = 0;
+      livingPitchUpWeight = 0;
+      livingPitchDownWeight = 0;
+      livingCometProgress = -1;
+      livingCometOpacity = 0;
+      resetCometGazeState('', 0);
+      return 0;
+    }
+
+    function interpolateEmblemPoints(poseAmount, upWeight, downWeight) {
+      const cometMorph = upWeight > 0 || downWeight > 0 ||
+        livingEventKind === 'comet-up' || livingEventKind === 'comet-down';
+      for (let i = 0; i < pointCount; i++) {
+        const id = GEOMETRY.points[i][0];
+        const pointPose = cometMorph && (id[0] === 'm' || id[0] === 'j') ? 0 : poseAmount;
+        currentX[i] = pose1X[i] + (pose2X[i] - pose1X[i]) * pointPose;
+        currentY[i] = pose1Y[i] + (pose2Y[i] - pose1Y[i]) * pointPose;
+      }
+      if (!cometMorph) return;
+
+      // Bilinear morph: rest/turn along yaw, then that pair toward the matching
+      // approved pitch pair. All weights stay in [0,1]; no angle is applied to a
+      // live point, so the profile cannot collapse through over-rotation.
+      for (let h = 0; h < HEAD_IDS.length; h++) {
+        const i = pointIndex[HEAD_IDS[h]];
+        const upTargetX = mix(APPROVED_COMET_POSES.up[h][0],
+          APPROVED_COMET_POSES.turnUp[h][0], poseAmount);
+        const upTargetY = mix(APPROVED_COMET_POSES.up[h][1],
+          APPROVED_COMET_POSES.turnUp[h][1], poseAmount);
+        const downTargetX = mix(APPROVED_COMET_POSES.down[h][0],
+          APPROVED_COMET_POSES.turnDown[h][0], poseAmount);
+        const downTargetY = mix(APPROVED_COMET_POSES.down[h][1],
+          APPROVED_COMET_POSES.turnDown[h][1], poseAmount);
+        if (upWeight > 0) {
+          currentX[i] = mix(currentX[i], upTargetX, upWeight);
+          currentY[i] = mix(currentY[i], upTargetY, upWeight);
+        } else if (downWeight > 0) {
+          currentX[i] = mix(currentX[i], downTargetX, downWeight);
+          currentY[i] = mix(currentY[i], downTargetY, downWeight);
+        }
+      }
+    }
+
+    function drawLivingComet() {
+      if (hideLivingComet || livingCometProgress < 0 || livingCometOpacity <= 0) return;
+      const up = livingEventKind === 'comet-up';
+      const comet = livingCometPosition(livingCometProgress, up);
+      const size = comet.size;
+      const tail = comet.tail;
+      const x = comet.x;
+      const y = comet.y;
+      const angle = 0;
+      const trailWidth = 13.5 * size;
+
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+      ctx.globalAlpha = livingCometOpacity;
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+
+      // Three tapered flat-vector layers keep the established cyan/teal language
+      // while giving this foreground comet the same visual weight as the emblem.
+      ctx.fillStyle = 'rgba(78,112,235,.24)';
+      ctx.beginPath();
+      ctx.moveTo(-tail, 0);
+      ctx.quadraticCurveTo(-tail * .34, -trailWidth * 1.45, 4 * size, 0);
+      ctx.quadraticCurveTo(-tail * .34, trailWidth * 1.45, -tail, 0);
+      ctx.fill();
+
+      ctx.fillStyle = 'rgba(46,159,218,.52)';
+      ctx.beginPath();
+      ctx.moveTo(-tail * .86, 0);
+      ctx.quadraticCurveTo(-tail * .31, -trailWidth * .78, 4.5 * size, 0);
+      ctx.quadraticCurveTo(-tail * .31, trailWidth * .78, -tail * .86, 0);
+      ctx.fill();
+
+      ctx.fillStyle = 'rgba(31,215,215,.86)';
+      ctx.beginPath();
+      ctx.moveTo(-tail * .62, 0);
+      ctx.quadraticCurveTo(-tail * .20, -trailWidth * .32, 5 * size, 0);
+      ctx.quadraticCurveTo(-tail * .20, trailWidth * .32, -tail * .62, 0);
+      ctx.fill();
+
+      // A layered, bright head and halo; no raster sprite or style change.
+      ctx.shadowColor = 'rgba(78,223,255,.95)';
+      ctx.shadowBlur = 22 * size;
+      ctx.fillStyle = 'rgba(75,218,242,.30)';
+      ctx.beginPath();
+      ctx.arc(0, 0, 14.5 * size, 0, TAU);
+      ctx.fill();
+      ctx.shadowBlur = 12 * size;
+      ctx.fillStyle = 'rgba(205,251,255,.98)';
+      ctx.beginPath();
+      ctx.arc(0, 0, 8.2 * size, 0, TAU);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(1.7 * size, -1.1 * size, 3.6 * size, 0, TAU);
+      ctx.fill();
+
+      // Crisp sparkle wake, kept close to the tail so it reads in the same plane.
+      ctx.shadowBlur = 8 * size;
+      for (let i = 0; i < 6; i++) {
+        const sx = -tail * (.18 + i * .115);
+        const sy = Math.sin(i * 2.7 + livingCometProgress * TAU) * trailWidth *
+          (.32 + i * .045);
+        const spark = (3.8 - i * .35) * size;
+        ctx.globalAlpha = livingCometOpacity * (1 - i * .10);
+        ctx.fillStyle = i % 2 ? 'rgba(169,236,255,.88)' : 'rgba(166,148,255,.82)';
+        ctx.beginPath();
+        ctx.moveTo(sx, sy - spark);
+        ctx.lineTo(sx + spark * .34, sy);
+        ctx.lineTo(sx, sy + spark);
+        ctx.lineTo(sx - spark * .34, sy);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function drawTrackingDebug() {
+      if (!document.body.classList.contains('show-debug') ||
+          livingCometProgress < 0 || livingCometOpacity <= 0) return;
+      ctx.save();
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.globalAlpha = .94;
+      ctx.strokeStyle = '#ffde59';
+      ctx.lineWidth = Math.max(2, 2.4 * dpr);
+      ctx.setLineDash([10 * dpr, 7 * dpr]);
+      ctx.beginPath();
+      ctx.moveTo(livingEyeX, livingEyeY);
+      ctx.lineTo(livingCometX, livingCometY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#ffde59';
+      ctx.beginPath();
+      ctx.arc(livingEyeX, livingEyeY, 5 * dpr, 0, TAU);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function traceIds(ids, closePath) {
+      const first = pointIndex[ids[0]];
+      ctx.beginPath();
+      ctx.moveTo(currentX[first], currentY[first]);
+      for (let i = 1; i < ids.length; i++) {
+        const index = pointIndex[ids[i]];
+        ctx.lineTo(currentX[index], currentY[index]);
+      }
+      if (closePath) ctx.closePath();
+    }
+
+    function traceEdges() {
+      ctx.beginPath();
+      for (let i = 0; i < GEOMETRY.edges.length; i++) {
+        const edge = GEOMETRY.edges[i];
+        const a = pointIndex[edge[0]];
+        const b = pointIndex[edge[1]];
+        ctx.moveTo(currentX[a], currentY[a]);
+        ctx.lineTo(currentX[b], currentY[b]);
+      }
+    }
+
+    function traceEdgesByPrefixes(prefixes) {
+      ctx.beginPath();
+      for (let i = 0; i < GEOMETRY.edges.length; i++) {
+        const edge = GEOMETRY.edges[i];
+        if (!prefixes.includes(edge[0][0]) || !prefixes.includes(edge[1][0])) continue;
+        const a = pointIndex[edge[0]];
+        const b = pointIndex[edge[1]];
+        ctx.moveTo(currentX[a], currentY[a]);
+        ctx.lineTo(currentX[b], currentY[b]);
+      }
+    }
+
+    function drawDownPoseTexture(left, top, scaled, alpha) {
+      // Map the painted head through three live contour anchors. This carries the
+      // solid hair/face shapes with the down-pose stars while the separately
+      // clipped jacket stays planted at its approved v5 coordinates.
+      const anchors = ['h00', 'h09', 'p07'].map(id => pointIndex[id]);
+      const ia = anchors[0], ib = anchors[1], ic = anchors[2];
+      const sx0 = pose1X[ia], sy0 = pose1Y[ia];
+      const sx1 = pose1X[ib], sy1 = pose1Y[ib];
+      const sx2 = pose1X[ic], sy2 = pose1Y[ic];
+      const dx0 = left + currentX[ia] * scaled;
+      const dy0 = top + currentY[ia] * scaled;
+      const dx1 = left + currentX[ib] * scaled;
+      const dy1 = top + currentY[ib] * scaled;
+      const dx2 = left + currentX[ic] * scaled;
+      const dy2 = top + currentY[ic] * scaled;
+      const determinant = sx0 * (sy1 - sy2) + sx1 * (sy2 - sy0) +
+        sx2 * (sy0 - sy1);
+      const a = (dx0 * (sy1 - sy2) + dx1 * (sy2 - sy0) +
+        dx2 * (sy0 - sy1)) / determinant;
+      const c = (dx0 * (sx2 - sx1) + dx1 * (sx0 - sx2) +
+        dx2 * (sx1 - sx0)) / determinant;
+      const e = (dx0 * (sx1 * sy2 - sx2 * sy1) +
+        dx1 * (sx2 * sy0 - sx0 * sy2) +
+        dx2 * (sx0 * sy1 - sx1 * sy0)) / determinant;
+      const b = (dy0 * (sy1 - sy2) + dy1 * (sy2 - sy0) +
+        dy2 * (sy0 - sy1)) / determinant;
+      const d = (dy0 * (sx2 - sx1) + dy1 * (sx0 - sx2) +
+        dy2 * (sx1 - sx0)) / determinant;
+      const f = (dy0 * (sx1 * sy2 - sx2 * sy1) +
+        dy1 * (sx2 * sy0 - sx0 * sy2) +
+        dy2 * (sx0 * sy1 - sx1 * sy0)) / determinant;
+
+      ctx.save();
+      ctx.setTransform(scaled, 0, 0, scaled, left, top);
+      traceIds(BODY_IDS, true);
+      ctx.clip();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.globalCompositeOperation = SYMBOL_RENDER.blendMode;
+      ctx.globalAlpha = alpha;
+      ctx.drawImage(emblemTexture, left, top, scaled, scaled);
+      ctx.restore();
+
+      ctx.save();
+      ctx.setTransform(scaled, 0, 0, scaled, left, top);
+      traceIds(HEAD_IDS, true);
+      ctx.clip();
+      ctx.setTransform(a, b, c, d, e, f);
+      ctx.globalCompositeOperation = SYMBOL_RENDER.blendMode;
+      ctx.globalAlpha = alpha;
+      ctx.drawImage(emblemTexture, 0, 0, 1, 1);
+      ctx.restore();
+    }
+
+    function drawEmblem(seconds, livingPose) {
+      const breathPhase = seconds * TAU / CONFIG.emblemBreathSeconds * motionFactor;
+      const breath = 1 + Math.sin(breathPhase) * CONFIG.emblemBreathAmount;
+      const driftPhase = seconds * TAU / CONFIG.driftSeconds * motionFactor;
+      const driftX = Math.sin(driftPhase) * CONFIG.driftPixels * dpr;
+      const driftY = Math.cos(driftPhase * .73) * CONFIG.driftPixels * .55 * dpr;
+      const scaled = emblemSize * breath;
+      const left = emblemLeft - (scaled - emblemSize) * .5 + driftX;
+      const top = emblemTop - (scaled - emblemSize) * .5 + driftY;
+      const pulse = .88 + Math.sin(breathPhase) * .12;
+      livingPose *= motionFactor;
+      const effectivePitch = livingPitch * motionFactor;
+      const effectiveUpWeight = livingPitchUpWeight * motionFactor;
+      const effectiveDownWeight = livingPitchDownWeight * motionFactor;
+      const cometMorph = livingEventKind === 'comet-up' || livingEventKind === 'comet-down';
+      const wakePulse = livingGlow * motionFactor * CONFIG.livingEmblem.contourWakeAmount *
+        (.82 + .18 * Math.sin(seconds * 3.15));
+      interpolateEmblemPoints(livingPose, effectiveUpWeight, effectiveDownWeight);
+      livingPlantedMaxDelta = 0;
+      if (cometMorph) {
+        for (let i = 0; i < pointCount; i++) {
+          const id = GEOMETRY.points[i][0];
+          if (id[0] !== 'm' && id[0] !== 'j') continue;
+          livingPlantedMaxDelta = Math.max(livingPlantedMaxDelta,
+            Math.hypot(currentX[i] - pose1X[i], currentY[i] - pose1Y[i]));
+        }
+      }
+
+      // Paint the crescent from the winning source through a fixed vector mask.
+      if (emblemImageReady) {
+        ctx.save();
+        ctx.setTransform(scaled, 0, 0, scaled, left, top);
+        traceIds(CRESCENT_IDS, true);
+        ctx.clip();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.globalCompositeOperation = SYMBOL_RENDER.blendMode;
+        ctx.globalAlpha = SYMBOL_RENDER.opacity * (.93 + pulse * .07);
+        ctx.drawImage(emblemTexture, left, top, scaled, scaled);
+        ctx.restore();
+
+        if (livingEventKind === 'comet-down') {
+          drawDownPoseTexture(left, top, scaled,
+            SYMBOL_RENDER.opacity * (.94 + pulse * .06));
+        } else if (livingEventKind === 'comet-up') {
+          // Carry the painted hair and earring through the same live head-anchor
+          // warp already proven by DOWN; the approved UP contour/timing is fixed.
+          drawDownPoseTexture(left, top, scaled,
+            SYMBOL_RENDER.opacity * (.94 + pulse * .06));
+        } else if (cometMorph) {
+          // V5 keeps the source painting planted and reveals it through the
+          // approved morphing profile. There is deliberately no head transform:
+          // the contour and texture can no longer diverge or fold into a blob.
+          ctx.save();
+          ctx.setTransform(scaled, 0, 0, scaled, left, top);
+          traceIds(SILHOUETTE_IDS, true);
+          ctx.clip();
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+          ctx.globalCompositeOperation = SYMBOL_RENDER.blendMode;
+          ctx.globalAlpha = SYMBOL_RENDER.opacity * (.94 + pulse * .06);
+          ctx.drawImage(emblemTexture, left, top, scaled, scaled);
+          ctx.restore();
+        } else {
+          // Preserve the approved v2 texture treatment for every non-comet pose.
+          ctx.save();
+          ctx.setTransform(scaled, 0, 0, scaled, left, top);
+          traceIds(SILHOUETTE_IDS, true);
+          ctx.clip();
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+          ctx.globalCompositeOperation = SYMBOL_RENDER.blendMode;
+          ctx.globalAlpha = SYMBOL_RENDER.opacity * (.94 + pulse * .06);
+          const pivotX = left + scaled * .674;
+          const pivotY = top + scaled * .688;
+          ctx.translate(pivotX, pivotY);
+          ctx.transform(1 - livingPose * .018, 0, -livingPose * .012, 1, 0, 0);
+          ctx.rotate(-livingPose * .006);
+          ctx.translate(-pivotX, -pivotY);
+          ctx.drawImage(emblemTexture, left, top, scaled, scaled);
+          ctx.restore();
+        }
+      }
+
+      // The soft vector fill is itself the morphing silhouette, preventing the
+      // transition from reading as a set of detached moving stars.
+      ctx.save();
+      ctx.setTransform(scaled, 0, 0, scaled, left, top);
+      ctx.globalCompositeOperation = 'screen';
+      ctx.globalAlpha = .52 * (.90 + pulse * .10);
+      ctx.fillStyle = emblemFillGradient;
+      traceIds(SILHOUETTE_IDS, true);
+      ctx.fill();
+
+      // Connect contour samples along the live, interpolated geometry.
+      ctx.strokeStyle = emblemLineGradient;
+      ctx.lineWidth = (1.05 * dpr) / scaled;
+      if (cometMorph) {
+        // Crescent and jacket brightness remain stable during the comet pose, so
+        // a deterministic diff can prove those layers did not rotate.
+        ctx.globalAlpha = CONFIG.contourLineOpacity * (.88 + pulse * .12);
+        traceEdgesByPrefixes('mj');
+        ctx.stroke();
+        ctx.globalAlpha = CONFIG.contourLineOpacity * (.88 + pulse * .12) *
+          (1 + wakePulse * .42);
+        traceEdgesByPrefixes('hp');
+        ctx.stroke();
+      } else {
+        ctx.globalAlpha = CONFIG.contourLineOpacity * (.88 + pulse * .12) *
+          (1 + wakePulse * .42);
+        traceEdges();
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // Finally place 40 brighter, independently twinkling stars ON those contours.
+      for (let i = 0; i < pointCount; i++) {
+        const id = GEOMETRY.points[i][0];
+        const pointWake = cometMorph && (id[0] === 'm' || id[0] === 'j')
+          ? 0 : wakePulse;
+        const x = left + currentX[i] * scaled;
+        const y = top + currentY[i] * scaled;
+        const twinkle = .76 + .24 * Math.sin(pointPhase[i] + seconds * pointRate[i] * motionFactor);
+        const core = pointSize[i] * dpr * (1 + .10 * Math.sin(breathPhase)) *
+          (1 + pointWake * .18);
+        const spriteSize = core * 6.1;
+        ctx.globalCompositeOperation = 'screen';
+        ctx.globalAlpha = twinkle * (.90 + pulse * .10) * (1 + pointWake * .62);
+        ctx.drawImage(starSprites[i % 3], x - spriteSize * .5, y - spriteSize * .5,
+          spriteSize, spriteSize);
+      }
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.globalAlpha = 1;
+      const eyeA = pointIndex.p00;
+      const eyeB = pointIndex.p01;
+      livingEyeX = left + (currentX[eyeA] + currentX[eyeB]) * .5 * scaled;
+      livingEyeY = top + (currentY[eyeA] + currentY[eyeB]) * .5 * scaled;
+      return livingPose;
+    }
+
+    let frameCount = 0;
+    let fpsFrame = 0;
+    let fpsTime = 0;
+    let fps = 0;
+    let startTime = 0;
+
+    function frame(now) {
+      if (!startTime) { startTime = now; fpsTime = now; }
+      const elapsedSeconds = (now - startTime) * .001 + captureOffsetSeconds;
+      // Deterministic proof mode freezes the ambient sky at `t` (zero by default)
+      // while eventT advances only the requested pose/comet sequence. That makes a
+      // rest-vs-peak pixel diff measure the emblem motion, not background twinkle.
+      const seconds = captureEventFixed ? captureOffsetSeconds : elapsedSeconds;
+      const livingPose = livingPoseAt(seconds);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = backgroundGradient;
+      ctx.fillRect(0, 0, width, height);
+
+      drawBackgroundStars(seconds);
+      drawBackgroundConstellations(seconds);
+      drawAurora(seconds);
+      // Keep the legacy review comet in demo mode only. Production comets are
+      // exclusively the authored up/down sequences on the rare-event scheduler.
+      // The former independent 17-second comet made the idle screen visibly
+      // loop. The two authored comets are now scheduled as rare big events.
+      drawEmblem(seconds, livingPose);
+      // The special comet sits in the emblem's foreground plane. Drawing it after
+      // the emblem also prevents it from collapsing into the background starfield.
+      drawLivingComet();
+
+      ctx.fillStyle = vignetteGradient;
+      ctx.fillRect(0, 0, width, height);
+      drawTrackingDebug();
+
+      frameCount++;
+      fpsFrame++;
+      const appliedYaw = -livingPose * CONFIG.livingEmblem.cometYawTurnRadians;
+      const appliedHeadAngle = Math.hypot(appliedYaw, livingPitch);
+      const trackingClock = captureEventFixed
+        ? Math.max(0, Number(window.__NIGHTSKY_CAPTURE_TIME) || 0)
+        : elapsedSeconds;
+      window.__NIGHTSKY_TRACKING = {
+        timeSeconds: Number(elapsedSeconds.toFixed(3)),
+        kind: livingEventKind,
+        phase: livingPhase,
+        cometOnScreen: livingCometProgress >= 0 && livingCometOpacity > 0,
+        cometX: Number(livingCometX.toFixed(1)),
+        cometY: Number(livingCometY.toFixed(1)),
+        eyeX: Number(livingEyeX.toFixed(1)),
+        eyeY: Number(livingEyeY.toFixed(1)),
+        targetPitchDegrees: Number((livingLookTargetPitch * 180 / Math.PI).toFixed(2)),
+        appliedPitchDegrees: Number((livingPitch * 180 / Math.PI).toFixed(2)),
+        targetYawDegrees: Number((livingLookTargetYaw * 180 / Math.PI).toFixed(2)),
+        appliedYawDegrees: Number((appliedYaw * 180 / Math.PI).toFixed(2)),
+        appliedHeadAngleDegrees: Number((appliedHeadAngle * 180 / Math.PI).toFixed(2)),
+        attackWeight: Number(smoothInOutCubic((trackingClock -
+          CONFIG.livingEmblem.cometVisibleStartSeconds) /
+          CONFIG.livingEmblem.cometGazeAttackSeconds).toFixed(4)),
+        upWeight: Number(livingPitchUpWeight.toFixed(4)),
+        downWeight: Number(livingPitchDownWeight.toFixed(4)),
+        yawWeight: Number(livingPose.toFixed(4)),
+        plantedMaxDelta: Number(livingPlantedMaxDelta.toFixed(6)),
+        errorDegrees: Number((livingLookErrorRadians * 180 / Math.PI).toFixed(2))
+      };
+      if (document.body.classList.contains('show-debug')) {
+        const track = window.__NIGHTSKY_TRACKING;
+        debugNode.textContent =
+          track.kind + ' · ' + track.phase + '\n' +
+          'comet (' + track.cometX + ', ' + track.cometY + ')  eye (' +
+            track.eyeX + ', ' + track.eyeY + ')\n' +
+          'pitch target ' + track.targetPitchDegrees.toFixed(1) + '°  applied ' +
+            track.appliedPitchDegrees.toFixed(1) + '°\n' +
+          'yaw   target ' + track.targetYawDegrees.toFixed(1) + '°  applied ' +
+            track.appliedYawDegrees.toFixed(1) + '°\n' +
+          'morph up ' + track.upWeight.toFixed(2) + '  down ' +
+            track.downWeight.toFixed(2) + '  turn ' + track.yawWeight.toFixed(2) +
+            '  planted ' + track.plantedMaxDelta.toFixed(3) +
+            '  error ' + track.errorDegrees.toFixed(1) + '°';
+      }
+      if (now - fpsTime >= 1000) {
+        fps = fpsFrame * 1000 / (now - fpsTime);
+        fpsFrame = 0;
+        fpsTime = now;
+        window.__NIGHTSKY_STATS = {
+          fps: Number(fps.toFixed(1)), frameCount, starCount, width, height, dpr,
+          symbolReady: emblemImageReady, contourStars: pointCount,
+          livingPose: Number(livingPose.toFixed(4)), livingPhase,
+          livingEventCount, livingEventKind, livingEventClass,
+          livingGlow: Number(livingGlow.toFixed(3)),
+          livingPitch: Number(livingPitch.toFixed(4)),
+          livingYaw: Number(appliedYaw.toFixed(4)),
+          lookTargetYaw: Number(livingLookTargetYaw.toFixed(4)),
+          lookTargetPitch: Number(livingLookTargetPitch.toFixed(4)),
+          lookErrorRadians: Number(livingLookErrorRadians.toFixed(4)),
+          livingCometProgress: Number(livingCometProgress.toFixed(3)),
+          livingCometX: Number(livingCometX.toFixed(1)),
+          livingCometY: Number(livingCometY.toFixed(1)),
+          demoMode: DEMO_CAPTURE,
+          nextSubtleStartSeconds: Number(livingNextSubtleSeconds.toFixed(2)),
+          nextBigStartSeconds: Number(livingNextBigSeconds.toFixed(2)),
+          lastBigKind: livingLastBigKind
+        };
+      }
+      requestAnimationFrame(frame);
+    }
+
+    addEventListener('resize', () => {
+      if (!resizeQueued) {
+        resizeQueued = true;
+        requestAnimationFrame(resize);
+      }
+    }, { passive: true });
+
+    resize();
+    requestAnimationFrame(frame);
+  })();
+  </script>
+</body>
+</html>

@@ -152,10 +152,10 @@ function hostAllowed(host: string, allowlist: string[]): boolean {
 /** Actionable message naming the blocked host and exactly how to allow it. */
 function blockedMessage(host: string): string {
   return (
-    `Address "${host}" is a private or internal network address, which Prism blocks ` +
+    `Address "${host}" is a private or internal network address, which KYST blocks ` +
     `by default to prevent server-side request forgery (SSRF). If this is your own ` +
-    `self-hosted service, add "${host}" to PRISM_ALLOWED_INTERNAL_HOSTS in your Prism ` +
-    `.env (comma-separated — hostnames, IPs, or CIDR ranges) and restart Prism.`
+    `self-hosted service, add "${host}" to PRISM_ALLOWED_INTERNAL_HOSTS in your KYST ` +
+    `.env (comma-separated — hostnames, IPs, or CIDR ranges) and restart KYST.`
   );
 }
 

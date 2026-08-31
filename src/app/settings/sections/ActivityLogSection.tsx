@@ -121,7 +121,7 @@ export function ActivityLogSection() {
           Activity Log
         </h2>
         <p className="text-sm text-muted-foreground mt-1">
-          30-day history of all actions taken in Prism
+          30-day history of all actions taken in KYST
         </p>
       </div>
 

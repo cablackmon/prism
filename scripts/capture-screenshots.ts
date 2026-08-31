@@ -406,7 +406,7 @@ async function waitForContentReady(page: Page, settleMs = 3500): Promise<void> {
     .waitForFunction(
       () => {
         const text = document.body.innerText.trim();
-        if (!text || text === 'Prism') return false;
+        if (!text || text === 'KYST') return false;
         if (/Loading[\s\w]*(\.\.\.|…)/i.test(text)) return false;
         // Skeleton placeholders (animate-pulse) and spinners (animate-spin)
         // are both indicators that content is still loading.

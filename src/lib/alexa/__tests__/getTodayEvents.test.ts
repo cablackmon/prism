@@ -32,7 +32,7 @@ describe('handleGetTodayEvents', () => {
     mockedClient.getCalendarToday.mockRejectedValue(new VoiceApiError(503, { error: 'down' }));
 
     const res = await handleGetTodayEvents();
-    expect(res.response.outputSpeech.text).toMatch(/couldn't reach prism/i);
+    expect(res.response.outputSpeech.text).toMatch(/couldn't reach kyst/i);
   });
 
   it('rethrows non-VoiceApiError exceptions', async () => {

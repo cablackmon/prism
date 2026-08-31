@@ -1,11 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useIdleDetection } from '@/lib/hooks/useIdleDetection';
-import { usePhotos } from '@/lib/hooks/usePhotos';
-import { useAutoOrientationSetting, usePinnedPhoto, useScreensaverInterval } from '@/components/layout/WallpaperBackground';
-import { useScreenOrientation } from '@/lib/hooks/useScreenOrientation';
 import type { WidgetConfig } from '@/lib/hooks/useLayouts';
 import { WIDGET_REGISTRY } from '@/components/widgets/widgetRegistry';
 import { useDashboardData } from '@/components/dashboard/useDashboardData';
@@ -14,6 +11,12 @@ import { GRID_COLS } from '@/lib/constants/grid';
 import { CssGridDisplay } from '@/components/layout/grid/CssGridDisplay';
 import { CalendarPrefsScopeContext } from '@/lib/hooks/useCalendarWidgetPrefs';
 import { loadScreensaverLayout } from './screensaverStorage';
+import { NightSky } from './NightSky';
+import {
+  isExpectedNightSkyFrameUrl,
+  isExpectedNightSkyResponse,
+  NIGHT_SKY_IDLE_SECONDS,
+} from './nightSkyUtils';
 
 /**
  * Wrapper classes that make any dashboard widget legible as a screensaver
@@ -41,37 +44,12 @@ export {
 } from './screensaverStorage';
 
 export function Screensaver() {
-  const { isIdle } = useIdleDetection();
-  const { enabled: autoOrientation } = useAutoOrientationSetting();
-  const { pinnedId } = usePinnedPhoto('screensaver');
-  const { interval: screensaverInterval } = useScreensaverInterval();
-  const screenOrientation = useScreenOrientation();
-  const orientationOverride = typeof window !== 'undefined'
-    ? (localStorage.getItem('prism-orientation-override') as 'landscape' | 'portrait' | null) || null
-    : null;
-  const effectiveOrientation = orientationOverride || screenOrientation;
-  const { photos } = usePhotos({
-    sort: 'random',
-    limit: 50,
-    usage: 'screensaver',
-    orientation: autoOrientation ? effectiveOrientation : undefined,
-  });
+  const { isIdle } = useIdleDetection(NIGHT_SKY_IDLE_SECONDS);
   const [visible, setVisible] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [fadingOut, setFadingOut] = useState(false);
-
-  // Only rotate if no pinned photo and interval is not "never" (0)
-  useEffect(() => {
-    if (!isIdle || photos.length <= 1 || pinnedId || screensaverInterval === 0) return;
-    const timer = setInterval(() => {
-      setFadingOut(true);
-      setTimeout(() => {
-        setCurrentIndex((i) => (i + 1) % photos.length);
-        setFadingOut(false);
-      }, 1000);
-    }, screensaverInterval * 1000);
-    return () => clearInterval(timer);
-  }, [isIdle, photos.length, pinnedId, screensaverInterval]);
+  const [staticNightSkyAvailable, setStaticNightSkyAvailable] = useState<boolean | null>(null);
+  const [staticNightSkyListenerReady, setStaticNightSkyListenerReady] = useState(false);
+  const frameLoadTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const staticNightSkyLoaded = useRef(false);
 
   useEffect(() => {
     if (isIdle) {
@@ -82,36 +60,105 @@ export function Screensaver() {
     }
   }, [isIdle]);
 
-  if (!isIdle) return null;
+  useEffect(() => {
+    if (!isIdle) {
+      // Reset between activations, while the iframe cannot be rendered. Doing
+      // this after a new idle activation can erase an onLoad from a cached
+      // iframe before the fallback timeout effect observes it.
+      staticNightSkyLoaded.current = false;
+      setStaticNightSkyListenerReady(false);
+      setStaticNightSkyAvailable(null);
+      return;
+    }
 
-  // Use pinned photo if set, otherwise use rotating photos
-  const src = pinnedId
-    ? `/api/photos/${pinnedId}/file`
-    : photos[currentIndex]
-      ? `/api/photos/${photos[currentIndex]!.id}/file`
-      : '';
+    const controller = new AbortController();
+    const nightSkyUrl = new URL('/screensaver/nightsky.html', window.location.href).href;
+    fetch('/screensaver/nightsky.html', { cache: 'no-store', signal: controller.signal })
+      .then((response) => setStaticNightSkyAvailable(isExpectedNightSkyResponse(response, nightSkyUrl)))
+      .catch((error: unknown) => {
+        if (!(error instanceof DOMException && error.name === 'AbortError')) {
+          setStaticNightSkyAvailable(false);
+        }
+      });
+
+    return () => controller.abort();
+  }, [isIdle]);
+
+  useEffect(() => {
+    if (!isIdle || !staticNightSkyAvailable) return;
+
+    const nightSkyUrl = new URL('/screensaver/nightsky.html', window.location.href).href;
+    const handleSecurityPolicyViolation = (event: SecurityPolicyViolationEvent) => {
+      if (event.effectiveDirective === 'frame-src' && event.blockedURI === nightSkyUrl) {
+        setStaticNightSkyAvailable(false);
+      }
+    };
+
+    // Do not render the iframe until the CSP listener is installed. The
+    // violation can be emitted as soon as the browser begins the navigation,
+    // before a passive effect that follows the iframe mount can observe it.
+    window.addEventListener('securitypolicyviolation', handleSecurityPolicyViolation);
+
+    // Chromium does not dispatch iframe `error` for a CSP-blocked document.
+    // Fall back if the frame never confirms a real load for any reason.
+    // A cached frame can load before this passive effect runs, so do not arm a
+    // timeout after onLoad has already confirmed the document.
+    if (!staticNightSkyLoaded.current) {
+      frameLoadTimeout.current = setTimeout(() => setStaticNightSkyAvailable(false), 5_000);
+    }
+    setStaticNightSkyListenerReady(true);
+
+    return () => {
+      window.removeEventListener('securitypolicyviolation', handleSecurityPolicyViolation);
+      if (frameLoadTimeout.current) clearTimeout(frameLoadTimeout.current);
+      frameLoadTimeout.current = null;
+    };
+  }, [isIdle, staticNightSkyAvailable]);
+
+  const confirmStaticNightSkyLoaded = (event: React.SyntheticEvent<HTMLIFrameElement>) => {
+    const expectedUrl = new URL('/screensaver/nightsky.html', window.location.href).href;
+    try {
+      const frameUrl = event.currentTarget.contentWindow?.location.href;
+      if (!frameUrl || !isExpectedNightSkyFrameUrl(frameUrl, expectedUrl)) {
+        setStaticNightSkyAvailable(false);
+        return;
+      }
+    } catch {
+      // The asset is same-origin. Losing access means the frame did not finish
+      // on the expected Night Sky document, so retain the React fallback.
+      setStaticNightSkyAvailable(false);
+      return;
+    }
+
+    staticNightSkyLoaded.current = true;
+    if (frameLoadTimeout.current) clearTimeout(frameLoadTimeout.current);
+    frameLoadTimeout.current = null;
+  };
+
+  const nightSkyDomains = useMemo(() => new Set(['calendar']), []);
+  const nightSkyData = useDashboardData(nightSkyDomains);
+
+  // Intentional: idle activates the screensaver at any hour. Night/day only
+  // selects the palette inside NightSky; it is not an activation gate.
+  if (!isIdle) return null;
 
   return (
     <div
-      className={`fixed inset-0 z-[9999] bg-black transition-opacity duration-1000 ${
+      className={`fixed inset-0 z-[9999] bg-black transition-opacity duration-200 ${
         visible ? 'opacity-100' : 'opacity-0'
       }`}
     >
-      {/* Decorative layers are absolutely positioned, so in CSS paint order they
-          sit ABOVE the (statically-positioned) widget grid and would swallow every
-          tap. pointer-events-none lets taps fall through to the widgets — needed
-          for the calendar view controls to be operable on the screensaver. */}
-      {src && (
-        <div
-          className="pointer-events-none absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
-          style={{
-            backgroundImage: `url(${src})`,
-            opacity: fadingOut ? 0 : 1,
-          }}
+      {staticNightSkyAvailable && staticNightSkyListenerReady ? (
+        <iframe
+          src="/screensaver/nightsky.html"
+          title="KYST Night Sky screensaver"
+          className="pointer-events-none h-full w-full border-0"
+          onLoad={confirmStaticNightSkyLoaded}
+          onError={() => setStaticNightSkyAvailable(false)}
         />
+      ) : (
+        <NightSky events={nightSkyData.calendar.events} loading={nightSkyData.calendar.loading} />
       )}
-      <div className="pointer-events-none absolute inset-0 bg-black/40" />
-      <ScreensaverGrid />
     </div>
   );
 }

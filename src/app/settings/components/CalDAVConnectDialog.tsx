@@ -156,7 +156,7 @@ export function CalDAVConnectDialog({
           </DialogTitle>
           <DialogDescription>
             {step === 'credentials' && 'Works with Apple iCloud, Nextcloud, Radicale, Baikal, Synology, and other CalDAV servers.'}
-            {step === 'calendars' && 'Choose which calendars to sync with Prism.'}
+            {step === 'calendars' && 'Choose which calendars to sync with KYST.'}
             {step === 'done' && `${connectedCount} calendar(s) connected and syncing.`}
           </DialogDescription>
         </DialogHeader>
