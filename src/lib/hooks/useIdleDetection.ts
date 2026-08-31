@@ -45,6 +45,7 @@ export function useIdleDetection(initialTimeout?: number) {
   const [awayModeTimeout, setAwayModeTimeout] = useState(() => getAwayModeTimeout());
   const [isIdle, setIsIdle] = useState(false);
   const forcedRef = useRef(false);
+  const previousTimeoutRef = useRef(timeout);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const awayModeTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -56,6 +57,16 @@ export function useIdleDetection(initialTimeout?: number) {
     window.addEventListener('prism:screensaver-timeout-change', handler as EventListener);
     return () => window.removeEventListener('prism:screensaver-timeout-change', handler as EventListener);
   }, []);
+
+  // Re-enabling after "Never" is a deliberate settings interaction. Start a
+  // complete new interval instead of inheriting a timestamp from the disabled
+  // period. Ordinary document remounts still preserve the persisted deadline.
+  useEffect(() => {
+    if (previousTimeoutRef.current <= 0 && timeout > 0) {
+      updateLastActivity();
+    }
+    previousTimeoutRef.current = timeout;
+  }, [timeout]);
 
   // Listen for away mode timeout changes from settings
   useEffect(() => {

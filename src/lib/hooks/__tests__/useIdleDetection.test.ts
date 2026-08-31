@@ -406,6 +406,24 @@ describe('useIdleDetection', () => {
     expect(result.current.isIdle).toBe(true);
   });
 
+  it('starts a fresh deadline when re-enabled after being disabled', () => {
+    localStorage.setItem('prism-last-activity', String(Date.now()));
+    const { result } = renderHook(() => useIdleDetection(0));
+
+    act(() => jest.advanceTimersByTime(10_000));
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent('prism:screensaver-timeout-change', { detail: 5 })
+      );
+    });
+
+    expect(Number(localStorage.getItem('prism-last-activity'))).toBe(Date.now());
+    act(() => jest.advanceTimersByTime(4999));
+    expect(result.current.isIdle).toBe(false);
+    act(() => jest.advanceTimersByTime(1));
+    expect(result.current.isIdle).toBe(true);
+  });
+
   it('cleans up event listeners on unmount', () => {
     const removeSpy = jest.spyOn(window, 'removeEventListener');
     const { unmount } = renderHook(() => useIdleDetection(60));
