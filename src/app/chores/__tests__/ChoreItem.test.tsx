@@ -34,7 +34,7 @@ describe('ChoreItem destructive-action safety', () => {
 
     expect(edit.parentElement).not.toBe(destructiveGroup);
     expect(edit.className).toContain('h-14');
-    expect(edit.parentElement?.className).toContain('gap-11');
+    expect(edit.parentElement?.className).toContain('gap-14');
     expect(disable).toBeTruthy();
     expect(deleteButton.className).toContain('h-14');
     expect(deleteButton.className).toContain('min-w-14');

@@ -171,7 +171,7 @@ export function ChoreItem({
       </div>
 
       {/* Edit is deliberately isolated from destructive chore controls. */}
-      <div className="mt-3 flex w-full flex-wrap items-center justify-end gap-11 shrink-0">
+      <div className="mt-3 flex w-full flex-wrap items-center justify-end gap-14 shrink-0">
         <Button
           variant="outline"
           size="sm"
