@@ -43,6 +43,7 @@ export function Screensaver() {
   const { isIdle } = useIdleDetection(NIGHT_SKY_IDLE_SECONDS);
   const [visible, setVisible] = useState(false);
   const [staticNightSkyAvailable, setStaticNightSkyAvailable] = useState<boolean | null>(null);
+  const [staticNightSkyListenerReady, setStaticNightSkyListenerReady] = useState(false);
   const frameLoadTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const staticNightSkyLoaded = useRef(false);
 
@@ -61,6 +62,7 @@ export function Screensaver() {
       // this after a new idle activation can erase an onLoad from a cached
       // iframe before the fallback timeout effect observes it.
       staticNightSkyLoaded.current = false;
+      setStaticNightSkyListenerReady(false);
       setStaticNightSkyAvailable(null);
       return;
     }
@@ -88,6 +90,11 @@ export function Screensaver() {
       }
     };
 
+    // Do not render the iframe until the CSP listener is installed. The
+    // violation can be emitted as soon as the browser begins the navigation,
+    // before a passive effect that follows the iframe mount can observe it.
+    window.addEventListener('securitypolicyviolation', handleSecurityPolicyViolation);
+
     // Chromium does not dispatch iframe `error` for a CSP-blocked document.
     // Fall back if the frame never confirms a real load for any reason.
     // A cached frame can load before this passive effect runs, so do not arm a
@@ -95,7 +102,7 @@ export function Screensaver() {
     if (!staticNightSkyLoaded.current) {
       frameLoadTimeout.current = setTimeout(() => setStaticNightSkyAvailable(false), 5_000);
     }
-    window.addEventListener('securitypolicyviolation', handleSecurityPolicyViolation);
+    setStaticNightSkyListenerReady(true);
 
     return () => {
       window.removeEventListener('securitypolicyviolation', handleSecurityPolicyViolation);
@@ -123,7 +130,7 @@ export function Screensaver() {
         visible ? 'opacity-100' : 'opacity-0'
       }`}
     >
-      {staticNightSkyAvailable ? (
+      {staticNightSkyAvailable && staticNightSkyListenerReady ? (
         <iframe
           src="/screensaver/nightsky.html"
           title="KYST Night Sky screensaver"
