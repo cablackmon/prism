@@ -248,7 +248,10 @@ export function ChoresView() {
             onDelete={() => handleDeleteFromModal(editingChore.id)}
             onSave={async (chore) => {
               if (editingChore.enabled && chore.enabled === false) {
-                const shouldDisable = await confirmDisableChore(editingChore);
+                const shouldDisable = await confirmDisableChore({
+                  ...editingChore,
+                  ...chore,
+                });
                 if (!shouldDisable) return;
               }
               await saveEditedChore(editingChore.id, chore);

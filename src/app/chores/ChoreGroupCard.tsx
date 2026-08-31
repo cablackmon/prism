@@ -141,7 +141,7 @@ export function ChoreGroupCard({
         </div>
       </div>
       <div
-        className="mt-2 flex items-center justify-end gap-11 border-t border-border/60 pt-2"
+        className="mt-2 flex flex-wrap items-center justify-end gap-x-11 gap-y-2 border-t border-border/60 pt-2"
         onClick={(event) => event.stopPropagation()}
       >
         <Button
