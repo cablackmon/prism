@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useIdleDetection } from '@/lib/hooks/useIdleDetection';
 import type { WidgetConfig } from '@/lib/hooks/useLayouts';
 import { WIDGET_REGISTRY } from '@/components/widgets/widgetRegistry';
@@ -43,6 +43,7 @@ export function Screensaver() {
   const { isIdle } = useIdleDetection(NIGHT_SKY_IDLE_SECONDS);
   const [visible, setVisible] = useState(false);
   const [staticNightSkyAvailable, setStaticNightSkyAvailable] = useState<boolean | null>(null);
+  const frameLoadTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (isIdle) {
@@ -68,9 +69,38 @@ export function Screensaver() {
     return () => controller.abort();
   }, [isIdle]);
 
+  useEffect(() => {
+    if (!isIdle || !staticNightSkyAvailable) return;
+
+    const nightSkyUrl = new URL('/screensaver/nightsky.html', window.location.href).href;
+    const handleSecurityPolicyViolation = (event: SecurityPolicyViolationEvent) => {
+      if (event.effectiveDirective === 'frame-src' && event.blockedURI === nightSkyUrl) {
+        setStaticNightSkyAvailable(false);
+      }
+    };
+
+    // Chromium does not dispatch iframe `error` for a CSP-blocked document.
+    // Fall back if the frame never confirms a real load for any reason.
+    frameLoadTimeout.current = setTimeout(() => setStaticNightSkyAvailable(false), 5_000);
+    window.addEventListener('securitypolicyviolation', handleSecurityPolicyViolation);
+
+    return () => {
+      window.removeEventListener('securitypolicyviolation', handleSecurityPolicyViolation);
+      if (frameLoadTimeout.current) clearTimeout(frameLoadTimeout.current);
+      frameLoadTimeout.current = null;
+    };
+  }, [isIdle, staticNightSkyAvailable]);
+
+  const confirmStaticNightSkyLoaded = () => {
+    if (frameLoadTimeout.current) clearTimeout(frameLoadTimeout.current);
+    frameLoadTimeout.current = null;
+  };
+
   const nightSkyDomains = useMemo(() => new Set(['calendar']), []);
   const nightSkyData = useDashboardData(nightSkyDomains);
 
+  // Intentional: idle activates the screensaver at any hour. Night/day only
+  // selects the palette inside NightSky; it is not an activation gate.
   if (!isIdle) return null;
 
   return (
@@ -84,6 +114,7 @@ export function Screensaver() {
           src="/screensaver/nightsky.html"
           title="KYST Night Sky screensaver"
           className="pointer-events-none h-full w-full border-0"
+          onLoad={confirmStaticNightSkyLoaded}
           onError={() => setStaticNightSkyAvailable(false)}
         />
       ) : (

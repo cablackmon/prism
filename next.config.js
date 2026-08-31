@@ -45,7 +45,7 @@ const nextConfig = {
   async headers() {
     const securityHeaders = buildSecurityHeaders();
     const wallHeaders = securityHeaders.map((header) => header.key === 'Content-Security-Policy'
-      ? { ...header, value: header.value.replace("frame-src 'none'", "frame-src https://kyst-wall-proxy.fly.dev") }
+      ? { ...header, value: header.value.replace("frame-src 'self'", "frame-src 'self' https://kyst-wall-proxy.fly.dev") }
       : header);
     return [
       {
