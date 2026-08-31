@@ -42,6 +42,7 @@ export {
 export function Screensaver() {
   const { isIdle } = useIdleDetection(NIGHT_SKY_IDLE_SECONDS);
   const [visible, setVisible] = useState(false);
+  const [staticNightSkyAvailable, setStaticNightSkyAvailable] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (isIdle) {
@@ -50,6 +51,21 @@ export function Screensaver() {
     } else {
       setVisible(false);
     }
+  }, [isIdle]);
+
+  useEffect(() => {
+    if (!isIdle) return;
+
+    const controller = new AbortController();
+    fetch('/screensaver/nightsky.html', { cache: 'no-store', signal: controller.signal })
+      .then((response) => setStaticNightSkyAvailable(response.ok))
+      .catch((error: unknown) => {
+        if (!(error instanceof DOMException && error.name === 'AbortError')) {
+          setStaticNightSkyAvailable(false);
+        }
+      });
+
+    return () => controller.abort();
   }, [isIdle]);
 
   const nightSkyDomains = useMemo(() => new Set(['calendar']), []);
@@ -63,7 +79,16 @@ export function Screensaver() {
         visible ? 'opacity-100' : 'opacity-0'
       }`}
     >
-      <NightSky events={nightSkyData.calendar.events} loading={nightSkyData.calendar.loading} />
+      {staticNightSkyAvailable ? (
+        <iframe
+          src="/screensaver/nightsky.html"
+          title="KYST Night Sky screensaver"
+          className="pointer-events-none h-full w-full border-0"
+          onError={() => setStaticNightSkyAvailable(false)}
+        />
+      ) : (
+        <NightSky events={nightSkyData.calendar.events} loading={nightSkyData.calendar.loading} />
+      )}
     </div>
   );
 }

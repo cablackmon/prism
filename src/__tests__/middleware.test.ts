@@ -257,6 +257,14 @@ describe('middleware', () => {
       );
     });
 
+    it('keeps the Night Sky screensaver behind the household auth wall', async () => {
+      const response = await middleware(makeRequest('/screensaver/nightsky.html?demo=1'));
+      expect(response.status).toBe(307);
+      expect(response.headers.get('location')).toBe(
+        'http://localhost:3000/auth/household?next=%2Fscreensaver%2Fnightsky.html%3Fdemo%3D1'
+      );
+    });
+
     it('keeps the login wall and health checks public', async () => {
       expect((await middleware(makeRequest('/auth/household'))).status).not.toBe(401);
       expect((await middleware(makeRequest('/api/health'))).status).not.toBe(401);
