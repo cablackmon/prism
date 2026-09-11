@@ -31,6 +31,10 @@
 
 // Import global styles (including Tailwind CSS)
 import '@/styles/globals.css';
+import '@/styles/kyst-theme.css';
+import { connection } from 'next/server';
+import { resolveKystTheme } from '@/lib/theme/kystTheme';
+import { KystThemeProvider } from '@/components/theme/KystTheme';
 
 // Bundle a color emoji webfont so emoji (🎯 🎂 🛒 🏆 …) render even on clients
 // with no system emoji font — e.g. a bare Raspberry Pi OS / minimal Chromium
@@ -227,11 +231,13 @@ export const viewport: Viewport = {
  * - Can't use hooks or browser APIs directly
  * - For client-side features, wrap in a Client Component
  */
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  await connection();
+  const kystTheme = resolveKystTheme(process.env.KYST_THEME);
   return (
     <html
       lang="en"
@@ -270,12 +276,14 @@ export default function RootLayout({
           Wrap children with application providers (theme, auth, etc.)
         */}
         <ErrorBoundary>
+          <KystThemeProvider value={kystTheme}>
           <Providers>
             <DemoBanner />
             {children}
             <LazyOverlays />
             <Toaster />
           </Providers>
+          </KystThemeProvider>
         </ErrorBoundary>
       </body>
     </html>

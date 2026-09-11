@@ -356,7 +356,7 @@ function AgendaRowItem({ row, cards = false }: { row: AgendaRow; cards?: boolean
       {...(row.dragId ? draggable.listeners : {})}
       {...(row.dragId ? draggable.attributes : {})}
       className={cn(
-        'relative w-full text-left flex items-start gap-2 p-1.5 rounded',
+        'kyst-agenda-row relative w-full text-left flex items-start gap-2 p-1.5 rounded',
         cards
           ? 'bg-card/85 backdrop-blur-sm border border-border/40 shadow-sm hover:bg-card text-foreground'
           : 'hover:opacity-90 text-white',

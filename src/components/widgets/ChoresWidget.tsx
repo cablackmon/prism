@@ -23,6 +23,7 @@
  */
 
 'use client';
+import { useBoardTheme } from '@/components/theme/KystTheme';
 
 import * as React from 'react';
 import { Emoji } from '@/components/ui/Emoji';
@@ -98,6 +99,7 @@ export const ChoresWidget = React.memo(function ChoresWidget({
   titleHref,
   className,
 }: ChoresWidgetProps) {
+  const nox = useBoardTheme() === 'nox';
   // Use provided chores (no demo data fallback in production)
   const allChores = externalChores || [];
 
@@ -111,8 +113,8 @@ export const ChoresWidget = React.memo(function ChoresWidget({
       if (!b.nextDue) return -1;
       return a.nextDue.localeCompare(b.nextDue);
     });
-    return { filteredChores: filtered, displayChores: filtered.slice(0, maxChores) };
-  }, [allChores, userId, showDisabled, maxChores]);
+    return { filteredChores: filtered, displayChores: nox ? filtered : filtered.slice(0, maxChores) };
+  }, [allChores, userId, showDisabled, maxChores, nox]);
 
   // Local state for optimistic updates
   const [completingChores, setCompletingChores] = useState<Set<string>>(new Set());
@@ -187,7 +189,7 @@ export const ChoresWidget = React.memo(function ChoresWidget({
           </div>
 
           {/* Show count of remaining chores */}
-          {filteredChores.length > maxChores && (
+          {!nox && filteredChores.length > maxChores && (
             <div className="mt-3 text-center text-xs text-muted-foreground">
               +{filteredChores.length - maxChores} more chores
             </div>

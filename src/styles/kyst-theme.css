@@ -1,0 +1,87 @@
+@font-face{font-family:'Barlow Semi Condensed';font-style:normal;font-weight:400;font-display:swap;src:url('/fonts/nox/BarlowSemiCondensed400.woff2') format('woff2');}
+@font-face{font-family:'Barlow Semi Condensed';font-style:normal;font-weight:500;font-display:swap;src:url('/fonts/nox/BarlowSemiCondensed500.woff2') format('woff2');}
+@font-face{font-family:'Barlow Semi Condensed';font-style:normal;font-weight:600;font-display:swap;src:url('/fonts/nox/BarlowSemiCondensed600.woff2') format('woff2');}
+@font-face{font-family:'Chakra Petch';font-style:normal;font-weight:400;font-display:swap;src:url('/fonts/nox/ChakraPetch400.woff2') format('woff2');}
+@font-face{font-family:'Chakra Petch';font-style:normal;font-weight:600;font-display:swap;src:url('/fonts/nox/ChakraPetch600.woff2') format('woff2');}
+@font-face{font-family:'Chakra Petch';font-style:normal;font-weight:700;font-display:swap;src:url('/fonts/nox/ChakraPetch700.woff2') format('woff2');}
+@font-face{font-family:'JetBrains Mono';font-style:normal;font-weight:400;font-display:swap;src:url('/fonts/nox/JetBrainsMono400.woff2') format('woff2');}
+@font-face{font-family:'JetBrains Mono';font-style:normal;font-weight:700;font-display:swap;src:url('/fonts/nox/JetBrainsMono700.woff2') format('woff2');}
+
+/* Approved mock v2 tokens. Faint labels are raised to muted for AA contrast.
+   Opaque card surfaces avoid per-frame backdrop rasterization over moving stars. */
+.kyst-board {
+  --nox-void: #06060e; --nox-ink: #0a0918; --nox-ink-2: #0f0d22;
+  --nox-pink: #ff4d9e; --nox-cyan: #35c7ff; --nox-violet: #7c4dff;
+  --nox-amber: #ffb347; --nox-brass: #d2b457; --nox-mint: #4ee0b8;
+  --nox-text: #f0eff8; --nox-text-2: #c3c0d6; --nox-muted: #8f8ca8;
+  --nox-line: rgb(255 255 255 / .14); --nox-radius: 14px; --nox-gap: 16px;
+  --nox-display: 'Chakra Petch', system-ui, sans-serif;
+  --nox-body: 'Barlow Semi Condensed', system-ui, sans-serif;
+  --nox-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --background: 240 40% 4%; --foreground: 247 39% 96%;
+  --card: 248 40% 9%; --card-foreground: 247 39% 96%;
+  --muted: 248 33% 16%; --muted-foreground: 246 14% 61%;
+  --secondary: 248 33% 16%; --secondary-foreground: 247 39% 96%;
+  --accent: 248 33% 20%; --accent-foreground: 247 39% 96%;
+  --border: 248 20% 30%; --input: 248 20% 45%; --ring: 197 100% 60%;
+  --seasonal-accent: 333 100% 65%; --seasonal-accent-foreground: 244 45% 6%;
+  color: var(--nox-text); background: var(--nox-void);
+  font-family: var(--nox-body);
+}
+.kyst-starfield { position:fixed; inset:0; overflow:hidden; pointer-events:none; z-index:0;
+  background: radial-gradient(ellipse at 8% 0%, rgb(124 77 255 / .23), transparent 60%),
+    radial-gradient(ellipse at 96% 8%, rgb(255 77 158 / .14), transparent 60%),
+    radial-gradient(ellipse at 78% 100%, rgb(53 199 255 / .13), transparent 60%), var(--nox-ink);
+}
+.kyst-stars { position:absolute; inset:-64px; background-image:url('/nox-stars.svg');
+  background-size:960px 640px; will-change:transform; }
+.kyst-stars-far { opacity:.45; animation:kyst-drift 240s ease-in-out infinite alternate; }
+.kyst-stars-near { background-size:1440px 960px; animation:kyst-drift 180s ease-in-out infinite alternate-reverse, kyst-twinkle 20s ease-in-out infinite alternate; }
+@keyframes kyst-drift { from { transform:translate3d(-24px,-16px,0); } to { transform:translate3d(24px,16px,0); } }
+@keyframes kyst-twinkle { from { opacity:.12; } to { opacity:.32; } }
+html[data-kyst-screensaver="active"] .kyst-stars,
+.kyst-starfield[data-paused="true"] .kyst-stars { animation-play-state:paused; }
+@media (prefers-reduced-motion:reduce) { .kyst-stars { animation:none; will-change:auto; } }
+.kyst-board > main { position:relative; }
+.kyst-board header { background:transparent; backdrop-filter:none; color:var(--nox-text-2); }
+.kyst-wordmark { display:flex; align-items:center; gap:12px; margin-right:auto;
+  color:var(--nox-text); font:700 26px var(--nox-display); letter-spacing:.12em; }
+.kyst-wordmark img { width:44px; height:44px; }
+.kyst-wordmark-dot { color:var(--nox-pink); }
+.kyst-board aside { background:linear-gradient(180deg,#161230,#090815); border-right:1px solid var(--nox-line); }
+.kyst-board .widget-cell { background:transparent !important; border:0 !important; backdrop-filter:none !important; }
+.kyst-board .kyst-widget { border:1px solid var(--nox-line); border-radius:var(--nox-radius);
+  color:var(--nox-text); background:linear-gradient(158deg,#181436,#0c0a1c 55%,#090814) !important;
+  backdrop-filter:none; box-shadow:inset 0 1px rgb(255 77 158 / .3);
+}
+.kyst-board .kyst-widget-header { padding:12px 20px 8px; }
+.kyst-board .kyst-widget-header h3 { font-family:var(--nox-display); font-weight:700;
+  font-size:20px; letter-spacing:.12em; text-transform:uppercase; }
+.kyst-board .kyst-widget-content { padding:0 20px 16px; }
+.kyst-board .kyst-widget .text-muted-foreground { color:var(--nox-muted); }
+.kyst-board .tabular-nums { font-family:var(--nox-mono); font-variant-numeric:tabular-nums; }
+.kyst-board .kyst-scroll { overscroll-behavior:contain; scrollbar-width:none; }
+.kyst-board .kyst-scroll::-webkit-scrollbar { display:none; }
+.kyst-board .kyst-scroll[data-more-below="true"] { mask-image:linear-gradient(to bottom,#000 calc(100% - 60px),transparent); }
+.kyst-board [data-radix-scroll-area-viewport] ~ [data-orientation] { visibility:hidden; }
+.kyst-board :is(a,button,input,select,textarea,[tabindex]):focus-visible {
+  outline:3px solid var(--nox-cyan); outline-offset:3px;
+}
+.kyst-board .kyst-scroll:focus-visible { outline-offset:-3px; }
+@media (max-width:767px) {
+  .kyst-board .kyst-widget-header { padding:12px 16px 8px; }
+  .kyst-board .kyst-widget-content { padding:0 16px 16px; }
+}
+
+.kyst-board .kyst-agenda-row { background:var(--nox-ink-2) !important; color:var(--nox-text); padding:12px; }
+.kyst-board .kyst-agenda-row .text-xs { font-family:var(--nox-mono); color:var(--nox-text-2); opacity:1; }
+.kyst-board .kyst-widget :is(.text-destructive, .text-red-500, .text-red-600) { color:var(--nox-pink); }
+.kyst-board .kyst-widget .truncate { white-space:normal; overflow-wrap:anywhere; }
+.kyst-board .kyst-widget [class*="text-muted-foreground/"] { color:var(--nox-muted); }
+/* The stored desktop layout also runs on tablets. Keep the clock within its
+   shallow grid slot when the original large type would wrap above the card. */
+@media (min-width:768px) and (max-width:1279px) {
+  .kyst-board .kyst-widget[data-widget="Clock"] .kyst-widget-content { padding:8px; }
+  .kyst-board .kyst-widget[data-widget="Clock"] time:first-child { font-size:24px; line-height:1.1; white-space:nowrap; }
+  .kyst-board .kyst-widget[data-widget="Clock"] time + time { font-size:12px; line-height:1.3; }
+}

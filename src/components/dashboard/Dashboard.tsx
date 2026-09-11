@@ -339,6 +339,7 @@ export function Dashboard({
         user={activeUser ? { id: activeUser.id, name: activeUser.name, avatarUrl: activeUser.avatarUrl, color: activeUser.color } : undefined}
         onLogout={activeUser ? clearActiveUser : undefined}
         onLogin={handleLogin}
+        boardTheme
       >
         <MobileDashboard data={data} />
       </AppShell>

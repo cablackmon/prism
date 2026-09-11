@@ -21,6 +21,7 @@
  */
 
 'use client';
+import { BoardStarfield, BoardThemeContext, useKystTheme } from '@/components/theme/KystTheme';
 
 import * as React from 'react';
 import { SideNav } from './SideNav';
@@ -54,6 +55,8 @@ export interface AppShellProps {
   hideNav?: boolean;
   /** Show wallpaper background (only for dashboard/screensaver) */
   showWallpaper?: boolean;
+  /** Apply board theme without enabling classic wallpaper on mobile. */
+  boardTheme?: boolean;
   /** Additional CSS classes for main content area */
   className?: string;
 }
@@ -89,6 +92,7 @@ export function AppShell({
   onLogin,
   hideNav = false,
   showWallpaper = false,
+  boardTheme = false,
   className,
 }: AppShellProps) {
   const orientation = useOrientation();
@@ -120,10 +124,14 @@ export function AppShell({
   const showPortraitNav = !isMobile && orientation === 'portrait';
   const showMobileNav = isMobile;
 
+  const configuredTheme = useKystTheme();
+  const board = showWallpaper || boardTheme;
+  const nox = board && configuredTheme === 'nox';
   return (
-    <div className={cn('relative min-h-screen', !showWallpaper && 'bg-background')}>
+    <BoardThemeContext.Provider value={nox ? 'nox' : 'classic'}>
+    <div data-kyst-theme={board ? configuredTheme : undefined} className={cn('relative min-h-screen', nox && 'kyst-board', !showWallpaper && 'bg-background')}>
       {/* WALLPAPER BACKGROUND (only on dashboard/screensaver) */}
-      {showWallpaper && <WallpaperBackground />}
+      {nox ? <BoardStarfield /> : showWallpaper && <WallpaperBackground />}
 
       {/* SIDE NAVIGATION - landscape mode on larger screens */}
       {!hideNav && showSideNav && (
@@ -156,5 +164,6 @@ export function AppShell({
         <MobileFab user={user} onLogin={onLogin} onLogout={onLogout} uiHidden={uiHidden || measureHideNav} />
       )}
     </div>
+    </BoardThemeContext.Provider>
   );
 }

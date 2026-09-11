@@ -30,6 +30,9 @@
 'use client';
 
 import * as React from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useBoardTheme } from '@/components/theme/KystTheme';
 import { cn } from '@/lib/utils';
 import { AwayModeToggle } from '@/components/away-mode';
 import { BabysitterModeToggle } from '@/components/babysitter-mode';
@@ -197,6 +200,7 @@ export function DashboardHeader({
   onEditClick,
   onScreensaverClick,
 }: DashboardHeaderProps) {
+  const nox = useBoardTheme() === 'nox';
   const { uiHidden } = useAutoHideUI();
   const [measureHideChrome, setMeasureHideChrome] = React.useState(false);
 
@@ -220,6 +224,10 @@ export function DashboardHeader({
       hidden ? 'opacity-0 max-h-0 py-0' : 'max-h-20 py-2 delay-200'
     )}>
       <div className="flex items-center justify-end gap-2">
+        {nox && <Link href="/" className="kyst-wordmark" aria-label="KYST family board home">
+          <Image src="/kyst-emblem.svg" alt="" width={44} height={44} priority />
+          <span>KYST<span className="kyst-wordmark-dot">.</span></span>
+        </Link>}
         {onEditClick && (
           <button
             onClick={onEditClick}
