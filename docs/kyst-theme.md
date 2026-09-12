@@ -87,13 +87,23 @@ respect Cameron's permitted screenshot-only lane.
 
 ## Current implementation boundary
 
-The live default layout read from `/api/layouts` on September 11 contains Calendar,
-Clock, Weather, Tasks, Chores, Points, and Family Messages. The approved mock also
-shows a Happening Now hero, schoolwork lanes, and a docked Ask NOX panel. The current
-auth-wall source does not implement these as widgets; the microphone is an overlay.
-The draft preserves the live information architecture and implements the shared
-visual foundation. NOX must reconcile that difference before this can claim mock
-v2 acceptance, the 90px hero/156px strip geometry, or production readiness.
+On September 12, Cameron selected **restyle existing widgets; defer extra panels**
+in the board-scope interaction. This release preserves Calendar, Clock, Weather,
+Tasks, Chores, Points, and Family Messages. Happening Now, separate schoolwork
+lanes, and docked Ask NOX are deferred. Their 90px/156px mock geometry is not a
+release target; saved grid geometry and fontScale=150 remain untouched.
+
+The approved mock supplies the palette, fonts, cards, and scrolling treatment.
+The NOX body scale uses 22px primary rows / 16px metadata at 1920px, scales
+to 44px / 32px at 3840px for the hallway display, and uses 18px / 14px at
+tablet widths. The existing mobile summary layout is preserved. Long content wraps into scrollable card bodies. Narrow weather cards scroll
+vertically to retain all metrics. The 44px emblem/wordmark also appears above
+the existing mobile summary cards.
+Parker uses cyan and Sawyer pink for the existing avatar, task, goal, and agenda
+indicators. This is a rendering-only mapping: original member IDs, colors, data,
+filters, and edit payloads remain intact. Agenda lane names resolve through each event's group ID; unknown groups retain
+the original source color. Family calendar markers use the mock brass token,
+reserving amber for temporal emphasis. Classic retains its original palette and type scale.
 
 Local browser screenshots and measurements are development evidence only. They
 do not substitute for the required post-deploy real-kiosk evidence. The current `kiosk_agent.py` argparse commands do not include `screenshot`, but

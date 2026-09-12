@@ -9,6 +9,7 @@ import {
 import { Calendar, UtensilsCrossed } from 'lucide-react';
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
+import { useBoardColor } from '@/components/theme/useBoardColor';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui';
 import type { CalendarEvent } from '@/types/calendar';
@@ -30,6 +31,7 @@ const TASK_FALLBACK_COLOR = '#3b82f6';
 
 export interface AgendaViewProps {
   events: CalendarEvent[];
+  groupNames?: Readonly<Record<string, string>>;
   days?: number;
   maxEventsPerDay?: number;
   onEventClick?: (event: CalendarEvent) => void;
@@ -57,6 +59,7 @@ type AgendaRow = {
   /** Optional drag id (`meal:<id>` etc.). Read-only for events. */
   dragId?: string;
   stripeColor: string;
+  memberName?: string;
   timeLabel: string;
   title: string;
   subtitle?: string;
@@ -67,6 +70,7 @@ type AgendaRow = {
 
 export function AgendaView({
   events,
+  groupNames,
   days = 14,
   maxEventsPerDay = 0,
   onEventClick,
@@ -136,6 +140,7 @@ export function AgendaView({
             key={date.toISOString()}
             date={date}
             events={dayEvts}
+            groupNames={groupNames}
             bucket={bucket}
             maxEvents={maxEventsPerDay}
             onEventClick={onEventClick}
@@ -153,6 +158,7 @@ export function AgendaView({
 function AgendaDaySection({
   date,
   events,
+  groupNames,
   bucket,
   maxEvents,
   onEventClick,
@@ -163,6 +169,7 @@ function AgendaDaySection({
 }: {
   date: Date;
   events: CalendarEvent[];
+  groupNames?: Readonly<Record<string, string>>;
   bucket?: DayBucket;
   maxEvents: number;
   onEventClick?: (event: CalendarEvent) => void;
@@ -173,7 +180,7 @@ function AgendaDaySection({
 }) {
   const { timeFormat, displayTimezone } = useTimeFormat();
   const droppable = useDayDroppable({ date, enabled: cards && enableDnd });
-  const rows = buildAgendaRows({ date, events, bucket, onEventClick, mealColor, onItemClick, timeFormat, displayTimezone });
+  const rows = buildAgendaRows({ date, events, groupNames, bucket, onEventClick, mealColor, onItemClick, timeFormat, displayTimezone });
   const displayRows = maxEvents > 0 ? rows.slice(0, maxEvents) : rows;
   const remainingCount = maxEvents > 0 ? rows.length - maxEvents : 0;
 
@@ -219,6 +226,7 @@ function AgendaDaySection({
 function buildAgendaRows({
   date,
   events,
+  groupNames,
   bucket,
   onEventClick,
   mealColor,
@@ -228,6 +236,7 @@ function buildAgendaRows({
 }: {
   date: Date;
   events: CalendarEvent[];
+  groupNames?: Readonly<Record<string, string>>;
   bucket?: DayBucket;
   onEventClick?: (event: CalendarEvent) => void;
   mealColor?: string;
@@ -254,6 +263,7 @@ function buildAgendaRows({
           + toDisplayDate(event.startTime, displayTimezone).getMinutes(),
       floating,
       stripeColor: event.color,
+      memberName: event.groupId ? groupNames?.[event.groupId] : undefined,
       timeLabel: allDay
         ? 'All day'
         : startsToday
@@ -291,6 +301,7 @@ function buildAgendaRows({
         floating: min === null,
         dragId: `chore:${chore.id}`,
         stripeColor: chore.assignedTo?.color || CHORE_FALLBACK_COLOR,
+        memberName: chore.assignedTo?.name,
         timeLabel: min !== null ? formatTimeLabel(t!, timeFormat) : 'Chore',
         title: chore.title,
         subtitle: chore.assignedTo?.name,
@@ -307,6 +318,7 @@ function buildAgendaRows({
         floating: min === null,
         dragId: `task:${task.id}`,
         stripeColor: task.assignedTo?.color || TASK_FALLBACK_COLOR,
+        memberName: task.assignedTo?.name,
         timeLabel: min !== null ? formatTimeLabel(t!, timeFormat) : 'Task',
         title: task.title,
         subtitle: task.assignedTo?.name,
@@ -331,6 +343,8 @@ function formatTimeLabel(hhmm: string, timeFormat: TimeFormat): string {
 }
 
 function AgendaRowItem({ row, cards = false }: { row: AgendaRow; cards?: boolean }) {
+  const boardColor = useBoardColor();
+  const stripeColor = boardColor(row.stripeColor, row.memberName);
   const draggable = useDraggable({
     id: row.dragId ?? `__static__:${row.key}`,
     disabled: !row.dragId,
@@ -341,8 +355,8 @@ function AgendaRowItem({ row, cards = false }: { row: AgendaRow; cards?: boolean
     transform: CSS.Translate.toString(draggable.transform),
     touchAction: row.dragId ? 'none' : undefined,
     zIndex: draggable.isDragging ? 50 : undefined,
-    borderLeft: `3px solid ${row.stripeColor}`,
-    backgroundColor: cards ? undefined : row.stripeColor,
+    borderLeft: `3px solid ${stripeColor}`,
+    backgroundColor: cards ? undefined : stripeColor,
   };
 
   const Tag: 'button' | 'div' = row.onClick ? 'button' : 'div';
@@ -379,7 +393,7 @@ function AgendaRowItem({ row, cards = false }: { row: AgendaRow; cards?: boolean
         </div>
         <div className={cn('flex items-center gap-1 text-sm font-medium', cards ? 'text-foreground' : 'text-white', row.muted && 'line-through')}>
           {row.dragId?.startsWith('meal:') && (
-            <UtensilsCrossed aria-hidden className="h-3 w-3 shrink-0" style={cards ? { color: row.stripeColor } : undefined} />
+            <UtensilsCrossed aria-hidden className="h-3 w-3 shrink-0" style={cards ? { color: stripeColor } : undefined} />
           )}
           <span className="truncate">{row.title}</span>
         </div>

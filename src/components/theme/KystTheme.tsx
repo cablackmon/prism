@@ -1,6 +1,8 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
 import type { KystTheme } from '@/lib/theme/kystTheme';
 
 const Configuration = createContext<KystTheme>('classic');
@@ -24,4 +26,11 @@ export function BoardStarfield() {
     <div className="kyst-stars kyst-stars-far" />
     <div className="kyst-stars kyst-stars-near" />
   </div>;
+}
+
+export function BoardWordmark() {
+  return <Link href="/" className="kyst-wordmark" aria-label="KYST family board home">
+    <Image src="/kyst-emblem.svg" alt="" width={44} height={44} priority />
+    <span>KYST<span className="kyst-wordmark-dot">.</span></span>
+  </Link>;
 }

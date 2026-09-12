@@ -31,6 +31,9 @@
 import * as React from 'react';
 import * as AvatarPrimitive from '@radix-ui/react-avatar';
 import { cn } from '@/lib/utils';
+import { useBoardColor } from '@/components/theme/useBoardColor';
+import { useBoardTheme } from '@/components/theme/KystTheme';
+import { contrastText } from '@/lib/utils/color';
 import { Emoji } from '@/components/ui/Emoji';
 
 
@@ -175,6 +178,9 @@ export function UserAvatar({
   size = 'md',
   className,
 }: UserAvatarProps) {
+  const boardColor = useBoardColor();
+  const nox = useBoardTheme() === 'nox';
+  color = color ? boardColor(color, name) : color;
   const initials = getInitials(name);
   const isEmoji = imageUrl?.startsWith('emoji:');
 
@@ -200,7 +206,7 @@ export function UserAvatar({
         <AvatarImage src={imageUrl} alt={name} />
       )}
       <AvatarFallback
-        style={color ? { backgroundColor: color, color: 'white' } : undefined}
+        style={color ? { backgroundColor: color, color: nox ? contrastText(color) : 'white' } : undefined}
       >
         {initials}
       </AvatarFallback>

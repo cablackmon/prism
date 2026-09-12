@@ -26,6 +26,7 @@
 'use client';
 import { useBoardTheme } from '@/components/theme/KystTheme';
 
+import { useBoardColor } from '@/components/theme/useBoardColor';
 import * as React from 'react';
 import { useMemo, useCallback } from 'react';
 import { format, isToday, isTomorrow, isPast } from 'date-fns';
@@ -207,6 +208,7 @@ function TaskItem({
   onToggle: () => void;
   onClick?: () => void;
 }) {
+  const boardColor = useBoardColor();
   // Format due date
   const dueDateDisplay = task.dueDate ? formatDueDate(task.dueDate) : null;
 
@@ -232,7 +234,7 @@ function TaskItem({
         className="mt-0.5"
         style={
           task.assignedTo
-            ? { borderColor: task.assignedTo.color }
+            ? { borderColor: boardColor(task.assignedTo.color, task.assignedTo.name) }
             : undefined
         }
       />

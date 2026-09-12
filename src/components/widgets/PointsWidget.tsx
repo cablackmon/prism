@@ -1,5 +1,6 @@
 'use client';
 
+import { useBoardColor } from '@/components/theme/useBoardColor';
 import * as React from 'react';
 import { Emoji } from '@/components/ui/Emoji';
 import { cn } from '@/lib/utils';
@@ -24,6 +25,7 @@ export const PointsWidget = React.memo(function PointsWidget({
   error,
   titleHref = '/goals',
 }: PointsWidgetProps) {
+  const boardColor = useBoardColor();
   return (
     <WidgetContainer
       title="Points"
@@ -43,7 +45,7 @@ export const PointsWidget = React.memo(function PointsWidget({
                 <div key={child.userId} className="flex items-center gap-1.5 text-xs">
                   <div
                     className="w-2 h-2 rounded-full"
-                    style={{ backgroundColor: child.color }}
+                    style={{ backgroundColor: boardColor(child.color, child.name) }}
                   />
                   <span className="font-medium">{child.name}</span>
                   <span className="text-muted-foreground tabular-nums">
@@ -75,14 +77,14 @@ export const PointsWidget = React.memo(function PointsWidget({
                 return (
                   <div key={child.userId} className="flex items-center gap-1.5">
                     {cp?.achieved ? (
-                      <Check className="h-3 w-3 shrink-0" style={{ color: child.color }} />
+                      <Check className="h-3 w-3 shrink-0" style={{ color: boardColor(child.color, child.name) }} />
                     ) : (
                       <div className="w-3 h-3 shrink-0" />
                     )}
                     <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all"
-                        style={{ width: `${pct}%`, backgroundColor: child.color }}
+                        style={{ width: `${pct}%`, backgroundColor: boardColor(child.color, child.name) }}
                       />
                     </div>
                     <span className="text-[10px] text-muted-foreground tabular-nums w-8 text-right">

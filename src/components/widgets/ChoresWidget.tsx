@@ -249,7 +249,7 @@ function ChoreItem({
           isPendingApproval && 'text-amber-500'
         )}
         title={isPendingApproval ? 'Pending approval - click to complete or approve' : 'Mark as complete'}
-        aria-label={isPendingApproval ? 'Pending approval' : 'Mark as complete'}
+        aria-label={isPendingApproval ? `Approve ${chore.title}` : `Complete ${chore.title}`}
       >
         {completing ? (
           <Clock className="h-4 w-4 animate-spin" />

@@ -21,7 +21,7 @@
  */
 
 'use client';
-import { BoardStarfield, BoardThemeContext, useKystTheme } from '@/components/theme/KystTheme';
+import { BoardStarfield, BoardWordmark, BoardThemeContext, useKystTheme } from '@/components/theme/KystTheme';
 
 import * as React from 'react';
 import { SideNav } from './SideNav';
@@ -151,6 +151,7 @@ export function AppShell({
           className
         )}
       >
+        {nox && isMobile && !uiHidden && <div className="kyst-mobile-brand"><BoardWordmark /></div>}
         {children}
       </main>
 

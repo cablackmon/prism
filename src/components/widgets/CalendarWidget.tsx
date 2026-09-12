@@ -1,5 +1,6 @@
 'use client';
 
+import { useBoardColor } from '@/components/theme/useBoardColor';
 import * as React from 'react';
 import { useMemo, useCallback, useState, useContext, lazy, Suspense } from 'react';
 import { format, isToday, isTomorrow, startOfWeek, endOfWeek, addDays, addWeeks, startOfMonth, endOfMonth } from 'date-fns';
@@ -83,6 +84,8 @@ export const CalendarWidget = React.memo(function CalendarWidget({
 
   // Date range for overlay buckets (meals/chores/tasks). Mirrors the page-level
   // calculation so each view's visible window has the right data loaded.
+  const boardColor = useBoardColor();
+  const groupNames = useMemo(() => Object.fromEntries(calendarGroups.map(group => [group.id, group.name])), [calendarGroups]);
   const cardsMode = displayMode === 'cards';
   const { from: bucketsFrom, to: bucketsTo } = useMemo(() => {
     if (resolvedView === 'day') return { from: currentDate, to: currentDate };
@@ -228,16 +231,16 @@ export const CalendarWidget = React.memo(function CalendarWidget({
           className={cn(
             'px-2 py-1 rounded-full text-[10px] font-medium transition-colors inline-flex items-center gap-1 leading-none',
             selectedCalendarIds.has(group.id) || selectedCalendarIds.has('all')
-              ? isLightColor(group.color) ? '!text-black' : '!text-white'
+              ? isLightColor(boardColor(group.color, group.name)) ? '!text-black' : '!text-white'
               : transparentMode ? 'text-current/60 hover:text-current' : 'bg-muted text-muted-foreground hover:bg-accent'
           )}
           style={
             selectedCalendarIds.has(group.id) || selectedCalendarIds.has('all')
-              ? { backgroundColor: group.color }
+              ? { backgroundColor: boardColor(group.color, group.name) }
               : undefined
           }
         >
-          <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: selectedCalendarIds.has(group.id) || selectedCalendarIds.has('all') ? 'rgba(255,255,255,0.55)' : group.color }} />
+          <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: selectedCalendarIds.has(group.id) || selectedCalendarIds.has('all') ? 'rgba(255,255,255,0.55)' : boardColor(group.color, group.name) }} />
           {group.name}
         </button>
       ))}
@@ -305,6 +308,7 @@ export const CalendarWidget = React.memo(function CalendarWidget({
             {resolvedView === 'agenda' && (
               <AgendaView
                 events={visibleEvents}
+                groupNames={groupNames}
                 days={30}
                 // Agenda is a scrollable list — show every event for each day
                 // rather than truncating to a "+N more" summary (0 = no cap).
