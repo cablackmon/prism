@@ -129,8 +129,8 @@ html[data-kyst-screensaver="active"] .kyst-stars,
 }
 
 @media (min-width:2560px) {
-  .kyst-board .kyst-widget[data-widget="Clock"] time:first-child { font-size:clamp(64px, 2.8125vw, 108px); }
-  .kyst-board .kyst-widget[data-widget="Clock"] time + time { font-size:var(--nox-detail-size); }
+  .kyst-board .kyst-widget[data-widget="Clock"] time:first-child { font-size:clamp(64px, 2.8125vw, 108px); line-height:1.1; }
+  .kyst-board .kyst-widget[data-widget="Clock"] time + time { font-size:var(--nox-detail-size); line-height:1.35; }
   .kyst-board .kyst-widget[data-widget="Weather"] .text-4xl { font-size:clamp(48px, 1.875vw, 72px); }
-  .kyst-board .kyst-widget[data-widget="Weather"] :is(.text-sm,.text-xs) { font-size:var(--nox-detail-size); }
+  .kyst-board .kyst-widget[data-widget="Weather"] :is(.text-sm,.text-xs) { font-size:var(--nox-detail-size); line-height:1.35; }
 }
