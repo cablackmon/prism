@@ -52,6 +52,11 @@ export function Screensaver() {
   const staticNightSkyLoaded = useRef(false);
 
   useEffect(() => {
+    document.documentElement.dataset.kystScreensaver = isIdle ? 'active' : 'inactive';
+    return () => { delete document.documentElement.dataset.kystScreensaver; };
+  }, [isIdle]);
+
+  useEffect(() => {
     if (isIdle) {
       const timer = setTimeout(() => setVisible(true), 50);
       return () => clearTimeout(timer);

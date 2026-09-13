@@ -34,6 +34,8 @@
 'use client';
 
 import * as React from 'react';
+import { useBoardTheme } from '@/components/theme/KystTheme';
+import { useScrollEdges } from '@/components/theme/useScrollEdges';
 import { Emoji } from '@/components/ui/Emoji';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -194,6 +196,9 @@ export function WidgetContainer({
   className,
   onClick,
 }: WidgetContainerProps) {
+  const nox = useBoardTheme() === 'nox';
+  const scrollRoot = React.useRef<HTMLDivElement>(null);
+  useScrollEdges(scrollRoot, nox, title || widgetType || 'Widget');
   // Resolve alignment from prop, context, or default
   const contextAlignments = React.useContext(WidgetAlignmentContext);
   const contextWidgetId = React.useContext(WidgetIdContext);
@@ -217,11 +222,12 @@ export function WidgetContainer({
 
   return (
     <Card
+      ref={scrollRoot}
       className={cn(
         // Grid sizing
         sizeClasses[size],
         // Full height within grid cell
-        'h-full',
+        'h-full kyst-widget',
         // Grid layout: header gets auto height, content gets remaining space
         // (CSS Grid gives the content row a definite height, enabling ScrollArea h-full)
         'grid overflow-hidden',
@@ -317,7 +323,7 @@ export function WidgetContainer({
     >
       {/* WIDGET HEADER */}
       {showHeader && title && (
-        <CardHeader className="flex-shrink-0 flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardHeader className="kyst-widget-header flex-shrink-0 flex flex-row items-center justify-between space-y-0 pb-2">
           <div className="flex items-center gap-2">
             {/* Icon */}
             {icon && (
@@ -351,7 +357,7 @@ export function WidgetContainer({
       <CardContent
         className={cn(
           // Fill remaining space; min-h-0 prevents grid row overflow
-          'flex flex-col min-h-0',
+          'kyst-widget-content flex flex-col min-h-0',
           // Clip content overflow (individual widgets use ScrollArea for scrolling)
           'overflow-hidden',
           // Remove padding if no header
