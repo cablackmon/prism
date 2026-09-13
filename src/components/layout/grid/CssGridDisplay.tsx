@@ -186,7 +186,8 @@ export function CssGridDisplay({
   return (
     <div
       ref={containerRef}
-      className={`relative overflow-hidden ${className || ''}`}
+      className={`kyst-grid-display relative overflow-hidden ${className || ''}`}
+      data-fit={stretch ? 'stretch' : contain ? 'contain' : 'legacy'}
       style={{
         height: containerHeight,
         ...(centerContain ? { display: 'flex', alignItems: 'center', justifyContent: 'center' } : {}),

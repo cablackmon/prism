@@ -149,7 +149,7 @@ export function DashboardLayout({
     <div
       className={cn(
         // Full viewport
-        'min-h-screen w-full',
+        'kyst-dashboard-layout min-h-screen w-full',
         // Transparent background to allow wallpaper to show through
         // Flex column for header + content
         'flex flex-col',
@@ -157,7 +157,7 @@ export function DashboardLayout({
       )}
     >
       {/* Main content area */}
-      <main className="flex-1 overflow-hidden">
+      <main className="kyst-dashboard-content flex-1 overflow-hidden">
         {children}
       </main>
     </div>
