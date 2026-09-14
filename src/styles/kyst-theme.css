@@ -138,41 +138,46 @@ html[data-kyst-screensaver="active"] .kyst-stars,
 /* Fit the NOX board in the visible viewport even when the saved fontScale
    zooms its ancestor. 100vh and the legacy pixel height are zoomed again;
    fixed insets + a flex remainder use the actual available box instead.
-   Scope this to the stretch dashboard; mobile, editor, contain-mode layouts,
-   screensaver and classic retain their existing layout rules. */
+   Display and measurement preview have separate, explicit markers. The latter
+   supplies a flex frame for its nested grid; ordinary editing never opts in.
+   Mobile, editor, contain-mode layouts, screensaver and classic retain their
+   existing rules. */
 @media (min-width:768px) {
-  .kyst-board:has(.kyst-grid-display[data-fit="stretch"]) {
+  .kyst-board:has(.kyst-dashboard-content > .kyst-board-display-grid[data-fit="stretch"], .kyst-dashboard-content > .kyst-board-measure-frame > .kyst-board-measure-grid[data-fit="stretch"]) {
     position:fixed; inset:0; min-height:0; overflow:hidden;
   }
-  .kyst-board:has(.kyst-grid-display[data-fit="stretch"]) > main,
-  .kyst-board:has(.kyst-grid-display[data-fit="stretch"]) .kyst-dashboard-layout {
+  .kyst-board:has(.kyst-dashboard-content > .kyst-board-display-grid[data-fit="stretch"], .kyst-dashboard-content > .kyst-board-measure-frame > .kyst-board-measure-grid[data-fit="stretch"]) > main,
+  .kyst-board:has(.kyst-dashboard-content > .kyst-board-display-grid[data-fit="stretch"], .kyst-dashboard-content > .kyst-board-measure-frame > .kyst-board-measure-grid[data-fit="stretch"]) .kyst-dashboard-layout {
     height:100%; min-height:0;
   }
-  .kyst-board:has(.kyst-grid-display[data-fit="stretch"]) .kyst-dashboard-content {
+  .kyst-board:has(.kyst-dashboard-content > .kyst-board-display-grid[data-fit="stretch"], .kyst-dashboard-content > .kyst-board-measure-frame > .kyst-board-measure-grid[data-fit="stretch"]) .kyst-dashboard-content {
     display:flex; flex-direction:column; min-height:0;
   }
-  .kyst-board .kyst-grid-display[data-fit="stretch"] {
+  .kyst-board .kyst-dashboard-content > .kyst-board-measure-frame:has(> .kyst-board-measure-grid[data-fit="stretch"]) {
+    display:flex; flex-direction:column; flex:1; min-height:0;
+  }
+  .kyst-board :is(.kyst-board-display-grid, .kyst-board-measure-grid)[data-fit="stretch"] {
     flex:1; min-height:0; height:auto !important;
   }
-  .kyst-board .widget-cell { min-width:0; min-height:0; }
+  .kyst-board :is(.kyst-board-display-grid, .kyst-board-measure-grid)[data-fit="stretch"] .widget-cell { min-width:0; min-height:0; }
 
   /* A clock's saved slot, rather than the screen width alone, bounds its
      type. Keep even the longest 12-hour time with seconds on one line. */
-  .kyst-board .kyst-widget[data-widget="Clock"] { container-type:size; }
-  .kyst-board .kyst-widget[data-widget="Clock"] .kyst-widget-content {
+  .kyst-board :is(.kyst-board-display-grid, .kyst-board-measure-grid)[data-fit="stretch"] .kyst-widget[data-widget="Clock"] { container-type:size; }
+  .kyst-board :is(.kyst-board-display-grid, .kyst-board-measure-grid)[data-fit="stretch"] .kyst-widget[data-widget="Clock"] .kyst-widget-content {
     width:100%; padding:8px;
   }
-  .kyst-board .kyst-widget[data-widget="Clock"] time:first-child {
+  .kyst-board :is(.kyst-board-display-grid, .kyst-board-measure-grid)[data-fit="stretch"] .kyst-widget[data-widget="Clock"] time:first-child {
     font-size:min(clamp(24px, 2.8125vw, 108px), 14cqw, 38cqh);
     line-height:1.1; white-space:nowrap;
   }
-  .kyst-board .kyst-widget[data-widget="Clock"] time + time {
+  .kyst-board :is(.kyst-board-display-grid, .kyst-board-measure-grid)[data-fit="stretch"] .kyst-widget[data-widget="Clock"] time + time {
     font-size:clamp(10px, 6cqw, var(--nox-detail-size)); line-height:1.35;
   }
 }
 
 @media (min-width:768px) and (max-width:1279px) {
-  .kyst-board .kyst-widget-header { padding:calc(var(--nox-gap) / 2); }
-  .kyst-board .kyst-widget-header h3 { font-size:16px; letter-spacing:.06em; }
-  .kyst-board .kyst-widget-content { padding:0 calc(var(--nox-gap) / 2) calc(var(--nox-gap) / 2); }
+  .kyst-board :is(.kyst-board-display-grid, .kyst-board-measure-grid)[data-fit="stretch"] .kyst-widget-header { padding:calc(var(--nox-gap) / 2); }
+  .kyst-board :is(.kyst-board-display-grid, .kyst-board-measure-grid)[data-fit="stretch"] .kyst-widget-header h3 { font-size:16px; letter-spacing:.06em; }
+  .kyst-board :is(.kyst-board-display-grid, .kyst-board-measure-grid)[data-fit="stretch"] .kyst-widget-content { padding:0 calc(var(--nox-gap) / 2) calc(var(--nox-gap) / 2); }
 }

@@ -127,8 +127,9 @@ zoom again (at 150%, a 1440px viewport previously produced a 2160px board).
 The saved `fontScale`, widget coordinates, type tokens, and card scroll regions
 remain in use. Clock type is additionally bounded by its own card's width and
 height so the time, including seconds, stays on one line. The fit rules apply
-only to the NOX stretch dashboard at desktop/tablet widths. Classic, mobile,
-layout editing, and contain-mode layouts retain their existing layout rules.
+only to the NOX stretch dashboard and its explicitly sized measurement preview
+at desktop/tablet widths. Classic, mobile, ordinary editing, and contain-mode
+layouts retain their existing layout rules.
 
 Run `scripts/check-kyst-viewport.mjs` against NOX and classic loopback instances
 of the same build to verify 100% and 150% scaling at 1024, 1920, 2560, and 3840px.
@@ -146,3 +147,15 @@ supplies the reviewed release/digest, then NOX captures front, scrolled, and
 screensaver-wake states through the existing lane. This does not grant Prism
 kiosk control. Real-kiosk geometry, motion, frame-time, touch, and 3m legibility
 remain acceptance evidence; local checks are development evidence.
+
+The viewport scope is explicit. LayoutGridEditor's non-editable branch emits
+`kyst-board-display-grid`; its measurement branch emits `kyst-board-measure-frame`
+and `kyst-board-measure-grid`. The measurement frame supplies the flex sizing
+chain for its nested grid, so preview intentionally shares the stretch board's
+fit and clock treatment. Ordinary editing, contain-mode, classic and mobile
+remain outside these additions. Every new clock/tablet/widget rule requires
+one of those two grid markers and stretch mode.
+`scripts/check-kyst-display-scope.mjs` uses synthetic parent/session fixtures on
+loopback to exercise editor → measurement → chrome toggles → editor → Cancel
+at 100%/150%, plus a portrait contain layout. It records actual bounds and
+keyboard-operable exit controls and rejects all API writes.
