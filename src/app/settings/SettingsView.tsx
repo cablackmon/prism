@@ -27,7 +27,7 @@ import {
   Monitor,
   Wand2,
 } from 'lucide-react';
-import { PrismIcon } from '@/components/ui/PrismIcon';
+import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { APP_VERSION } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
@@ -285,20 +285,20 @@ export function SettingsView() {
               {activeSection === 'about' && (
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-2xl font-bold">About Prism</h2>
+                    <h2 className="text-2xl font-bold">About KYST</h2>
                   </div>
                   <Card>
                     <CardContent className="p-6">
                       <div className="flex flex-col items-center">
-                        <PrismIcon size={96} className="mb-4 drop-shadow-lg" />
-                        <h3 className="text-4xl font-bold text-primary mb-6">Prism</h3>
+                        <Image src="/kyst-emblem.svg" alt="" width={96} height={96} className="mb-4 drop-shadow-lg" />
+                        <h3 className="text-4xl font-bold text-primary mb-6">KYST</h3>
                         <div className="text-sm text-muted-foreground max-w-lg space-y-4 text-left">
                           <p>
-                            Prism is a subscription-free, self-hosted family dashboard that pulls together
+                            KYST is a subscription-free, self-hosted family dashboard that pulls together
                             your calendars, tasks, and photos from the services you already use.
                           </p>
                           <p>
-                            Prism is source-available under the PolyForm Noncommercial 1.0.0 license — free for
+                            KYST is source-available under the PolyForm Noncommercial 1.0.0 license — free for
                             personal and non-commercial use. If you find it useful,
                             please star the repo and share it with others who might benefit.
                           </p>

@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
 
   if (reqType === 'LaunchRequest') {
     return NextResponse.json(
-      speak('Welcome to Prism. Ask me about today\'s events, today\'s tasks, or your family.'),
+      speak('Welcome to KYST. Ask me about today\'s events, today\'s tasks, or your family.'),
     );
   }
 

@@ -9,7 +9,7 @@ export async function handleGetFamilyMessages(): Promise<AlexaResponse> {
   } catch (err) {
     if (err instanceof VoiceApiError) {
       logError('[alexa] getRecentMessages failed', err);
-      return speak("Sorry, I couldn't reach Prism right now.");
+      return speak("Sorry, I couldn't reach KYST right now.");
     }
     throw err;
   }

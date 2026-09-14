@@ -52,7 +52,7 @@ export function CompleteStep() {
         <div className="space-y-2">
           <h1 className="text-2xl font-bold">You&apos;re all set!</h1>
           <p className="text-muted-foreground">
-            Prism is ready. Head to your dashboard to get started, or visit Settings to
+            KYST is ready. Head to your dashboard to get started, or visit Settings to
             connect accounts, add more family members, or fine-tune your display.
           </p>
         </div>
@@ -97,7 +97,7 @@ export function CompleteStep() {
             <div className="flex-1 space-y-1">
               <p className="text-sm font-medium">Anonymous update check</p>
               <p className="text-xs text-muted-foreground">
-                Once a week Prism checks for a new version and counts this install
+                Once a week KYST checks for a new version and counts this install
                 anonymously so we know how many families use it.{' '}
                 <span className="font-medium text-foreground">No personal data, no IP address, no tracking.</span>{' '}
                 <button
@@ -111,7 +111,7 @@ export function CompleteStep() {
               {showSent && (
                 <ul className="text-xs text-muted-foreground list-disc pl-4 pt-1 space-y-0.5">
                   <li>a random ID for this install (not linked to you)</li>
-                  <li>the Prism version you&apos;re running</li>
+                  <li>the KYST version you&apos;re running</li>
                   <li>Docker vs. Home Assistant, and CPU type</li>
                 </ul>
               )}

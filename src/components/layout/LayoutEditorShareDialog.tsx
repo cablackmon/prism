@@ -135,7 +135,7 @@ export function LayoutEditorShareDialog({
       <div className="bg-popover border border-border rounded-lg shadow-xl p-4 max-w-2xl w-full mx-4 space-y-3" onClick={e => e.stopPropagation()}>
         <div className="text-sm font-medium">Share to Community</div>
         <p className="text-xs text-muted-foreground">
-          Submit your layout to the Prism community gallery. This opens a GitHub Issue with your layout data.
+          Submit your layout to the KYST community gallery. This opens a GitHub Issue with your layout data.
         </p>
         <div className="grid grid-cols-2 gap-3">
           <div>

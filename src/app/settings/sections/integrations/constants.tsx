@@ -49,7 +49,7 @@ export const TASK_CONFIG: IntegrationConfig = {
   finalizeEndpoint: '/api/task-sources/finalize',
   oauthEntityParam: 'taskListId',
   returnSection: 'tasks',
-  deleteConfirmSuffix: 'Tasks already synced will remain in Prism.',
+  deleteConfirmSuffix: 'Tasks already synced will remain in KYST.',
   providers: {
     microsoft_todo: { name: 'Microsoft To-Do', icon: MS_TODO_ICON, color: '#0078D4' },
     google_tasks: { name: 'Google Tasks', icon: GOOGLE_TASKS_ICON, color: '#4285F4' },
@@ -73,7 +73,7 @@ export const SHOPPING_CONFIG: IntegrationConfig = {
   finalizeEndpoint: '/api/shopping-list-sources/finalize',
   oauthEntityParam: 'shoppingListId',
   returnSection: 'shopping',
-  deleteConfirmSuffix: 'Items already synced will remain in Prism.',
+  deleteConfirmSuffix: 'Items already synced will remain in KYST.',
   providers: {
     microsoft_todo: { name: 'Microsoft To-Do', icon: MS_TODO_ICON, color: '#0078D4' },
   },
@@ -94,7 +94,7 @@ export const WISH_CONFIG: IntegrationConfig = {
   finalizeEndpoint: '/api/wish-item-sources/finalize',
   oauthEntityParam: 'wishMemberId',
   returnSection: 'wish',
-  deleteConfirmSuffix: 'Items already synced will remain in Prism.',
+  deleteConfirmSuffix: 'Items already synced will remain in KYST.',
   providers: {
     microsoft_todo: { name: 'Microsoft To-Do', icon: MS_TODO_ICON, color: '#0078D4' },
   },

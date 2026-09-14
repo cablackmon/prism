@@ -157,7 +157,7 @@ describe('POST /api/alexa', () => {
     }) as never);
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.response.outputSpeech.text).toMatch(/welcome to prism/i);
+    expect(body.response.outputSpeech.text).toMatch(/welcome to kyst/i);
   });
 
   it('dispatches GetTodayEventsIntent', async () => {

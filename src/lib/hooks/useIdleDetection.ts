@@ -2,11 +2,13 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useIsPWA } from './useIsPWA';
+import { WALL_WRAPPER_URL } from '@/lib/auth/deviceHandoff';
 
 const STORAGE_KEY = 'prism-screensaver-timeout';
 const AWAY_MODE_STORAGE_KEY = 'prism-away-mode-timeout';
 const LAST_ACTIVITY_KEY = 'prism-last-activity';
-const DEFAULT_TIMEOUT = 120;
+const DEFAULT_TIMEOUT = 0;
+const KYST_WRAPPER_ORIGIN = new URL(WALL_WRAPPER_URL).origin;
 
 function getStoredTimeout(): number {
   if (typeof window === 'undefined') return DEFAULT_TIMEOUT;
@@ -29,7 +31,12 @@ function updateLastActivity() {
 function getLastActivity(): number {
   if (typeof window === 'undefined') return Date.now();
   const stored = localStorage.getItem(LAST_ACTIVITY_KEY);
-  return stored !== null ? Number(stored) : Date.now();
+  const timestamp = stored !== null ? Number(stored) : NaN;
+  const now = Date.now();
+  if (Number.isFinite(timestamp) && timestamp <= now) return timestamp;
+
+  localStorage.setItem(LAST_ACTIVITY_KEY, String(now));
+  return now;
 }
 
 export function useIdleDetection(initialTimeout?: number) {
@@ -38,6 +45,7 @@ export function useIdleDetection(initialTimeout?: number) {
   const [awayModeTimeout, setAwayModeTimeout] = useState(() => getAwayModeTimeout());
   const [isIdle, setIsIdle] = useState(false);
   const forcedRef = useRef(false);
+  const previousTimeoutRef = useRef(timeout);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const awayModeTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -50,6 +58,16 @@ export function useIdleDetection(initialTimeout?: number) {
     return () => window.removeEventListener('prism:screensaver-timeout-change', handler as EventListener);
   }, []);
 
+  // Re-enabling after "Never" is a deliberate settings interaction. Start a
+  // complete new interval instead of inheriting a timestamp from the disabled
+  // period. Ordinary document remounts still preserve the persisted deadline.
+  useEffect(() => {
+    if (previousTimeoutRef.current <= 0 && timeout > 0) {
+      updateLastActivity();
+    }
+    previousTimeoutRef.current = timeout;
+  }, [timeout]);
+
   // Listen for away mode timeout changes from settings
   useEffect(() => {
     const handler = (e: CustomEvent<number>) => {
@@ -60,12 +78,14 @@ export function useIdleDetection(initialTimeout?: number) {
   }, []);
 
   // Reset idle timer on user activity (restarts countdown)
-  const resetTimer = useCallback(() => {
+  const resetTimer = useCallback((recordActivity = true) => {
     if (timerRef.current) clearTimeout(timerRef.current);
-    // Update last activity for away mode tracking
-    updateLastActivity();
+    if (recordActivity) updateLastActivity();
+    else if (localStorage.getItem(LAST_ACTIVITY_KEY) === null) updateLastActivity();
     if (timeout > 0) {
-      timerRef.current = setTimeout(() => setIsIdle(true), timeout * 1000);
+      const elapsed = recordActivity ? 0 : Math.max(0, Date.now() - getLastActivity());
+      const remaining = Math.max(0, timeout * 1000 - elapsed);
+      timerRef.current = setTimeout(() => setIsIdle(true), remaining);
     }
   }, [timeout]);
 
@@ -96,7 +116,15 @@ export function useIdleDetection(initialTimeout?: number) {
 
     // Mousemove/scroll only reset the idle timer, they don't dismiss the screensaver
     const moveEvents = ['mousemove', 'scroll'] as const;
-    moveEvents.forEach((e) => window.addEventListener(e, resetTimer));
+    // Edge kiosk mode reports display-mode: fullscreen and can emit passive
+    // mousemove noise with untouched glass. Check the media query per event so
+    // runtime fullscreen transitions cannot leave stale listener behavior.
+    // Scroll remains activity in every display mode.
+    const onPassiveMovement = (event: Event) => {
+      if (event.type === 'mousemove' && window.matchMedia('(display-mode: fullscreen)').matches) return;
+      resetTimer();
+    };
+    moveEvents.forEach((e) => window.addEventListener(e, onPassiveMovement));
 
     // Click/key/touch dismiss the screensaver AND reset the timer — EXCEPT when
     // the interaction targets an opt-in "keep-alive" control (e.g. the calendar
@@ -111,17 +139,69 @@ export function useIdleDetection(initialTimeout?: number) {
       }
       dismissIdle();
     };
-    const dismissEvents = ['mousedown', 'keydown', 'touchstart'] as const;
+    const dismissEvents = ['pointerdown', 'mousedown', 'keydown', 'touchstart'] as const;
     dismissEvents.forEach((e) => window.addEventListener(e, maybeDismiss));
 
-    resetTimer();
+    // A document remount is not human activity. Always preserve the persisted
+    // deadline so the deployed wall wrapper's ten-minute iframe reload cannot
+    // restart a fifteen-minute screensaver countdown, regardless of how Edge
+    // reports display mode inside the iframe.
+    resetTimer(false);
 
     return () => {
-      moveEvents.forEach((e) => window.removeEventListener(e, resetTimer));
+      moveEvents.forEach((e) => window.removeEventListener(e, onPassiveMovement));
       dismissEvents.forEach((e) => window.removeEventListener(e, maybeDismiss));
       if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, [resetTimer, dismissIdle, timeout, isPWA]);
+
+  // Controls rendered by the kiosk wrapper sit outside this iframe, so their
+  // pointer events cannot reach the listeners above. The wrapper forwards a
+  // narrow activity message after its own mic/chat/fullscreen interactions.
+  useEffect(() => {
+    const onWrapperActivity = (event: MessageEvent) => {
+      if (
+        event.source !== window.parent ||
+        event.origin !== KYST_WRAPPER_ORIGIN ||
+        event.data?.type !== 'kyst-user-activity'
+      ) return;
+      // Wrapper controls are already completed gestures, not the pointerdown
+      // that initiated forceIdle inside this document. Clear the force guard,
+      // dismiss immediately, and grant the interaction a complete deadline.
+      forcedRef.current = false;
+      setIsIdle(false);
+      resetTimer();
+    };
+    window.addEventListener('message', onWrapperActivity);
+    return () => window.removeEventListener('message', onWrapperActivity);
+  }, [resetTimer]);
+
+  // Kiosk announcements commonly navigate/refresh the page or bring a hidden
+  // page back to the foreground. Exit immediately so their UI is never covered.
+  useEffect(() => {
+    const wake = (recordActivity: boolean) => {
+      forcedRef.current = false;
+      setIsIdle(false);
+      resetTimer(recordActivity || !window.matchMedia('(display-mode: fullscreen)').matches);
+    };
+    // Edge fullscreen kiosk can emit lifecycle events without human input, so
+    // those preserve the existing deadline. Navigation and announcements are
+    // deliberate activity and get a fresh interval so their UI stays visible.
+    const onLifecycleWake = () => wake(false);
+    const onDeliberateWake = () => wake(true);
+    window.addEventListener('pageshow', onLifecycleWake);
+    window.addEventListener('popstate', onDeliberateWake);
+    window.addEventListener('hashchange', onDeliberateWake);
+    window.addEventListener('prism:announce', onDeliberateWake);
+    document.addEventListener('visibilitychange', onLifecycleWake);
+    return () => {
+      window.removeEventListener('pageshow', onLifecycleWake);
+      window.removeEventListener('popstate', onDeliberateWake);
+      window.removeEventListener('hashchange', onDeliberateWake);
+      window.removeEventListener('prism:announce', onDeliberateWake);
+      document.removeEventListener('visibilitychange', onLifecycleWake);
+    };
+  }, [resetTimer]);
 
   // Listen for custom screensaver activation event
   useEffect(() => {

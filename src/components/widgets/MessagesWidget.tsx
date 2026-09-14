@@ -23,6 +23,7 @@
  */
 
 'use client';
+import { useBoardTheme } from '@/components/theme/KystTheme';
 
 import * as React from 'react';
 import { formatDistanceToNow } from 'date-fns';
@@ -95,6 +96,7 @@ export const MessagesWidget = React.memo(function MessagesWidget({
   onDeleteClick,
   className,
 }: MessagesWidgetProps) {
+  const nox = useBoardTheme() === 'nox';
   // Use provided messages (no demo data fallback in production)
   const allMessages = externalMessages || [];
 
@@ -106,7 +108,7 @@ export const MessagesWidget = React.memo(function MessagesWidget({
   });
 
   // Limit messages
-  const displayMessages = sortedMessages.slice(0, maxMessages);
+  const displayMessages = nox ? sortedMessages : sortedMessages.slice(0, maxMessages);
 
   return (
     <WidgetContainer
@@ -159,7 +161,7 @@ export const MessagesWidget = React.memo(function MessagesWidget({
           </div>
 
           {/* Show remaining count */}
-          {allMessages.length > maxMessages && (
+          {!nox && allMessages.length > maxMessages && (
             <div className="mt-3 text-center text-xs text-muted-foreground">
               +{allMessages.length - maxMessages} more messages
             </div>

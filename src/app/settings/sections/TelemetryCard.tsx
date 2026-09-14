@@ -85,7 +85,7 @@ export function TelemetryCard() {
       <CardHeader>
         <CardTitle>Anonymous update check</CardTitle>
         <CardDescription>
-          Once a week Prism checks whether a newer version is available and, in
+          Once a week KYST checks whether a newer version is available and, in
           the same request, adds one anonymous install to the maintainer&apos;s
           count. No personal data, no IP address, no usage — just the four fields
           shown below. On by default; switch it off anytime.
@@ -122,7 +122,7 @@ export function TelemetryCard() {
             </span>
           ) : (
             <span className="text-muted-foreground">
-              Prism is up to date (v{status.version})
+              KYST is up to date (v{status.version})
             </span>
           )}
         </div>

@@ -31,6 +31,10 @@
 
 // Import global styles (including Tailwind CSS)
 import '@/styles/globals.css';
+import '@/styles/kyst-theme.css';
+import { connection } from 'next/server';
+import { resolveKystTheme } from '@/lib/theme/kystTheme';
+import { KystThemeProvider } from '@/components/theme/KystTheme';
 
 // Bundle a color emoji webfont so emoji (🎯 🎂 🛒 🏆 …) render even on clients
 // with no system emoji font — e.g. a bare Raspberry Pi OS / minimal Chromium
@@ -101,15 +105,15 @@ const inter = Inter({
 export const metadata: Metadata = {
   // Title configuration
   // 'default' is used when no page-specific title
-  // 'template' is used with page titles: "Calendar | Prism"
+  // 'template' is used with page titles: "Calendar | KYST"
   title: {
-    default: 'Prism - Family Dashboard',
-    template: '%s | Prism',
+    default: 'KYST - Family Dashboard',
+    template: '%s | KYST',
   },
 
   // Description for search engines and social sharing
   description:
-    'Prism is a self-hosted family dashboard. Sync calendars, manage chores, plan meals, and stay organized—without giving your data to commercial services.',
+    'KYST is a self-hosted family dashboard. Sync calendars, manage chores, plan meals, and stay organized—without giving your data to commercial services.',
 
   // Keywords for SEO
   keywords: [
@@ -123,10 +127,10 @@ export const metadata: Metadata = {
   ],
 
   // Author information
-  authors: [{ name: 'Prism Community' }],
+  authors: [{ name: 'KYST Community' }],
 
   // App name (used when added to home screen)
-  applicationName: 'Prism',
+  applicationName: 'KYST',
 
   // Generator (what built this site)
   generator: 'Next.js',
@@ -144,6 +148,8 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: '/icons/icon.svg', type: 'image/svg+xml' },
+      { url: '/icons/favicon-16.png', type: 'image/png', sizes: '16x16' },
+      { url: '/icons/favicon-32.png', type: 'image/png', sizes: '32x32' },
       { url: '/icons/icon-192.png', type: 'image/png', sizes: '192x192' },
     ],
     apple: '/icons/apple-touch-icon.png',
@@ -153,15 +159,15 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    siteName: 'Prism',
-    title: 'Prism - Family Dashboard',
+    siteName: 'KYST',
+    title: 'KYST - Family Dashboard',
     description: 'Your family\'s digital home',
   },
 
   // Twitter Card metadata (for Twitter/X sharing)
   twitter: {
     card: 'summary_large_image',
-    title: 'Prism - Family Dashboard',
+    title: 'KYST - Family Dashboard',
     description: 'Your family\'s digital home',
   },
 };
@@ -225,11 +231,13 @@ export const viewport: Viewport = {
  * - Can't use hooks or browser APIs directly
  * - For client-side features, wrap in a Client Component
  */
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  await connection();
+  const kystTheme = resolveKystTheme(process.env.KYST_THEME);
   return (
     <html
       lang="en"
@@ -268,12 +276,14 @@ export default function RootLayout({
           Wrap children with application providers (theme, auth, etc.)
         */}
         <ErrorBoundary>
+          <KystThemeProvider value={kystTheme}>
           <Providers>
             <DemoBanner />
             {children}
             <LazyOverlays />
             <Toaster />
           </Providers>
+          </KystThemeProvider>
         </ErrorBoundary>
       </body>
     </html>

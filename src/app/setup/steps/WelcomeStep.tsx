@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Emoji } from '@/components/ui/Emoji';
 import { Card, CardContent } from '@/components/ui/card';
-import { PrismIcon } from '@/components/ui/PrismIcon';
+import Image from 'next/image';
 
 export function WelcomeStep({ onNext }: { onNext: () => void }) {
   return (
@@ -11,12 +11,12 @@ export function WelcomeStep({ onNext }: { onNext: () => void }) {
       <CardContent className="pt-8 pb-8 text-center space-y-6">
         <div className="flex justify-center">
           <div className="rounded-full bg-primary/10 p-4">
-            <PrismIcon className="h-10 w-10" size={40} />
+            <Image src="/kyst-emblem.svg" alt="" width={40} height={40} />
           </div>
         </div>
 
         <div className="space-y-2">
-          <h1 className="text-2xl font-bold">Welcome to Prism</h1>
+          <h1 className="text-2xl font-bold">Welcome to KYST</h1>
           <p className="text-muted-foreground text-balance">
             Let&apos;s set up your family and a few basics.
           </p>

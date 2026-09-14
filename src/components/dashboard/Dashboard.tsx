@@ -118,6 +118,7 @@ export function Dashboard({
     setShowAddModal: () => {},
     setEditingChore,
     deleteChore: () => {},
+    confirm: confirmAction,
   });
 
   const layout = useDashboardLayout(data.layouts, slug);
@@ -338,6 +339,7 @@ export function Dashboard({
         user={activeUser ? { id: activeUser.id, name: activeUser.name, avatarUrl: activeUser.avatarUrl, color: activeUser.color } : undefined}
         onLogout={activeUser ? clearActiveUser : undefined}
         onLogin={handleLogin}
+        boardTheme
       >
         <MobileDashboard data={data} />
       </AppShell>
@@ -463,7 +465,7 @@ export function Dashboard({
               familyMembers={familyMembers}
               onClose={() => setEditingChore(null)}
               onSave={async (updated) => {
-                await saveEditedChore(editingChore.id, updated);
+                await saveEditedChore(editingChore, updated);
               }}
             />
           </Suspense>

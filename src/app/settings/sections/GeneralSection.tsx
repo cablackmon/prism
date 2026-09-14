@@ -121,7 +121,7 @@ function TimezoneCard() {
         <CardTitle>Time Zone</CardTitle>
         <CardDescription>
           The household timezone used for scheduling, calendar sync, and—by default—times shown
-          throughout Prism.
+          throughout KYST.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -167,7 +167,7 @@ function DisplayTimezoneCard() {
       value: 'household',
       label: 'Household',
       timezone: householdTimezone,
-      description: 'Keeps appointments and clocks consistent on every Prism display.',
+      description: 'Keeps appointments and clocks consistent on every KYST display.',
     },
     {
       value: 'device',

@@ -24,7 +24,7 @@ export async function handleGetTodayChores(args: IntentArgs = {}): Promise<Alexa
   } catch (err) {
     if (err instanceof VoiceApiError) {
       logError('[alexa] getChoresToday failed', err);
-      return speak("Sorry, I couldn't reach Prism right now.");
+      return speak("Sorry, I couldn't reach KYST right now.");
     }
     throw err;
   }

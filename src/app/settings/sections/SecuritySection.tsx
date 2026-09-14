@@ -288,7 +288,7 @@ export function SecuritySection() {
         <CardHeader>
           <CardTitle>Authentication Mode</CardTitle>
           <CardDescription>
-            How Prism handles user authentication
+            How KYST handles user authentication
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

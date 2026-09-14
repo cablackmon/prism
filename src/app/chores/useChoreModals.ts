@@ -11,7 +11,7 @@ interface ChoreFormData {
   startDay?: string | null;
   pointValue: number;
   requiresApproval: boolean;
-  assignedTo?: { id: string } | null;
+  assignedTo?: { id: string; name?: string } | null;
   enabled?: boolean;
   nextDue?: string | null;
   nextDueTime?: string | null;
@@ -22,6 +22,11 @@ interface UseChoreModalsProps {
   setShowAddModal: (show: boolean) => void;
   setEditingChore: (chore: Chore | null) => void;
   deleteChore: (id: string) => void;
+  confirm: (
+    title: string,
+    description?: string,
+    options?: { confirmLabel?: string; variant?: 'default' | 'destructive' }
+  ) => Promise<boolean>;
 }
 
 export function useChoreModals({
@@ -29,6 +34,7 @@ export function useChoreModals({
   setShowAddModal,
   setEditingChore,
   deleteChore,
+  confirm,
 }: UseChoreModalsProps) {
   const saveNewChore = async (chore: ChoreFormData) => {
     try {
@@ -60,9 +66,22 @@ export function useChoreModals({
     }
   };
 
-  const saveEditedChore = async (choreId: string, updatedChore: ChoreFormData) => {
+  const saveEditedChore = async (
+    originalChore: Chore,
+    updatedChore: ChoreFormData
+  ): Promise<boolean> => {
+    if (originalChore.enabled && updatedChore.enabled === false) {
+      const assignee = updatedChore.assignedTo?.name || 'Unassigned';
+      const shouldDisable = await confirm(
+        `Disable “${updatedChore.title}”?`,
+        `Assigned to: ${assignee}. This chore will stop appearing as active and cannot be completed until it is enabled again.`,
+        { confirmLabel: 'Disable chore', variant: 'destructive' }
+      );
+      if (!shouldDisable) return false;
+    }
+
     try {
-      const response = await fetch(`/api/chores/${choreId}`, {
+      const response = await fetch(`/api/chores/${originalChore.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -84,9 +103,11 @@ export function useChoreModals({
       if (!response.ok) throw new Error('Failed to update chore');
       refreshChores();
       setEditingChore(null);
+      return true;
     } catch (err) {
       console.error('Error updating chore:', err);
       toast({ title: 'Failed to update chore', variant: 'destructive' });
+      return false;
     }
   };
 
