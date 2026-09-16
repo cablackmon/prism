@@ -9,13 +9,13 @@ $ErrorActionPreference='Stop'
 if(-not $Execute -and -not $PreflightOnly){throw 'Execution not released by preparation; -Execute and recorded MAIN NOX release required'}
 $until=[DateTimeOffset]::ParseExact($ApprovedUntilUtc,'yyyy-MM-ddTHH:mm:ssZ',[Globalization.CultureInfo]::InvariantCulture)
 if($until.UtcDateTime -le [DateTime]::UtcNow -or $until.UtcDateTime -gt [DateTime]::UtcNow.AddMinutes(45)){throw 'Expired/invalid session window'}
-$stage='C:\NoxAgent\review\nox-11625-observe-recovery'
+$stage='C:\NoxAgent\review\nox-11625-diagnostic-load'
 $pins=@{
  'C:\NoxAgent\agent.ps1'='f3b3ff51406eeece41f4abdaeff39af12be99b61999a246add0f3d6969fa8444';
  'C:\NoxAgent\supervisor.vbs'='812b563541031d1dc81c7fc6ead4e75372983d8fca14d34fa059d0c2d9af79cc';
  'C:\NoxAgent\nox11625-observe-after-night-sky.claimed'='749938623b1b42852d814dd3dc92e4cdbc8ef531330ec7b02aa864932a43e45b';
- 'C:\NoxAgent\review\nox-11625-observe-recovery\board-install-guard.ps1'='8cd85643ad160f4e98df9247e982c6b088129f4d763ba4314af6ca5d55b6e6ee';
- 'C:\NoxAgent\review\nox-11625-observe-recovery\recovery-evidence.ps1'='b52c2e97048c1a3be8153fe326485f303ed50cac51ae6c10e09ac2b079f407f2'
+ 'C:\NoxAgent\review\nox-11625-diagnostic-load\board-install-guard.ps1'='f642e5de30aefbb68e22f655039c3ca2e64839f1fc2565e03b3d05e4dd641c59';
+ 'C:\NoxAgent\review\nox-11625-diagnostic-load\recovery-evidence.ps1'='b52c2e97048c1a3be8153fe326485f303ed50cac51ae6c10e09ac2b079f407f2'
 }
 foreach($path in $pins.Keys){if((Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant() -cne $pins[$path]){throw ('Pinned state drift: '+$path)}}
 . (Join-Path $stage 'board-install-guard.ps1')

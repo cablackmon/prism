@@ -20,7 +20,7 @@ function Assert-InstallBoardStable {
     foreach($key in @('pid','created','session','sid','commandHash','taskHash')){if($now[$key] -ne $script:InstallBoardBefore[$key]){throw ('Board state changed; no resident reload: '+$key)}}
     # Any unresolved refresh receipt blocks installation/reload. Never turn an
     # absent final receipt into permission to restart a possibly active handler.
-    foreach($name in @('nox11625-refresh-baseline','nox11625-refresh-classic','nox11625-refresh-nox-return')){
+    foreach($name in @('nox11625-refresh-baseline','nox11625-refresh-classic','nox11625-refresh-nox-return','nox11625-diagnostic-load')){
         if(Test-Path (Join-Path 'C:\NoxAgent' ($name+'.claimed'))){
             $receipt=Get-Content (Join-Path 'C:\NoxAgent\media' ($name+'.refresh.json')) -Raw -Encoding UTF8 -ErrorAction Stop|ConvertFrom-Json
             if(-not $receipt.completedAt -or (-not $receipt.ok -and $receipt.phase -in @('stop_may_start','waiting_for_terminal','start_may_occur','waiting_for_new_board'))){throw 'Refresh process state unresolved; file restore only, no reload'}
