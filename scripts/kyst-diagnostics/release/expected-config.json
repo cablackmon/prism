@@ -1,0 +1,43 @@
+{
+  "app": "kyst-board",
+  "primary_region": "dfw",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "deploy": {
+    "strategy": "rolling"
+  },
+  "env": {
+    "APP_URL": "https://kyst-board.fly.dev",
+    "KYST_THEME": "nox",
+    "NODE_ENV": "production",
+    "NODE_OPTIONS": "--dns-result-order=ipv6first",
+    "PORT": "3000",
+    "PRISM_DISABLE_TELEMETRY": "true",
+    "WEATHER_LAT": "32.7113",
+    "WEATHER_LOCATION": "Fort Worth,TX,US",
+    "WEATHER_LON": "-97.3364",
+    "WEATHER_PROVIDER": "meteo",
+    "KYST_DIAGNOSTIC_ENABLED": "1"
+  },
+  "mounts": [
+    {
+      "source": "prism_data",
+      "destination": "/app/data",
+      "initial_size": "3gb"
+    }
+  ],
+  "http_service": {
+    "internal_port": 3000,
+    "force_https": true,
+    "auto_stop_machines": false,
+    "auto_start_machines": true,
+    "min_machines_running": 1
+  },
+  "vm": [
+    {
+      "size": "shared-cpu-1x",
+      "memory": "1024mb"
+    }
+  ]
+}

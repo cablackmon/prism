@@ -33,6 +33,7 @@
 import '@/styles/globals.css';
 import '@/styles/kyst-theme.css';
 import { connection } from 'next/server';
+import { AcceptanceEntry } from '@/components/diagnostics/AcceptanceEntry';
 import { resolveKystTheme } from '@/lib/theme/kystTheme';
 import { KystThemeProvider } from '@/components/theme/KystTheme';
 
@@ -280,6 +281,7 @@ export default async function RootLayout({
           <Providers>
             <DemoBanner />
             {children}
+            {process.env.KYST_DIAGNOSTIC_ENABLED === '1' && <AcceptanceEntry />}
             <LazyOverlays />
             <Toaster />
           </Providers>
