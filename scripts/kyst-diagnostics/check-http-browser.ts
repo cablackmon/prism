@@ -130,7 +130,13 @@ async function main() {
     await api('arm', { operation: 'measure' }, 409);
     checks.push('unverified renderer cannot arm');
     const frame=page.frames().find((f:any)=>f!==page.mainFrame())!;
-    const accessibility=await frame.evaluate(()=>{const el=document.querySelector('[data-kyst-diagnostic-identity]') as HTMLElement;const style=getComputedStyle(el);const luminance=(css:string)=>{const channels=css.match(/\d+/g)!.slice(0,3).map(Number).map(v=>{v/=255;return v<=0.04045?v/12.92:((v+0.055)/1.055)**2.4;});return channels[0]!*0.2126+channels[1]!*0.7152+channels[2]!*0.0722;};const rect=el.getBoundingClientRect();return{contrast:(luminance(style.color)+0.05)/(luminance(style.backgroundColor)+0.05),role:el.getAttribute('role'),focus:document.activeElement?.tagName,fit:rect.left>=0&&rect.right<=innerWidth&&rect.bottom<=innerHeight};});
+    const accessibility=await frame.evaluate(`(() => {
+      const el=document.querySelector('[data-kyst-diagnostic-identity]');
+      const style=getComputedStyle(el);
+      function luminance(css){const channels=css.match(/\\d+/g).slice(0,3).map(Number).map(v=>{v/=255;return v<=0.04045?v/12.92:((v+0.055)/1.055)**2.4;});return channels[0]*0.2126+channels[1]*0.7152+channels[2]*0.0722;}
+      const rect=el.getBoundingClientRect();
+      return {contrast:(luminance(style.color)+0.05)/(luminance(style.backgroundColor)+0.05),role:el.getAttribute('role'),focus:document.activeElement?.tagName,fit:rect.left>=0&&rect.right<=innerWidth&&rect.bottom<=innerHeight};
+    })()`);
     assert.ok(accessibility.contrast>=4.5);assert.equal(accessibility.role,'status');assert.equal(accessibility.focus,'BODY');assert.equal(accessibility.fit,true);
     fs.writeFileSync(path.join(scratch,'accessibility.json'),JSON.stringify(accessibility));
     await page.screenshot({ path: path.join(scratch, 'diagnostic-before.png') });
