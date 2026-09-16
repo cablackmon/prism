@@ -35,7 +35,8 @@ def dispatch(a):
  def save(): (out/(cmdid+'.operator.json')).write_text(json.dumps(outcome,indent=2))
  save()
  try:
-  outcome['queued']=remote(invoke+'-Execute');save()
+  deadline=datetime.datetime.fromtimestamp(grant['deadline']/1000,datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+  outcome['queued']=remote(invoke+'-Execute -PublicationDeadlineUtc '+deadline);save()
   end=time.monotonic()+90
   while time.monotonic()<end:
    receipt=remote("$s=Get-Content C:\\NoxAgent\\state.json -Raw|ConvertFrom-Json;$r=@($s.commandReceipts|Where-Object {$_.commandId -ceq '"+cmdid+"'});if($r.Count -gt 1){throw 'Ambiguous receipt'};@{receipt=if($r.Count){$r[0]}else{$null};active=$s.lastResult}|ConvertTo-Json -Depth 6")

@@ -3,7 +3,7 @@
 param(
  [Parameter(Mandatory=$true)][ValidateSet('diagnostic-load','identity-capture','classic-refresh','classic-start','classic-capture','nox-return-refresh','nox-return-start','nox-return-capture','scrolled-capture','restored-capture')][string]$Phase,
  [Parameter(Mandatory=$true)][string]$ApprovedUntilUtc,
- [switch]$Execute, [switch]$PreflightOnly
+ [switch]$Execute, [switch]$PreflightOnly, [string]$PublicationDeadlineUtc
 )
 $ErrorActionPreference='Stop'
 if(-not $Execute -and -not $PreflightOnly){throw 'Execution not released by preparation; -Execute and recorded MAIN NOX release required'}
@@ -50,9 +50,16 @@ if($command -ceq 'start_board'){
 }
 if($PreflightOnly){@{ready=$true;residentPid=$p.ProcessId;board=$script:InstallBoardBefore}|ConvertTo-Json -Depth 6;exit 0}
 if([DateTime]::UtcNow -ge $until.UtcDateTime){throw 'Window expired before queue publication'}
+$publicationDeadline=$until.UtcDateTime
+if($command -ceq 'screenshot' -or $Phase -ceq 'diagnostic-load'){
+ if(-not $PublicationDeadlineUtc){throw 'Server publication deadline required'}
+ $publicationDeadline=[DateTimeOffset]::ParseExact($PublicationDeadlineUtc,'yyyy-MM-ddTHH:mm:ssZ',[Globalization.CultureInfo]::InvariantCulture).UtcDateTime
+ if($publicationDeadline -gt $until.UtcDateTime -or $publicationDeadline -le [DateTime]::UtcNow){throw 'Publication expired or outside release'}
+}
 $payload=@{cmd=$command};if($command -ceq 'screenshot'){$payload.file=$id+'.png'}
 $tmp='C:\NoxAgent\queue\'+$id+'.tmp';$final='C:\NoxAgent\queue\'+$id+'.json'
 $f=[IO.File]::Open($tmp,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None)
 try{$b=[Text.Encoding]::UTF8.GetBytes(($payload|ConvertTo-Json -Compress));$f.Write($b,0,$b.Length);$f.Flush($true)}finally{$f.Dispose()}
+if([DateTime]::UtcNow -ge $publicationDeadline){throw 'Expired before atomic publication; preserve tmp evidence, no retry'}
 [IO.File]::Move($tmp,$final)
 @{id=$id;command=$command;queuedAt=[DateTime]::UtcNow.ToString('o');retryAllowed=$false;residentPid=$p.ProcessId;board=$script:InstallBoardBefore}|ConvertTo-Json -Depth 6
