@@ -143,3 +143,8 @@ transcript*.json
 # Lighthouse reports
 lighthouse-*
 /public/twemoji/
+
+# A release seal is attached to the issue after building the exact source head.
+/scripts/kyst-diagnostics/release/candidate.json
+/scripts/kyst-diagnostics/**/__pycache__/
+/scripts/kyst-diagnostics/page-probe-checks.json
