@@ -284,8 +284,11 @@ export function VoiceAssistantOverlay() {
       changePhase('connecting');
 
       try {
-        // Playback must be unlocked during the initiating gesture on mobile browsers.
+        // Both audio contexts must be created and unlocked during the initiating gesture.
         const playbackUnlock = playback.current.unlock();
+        const context = new AudioContext();
+        captureContext.current = context;
+        const captureUnlock = context.state === 'suspended' ? context.resume() : Promise.resolve();
         const mediaPromise = navigator.mediaDevices.getUserMedia({
           audio: {
             deviceId: 'default',
@@ -294,11 +297,13 @@ export function VoiceAssistantOverlay() {
             autoGainControl: true,
           },
         });
-        const [unlockResult, connectionResult, mediaResult] = await Promise.allSettled([
-          playbackUnlock,
-          client.current?.connect(),
-          mediaPromise,
-        ]);
+        const [unlockResult, captureUnlockResult, connectionResult, mediaResult] =
+          await Promise.allSettled([
+            playbackUnlock,
+            captureUnlock,
+            client.current?.connect(),
+            mediaPromise,
+          ]);
         const media = mediaResult.status === 'fulfilled' ? mediaResult.value : null;
         if (generation !== captureGeneration.current) {
           media?.getTracks().forEach((track) => track.stop());
@@ -306,6 +311,7 @@ export function VoiceAssistantOverlay() {
         }
         if (media) stream.current = media;
         if (unlockResult.status === 'rejected') throw unlockResult.reason;
+        if (captureUnlockResult.status === 'rejected') throw captureUnlockResult.reason;
         if (connectionResult.status === 'rejected') throw connectionResult.reason;
         if (mediaResult.status === 'rejected') throw mediaResult.reason;
         if (!media) throw new Error('Microphone access is needed to ask NOX.');
@@ -314,20 +320,6 @@ export function VoiceAssistantOverlay() {
         requestId.current = id;
         if (!client.current?.startTurn(id)) throw new Error('voice socket is not ready');
 
-        const context = new AudioContext();
-        captureContext.current = context;
-        if (context.state === 'suspended') await context.resume();
-        if (generation !== captureGeneration.current) {
-          if (stream.current === media) {
-            stream.current = null;
-            media.getTracks().forEach((track) => track.stop());
-          }
-          if (captureContext.current === context) {
-            captureContext.current = null;
-            void context.close();
-          }
-          return;
-        }
         const source = context.createMediaStreamSource(media);
         const analyser = context.createAnalyser();
         const captureProcessor = context.createScriptProcessor(2_048, 1, 1);

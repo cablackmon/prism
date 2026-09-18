@@ -213,7 +213,7 @@ describe('VoiceAssistantOverlay accessibility and turn controls', () => {
     render(<VoiceAssistantOverlay />);
     fireEvent.click(screen.getByRole('button', { name: 'Ask NOX by voice' }));
 
-    expect(resume).toHaveBeenCalledTimes(1);
+    expect(resume).toHaveBeenCalledTimes(2);
     await waitFor(() => expect(startTurn).toHaveBeenCalledTimes(1));
   });
 
@@ -226,7 +226,9 @@ describe('VoiceAssistantOverlay accessibility and turn controls', () => {
     render(<VoiceAssistantOverlay />);
     fireEvent.click(screen.getByRole('button', { name: 'Ask NOX by voice' }));
 
-    await waitFor(() => expect(screen.getByRole('status').textContent).toContain('Playback unavailable.'));
+    await waitFor(() =>
+      expect(screen.getByRole('status').textContent).toContain('Playback unavailable.')
+    );
     expect(stop).toHaveBeenCalledTimes(1);
   });
 
@@ -267,7 +269,7 @@ describe('VoiceAssistantOverlay accessibility and turn controls', () => {
 
     render(<VoiceAssistantOverlay />);
     fireEvent.click(screen.getByRole('button', { name: 'Ask NOX by voice' }));
-    await waitFor(() => expect(startTurn).toHaveBeenCalledTimes(1));
+    expect(resumeCalls).toBe(2);
     fireEvent.click(screen.getByRole('button', { name: 'Close voice assistant' }));
 
     await act(async () => {
@@ -276,6 +278,7 @@ describe('VoiceAssistantOverlay accessibility and turn controls', () => {
     });
 
     expect(createMediaStreamSource).not.toHaveBeenCalled();
+    expect(startTurn).not.toHaveBeenCalled();
     expect(screen.queryByRole('status')).toBeNull();
     expect(screen.getByRole('button', { name: 'Ask NOX by voice' })).toBeTruthy();
   });

@@ -208,6 +208,42 @@ describe('KystVoiceStreamClient', () => {
     jest.useRealTimers();
   });
 
+  it('acknowledges playback after complete when audio scheduling settles late', async () => {
+    const socket = new FakeSocket();
+    const client = new KystVoiceStreamClient({
+      fetchTicket: async () => ({ url: VOICE_SOCKET_URL, token: 'ticket' }),
+      createSocket: () => socket,
+    });
+    const connection = client.connect();
+    await new Promise((resolve) => setImmediate(resolve));
+    socket.emit('open');
+    socket.emit('message', JSON.stringify({ type: 'ready' }));
+    await connection;
+
+    client.startTurn('request-late-playback');
+    socket.emit(
+      'message',
+      JSON.stringify({
+        type: 'audio.start',
+        requestId: 'request-late-playback',
+        format: 'pcm16',
+      })
+    );
+    socket.emit('message', new ArrayBuffer(2));
+    socket.emit(
+      'message',
+      JSON.stringify({ type: 'complete', requestId: 'request-late-playback' })
+    );
+
+    expect(client.active).toBeNull();
+    expect(client.playbackStarted('request-late-playback')).toBe(true);
+    expect(JSON.parse(socket.sent.at(-1) as string)).toEqual({
+      type: 'playback.started',
+      requestId: 'request-late-playback',
+    });
+    expect(client.playbackStarted('request-late-playback')).toBe(false);
+  });
+
   it('fails a server-VAD-ended turn that receives no response', async () => {
     jest.useFakeTimers();
     const socket = new FakeSocket();
@@ -224,10 +260,7 @@ describe('KystVoiceStreamClient', () => {
     await connection;
 
     client.startTurn('request-server-vad');
-    socket.emit(
-      'message',
-      JSON.stringify({ type: 'speech.end', requestId: 'request-server-vad' })
-    );
+    socket.emit('message', JSON.stringify({ type: 'speech.end', requestId: 'request-server-vad' }));
     expect(client.sendAudio(new ArrayBuffer(2))).toBe(false);
     jest.advanceTimersByTime(6_000);
 
