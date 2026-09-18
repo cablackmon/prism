@@ -115,6 +115,7 @@
         // and non-comet big events retain their rare 20-40min cadence.
         cometFirstDelaySeconds: 3.1,
         cometPeriodSeconds: 3 * 60,
+        cometLateGraceSeconds: 3,
         subtleMinIntervalSeconds: 60,
         subtleMaxIntervalSeconds: 90,
         bigMinIntervalSeconds: 20 * 60,
@@ -747,8 +748,23 @@
       recordLivingEvent(seconds);
     }
 
+    function expiredCometSlotCount(seconds, nextCometSeconds) {
+      const timing = CONFIG.livingEmblem;
+      const lateness = seconds - nextCometSeconds;
+      if (lateness <= timing.cometLateGraceSeconds) return 0;
+      return Math.floor(lateness / timing.cometPeriodSeconds) + 1;
+    }
+    window.NIGHTSKY_EXPIRED_COMET_SLOTS = expiredCometSlotCount;
+
     function startDueLivingEvent(seconds) {
       if (!DEMO_CAPTURE && seconds >= livingNextCometSeconds) {
+        const expiredSlots = expiredCometSlotCount(seconds, livingNextCometSeconds);
+        if (expiredSlots > 0) {
+          livingNextCometSeconds += expiredSlots *
+            CONFIG.livingEmblem.cometPeriodSeconds;
+          livingCometIndex += expiredSlots;
+          return;
+        }
         const kind = COMET_EVENT_KINDS[livingCometIndex++ % COMET_EVENT_KINDS.length];
         do {
           livingNextCometSeconds += CONFIG.livingEmblem.cometPeriodSeconds;
