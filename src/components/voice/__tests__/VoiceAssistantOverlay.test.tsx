@@ -31,9 +31,13 @@ jest.mock('@/lib/voice/KystVoiceStreamClient', () => ({
 
 import { PcmPlaybackQueue, VoiceAssistantOverlay } from '../VoiceAssistantOverlay';
 
-function installCaptureMocks(options: { audioState?: AudioContextState } = {}) {
+function installCaptureMocks(
+  options: { audioState?: AudioContextState; resumeError?: Error } = {}
+) {
   const stop = jest.fn();
-  const resume = jest.fn(async () => undefined);
+  const resume = jest.fn(async () => {
+    if (options.resumeError) throw options.resumeError;
+  });
   Object.defineProperty(navigator, 'mediaDevices', {
     configurable: true,
     value: { getUserMedia: jest.fn(async () => ({ getTracks: () => [{ stop }] })) },
@@ -208,6 +212,19 @@ describe('VoiceAssistantOverlay accessibility and turn controls', () => {
 
     expect(resume).toHaveBeenCalledTimes(1);
     await waitFor(() => expect(startTurn).toHaveBeenCalledTimes(1));
+  });
+
+  it('stops an acquired microphone stream when setup fails', async () => {
+    const { stop } = installCaptureMocks({
+      audioState: 'suspended',
+      resumeError: new Error('Playback unavailable.'),
+    });
+
+    render(<VoiceAssistantOverlay />);
+    fireEvent.click(screen.getByRole('button', { name: 'Ask NOX by voice' }));
+
+    await waitFor(() => expect(screen.getByRole('status').textContent).toContain('Playback unavailable.'));
+    expect(stop).toHaveBeenCalledTimes(1);
   });
 });
 

@@ -295,6 +295,10 @@ export class KystVoiceStreamClient {
 
   private handleControl(message: VoiceStreamEvent) {
     if (!this.activeRequestId || message.requestId !== this.activeRequestId) return;
+    if (message.type === 'speech.end') {
+      this.ended = true;
+      this.armResponseTimeout('first_audio_timeout');
+    }
     if (message.type === 'audio.start') {
       this.audioRequestId = message.requestId;
       this.armResponseTimeout('audio_idle_timeout');

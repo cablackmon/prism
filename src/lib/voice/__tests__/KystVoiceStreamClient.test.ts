@@ -208,6 +208,38 @@ describe('KystVoiceStreamClient', () => {
     jest.useRealTimers();
   });
 
+  it('fails a server-VAD-ended turn that receives no response', async () => {
+    jest.useFakeTimers();
+    const socket = new FakeSocket();
+    const events: Array<{ type: string; reason?: string }> = [];
+    const client = new KystVoiceStreamClient({
+      fetchTicket: async () => ({ url: VOICE_SOCKET_URL, token: 'ticket' }),
+      createSocket: () => socket,
+      onEvent: (event) => events.push(event),
+    });
+    const connection = client.connect();
+    await Promise.resolve();
+    socket.emit('open');
+    socket.emit('message', JSON.stringify({ type: 'ready' }));
+    await connection;
+
+    client.startTurn('request-server-vad');
+    socket.emit(
+      'message',
+      JSON.stringify({ type: 'speech.end', requestId: 'request-server-vad' })
+    );
+    expect(client.sendAudio(new ArrayBuffer(2))).toBe(false);
+    jest.advanceTimersByTime(6_000);
+
+    expect(events.at(-1)).toEqual({
+      type: 'error',
+      requestId: 'request-server-vad',
+      reason: 'first_audio_timeout',
+    });
+    expect(client.active).toBeNull();
+    jest.useRealTimers();
+  });
+
   it('does not create a socket when disconnect invalidates a pending ticket request', async () => {
     let resolveTicket: ((ticket: { url: string; token: string }) => void) | undefined;
     const ticket = new Promise<{ url: string; token: string }>((resolve) => {

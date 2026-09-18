@@ -305,11 +305,11 @@ export function VoiceAssistantOverlay() {
           media?.getTracks().forEach((track) => track.stop());
           return;
         }
+        if (media) stream.current = media;
         if (unlockResult.status === 'rejected') throw unlockResult.reason;
         if (connectionResult.status === 'rejected') throw connectionResult.reason;
         if (mediaResult.status === 'rejected') throw mediaResult.reason;
         if (!media) throw new Error('Microphone access is needed to ask NOX.');
-        stream.current = media;
 
         const id = crypto.randomUUID();
         requestId.current = id;
