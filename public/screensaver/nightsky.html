@@ -41,8 +41,8 @@
   </style>
 </head>
 <body>
-  <canvas id="sky" aria-label="Animated night sky with the face-in-the-moon KYST emblem decorated by constellation stars"></canvas>
-  <div class="label">KYST · NIGHT SKY</div>
+  <canvas id="sky" role="img" aria-label="Animated night sky with the face-in-the-moon KYST emblem decorated by constellation stars"></canvas>
+  <div class="label" aria-hidden="true">KYST · NIGHT SKY</div>
   <div class="debug" id="debug"></div>
 
   <script>
@@ -77,9 +77,9 @@
       driftSeconds: 31,
       auroraOpacity: 0.16,
       auroraSpeed: 0.045,
-      cometPeriodSeconds: 17,
-      cometVisibleSeconds: 2.7,
-      cometStartSeconds: 3.1,
+      demoCometPeriodSeconds: 17,
+      demoCometVisibleSeconds: 2.7,
+      demoCometStartSeconds: 3.1,
       livingEmblem: Object.freeze({
         // The approved v3 uses 1.0× of the pose delta. This comparison build
         // extrapolates the exact same geometry rig instead of replacing it.
@@ -111,8 +111,10 @@
         cometUpPitchRadians: -.593,
         cometDownPitchRadians: .558,
         // Production cadence: stillness is the baseline. Subtle head motion
-        // every 60-90s; big events (bold turn / look-around / comet gaze)
-        // every 20-40min with a hard 10min floor so nothing lands back-to-back.
+        // lands every 60-90s, the authored comet gaze crosses every 3 minutes,
+        // and non-comet big events retain their rare 20-40min cadence.
+        cometFirstDelaySeconds: 3.1,
+        cometPeriodSeconds: 3 * 60,
         subtleMinIntervalSeconds: 60,
         subtleMaxIntervalSeconds: 90,
         bigMinIntervalSeconds: 20 * 60,
@@ -578,15 +580,15 @@
         livingEventKind === 'comet-down') &&
         (livingStartSeconds >= 0 || captureEvent === livingEventKind);
       if (livingCometActive) return;
-      // The ambient 17s background comet is review-only. In production the
-      // only comets are the scheduled gaze events, so catching one is rare.
+      // The legacy 17s background sprite is demo-only. Production uses the
+      // authored foreground comet + gaze sequence scheduled below.
       if (!DEMO_CAPTURE) return;
-      const period = CONFIG.cometPeriodSeconds;
+      const period = CONFIG.demoCometPeriodSeconds;
       const local = seconds % period;
-      const start = CONFIG.cometStartSeconds;
-      const end = start + CONFIG.cometVisibleSeconds;
+      const start = CONFIG.demoCometStartSeconds;
+      const end = start + CONFIG.demoCometVisibleSeconds;
       if (local < start || local > end) return;
-      const raw = (local - start) / CONFIG.cometVisibleSeconds;
+      const raw = (local - start) / CONFIG.demoCometVisibleSeconds;
       const eased = raw * raw * (3 - 2 * raw);
       const x = width * (-.03 + eased * 1.02);
       const y = height * (.12 + eased * .42);
@@ -603,9 +605,8 @@
     }
 
     const SUBTLE_EVENT_KINDS = Object.freeze(['subtle-turn', 'subtle-shift']);
-    const BIG_EVENT_KINDS = Object.freeze([
-      'bold-turn', 'look-around', 'comet-up', 'comet-down'
-    ]);
+    const BIG_EVENT_KINDS = Object.freeze(['bold-turn', 'look-around']);
+    const COMET_EVENT_KINDS = Object.freeze(['comet-up', 'comet-down']);
     const DEMO_BIG_EVENT_KINDS = Object.freeze([
       'comet-up', 'comet-down', 'look-around', 'bold-turn'
     ]);
@@ -616,6 +617,9 @@
     let livingNextBigSeconds = DEMO_CAPTURE
       ? CONFIG.livingEmblem.demoFirstBigDelaySeconds
       : randomBigGap(Math.random);
+    let livingNextCometSeconds = DEMO_CAPTURE
+      ? Infinity : CONFIG.livingEmblem.cometFirstDelaySeconds;
+    let livingCometIndex = 0;
     let livingPhase = 'still';
     let livingEventCount = 0;
     let livingEventKind = 'subtle-turn';
@@ -700,7 +704,7 @@
         livingLastBigKind = kind;
         livingLastBigStartSeconds = seconds;
         livingNextBigSeconds = Infinity;
-      } else {
+      } else if (eventClass === 'subtle') {
         livingLastSubtleKind = kind;
         livingNextSubtleSeconds = Infinity;
       }
@@ -708,18 +712,30 @@
     }
 
     function startDueLivingEvent(seconds) {
+      if (!DEMO_CAPTURE && seconds >= livingNextCometSeconds) {
+        const kind = COMET_EVENT_KINDS[livingCometIndex++ % COMET_EVENT_KINDS.length];
+        do {
+          livingNextCometSeconds += CONFIG.livingEmblem.cometPeriodSeconds;
+        } while (livingNextCometSeconds <= seconds);
+        startLivingEvent(seconds, 'comet', kind);
+        return;
+      }
       const bigReady = seconds >= livingNextBigSeconds &&
         seconds - livingLastBigStartSeconds >= bigMinSeparation();
       if (bigReady) {
         const kind = DEMO_CAPTURE
           ? DEMO_BIG_EVENT_KINDS[demoBigIndex++ % DEMO_BIG_EVENT_KINDS.length]
           : chooseDifferentKind(BIG_EVENT_KINDS, livingLastBigKind);
+        if (!DEMO_CAPTURE &&
+            seconds + livingEventDuration(kind) > livingNextCometSeconds) return;
         startLivingEvent(seconds, 'big', kind);
         return;
       }
       if (seconds >= livingNextSubtleSeconds) {
-        startLivingEvent(seconds, 'subtle', chooseDifferentKind(
-          SUBTLE_EVENT_KINDS, livingLastSubtleKind));
+        const kind = chooseDifferentKind(SUBTLE_EVENT_KINDS, livingLastSubtleKind);
+        if (!DEMO_CAPTURE &&
+            seconds + livingEventDuration(kind) > livingNextCometSeconds) return;
+        startLivingEvent(seconds, 'subtle', kind);
       }
     }
 
@@ -733,9 +749,13 @@
         if (livingNextSubtleSeconds <= seconds) {
           livingNextSubtleSeconds = seconds + randomSubtleGap();
         }
-      } else {
+      } else if (livingEventClass === 'subtle') {
         livingNextSubtleSeconds = Math.max(
           seconds, livingStartSeconds + randomSubtleGap());
+      } else if (livingEventClass === 'comet' && livingNextSubtleSeconds <= seconds) {
+        // Preserve a quiet beat after each comet instead of firing an overdue
+        // subtle motion immediately after the authored gaze returns to rest.
+        livingNextSubtleSeconds = seconds + randomSubtleGap();
       }
       livingStartSeconds = -1;
       livingEventClass = 'none';
@@ -782,28 +802,56 @@
         timing.subtleMaxIntervalSeconds, random);
       let nextBig = randomRange(timing.bigMinIntervalSeconds,
         timing.bigMaxIntervalSeconds, random);
+      let nextComet = timing.cometFirstDelaySeconds;
       let lastSubtle = '';
       let lastBig = '';
       let lastBigStart = -Infinity;
-      while (Math.min(nextSubtle, nextBig) <= endSeconds) {
-        const eventClass = nextBig <= nextSubtle ? 'big' : 'subtle';
-        let now = eventClass === 'big' ? nextBig : nextSubtle;
+      let cometIndex = 0;
+      let availableAt = 0;
+      while (Math.min(nextSubtle, nextBig, nextComet) <= endSeconds) {
+        let eventClass = nextComet <= nextSubtle && nextComet <= nextBig
+          ? 'comet' : (nextBig <= nextSubtle ? 'big' : 'subtle');
+        let now = eventClass === 'comet'
+          ? nextComet : (eventClass === 'big' ? nextBig : nextSubtle);
+        now = Math.max(now, availableAt);
         let kind;
-        if (eventClass === 'big') {
+        if (eventClass === 'comet' || now >= nextComet) {
+          eventClass = 'comet';
+          now = Math.max(nextComet, availableAt);
+          kind = COMET_EVENT_KINDS[cometIndex++ % COMET_EVENT_KINDS.length];
+        } else if (eventClass === 'big') {
           now = Math.max(now, lastBigStart + timing.bigMinSeparationSeconds);
           kind = chooseDifferentKind(BIG_EVENT_KINDS, lastBig, random);
-          lastBig = kind;
-          lastBigStart = now;
         } else {
           kind = chooseDifferentKind(SUBTLE_EVENT_KINDS, lastSubtle, random);
-          lastSubtle = kind;
+        }
+        if (eventClass !== 'comet' &&
+            now + livingEventDuration(kind) > nextComet) {
+          eventClass = 'comet';
+          now = nextComet;
+          kind = COMET_EVENT_KINDS[cometIndex++ % COMET_EVENT_KINDS.length];
         }
         if (now > endSeconds) break;
+        if (eventClass === 'big') {
+          lastBig = kind;
+          lastBigStart = now;
+        } else if (eventClass === 'subtle') {
+          lastSubtle = kind;
+        }
         events.push(Object.freeze({
           timeSeconds: Number(now.toFixed(3)), eventClass, kind
         }));
         const finished = now + livingEventDuration(kind);
-        if (eventClass === 'big') {
+        availableAt = finished;
+        if (eventClass === 'comet') {
+          do {
+            nextComet += timing.cometPeriodSeconds;
+          } while (nextComet <= now);
+          if (nextSubtle <= finished) {
+            nextSubtle = finished + randomRange(timing.subtleMinIntervalSeconds,
+              timing.subtleMaxIntervalSeconds, random);
+          }
+        } else if (eventClass === 'big') {
           nextBig = Math.max(
             now + randomRange(timing.bigMinIntervalSeconds,
               timing.bigMaxIntervalSeconds, random),
@@ -1434,10 +1482,9 @@
       drawBackgroundStars(seconds);
       drawBackgroundConstellations(seconds);
       drawAurora(seconds);
-      // Keep the legacy review comet in demo mode only. Production comets are
-      // exclusively the authored up/down sequences on the rare-event scheduler.
-      // The former independent 17-second comet made the idle screen visibly
-      // loop. The two authored comets are now scheduled as rare big events.
+      // Keep the legacy review comet in demo mode only. Production uses the
+      // approved foreground comet + gaze sequence on its independent 180s clock.
+      // The former independent 17-second background comet remains demo-only.
       drawEmblem(seconds, livingPose);
       // The special comet sits in the emblem's foreground plane. Drawing it after
       // the emblem also prevents it from collapsing into the background starfield.
@@ -1513,6 +1560,7 @@
           demoMode: DEMO_CAPTURE,
           nextSubtleStartSeconds: Number(livingNextSubtleSeconds.toFixed(2)),
           nextBigStartSeconds: Number(livingNextBigSeconds.toFixed(2)),
+          nextCometStartSeconds: Number(livingNextCometSeconds.toFixed(2)),
           lastBigKind: livingLastBigKind
         };
       }
