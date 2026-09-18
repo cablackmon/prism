@@ -39,8 +39,8 @@ describe('GET /api/household-auth/device', () => {
 
     expect(response.status).toBe(303);
     const location = new URL(response.headers.get('location')!);
-    expect(location.origin + location.pathname).toBe('https://kyst-one.vercel.app/wall.html');
-    expect(location.searchParams.get('handoff')).toMatch(/^v1\./);
+    expect(location.href).toBe('https://kyst-board.fly.dev/wall.html');
+    expect(location.searchParams.get('handoff')).toBeNull();
     expect(response.headers.get('set-cookie')).toContain('kyst_household_session=signed-session');
   });
 
