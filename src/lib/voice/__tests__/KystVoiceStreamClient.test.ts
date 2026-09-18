@@ -283,6 +283,21 @@ describe('KystVoiceStreamClient', () => {
       requestId: 'request-empty',
       emptyTranscript: true,
     });
+
+    client.startTurn('request-reason-only-empty');
+    socket.emit(
+      'message',
+      JSON.stringify({
+        type: 'complete',
+        requestId: 'request-reason-only-empty',
+        reason: 'no speech detected',
+      })
+    );
+    expect(events.at(-1)).toMatchObject({
+      type: 'complete',
+      requestId: 'request-reason-only-empty',
+      reason: 'no speech detected',
+    });
   });
 
   it('does not create a socket when disconnect invalidates a pending ticket request', async () => {

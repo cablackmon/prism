@@ -38,7 +38,6 @@ export class PcmPlaybackQueue {
   async push(chunk: ArrayBuffer) {
     const generation = this.generation;
     this.pendingPushes += 1;
-    let scheduled = false;
     try {
       await this.unlock();
       if (generation !== this.generation || !this.context || chunk.byteLength < 2) return;
@@ -62,10 +61,9 @@ export class PcmPlaybackQueue {
         this.maybeFinish();
       };
       source.start(startsAt);
-      scheduled = true;
     } finally {
       this.pendingPushes -= 1;
-      if (scheduled || generation !== this.generation) this.maybeFinish();
+      this.maybeFinish();
     }
   }
 
@@ -223,6 +221,7 @@ export function VoiceAssistantOverlay() {
             if (firstAudio) voiceClient.playbackStarted(audioRequestId);
           })
           .catch(() => {
+            if (audioRequestId !== requestId.current) return;
             voiceClient.cancelTurn('audio_playback_failed');
             audioQueue.stop();
             setError('I found the answer, but could not play it.');
@@ -318,6 +317,17 @@ export function VoiceAssistantOverlay() {
         const context = new AudioContext();
         captureContext.current = context;
         if (context.state === 'suspended') await context.resume();
+        if (generation !== captureGeneration.current) {
+          if (stream.current === media) {
+            stream.current = null;
+            media.getTracks().forEach((track) => track.stop());
+          }
+          if (captureContext.current === context) {
+            captureContext.current = null;
+            void context.close();
+          }
+          return;
+        }
         const source = context.createMediaStreamSource(media);
         const analyser = context.createAnalyser();
         const captureProcessor = context.createScriptProcessor(2_048, 1, 1);
@@ -393,6 +403,7 @@ export function VoiceAssistantOverlay() {
       const detail = (event as CustomEvent<VoiceEvent>).detail || {};
       const incomingOwner = detail.owner || 'wake';
       if (detail.error) {
+        if (owner.current && owner.current !== incomingOwner) return;
         setError(detail.error);
         changePhase('error');
       } else if (detail.phase === 'listening' && !owner.current) {

@@ -311,7 +311,12 @@ export class KystVoiceStreamClient {
       this.audioRequestId = message.requestId;
       this.armResponseTimeout('audio_idle_timeout');
     }
-    if (message.type === 'complete' && !message.emptyTranscript && !this.receivedAudio) {
+    if (
+      message.type === 'complete' &&
+      !message.emptyTranscript &&
+      message.reason !== 'no speech detected' &&
+      !this.receivedAudio
+    ) {
       this.failActive('complete_without_audio');
       return;
     }
