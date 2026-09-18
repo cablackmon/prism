@@ -22,10 +22,12 @@ const MIN_CAPTURE_MS = 1_200;
 const SILENCE_MS = 1_250;
 const SILENCE_LEVEL = 0.035;
 
-class PcmPlaybackQueue {
+export class PcmPlaybackQueue {
   private context: AudioContext | null = null;
   private nextPlayAt = 0;
   private sources = new Set<AudioBufferSourceNode>();
+  private pendingPushes = 0;
+  private generation = 0;
   private finishCallback: (() => void) | null = null;
 
   async unlock() {
@@ -34,40 +36,53 @@ class PcmPlaybackQueue {
   }
 
   async push(chunk: ArrayBuffer) {
-    await this.unlock();
-    if (!this.context || chunk.byteLength < 2) return;
-    const aligned = chunk.byteLength - (chunk.byteLength % 2);
-    const samples = new Int16Array(chunk.slice(0, aligned));
-    const buffer = this.context.createBuffer(1, samples.length, 16_000);
-    const channel = buffer.getChannelData(0);
-    for (let index = 0; index < samples.length; index += 1) {
-      const sample = samples[index] ?? 0;
-      channel[index] = sample < 0 ? sample / 32768 : sample / 32767;
-    }
-
-    const source = this.context.createBufferSource();
-    source.buffer = buffer;
-    source.connect(this.context.destination);
-    const startsAt = Math.max(this.context.currentTime + 0.025, this.nextPlayAt);
-    this.nextPlayAt = startsAt + buffer.duration;
-    this.sources.add(source);
-    source.onended = () => {
-      this.sources.delete(source);
-      if (!this.sources.size && this.finishCallback) {
-        const callback = this.finishCallback;
-        this.finishCallback = null;
-        callback();
+    const generation = this.generation;
+    this.pendingPushes += 1;
+    let scheduled = false;
+    try {
+      await this.unlock();
+      if (generation !== this.generation || !this.context || chunk.byteLength < 2) return;
+      const aligned = chunk.byteLength - (chunk.byteLength % 2);
+      const samples = new Int16Array(chunk.slice(0, aligned));
+      const buffer = this.context.createBuffer(1, samples.length, 16_000);
+      const channel = buffer.getChannelData(0);
+      for (let index = 0; index < samples.length; index += 1) {
+        const sample = samples[index] ?? 0;
+        channel[index] = sample < 0 ? sample / 32768 : sample / 32767;
       }
-    };
-    source.start(startsAt);
+
+      const source = this.context.createBufferSource();
+      source.buffer = buffer;
+      source.connect(this.context.destination);
+      const startsAt = Math.max(this.context.currentTime + 0.025, this.nextPlayAt);
+      this.nextPlayAt = startsAt + buffer.duration;
+      this.sources.add(source);
+      source.onended = () => {
+        this.sources.delete(source);
+        this.maybeFinish();
+      };
+      source.start(startsAt);
+      scheduled = true;
+    } finally {
+      this.pendingPushes -= 1;
+      if (scheduled || generation !== this.generation) this.maybeFinish();
+    }
   }
 
   finish(callback: () => void) {
-    if (!this.sources.size) callback();
-    else this.finishCallback = callback;
+    this.finishCallback = callback;
+    this.maybeFinish();
+  }
+
+  private maybeFinish() {
+    if (this.pendingPushes || this.sources.size || !this.finishCallback) return;
+    const callback = this.finishCallback;
+    this.finishCallback = null;
+    callback();
   }
 
   stop() {
+    this.generation += 1;
     this.finishCallback = null;
     for (const source of this.sources) {
       try {
@@ -270,6 +285,8 @@ export function VoiceAssistantOverlay() {
       changePhase('connecting');
 
       try {
+        // Playback must be unlocked during the initiating gesture on mobile browsers.
+        const playbackUnlock = playback.current.unlock();
         const mediaPromise = navigator.mediaDevices.getUserMedia({
           audio: {
             deviceId: 'default',
@@ -278,7 +295,8 @@ export function VoiceAssistantOverlay() {
             autoGainControl: true,
           },
         });
-        const [connectionResult, mediaResult] = await Promise.allSettled([
+        const [unlockResult, connectionResult, mediaResult] = await Promise.allSettled([
+          playbackUnlock,
           client.current?.connect(),
           mediaPromise,
         ]);
@@ -287,11 +305,11 @@ export function VoiceAssistantOverlay() {
           media?.getTracks().forEach((track) => track.stop());
           return;
         }
+        if (unlockResult.status === 'rejected') throw unlockResult.reason;
         if (connectionResult.status === 'rejected') throw connectionResult.reason;
         if (mediaResult.status === 'rejected') throw mediaResult.reason;
         if (!media) throw new Error('Microphone access is needed to ask NOX.');
         stream.current = media;
-        await playback.current.unlock();
 
         const id = crypto.randomUUID();
         requestId.current = id;

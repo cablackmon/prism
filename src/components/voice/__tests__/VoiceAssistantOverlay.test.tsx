@@ -29,21 +29,22 @@ jest.mock('@/lib/voice/KystVoiceStreamClient', () => ({
   pcm16FromFloat32: jest.fn(() => new ArrayBuffer(2)),
 }));
 
-import { VoiceAssistantOverlay } from '../VoiceAssistantOverlay';
+import { PcmPlaybackQueue, VoiceAssistantOverlay } from '../VoiceAssistantOverlay';
 
-function installCaptureMocks() {
+function installCaptureMocks(options: { audioState?: AudioContextState } = {}) {
   const stop = jest.fn();
+  const resume = jest.fn(async () => undefined);
   Object.defineProperty(navigator, 'mediaDevices', {
     configurable: true,
     value: { getUserMedia: jest.fn(async () => ({ getTracks: () => [{ stop }] })) },
   });
 
   class FakeAudioContext {
-    state = 'running';
+    state = options.audioState || 'running';
     sampleRate = 48_000;
     currentTime = 0;
     destination = {};
-    resume = jest.fn(async () => undefined);
+    resume = resume;
     close = jest.fn(async () => undefined);
     createMediaStreamSource() {
       return { connect: jest.fn(), disconnect: jest.fn() };
@@ -67,7 +68,7 @@ function installCaptureMocks() {
   });
   jest.spyOn(window, 'requestAnimationFrame').mockReturnValue(1);
   jest.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => undefined);
-  return stop;
+  return { resume, stop };
 }
 
 describe('VoiceAssistantOverlay accessibility and turn controls', () => {
@@ -119,7 +120,7 @@ describe('VoiceAssistantOverlay accessibility and turn controls', () => {
     jest
       .spyOn(globalThis.crypto, 'randomUUID')
       .mockReturnValue('6f9619ff-8b86-d011-b42d-00cf4fc964ff');
-    const stop = installCaptureMocks();
+    const { stop } = installCaptureMocks();
 
     render(<VoiceAssistantOverlay />);
     fireEvent.click(screen.getByRole('button', { name: 'Ask NOX by voice' }));
@@ -178,7 +179,7 @@ describe('VoiceAssistantOverlay accessibility and turn controls', () => {
     jest
       .spyOn(globalThis.crypto, 'randomUUID')
       .mockReturnValue('6f9619ff-8b86-d011-b42d-00cf4fc964ff');
-    const stop = installCaptureMocks();
+    const { stop } = installCaptureMocks();
 
     render(<VoiceAssistantOverlay />);
     fireEvent.click(screen.getByRole('button', { name: 'Ask NOX by voice' }));
@@ -194,5 +195,76 @@ describe('VoiceAssistantOverlay accessibility and turn controls', () => {
     expect(stop).toHaveBeenCalledTimes(1);
     expect(screen.getByRole('button', { name: 'Interrupt and ask NOX' })).toBeTruthy();
     expect(screen.getByRole('status').textContent).toContain('Thinking…');
+  });
+
+  it('unlocks playback synchronously from the initiating tap', async () => {
+    jest
+      .spyOn(globalThis.crypto, 'randomUUID')
+      .mockReturnValue('6f9619ff-8b86-d011-b42d-00cf4fc964ff');
+    const { resume } = installCaptureMocks({ audioState: 'suspended' });
+
+    render(<VoiceAssistantOverlay />);
+    fireEvent.click(screen.getByRole('button', { name: 'Ask NOX by voice' }));
+
+    expect(resume).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(startTurn).toHaveBeenCalledTimes(1));
+  });
+});
+
+describe('PcmPlaybackQueue', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('waits for an in-flight push and scheduled source before finishing', async () => {
+    let resolveResume: (() => void) | undefined;
+    const resume = jest.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveResume = resolve;
+        })
+    );
+    const source = {
+      buffer: null,
+      connect: jest.fn(),
+      onended: null as (() => void) | null,
+      start: jest.fn(),
+      stop: jest.fn(),
+    };
+    class FakeAudioContext {
+      state = 'suspended';
+      currentTime = 0;
+      destination = {};
+      resume = resume;
+      close = jest.fn(async () => undefined);
+      createBuffer() {
+        return {
+          duration: 0.1,
+          getChannelData: () => new Float32Array(2),
+        };
+      }
+      createBufferSource() {
+        return source;
+      }
+    }
+    Object.defineProperty(window, 'AudioContext', {
+      configurable: true,
+      value: FakeAudioContext,
+    });
+    const queue = new PcmPlaybackQueue();
+    const finished = jest.fn();
+
+    const pushing = queue.push(new Int16Array([1, 2]).buffer);
+    queue.finish(finished);
+    expect(finished).not.toHaveBeenCalled();
+
+    resolveResume?.();
+    await pushing;
+    expect(source.start).toHaveBeenCalledTimes(1);
+    expect(finished).not.toHaveBeenCalled();
+
+    source.onended?.();
+    expect(finished).toHaveBeenCalledTimes(1);
+    queue.close();
   });
 });

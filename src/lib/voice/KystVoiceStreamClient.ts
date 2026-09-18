@@ -1,5 +1,6 @@
 export const VOICE_SOCKET_URL = 'wss://cb-threadripper.tail3a8e2d.ts.net:8445/voice';
 export const VOICE_SAMPLE_RATE = 16_000;
+const RESPONSE_TIMEOUT_MS = 6_000;
 
 export type VoiceTicket = {
   url: string;
@@ -116,8 +117,11 @@ export class KystVoiceStreamClient {
   private readonly clearTimer: (timer: TimerId) => void;
   private socket: VoiceSocket | null = null;
   private connecting: Promise<void> | null = null;
+  private connectionGeneration = 0;
   private authenticated = false;
   private activeRequestId: string | null = null;
+  private audioRequestId: string | null = null;
+  private responseTimer: TimerId | null = null;
   private ended = false;
 
   constructor(options: ClientOptions = {}) {
@@ -141,18 +145,23 @@ export class KystVoiceStreamClient {
   connect(): Promise<void> {
     if (this.ready) return Promise.resolve();
     if (this.connecting) return this.connecting;
-    this.connecting = this.openFreshSocket().finally(() => {
-      this.connecting = null;
+    const generation = ++this.connectionGeneration;
+    const connecting = this.openFreshSocket(generation).finally(() => {
+      if (this.connecting === connecting) this.connecting = null;
     });
-    return this.connecting;
+    this.connecting = connecting;
+    return connecting;
   }
 
-  private async openFreshSocket() {
+  private async openFreshSocket(generation: number) {
     const ticket = await this.fetchTicket();
+    if (generation !== this.connectionGeneration) {
+      throw new Error('NOX voice connection was cancelled.');
+    }
     if (ticket.url !== VOICE_SOCKET_URL || !ticket.token) {
       throw new Error('NOX returned an invalid voice connection.');
     }
-    this.disconnect('reconnect');
+    this.closeSocket('reconnect');
     const socket = this.createSocket(ticket.url);
     socket.binaryType = 'arraybuffer';
     this.socket = socket;
@@ -179,7 +188,10 @@ export class KystVoiceStreamClient {
       socket.addEventListener('message', (event) => {
         if (this.socket !== socket) return;
         if (typeof event.data !== 'string') {
-          if (this.activeRequestId) this.onAudio(event.data, this.activeRequestId);
+          if (this.activeRequestId && this.audioRequestId === this.activeRequestId) {
+            this.armResponseTimeout('audio_idle_timeout');
+            this.onAudio(event.data, this.audioRequestId);
+          }
           return;
         }
         let message: VoiceStreamEvent;
@@ -218,6 +230,8 @@ export class KystVoiceStreamClient {
   startTurn(requestId: string) {
     if (!this.ready || this.activeRequestId) return false;
     this.activeRequestId = requestId;
+    this.audioRequestId = null;
+    this.clearResponseTimeout();
     this.ended = false;
     this.sendControl({
       type: 'start',
@@ -239,6 +253,7 @@ export class KystVoiceStreamClient {
     if (!this.ready || !this.activeRequestId || this.ended) return false;
     this.ended = true;
     this.sendControl({ type: 'end_of_speech', requestId: this.activeRequestId });
+    this.armResponseTimeout('first_audio_timeout');
     return true;
   }
 
@@ -247,7 +262,9 @@ export class KystVoiceStreamClient {
     if (this.ready) {
       this.sendControl({ type: 'cancel', requestId: this.activeRequestId, reason });
     }
+    this.clearResponseTimeout();
     this.activeRequestId = null;
+    this.audioRequestId = null;
     this.ended = false;
     return true;
   }
@@ -259,7 +276,13 @@ export class KystVoiceStreamClient {
   }
 
   disconnect(reason = 'disconnect') {
+    this.connectionGeneration += 1;
+    this.connecting = null;
     this.cancelTurn(reason);
+    this.closeSocket(reason);
+  }
+
+  private closeSocket(reason: string) {
     const socket = this.socket;
     this.socket = null;
     this.authenticated = false;
@@ -272,21 +295,39 @@ export class KystVoiceStreamClient {
 
   private handleControl(message: VoiceStreamEvent) {
     if (!this.activeRequestId || message.requestId !== this.activeRequestId) return;
+    if (message.type === 'audio.start') {
+      this.audioRequestId = message.requestId;
+      this.armResponseTimeout('audio_idle_timeout');
+    }
     const acknowledgement = ACTION_ACKS[message.type];
     if (acknowledgement) {
       this.sendControl({ type: acknowledgement, requestId: this.activeRequestId });
     }
     this.onEvent(message);
     if (message.type === 'complete' || message.type === 'error' || message.type === 'fallback') {
+      this.clearResponseTimeout();
       this.activeRequestId = null;
+      this.audioRequestId = null;
       this.ended = false;
     }
+  }
+
+  private armResponseTimeout(reason: string) {
+    this.clearResponseTimeout();
+    this.responseTimer = this.setTimer(() => this.failActive(reason), RESPONSE_TIMEOUT_MS);
+  }
+
+  private clearResponseTimeout() {
+    if (this.responseTimer) this.clearTimer(this.responseTimer);
+    this.responseTimer = null;
   }
 
   private failActive(reason: string) {
     if (!this.activeRequestId) return;
     const requestId = this.activeRequestId;
+    this.clearResponseTimeout();
     this.activeRequestId = null;
+    this.audioRequestId = null;
     this.ended = false;
     this.onEvent({ type: 'error', requestId, reason });
   }

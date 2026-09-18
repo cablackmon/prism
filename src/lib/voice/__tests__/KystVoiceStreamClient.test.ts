@@ -58,11 +58,15 @@ describe('KystVoiceStreamClient', () => {
       'message',
       JSON.stringify({ type: 'transcript.delta', requestId: 'request-1', text: 'hello' })
     );
+    socket.emit(
+      'message',
+      JSON.stringify({ type: 'audio.start', requestId: 'request-1', format: 'pcm16' })
+    );
     socket.emit('message', new ArrayBuffer(12));
     expect(client.playbackStarted('request-1')).toBe(true);
     socket.emit('message', JSON.stringify({ type: 'complete', requestId: 'request-1' }));
 
-    expect(events).toEqual(['ready', 'transcript.delta', 'complete']);
+    expect(events).toEqual(['ready', 'transcript.delta', 'audio.start', 'complete']);
     expect(audio).toHaveLength(1);
     expect(socket.sent).toEqual([
       JSON.stringify({ type: 'auth', token: 'signed-ticket' }),
@@ -136,6 +140,90 @@ describe('KystVoiceStreamClient', () => {
     });
 
     await expect(client.connect()).rejects.toThrow('invalid voice connection');
+    expect(createSocket).not.toHaveBeenCalled();
+  });
+
+  it('accepts binary audio only after audio.start for the active request', async () => {
+    const socket = new FakeSocket();
+    const received: string[] = [];
+    const client = new KystVoiceStreamClient({
+      fetchTicket: async () => ({ url: VOICE_SOCKET_URL, token: 'ticket' }),
+      createSocket: () => socket,
+      onAudio: (_chunk, requestId) => received.push(requestId),
+    });
+    const connection = client.connect();
+    await new Promise((resolve) => setImmediate(resolve));
+    socket.emit('open');
+    socket.emit('message', JSON.stringify({ type: 'ready' }));
+    await connection;
+
+    client.startTurn('request-old');
+    socket.emit(
+      'message',
+      JSON.stringify({ type: 'audio.start', requestId: 'request-old', format: 'pcm16' })
+    );
+    client.cancelTurn();
+    client.startTurn('request-new');
+    socket.emit('message', new ArrayBuffer(4));
+    socket.emit(
+      'message',
+      JSON.stringify({ type: 'audio.start', requestId: 'request-old', format: 'pcm16' })
+    );
+    socket.emit('message', new ArrayBuffer(4));
+    socket.emit(
+      'message',
+      JSON.stringify({ type: 'audio.start', requestId: 'request-new', format: 'pcm16' })
+    );
+    socket.emit('message', new ArrayBuffer(4));
+
+    expect(received).toEqual(['request-new']);
+    client.cancelTurn('test_complete');
+  });
+
+  it('fails a turn that receives no response after end_of_speech', async () => {
+    jest.useFakeTimers();
+    const socket = new FakeSocket();
+    const events: Array<{ type: string; reason?: string }> = [];
+    const client = new KystVoiceStreamClient({
+      fetchTicket: async () => ({ url: VOICE_SOCKET_URL, token: 'ticket' }),
+      createSocket: () => socket,
+      onEvent: (event) => events.push(event),
+    });
+    const connection = client.connect();
+    await Promise.resolve();
+    socket.emit('open');
+    socket.emit('message', JSON.stringify({ type: 'ready' }));
+    await connection;
+
+    client.startTurn('request-timeout');
+    client.endTurn();
+    jest.advanceTimersByTime(6_000);
+
+    expect(events.at(-1)).toEqual({
+      type: 'error',
+      requestId: 'request-timeout',
+      reason: 'first_audio_timeout',
+    });
+    expect(client.active).toBeNull();
+    jest.useRealTimers();
+  });
+
+  it('does not create a socket when disconnect invalidates a pending ticket request', async () => {
+    let resolveTicket: ((ticket: { url: string; token: string }) => void) | undefined;
+    const ticket = new Promise<{ url: string; token: string }>((resolve) => {
+      resolveTicket = resolve;
+    });
+    const createSocket = jest.fn();
+    const client = new KystVoiceStreamClient({
+      fetchTicket: () => ticket,
+      createSocket,
+    });
+
+    const connection = client.connect();
+    client.disconnect('unmount');
+    resolveTicket?.({ url: VOICE_SOCKET_URL, token: 'ticket' });
+
+    await expect(connection).rejects.toThrow('cancelled');
     expect(createSocket).not.toHaveBeenCalled();
   });
 });
