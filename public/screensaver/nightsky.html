@@ -211,6 +211,41 @@
     const hideLivingComet = query.get('hideComet') === '1';
     if (query.has('debug')) document.body.classList.add('show-debug');
 
+    const COMET_SCHEDULE_STORAGE_KEY = 'prism-nightsky-comet-anchor-v1';
+    function loadProductionCometSchedule(nowMs = Date.now()) {
+      const timing = CONFIG.livingEmblem;
+      const periodMs = timing.cometPeriodSeconds * 1000;
+      const firstDelayMs = timing.cometFirstDelaySeconds * 1000;
+      let anchorMs = NaN;
+      let source = 'local-storage';
+      try {
+        anchorMs = Number(localStorage.getItem(COMET_SCHEDULE_STORAGE_KEY));
+        if (!Number.isFinite(anchorMs) || anchorMs <= 0 ||
+            anchorMs > nowMs + periodMs) {
+          anchorMs = nowMs + firstDelayMs;
+          localStorage.setItem(COMET_SCHEDULE_STORAGE_KEY, String(anchorMs));
+        }
+      } catch (_error) {
+        // Storage can be disabled in hardened kiosk contexts. An epoch-aligned
+        // fallback still survives document reloads without shared state.
+        anchorMs = firstDelayMs;
+        source = 'epoch-fallback';
+      }
+      const elapsedPeriods = nowMs <= anchorMs
+        ? 0 : Math.ceil((nowMs - anchorMs) / periodMs);
+      const nextWallMs = anchorMs + elapsedPeriods * periodMs;
+      return Object.freeze({
+        anchorMs,
+        nextWallMs,
+        nextDelaySeconds: Math.max(0, (nextWallMs - nowMs) / 1000),
+        nextCometIndex: elapsedPeriods,
+        source
+      });
+    }
+    const productionCometSchedule = !DEMO_CAPTURE && !reducedMotion
+      ? loadProductionCometSchedule() : null;
+    window.NIGHTSKY_COMET_SCHEDULE = productionCometSchedule;
+
     let width = 1;
     let height = 1;
     let dpr = 1;
@@ -617,9 +652,10 @@
     let livingNextBigSeconds = DEMO_CAPTURE
       ? CONFIG.livingEmblem.demoFirstBigDelaySeconds
       : randomBigGap(Math.random);
-    let livingNextCometSeconds = DEMO_CAPTURE
-      ? Infinity : CONFIG.livingEmblem.cometFirstDelaySeconds;
-    let livingCometIndex = 0;
+    let livingNextCometSeconds = productionCometSchedule
+      ? productionCometSchedule.nextDelaySeconds : Infinity;
+    let livingCometIndex = productionCometSchedule
+      ? productionCometSchedule.nextCometIndex : 0;
     let livingPhase = 'still';
     let livingEventCount = 0;
     let livingEventKind = 'subtle-turn';
@@ -752,10 +788,17 @@
       } else if (livingEventClass === 'subtle') {
         livingNextSubtleSeconds = Math.max(
           seconds, livingStartSeconds + randomSubtleGap());
-      } else if (livingEventClass === 'comet' && livingNextSubtleSeconds <= seconds) {
+      } else if (livingEventClass === 'comet') {
         // Preserve a quiet beat after each comet instead of firing an overdue
-        // subtle motion immediately after the authored gaze returns to rest.
-        livingNextSubtleSeconds = seconds + randomSubtleGap();
+        // authored motion immediately after the gaze returns to rest.
+        if (livingNextSubtleSeconds <= seconds) {
+          livingNextSubtleSeconds = seconds + randomSubtleGap();
+        }
+        if (livingNextBigSeconds <= seconds) {
+          livingNextBigSeconds = Math.max(
+            seconds + randomBigGap(),
+            livingLastBigStartSeconds + bigMinSeparation());
+        }
       }
       livingStartSeconds = -1;
       livingEventClass = 'none';
@@ -850,6 +893,12 @@
           if (nextSubtle <= finished) {
             nextSubtle = finished + randomRange(timing.subtleMinIntervalSeconds,
               timing.subtleMaxIntervalSeconds, random);
+          }
+          if (nextBig <= finished) {
+            nextBig = Math.max(
+              finished + randomRange(timing.bigMinIntervalSeconds,
+                timing.bigMaxIntervalSeconds, random),
+              lastBigStart + timing.bigMinSeparationSeconds);
           }
         } else if (eventClass === 'big') {
           nextBig = Math.max(
