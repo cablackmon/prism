@@ -275,6 +275,8 @@ export function VoiceAssistantOverlay() {
   const cancelTurn = useCallback(
     (reason = 'barge_in') => {
       captureGeneration.current += 1;
+      if (idleTimer.current) window.clearTimeout(idleTimer.current);
+      idleTimer.current = undefined;
       const activeRequestId = requestId.current;
       if (activeRequestId) client.current?.discardPendingPlayback(activeRequestId);
       client.current?.cancelTurn(reason);

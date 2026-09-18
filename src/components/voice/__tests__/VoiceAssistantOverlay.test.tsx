@@ -367,6 +367,53 @@ describe('VoiceAssistantOverlay accessibility and turn controls', () => {
     expect(screen.getByRole('status').textContent).toContain('Wake-word capture failed.');
   });
 
+  it('does not let a completed turn reset a replacement external answer', async () => {
+    jest.useFakeTimers();
+    try {
+      jest
+        .spyOn(globalThis.crypto, 'randomUUID')
+        .mockReturnValue('6f9619ff-8b86-d011-b42d-00cf4fc964ff');
+      installCaptureMocks();
+      const play = jest.fn(async () => undefined);
+      class FakeAudio {
+        onended: (() => void) | null = null;
+        onerror: ((event: Event) => void) | null = null;
+        play = play;
+        pause = jest.fn();
+        constructor(_url: string) {}
+      }
+      Object.defineProperty(window, 'Audio', { configurable: true, value: FakeAudio });
+
+      render(<VoiceAssistantOverlay />);
+      fireEvent.click(screen.getByRole('button', { name: 'Ask NOX by voice' }));
+      await act(async () => {
+        await Promise.resolve();
+      });
+      act(() => {
+        emit?.({
+          type: 'complete',
+          requestId: '6f9619ff-8b86-d011-b42d-00cf4fc964ff',
+        });
+        window.dispatchEvent(
+          new CustomEvent('prism:voice-assistant', {
+            detail: {
+              owner: 'tap',
+              answer: 'Replacement answer.',
+              audioUrl: 'https://example.invalid/replacement-answer.mp3',
+            },
+          })
+        );
+        jest.advanceTimersByTime(3_000);
+      });
+
+      expect(play).toHaveBeenCalledTimes(1);
+      expect(screen.getByRole('status').textContent).toContain('Replacement answer.');
+      expect(screen.getByRole('button', { name: 'Interrupt and ask NOX' })).toBeTruthy();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   it('ignores an external error owned by a different voice session', async () => {
     jest
       .spyOn(globalThis.crypto, 'randomUUID')
