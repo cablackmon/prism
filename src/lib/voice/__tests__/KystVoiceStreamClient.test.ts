@@ -240,6 +240,51 @@ describe('KystVoiceStreamClient', () => {
     jest.useRealTimers();
   });
 
+  it('fails a completed non-empty turn when no audio was delivered', async () => {
+    const socket = new FakeSocket();
+    const events: Array<{ type: string; reason?: string }> = [];
+    const client = new KystVoiceStreamClient({
+      fetchTicket: async () => ({ url: VOICE_SOCKET_URL, token: 'ticket' }),
+      createSocket: () => socket,
+      onEvent: (event) => events.push(event),
+    });
+    const connection = client.connect();
+    await new Promise((resolve) => setImmediate(resolve));
+    socket.emit('open');
+    socket.emit('message', JSON.stringify({ type: 'ready' }));
+    await connection;
+
+    client.startTurn('request-no-audio');
+    socket.emit(
+      'message',
+      JSON.stringify({
+        type: 'answer.delta',
+        requestId: 'request-no-audio',
+        text: 'The answer exists, but synthesis failed.',
+      })
+    );
+    socket.emit('message', JSON.stringify({ type: 'complete', requestId: 'request-no-audio' }));
+
+    expect(events.at(-1)).toEqual({
+      type: 'error',
+      requestId: 'request-no-audio',
+      reason: 'complete_without_audio',
+    });
+    expect(events.map((event) => event.type)).not.toContain('complete');
+    expect(client.active).toBeNull();
+
+    client.startTurn('request-empty');
+    socket.emit(
+      'message',
+      JSON.stringify({ type: 'complete', requestId: 'request-empty', emptyTranscript: true })
+    );
+    expect(events.at(-1)).toMatchObject({
+      type: 'complete',
+      requestId: 'request-empty',
+      emptyTranscript: true,
+    });
+  });
+
   it('does not create a socket when disconnect invalidates a pending ticket request', async () => {
     let resolveTicket: ((ticket: { url: string; token: string }) => void) | undefined;
     const ticket = new Promise<{ url: string; token: string }>((resolve) => {

@@ -121,6 +121,7 @@ export class KystVoiceStreamClient {
   private authenticated = false;
   private activeRequestId: string | null = null;
   private audioRequestId: string | null = null;
+  private receivedAudio = false;
   private responseTimer: TimerId | null = null;
   private ended = false;
 
@@ -188,8 +189,13 @@ export class KystVoiceStreamClient {
       socket.addEventListener('message', (event) => {
         if (this.socket !== socket) return;
         if (typeof event.data !== 'string') {
-          if (this.activeRequestId && this.audioRequestId === this.activeRequestId) {
+          if (
+            event.data.byteLength > 0 &&
+            this.activeRequestId &&
+            this.audioRequestId === this.activeRequestId
+          ) {
             this.armResponseTimeout('audio_idle_timeout');
+            this.receivedAudio = true;
             this.onAudio(event.data, this.audioRequestId);
           }
           return;
@@ -231,6 +237,7 @@ export class KystVoiceStreamClient {
     if (!this.ready || this.activeRequestId) return false;
     this.activeRequestId = requestId;
     this.audioRequestId = null;
+    this.receivedAudio = false;
     this.clearResponseTimeout();
     this.ended = false;
     this.sendControl({
@@ -265,6 +272,7 @@ export class KystVoiceStreamClient {
     this.clearResponseTimeout();
     this.activeRequestId = null;
     this.audioRequestId = null;
+    this.receivedAudio = false;
     this.ended = false;
     return true;
   }
@@ -303,6 +311,10 @@ export class KystVoiceStreamClient {
       this.audioRequestId = message.requestId;
       this.armResponseTimeout('audio_idle_timeout');
     }
+    if (message.type === 'complete' && !message.emptyTranscript && !this.receivedAudio) {
+      this.failActive('complete_without_audio');
+      return;
+    }
     const acknowledgement = ACTION_ACKS[message.type];
     if (acknowledgement) {
       this.sendControl({ type: acknowledgement, requestId: this.activeRequestId });
@@ -312,6 +324,7 @@ export class KystVoiceStreamClient {
       this.clearResponseTimeout();
       this.activeRequestId = null;
       this.audioRequestId = null;
+      this.receivedAudio = false;
       this.ended = false;
     }
   }
@@ -332,6 +345,7 @@ export class KystVoiceStreamClient {
     this.clearResponseTimeout();
     this.activeRequestId = null;
     this.audioRequestId = null;
+    this.receivedAudio = false;
     this.ended = false;
     this.onEvent({ type: 'error', requestId, reason });
   }
