@@ -26,6 +26,7 @@ describe('SubpageHeader', () => {
     expect(backLink.textContent).toContain('Back to board');
     expect(backLink.className).toContain('h-11');
     expect(backLink.className).toContain('[@media(pointer:coarse)]:h-14');
+    expect(screen.getByText('Back to board').className).toContain('hidden xl:inline');
 
     backLink.focus();
     expect(document.activeElement).toBe(backLink);

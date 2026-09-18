@@ -51,7 +51,7 @@ export function SubpageHeader({ icon, title, badge, actions, overflow }: Subpage
           >
             <Link href={boardHref} aria-label="Back to board">
               <Home className="h-5 w-5" />
-              <span>Back to board</span>
+              <span className="hidden xl:inline">Back to board</span>
             </Link>
           </Button>
           <div className="flex items-center gap-2">

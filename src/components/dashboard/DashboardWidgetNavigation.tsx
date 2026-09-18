@@ -7,6 +7,7 @@ import { getWidgetRoute } from '@/components/widgets/widgetRegistry';
 const DOUBLE_TAP_MS = 450;
 const DOUBLE_TAP_DISTANCE_PX = 48;
 const TAP_MOVE_TOLERANCE_PX = 12;
+const MAX_TAP_DURATION_MS = 500;
 
 type Point = {
   x: number;
@@ -15,6 +16,7 @@ type Point = {
 
 type ActiveTouch = Point & {
   pointerId: number;
+  startedAt: number;
   moved: boolean;
 };
 
@@ -83,7 +85,7 @@ export function DashboardWidgetNavigation({ widgetId, slug, children }: Dashboar
   const handlePointerDown = React.useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
       if (!route || event.pointerType !== 'touch' || !event.isPrimary) return;
-      if (isInteractiveTarget(event.target)) {
+      if (isWidgetNavigationBlocked() || isInteractiveTarget(event.target)) {
         activeTouch.current = null;
         lastTap.current = null;
         return;
@@ -92,6 +94,7 @@ export function DashboardWidgetNavigation({ widgetId, slug, children }: Dashboar
         pointerId: event.pointerId,
         x: event.clientX,
         y: event.clientY,
+        startedAt: Date.now(),
         moved: false,
       };
     },
@@ -111,18 +114,22 @@ export function DashboardWidgetNavigation({ widgetId, slug, children }: Dashboar
     (event: React.PointerEvent<HTMLDivElement>) => {
       const active = activeTouch.current;
       activeTouch.current = null;
+      const now = Date.now();
       if (
         !route ||
         event.pointerType !== 'touch' ||
         !event.isPrimary ||
         !active ||
         active.pointerId !== event.pointerId ||
-        active.moved
+        active.moved ||
+        now - active.startedAt > MAX_TAP_DURATION_MS ||
+        isWidgetNavigationBlocked() ||
+        isInteractiveTarget(event.target)
       ) {
+        lastTap.current = null;
         return;
       }
 
-      const now = Date.now();
       const currentTap = { at: now, x: event.clientX, y: event.clientY };
       const previousTap = lastTap.current;
       lastTap.current = currentTap;

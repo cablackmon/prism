@@ -117,6 +117,66 @@ describe('DashboardWidgetNavigation', () => {
     expect(push).not.toHaveBeenCalled();
   });
 
+  it('does not combine a modal-backdrop dismissal with a widget tap', () => {
+    const { container } = render(
+      <DashboardWidgetNavigation widgetId="meals">
+        <div data-widget-navigation-ignore>Dismiss meal modal</div>
+      </DashboardWidgetNavigation>
+    );
+    const backdrop = screen.getByText('Dismiss meal modal');
+    const widget = container.firstElementChild as HTMLElement;
+
+    touch(backdrop);
+    now += 200;
+    touch(widget);
+
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it('does not combine a long press with a following tap', () => {
+    const { container } = render(
+      <DashboardWidgetNavigation widgetId="tasks">Tasks</DashboardWidgetNavigation>
+    );
+    const widget = container.firstElementChild as HTMLElement;
+
+    fireEvent.pointerDown(widget, {
+      pointerType: 'touch',
+      pointerId: 1,
+      isPrimary: true,
+      clientX: 100,
+      clientY: 100,
+    });
+    now += 1_000;
+    fireEvent.pointerUp(widget, {
+      pointerType: 'touch',
+      pointerId: 1,
+      isPrimary: true,
+      clientX: 100,
+      clientY: 100,
+    });
+    now += 100;
+    touch(widget);
+
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it('does not retain a tap recorded while navigation is blocked', () => {
+    const { container } = render(
+      <DashboardWidgetNavigation widgetId="chores">Chores</DashboardWidgetNavigation>
+    );
+    const widget = container.firstElementChild as HTMLElement;
+    const overlay = document.createElement('div');
+    overlay.dataset.voiceAssistantActive = 'true';
+    document.body.appendChild(overlay);
+
+    touch(widget);
+    overlay.remove();
+    now += 200;
+    touch(widget);
+
+    expect(push).not.toHaveBeenCalled();
+  });
+
   it('does not turn scrolling or separated taps into navigation', () => {
     const { container } = render(
       <DashboardWidgetNavigation widgetId="tasks">Tasks</DashboardWidgetNavigation>
