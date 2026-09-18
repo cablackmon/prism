@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Home, MoreVertical } from 'lucide-react';
 import { useIsMobile } from '@/lib/hooks/useIsMobile';
 import { cn } from '@/lib/utils';
@@ -34,14 +35,23 @@ export interface SubpageHeaderProps {
 
 export function SubpageHeader({ icon, title, badge, actions, overflow }: SubpageHeaderProps) {
   const isMobile = useIsMobile();
+  const pathname = usePathname();
+  const dashboardSlug = pathname.match(/^\/d\/([^/]+)(?:\/|$)/)?.[1];
+  const boardHref = dashboardSlug ? `/d/${dashboardSlug}` : '/';
 
   return (
     <header className="flex-shrink-0 border-b border-border bg-card/85 backdrop-blur-sm px-4 safe-area-top">
       <div className={cn('flex items-center justify-between', isMobile ? 'h-11' : 'h-12 [@media(pointer:coarse)]:h-16')}>
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" asChild className="hidden md:inline-flex">
-            <Link href="/" aria-label="Back to dashboard">
+          <Button
+            variant="ghost"
+            size="icon"
+            asChild
+            className="hidden h-11 w-auto gap-2 px-3 md:inline-flex [@media(pointer:coarse)]:h-14 [@media(pointer:coarse)]:px-5"
+          >
+            <Link href={boardHref} aria-label="Back to board">
               <Home className="h-5 w-5" />
+              <span>Back to board</span>
             </Link>
           </Button>
           <div className="flex items-center gap-2">

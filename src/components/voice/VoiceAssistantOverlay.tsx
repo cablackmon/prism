@@ -235,6 +235,7 @@ export function VoiceAssistantOverlay() {
   return (
     <div
       data-screensaver-keep
+      data-voice-assistant-active={active ? 'true' : 'false'}
       className="fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] right-[max(1.25rem,env(safe-area-inset-right))] z-[10020] flex max-w-[min(26rem,calc(100vw-2rem))] items-end gap-3"
     >
       {active && (
