@@ -594,18 +594,19 @@
   box-shadow: none;
 }
 
-/* Pressed: .hg-activeButton is what simple-keyboard actually toggles. */
+[data-virtual-keyboard] .hg-theme-default .hg-button.key-action {
+  background: hsl(var(--virtual-key-action));
+  font-size: 20px;
+}
+
+/* Pressed: .hg-activeButton is what simple-keyboard actually toggles.
+   Keep this after .key-action so every key exposes the active state. */
 [data-virtual-keyboard] .hg-theme-default .hg-button:hover,
 [data-virtual-keyboard] .hg-theme-default .hg-button:active,
 [data-virtual-keyboard] .hg-theme-default .hg-button.hg-activeButton {
   background: hsl(var(--virtual-key-active));
   color: hsl(var(--foreground));
   -webkit-text-fill-color: currentColor;
-}
-
-[data-virtual-keyboard] .hg-theme-default .hg-button.key-action {
-  background: hsl(var(--virtual-key-action));
-  font-size: 20px;
 }
 
 [data-virtual-keyboard] .hg-theme-default .hg-button.key-space {
