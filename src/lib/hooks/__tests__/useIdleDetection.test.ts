@@ -225,7 +225,7 @@ describe('useIdleDetection', () => {
       jest.advanceTimersByTime(4000);
       window.dispatchEvent(new MessageEvent('message', {
         source: window.parent,
-        origin: 'https://kyst-one.vercel.app',
+        origin: 'https://kyst-board.fly.dev',
         data: { type: 'kyst-user-activity' },
       }));
       jest.advanceTimersByTime(4999);
@@ -243,7 +243,7 @@ describe('useIdleDetection', () => {
       result.current.forceIdle();
       window.dispatchEvent(new MessageEvent('message', {
         source: window.parent,
-        origin: 'https://kyst-one.vercel.app',
+        origin: 'https://kyst-board.fly.dev',
         data: { type: 'kyst-user-activity' },
       }));
     });

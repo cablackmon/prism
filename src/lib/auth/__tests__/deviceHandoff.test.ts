@@ -1,5 +1,6 @@
 import {
   createDeviceHandoff,
+  deviceAuthRedirect,
   DEVICE_HANDOFF_TTL_SECONDS,
   requestedDeviceDestination,
   WALL_PROXY_AUDIENCE,
@@ -18,5 +19,24 @@ describe('device handoff', () => {
     expect(requestedDeviceDestination(new Request('https://kyst-board.fly.dev/x'))).toBe('/wall.html');
     expect(requestedDeviceDestination(new Request('https://kyst-board.fly.dev/x?next=%2Fwall.html'))).toBe('/wall.html');
     expect(requestedDeviceDestination(new Request('https://kyst-board.fly.dev/x?next=https%3A%2F%2Fevil.test'))).toBe('/');
+  });
+
+  it('keeps accepted device destinations on the authenticated board origin', async () => {
+    const [wallRedirect, fallbackRedirect] = await Promise.all([
+      deviceAuthRedirect(
+        new Request('https://kyst-board.fly.dev/api/household-auth/device?next=%2Fwall.html'),
+        's'.repeat(64)
+      ),
+      deviceAuthRedirect(
+        new Request(
+          'https://kyst-board.fly.dev/api/household-auth/device?next=https%3A%2F%2Fevil.test'
+        ),
+        's'.repeat(64)
+      ),
+    ]);
+    const wall = new URL(wallRedirect);
+    expect(wall.origin + wall.pathname).toBe('https://kyst-board.fly.dev/wall.html');
+    expect(wall.searchParams.get('handoff')).toMatch(/^v1\./);
+    expect(fallbackRedirect).toBe('https://kyst-board.fly.dev/');
   });
 });

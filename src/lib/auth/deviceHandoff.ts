@@ -1,5 +1,5 @@
 export const WALL_DESTINATION = '/wall.html';
-export const WALL_WRAPPER_URL = 'https://kyst-one.vercel.app/wall.html';
+export const WALL_WRAPPER_URL = 'https://kyst-board.fly.dev/wall.html';
 export const WALL_PROXY_AUDIENCE = 'https://kyst-wall-proxy.fly.dev';
 export const DEVICE_HANDOFF_TTL_SECONDS = 60;
 
@@ -45,8 +45,10 @@ export async function createDeviceHandoff(
 }
 
 export async function deviceAuthRedirect(request: Request, secret: string): Promise<string> {
-  if (requestedDeviceDestination(request) !== WALL_DESTINATION) return '/';
-  const destination = new URL(WALL_WRAPPER_URL);
-  destination.searchParams.set('handoff', await createDeviceHandoff(secret));
-  return destination.href;
+  const destination = requestedDeviceDestination(request);
+  const redirect = new URL(destination, request.url);
+  if (destination === WALL_DESTINATION) {
+    redirect.searchParams.set('handoff', await createDeviceHandoff(secret));
+  }
+  return redirect.href;
 }
