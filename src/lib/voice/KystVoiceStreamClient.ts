@@ -190,7 +190,7 @@ export class KystVoiceStreamClient {
         if (this.socket !== socket) return;
         if (typeof event.data !== 'string') {
           if (
-            event.data.byteLength > 0 &&
+            event.data.byteLength >= 2 &&
             this.activeRequestId &&
             this.audioRequestId === this.activeRequestId
           ) {

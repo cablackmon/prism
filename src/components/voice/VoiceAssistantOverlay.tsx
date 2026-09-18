@@ -404,6 +404,7 @@ export function VoiceAssistantOverlay() {
       const incomingOwner = detail.owner || 'wake';
       if (detail.error) {
         if (owner.current && owner.current !== incomingOwner) return;
+        if (owner.current) cancelTurn('external_error');
         setError(detail.error);
         changePhase('error');
       } else if (detail.phase === 'listening' && !owner.current) {
@@ -412,7 +413,7 @@ export function VoiceAssistantOverlay() {
     };
     window.addEventListener('prism:voice-assistant', onVoice);
     return () => window.removeEventListener('prism:voice-assistant', onVoice);
-  }, [beginCapture, changePhase]);
+  }, [beginCapture, cancelTurn, changePhase]);
 
   const close = () => {
     cancelTurn('dismissed');

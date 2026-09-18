@@ -332,6 +332,29 @@ describe('VoiceAssistantOverlay accessibility and turn controls', () => {
     expect(screen.getByRole('button', { name: 'Stop and send voice question' })).toBeTruthy();
     expect(screen.getByRole('status').textContent).not.toContain('Wake-word capture failed.');
   });
+
+  it('cancels the matching active session before showing an external error', async () => {
+    jest
+      .spyOn(globalThis.crypto, 'randomUUID')
+      .mockReturnValue('6f9619ff-8b86-d011-b42d-00cf4fc964ff');
+    const { stop } = installCaptureMocks();
+
+    render(<VoiceAssistantOverlay />);
+    fireEvent.click(screen.getByRole('button', { name: 'Ask NOX by voice' }));
+    await screen.findByRole('button', { name: 'Stop and send voice question' });
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent('prism:voice-assistant', {
+          detail: { owner: 'tap', error: 'Tap capture failed.' },
+        })
+      );
+    });
+
+    expect(cancelTurn).toHaveBeenCalledWith('external_error');
+    expect(stop).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('status').textContent).toContain('Tap capture failed.');
+    expect(screen.getByRole('status').textContent).toContain('Couldn’t finish');
+  });
 });
 
 describe('PcmPlaybackQueue', () => {

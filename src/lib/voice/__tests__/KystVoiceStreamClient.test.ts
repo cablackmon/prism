@@ -298,6 +298,26 @@ describe('KystVoiceStreamClient', () => {
       requestId: 'request-reason-only-empty',
       reason: 'no speech detected',
     });
+
+    client.startTurn('request-undersized-audio');
+    socket.emit(
+      'message',
+      JSON.stringify({
+        type: 'audio.start',
+        requestId: 'request-undersized-audio',
+        format: 'pcm16',
+      })
+    );
+    socket.emit('message', new ArrayBuffer(1));
+    socket.emit(
+      'message',
+      JSON.stringify({ type: 'complete', requestId: 'request-undersized-audio' })
+    );
+    expect(events.at(-1)).toEqual({
+      type: 'error',
+      requestId: 'request-undersized-audio',
+      reason: 'complete_without_audio',
+    });
   });
 
   it('does not create a socket when disconnect invalidates a pending ticket request', async () => {
