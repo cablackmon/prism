@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
   const response = new NextResponse(null, {
     status: 303,
     headers: {
-      location: deviceAuthRedirect(request),
+      location: await deviceAuthRedirect(request, process.env.KYST_AUTH_SECRET!),
       'cache-control': 'no-store',
     },
   });
