@@ -39,4 +39,37 @@ describe('device handoff', () => {
     expect(wall.searchParams.get('handoff')).toMatch(/^v1\./);
     expect(fallbackRedirect).toBe('https://kyst-board.fly.dev/');
   });
+
+  it.each(['80', '3000'])(
+    'pins the wall redirect to public HTTPS when the inbound authority uses port %s',
+    async (port) => {
+      const redirect = new URL(
+        await deviceAuthRedirect(
+          new Request(
+            `https://kyst-board.fly.dev:${port}/api/household-auth/device?next=%2Fwall.html`
+          ),
+          's'.repeat(64)
+        )
+      );
+
+      expect(redirect.origin + redirect.pathname).toBe('https://kyst-board.fly.dev/wall.html');
+      expect(redirect.protocol).toBe('https:');
+      expect(redirect.port || '443').toBe('443');
+      expect(redirect.searchParams.get('handoff')).toMatch(/^v1\./);
+    }
+  );
+
+  it.each(['80', '3000'])(
+    'keeps invalid destinations on the public board root when the inbound authority uses port %s',
+    async (port) => {
+      const redirect = await deviceAuthRedirect(
+        new Request(
+          `https://kyst-board.fly.dev:${port}/api/household-auth/device?next=https%3A%2F%2Fevil.test`
+        ),
+        's'.repeat(64)
+      );
+
+      expect(redirect).toBe('https://kyst-board.fly.dev/');
+    }
+  );
 });
