@@ -335,6 +335,38 @@ describe('VoiceAssistantOverlay accessibility and turn controls', () => {
     expect(screen.getByRole('button', { name: 'Stop and send voice question' })).toBeTruthy();
   });
 
+  it('releases UI ownership when playback fails for the active turn', async () => {
+    jest
+      .spyOn(globalThis.crypto, 'randomUUID')
+      .mockReturnValue('6f9619ff-8b86-d011-b42d-00cf4fc964ff');
+    installCaptureMocks();
+    jest
+      .spyOn(PcmPlaybackQueue.prototype, 'push')
+      .mockRejectedValue(new Error('playback failed'));
+
+    render(<VoiceAssistantOverlay />);
+    fireEvent.click(screen.getByRole('button', { name: 'Ask NOX by voice' }));
+    await screen.findByRole('button', { name: 'Stop and send voice question' });
+    act(() => {
+      emitAudio?.(new ArrayBuffer(2), '6f9619ff-8b86-d011-b42d-00cf4fc964ff');
+    });
+    await waitFor(() =>
+      expect(screen.getByRole('status').textContent).toContain(
+        'I found the answer, but could not play it.'
+      )
+    );
+
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent('prism:voice-assistant', {
+          detail: { owner: 'wake', error: 'Wake-word capture failed.' },
+        })
+      );
+    });
+
+    expect(screen.getByRole('status').textContent).toContain('Wake-word capture failed.');
+  });
+
   it('ignores an external error owned by a different voice session', async () => {
     jest
       .spyOn(globalThis.crypto, 'randomUUID')
@@ -363,14 +395,25 @@ describe('VoiceAssistantOverlay accessibility and turn controls', () => {
     installCaptureMocks();
     const play = jest.fn(async () => undefined);
     const pause = jest.fn();
+    const revokeObjectURL = jest.fn();
+    let endExternalAudio: (() => void) | null = null;
     class FakeAudio {
-      onended: (() => void) | null = null;
+      get onended() {
+        return endExternalAudio;
+      }
+      set onended(callback: (() => void) | null) {
+        endExternalAudio = callback;
+      }
       onerror: ((event: Event) => void) | null = null;
       play = play;
       pause = pause;
       constructor(_url: string) {}
     }
     Object.defineProperty(window, 'Audio', { configurable: true, value: FakeAudio });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      value: revokeObjectURL,
+    });
 
     render(<VoiceAssistantOverlay />);
     act(() => {
@@ -396,6 +439,89 @@ describe('VoiceAssistantOverlay accessibility and turn controls', () => {
     expect(cancelTurn).toHaveBeenCalledWith('external_answer');
     expect(play).toHaveBeenCalledTimes(1);
     expect(screen.getByRole('status').textContent).toContain('Today is Sunday.');
+    expect(revokeObjectURL).not.toHaveBeenCalled();
+    act(() => endExternalAudio?.());
+    expect(pause).toHaveBeenCalledTimes(1);
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:voice-answer');
+  });
+
+  it('revokes external answer audio when the user dismisses playback', () => {
+    const play = jest.fn(async () => undefined);
+    const pause = jest.fn();
+    const revokeObjectURL = jest.fn();
+    class FakeAudio {
+      onended: (() => void) | null = null;
+      onerror: ((event: Event) => void) | null = null;
+      play = play;
+      pause = pause;
+      constructor(_url: string) {}
+    }
+    Object.defineProperty(window, 'Audio', { configurable: true, value: FakeAudio });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      value: revokeObjectURL,
+    });
+
+    render(<VoiceAssistantOverlay />);
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent('prism:voice-assistant', {
+          detail: {
+            owner: 'wake',
+            answer: 'Today is Sunday.',
+            audioUrl: 'blob:voice-cancelled-answer',
+          },
+        })
+      );
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Close voice assistant' }));
+
+    expect(pause).toHaveBeenCalledTimes(1);
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:voice-cancelled-answer');
+  });
+
+  it('revokes external answer audio when playback errors', () => {
+    const play = jest.fn(async () => undefined);
+    const pause = jest.fn();
+    const revokeObjectURL = jest.fn();
+    let failExternalAudio: ((event: Event) => void) | null = null;
+    class FakeAudio {
+      onended: (() => void) | null = null;
+      get onerror() {
+        return failExternalAudio;
+      }
+      set onerror(callback: ((event: Event) => void) | null) {
+        failExternalAudio = callback;
+      }
+      play = play;
+      pause = pause;
+      constructor(_url: string) {}
+    }
+    Object.defineProperty(window, 'Audio', { configurable: true, value: FakeAudio });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      value: revokeObjectURL,
+    });
+
+    render(<VoiceAssistantOverlay />);
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent('prism:voice-assistant', {
+          detail: {
+            owner: 'wake',
+            answer: 'Today is Sunday.',
+            audioUrl: 'blob:voice-failed-answer',
+          },
+        })
+      );
+      failExternalAudio?.(new Event('error'));
+    });
+
+    expect(pause).toHaveBeenCalledTimes(1);
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:voice-failed-answer');
+    expect(screen.getByRole('status').textContent).toContain(
+      'I found the answer, but could not play it.'
+    );
   });
 
   it('cancels the matching active session before showing an external error', async () => {

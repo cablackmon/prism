@@ -136,6 +136,7 @@ export function VoiceAssistantOverlay() {
   const heardAudio = useRef(false);
   const captureGeneration = useRef(0);
   const externalAudio = useRef<HTMLAudioElement | null>(null);
+  const externalAudioUrl = useRef<string | null>(null);
 
   const changePhase = useCallback((next: Phase) => {
     phaseRef.current = next;
@@ -159,6 +160,15 @@ export function VoiceAssistantOverlay() {
     captureContext.current = null;
     resampleState.current = {};
     setLevel(0);
+  }, []);
+
+  const releaseExternalAudio = useCallback((expectedAudio?: HTMLAudioElement) => {
+    if (expectedAudio && externalAudio.current !== expectedAudio) return;
+    externalAudio.current?.pause();
+    externalAudio.current = null;
+    const audioUrl = externalAudioUrl.current;
+    externalAudioUrl.current = null;
+    if (audioUrl?.startsWith('blob:')) URL.revokeObjectURL(audioUrl);
   }, []);
 
   const finishUi = useCallback(() => {
@@ -227,6 +237,8 @@ export function VoiceAssistantOverlay() {
             if (audioRequestId !== requestId.current) return;
             voiceClient.cancelTurn('audio_playback_failed');
             audioQueue.stop();
+            requestId.current = null;
+            owner.current = null;
             setError('I found the answer, but could not play it.');
             changePhase('error');
           });
@@ -242,9 +254,10 @@ export function VoiceAssistantOverlay() {
       client.current = null;
       resetCapture();
       audioQueue.close();
+      releaseExternalAudio();
       if (idleTimer.current) window.clearTimeout(idleTimer.current);
     };
-  }, [changePhase, handleStreamEvent, resetCapture]);
+  }, [changePhase, handleStreamEvent, releaseExternalAudio, resetCapture]);
 
   const endCapture = useCallback(() => {
     if (phaseRef.current !== 'listening') return;
@@ -267,12 +280,11 @@ export function VoiceAssistantOverlay() {
       client.current?.cancelTurn(reason);
       resetCapture();
       playback.current.stop();
-      externalAudio.current?.pause();
-      externalAudio.current = null;
+      releaseExternalAudio();
       requestId.current = null;
       owner.current = null;
     },
-    [resetCapture]
+    [releaseExternalAudio, resetCapture]
   );
 
   const beginCapture = useCallback(
@@ -416,14 +428,15 @@ export function VoiceAssistantOverlay() {
         changePhase('speaking');
         const audio = new Audio(detail.audioUrl);
         externalAudio.current = audio;
+        externalAudioUrl.current = detail.audioUrl;
         audio.onended = () => {
           if (externalAudio.current !== audio) return;
-          externalAudio.current = null;
+          releaseExternalAudio(audio);
           finishUi();
         };
         audio.onerror = () => {
           if (externalAudio.current !== audio) return;
-          externalAudio.current = null;
+          releaseExternalAudio(audio);
           owner.current = null;
           setError('I found the answer, but could not play it.');
           changePhase('error');
@@ -435,7 +448,7 @@ export function VoiceAssistantOverlay() {
     };
     window.addEventListener('prism:voice-assistant', onVoice);
     return () => window.removeEventListener('prism:voice-assistant', onVoice);
-  }, [beginCapture, cancelTurn, changePhase, finishUi]);
+  }, [beginCapture, cancelTurn, changePhase, finishUi, releaseExternalAudio]);
 
   const close = () => {
     cancelTurn('dismissed');
