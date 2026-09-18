@@ -46,7 +46,7 @@ export async function createDeviceHandoff(
 
 export async function deviceAuthRedirect(request: Request, secret: string): Promise<string> {
   const destination = requestedDeviceDestination(request);
-  const redirect = new URL(destination, request.url);
+  const redirect = new URL(destination, WALL_WRAPPER_URL);
   if (destination === WALL_DESTINATION) {
     redirect.searchParams.set('handoff', await createDeviceHandoff(secret));
   }
