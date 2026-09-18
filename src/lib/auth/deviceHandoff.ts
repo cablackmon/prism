@@ -1,5 +1,5 @@
 export const WALL_DESTINATION = '/wall.html';
-export const WALL_WRAPPER_URL = 'https://kyst-one.vercel.app/wall.html';
+export const WALL_WRAPPER_URL = 'https://kyst-board.fly.dev/wall.html';
 export const WALL_PROXY_AUDIENCE = 'https://kyst-wall-proxy.fly.dev';
 export const DEVICE_HANDOFF_TTL_SECONDS = 60;
 

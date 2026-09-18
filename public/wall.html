@@ -168,7 +168,11 @@ document.addEventListener("visibilitychange", () => {
 
 // Prism has no push channel, so refresh the embedded board every 10 minutes.
 const boardFrame = document.querySelector("iframe");
-const proxyRoot = "https://kyst-wall-proxy.fly.dev/";
+const proxyOrigin = "https://kyst-wall-proxy.fly.dev";
+const proxyRoot = proxyOrigin + "/";
+function notifyBoardActivity() {
+  boardFrame.contentWindow?.postMessage({ type:"kyst-user-activity" }, proxyOrigin);
+}
 setInterval(() => { boardFrame.src = proxyRoot; }, 10 * 60 * 1000);
 
 const fullscreenButton = document.getElementById("fullscreen");
@@ -212,7 +216,10 @@ async function toggleFullscreen() {
     showToast("Fullscreen unavailable");
   }
 }
-fullscreenButton.addEventListener("click", toggleFullscreen);
+fullscreenButton.addEventListener("click", () => {
+  notifyBoardActivity();
+  toggleFullscreen();
+});
 document.addEventListener("fullscreenchange", updateFullscreenButton);
 document.addEventListener("webkitfullscreenchange", updateFullscreenButton);
 
@@ -659,6 +666,7 @@ async function beginRecording() {
 }
 
 mic.addEventListener("click", () => {
+  notifyBoardActivity();
   setChatOpen(true);
   if (recorder?.state === "recording") stopRecording();
   else if (pendingPlaybackRequestId && pendingPlaybackRequestId === activeRequestId) {
@@ -674,7 +682,10 @@ mic.addEventListener("click", () => {
   }
   else beginRecording();
 });
-chatClose.addEventListener("click", () => setChatOpen(false));
+chatClose.addEventListener("click", () => {
+  notifyBoardActivity();
+  setChatOpen(false);
+});
 
 window.addEventListener("message", async (event) => {
   if (event.origin !== "https://kyst-wall-proxy.fly.dev" || event.source !== boardFrame.contentWindow) return;
