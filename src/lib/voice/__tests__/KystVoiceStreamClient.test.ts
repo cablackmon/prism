@@ -244,6 +244,37 @@ describe('KystVoiceStreamClient', () => {
     expect(client.playbackStarted('request-late-playback')).toBe(false);
   });
 
+  it('invalidates a pending playback acknowledgement when playback is discarded', async () => {
+    const socket = new FakeSocket();
+    const client = new KystVoiceStreamClient({
+      fetchTicket: async () => ({ url: VOICE_SOCKET_URL, token: 'ticket' }),
+      createSocket: () => socket,
+    });
+    const connection = client.connect();
+    await new Promise((resolve) => setImmediate(resolve));
+    socket.emit('open');
+    socket.emit('message', JSON.stringify({ type: 'ready' }));
+    await connection;
+
+    client.startTurn('request-discarded-playback');
+    socket.emit(
+      'message',
+      JSON.stringify({
+        type: 'audio.start',
+        requestId: 'request-discarded-playback',
+        format: 'pcm16',
+      })
+    );
+    socket.emit('message', new ArrayBuffer(2));
+    socket.emit(
+      'message',
+      JSON.stringify({ type: 'complete', requestId: 'request-discarded-playback' })
+    );
+
+    expect(client.discardPendingPlayback('request-discarded-playback')).toBe(true);
+    expect(client.playbackStarted('request-discarded-playback')).toBe(false);
+  });
+
   it('fails a server-VAD-ended turn that receives no response', async () => {
     jest.useFakeTimers();
     const socket = new FakeSocket();

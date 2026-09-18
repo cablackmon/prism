@@ -14,6 +14,8 @@ type Phase = 'idle' | 'connecting' | 'listening' | 'thinking' | 'speaking' | 'er
 type VoiceEvent = {
   owner?: 'tap' | 'wake';
   phase?: Phase;
+  answer?: string;
+  audioUrl?: string;
   error?: string;
 };
 
@@ -133,6 +135,7 @@ export function VoiceAssistantOverlay() {
   const resampleState = useRef<ResampleState>({});
   const heardAudio = useRef(false);
   const captureGeneration = useRef(0);
+  const externalAudio = useRef<HTMLAudioElement | null>(null);
 
   const changePhase = useCallback((next: Phase) => {
     phaseRef.current = next;
@@ -248,6 +251,7 @@ export function VoiceAssistantOverlay() {
     resetCapture();
     if (client.current?.endTurn()) changePhase('thinking');
     else {
+      client.current?.cancelTurn('end_turn_failed');
       setError('NOX lost the voice connection. Tap to reconnect.');
       owner.current = null;
       requestId.current = null;
@@ -258,9 +262,13 @@ export function VoiceAssistantOverlay() {
   const cancelTurn = useCallback(
     (reason = 'barge_in') => {
       captureGeneration.current += 1;
+      const activeRequestId = requestId.current;
+      if (activeRequestId) client.current?.discardPendingPlayback(activeRequestId);
       client.current?.cancelTurn(reason);
       resetCapture();
       playback.current.stop();
+      externalAudio.current?.pause();
+      externalAudio.current = null;
       requestId.current = null;
       owner.current = null;
     },
@@ -394,18 +402,40 @@ export function VoiceAssistantOverlay() {
     const onVoice = (event: Event) => {
       const detail = (event as CustomEvent<VoiceEvent>).detail || {};
       const incomingOwner = detail.owner || 'wake';
+      if (owner.current && owner.current !== incomingOwner) return;
       if (detail.error) {
-        if (owner.current && owner.current !== incomingOwner) return;
         if (owner.current) cancelTurn('external_error');
         setError(detail.error);
         changePhase('error');
+      } else if (detail.answer && detail.audioUrl) {
+        if (owner.current) cancelTurn('external_answer');
+        owner.current = incomingOwner;
+        setTranscript('');
+        setAnswer(detail.answer);
+        setError('');
+        changePhase('speaking');
+        const audio = new Audio(detail.audioUrl);
+        externalAudio.current = audio;
+        audio.onended = () => {
+          if (externalAudio.current !== audio) return;
+          externalAudio.current = null;
+          finishUi();
+        };
+        audio.onerror = () => {
+          if (externalAudio.current !== audio) return;
+          externalAudio.current = null;
+          owner.current = null;
+          setError('I found the answer, but could not play it.');
+          changePhase('error');
+        };
+        void audio.play().catch(() => audio.onerror?.(new Event('error')));
       } else if (detail.phase === 'listening' && !owner.current) {
         void beginCapture(incomingOwner);
       }
     };
     window.addEventListener('prism:voice-assistant', onVoice);
     return () => window.removeEventListener('prism:voice-assistant', onVoice);
-  }, [beginCapture, cancelTurn, changePhase]);
+  }, [beginCapture, cancelTurn, changePhase, finishUi]);
 
   const close = () => {
     cancelTurn('dismissed');

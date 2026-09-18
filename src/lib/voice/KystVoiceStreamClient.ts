@@ -294,6 +294,10 @@ export class KystVoiceStreamClient {
     return true;
   }
 
+  discardPendingPlayback(requestId: string) {
+    return this.pendingPlaybackRequestIds.delete(requestId);
+  }
+
   disconnect(reason = 'disconnect') {
     this.connectionGeneration += 1;
     this.connecting = null;

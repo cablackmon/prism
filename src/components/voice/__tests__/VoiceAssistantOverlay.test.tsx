@@ -11,6 +11,7 @@ const endTurn = jest.fn(() => true);
 const cancelTurn = jest.fn();
 const disconnect = jest.fn();
 const playbackStarted = jest.fn();
+const discardPendingPlayback = jest.fn();
 let emit: ((event: Record<string, unknown>) => void) | undefined;
 let emitAudio: ((chunk: ArrayBuffer, requestId: string) => void) | undefined;
 
@@ -25,6 +26,7 @@ jest.mock('@/lib/voice/KystVoiceStreamClient', () => ({
       cancelTurn,
       disconnect,
       playbackStarted,
+      discardPendingPlayback,
       sendAudio: jest.fn(),
     };
   }),
@@ -204,6 +206,24 @@ describe('VoiceAssistantOverlay accessibility and turn controls', () => {
     expect(screen.getByRole('status').textContent).toContain('Thinking…');
   });
 
+  it('clears the stale client turn when ending capture fails', async () => {
+    jest
+      .spyOn(globalThis.crypto, 'randomUUID')
+      .mockReturnValue('6f9619ff-8b86-d011-b42d-00cf4fc964ff');
+    installCaptureMocks();
+    endTurn.mockReturnValueOnce(false);
+
+    render(<VoiceAssistantOverlay />);
+    fireEvent.click(screen.getByRole('button', { name: 'Ask NOX by voice' }));
+    await screen.findByRole('button', { name: 'Stop and send voice question' });
+    fireEvent.click(screen.getByRole('button', { name: 'Stop and send voice question' }));
+
+    expect(cancelTurn).toHaveBeenCalledWith('end_turn_failed');
+    expect(screen.getByRole('status').textContent).toContain(
+      'NOX lost the voice connection. Tap to reconnect.'
+    );
+  });
+
   it('unlocks playback synchronously from the initiating tap', async () => {
     jest
       .spyOn(globalThis.crypto, 'randomUUID')
@@ -334,6 +354,48 @@ describe('VoiceAssistantOverlay accessibility and turn controls', () => {
 
     expect(screen.getByRole('button', { name: 'Stop and send voice question' })).toBeTruthy();
     expect(screen.getByRole('status').textContent).not.toContain('Wake-word capture failed.');
+  });
+
+  it('continues handling a wake-owned external answer and audio URL', async () => {
+    jest
+      .spyOn(globalThis.crypto, 'randomUUID')
+      .mockReturnValue('6f9619ff-8b86-d011-b42d-00cf4fc964ff');
+    installCaptureMocks();
+    const play = jest.fn(async () => undefined);
+    const pause = jest.fn();
+    class FakeAudio {
+      onended: (() => void) | null = null;
+      onerror: ((event: Event) => void) | null = null;
+      play = play;
+      pause = pause;
+      constructor(_url: string) {}
+    }
+    Object.defineProperty(window, 'Audio', { configurable: true, value: FakeAudio });
+
+    render(<VoiceAssistantOverlay />);
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent('prism:voice-assistant', {
+          detail: { owner: 'wake', phase: 'listening' },
+        })
+      );
+    });
+    await screen.findByRole('button', { name: 'Stop and send voice question' });
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent('prism:voice-assistant', {
+          detail: {
+            owner: 'wake',
+            answer: 'Today is Sunday.',
+            audioUrl: 'blob:voice-answer',
+          },
+        })
+      );
+    });
+
+    expect(cancelTurn).toHaveBeenCalledWith('external_answer');
+    expect(play).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('status').textContent).toContain('Today is Sunday.');
   });
 
   it('cancels the matching active session before showing an external error', async () => {
