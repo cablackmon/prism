@@ -16,7 +16,7 @@ const EVIDENCE_DIR = process.env.KYST_VOICE_EVIDENCE_DIR;
 
 type LifecycleOptions = {
   clientAsset?: 'ok' | 'failed';
-  bridgeAsset?: 'ok' | 'failed' | 'failed-once';
+  bridgeAsset?: 'ok' | 'failed' | 'failed-once' | 'failed-after-first';
   bridgeLoadDelayMs?: number;
   suppressInitialBridgeReady?: boolean;
   automaticSocketReady?: boolean;
@@ -291,7 +291,8 @@ async function installLifecycle(
       bridgeRequestCount += 1;
       if (
         options.bridgeAsset === 'failed' ||
-        (options.bridgeAsset === 'failed-once' && bridgeRequestCount === 1)
+        (options.bridgeAsset === 'failed-once' && bridgeRequestCount === 1) ||
+        (options.bridgeAsset === 'failed-after-first' && bridgeRequestCount > 1)
       ) {
         await route.abort('failed');
       } else {
@@ -414,6 +415,32 @@ test.describe('wall parent + proxy iframe voice lifecycle', () => {
     expect(lifecycle.socketRoutes()).toBe(1);
     await page.locator('#mic').click();
     await recordSafeEvents(lifecycle.events, 'fixed-active-refresh-events');
+  });
+
+  test('keeps active recording controls when bridge recovery exhausts after refresh', async ({
+    page,
+  }) => {
+    test.setTimeout(15_000);
+    const lifecycle = await installLifecycle(page, {
+      fakeCapture: true,
+      bridgeAsset: 'failed-after-first',
+    });
+    await page.goto(`${BOARD}/api/household-auth/device?token=fixture`);
+    await expect(page.locator('#voice-status')).toHaveText('Tap to ask NOX');
+    await page.locator('#start').click();
+    await expect(page.locator('#start')).toBeHidden();
+    await page.locator('#mic').click();
+    await expect(page.locator('#voice-status')).toHaveText('Listening… tap to stop');
+
+    await page.locator('#board-frame').evaluate((frame: HTMLIFrameElement, proxy) => {
+      frame.src = `${proxy}/?fixture-bridge-failure=1`;
+    }, PROXY);
+    await expect.poll(lifecycle.bridgeRequests).toBe(2);
+    await page.waitForTimeout(5_500);
+    await expect(page.locator('#voice-status')).toHaveText('Listening… tap to stop');
+    await expect(page.locator('#mic')).toHaveAttribute('aria-label', 'Stop recording');
+    await page.locator('#mic').click();
+    await recordSafeEvents(lifecycle.events, 'fixed-active-bridge-exhaustion-events');
   });
 
   test('records through the batch fallback while the streaming socket is unavailable', async ({

@@ -828,7 +828,9 @@ function pingVoiceBridge() {
   if (bridgeProbeAttempts >= bridgeProbeMaxAttempts) {
     bridgeProbeTimer = null;
     bridgeProbeExhausted = true;
-    setVoiceState("unavailable", "NOX voice is unavailable. Tap to retry.");
+    if (!recorder && !activeRequestId) {
+      setVoiceState("unavailable", "NOX voice is unavailable. Tap to retry.");
+    }
     return;
   }
   bridgeProbeTimer = setTimeout(pingVoiceBridge, bridgeProbeIntervalMs);
