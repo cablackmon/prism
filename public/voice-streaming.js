@@ -32,24 +32,32 @@
       this.clearTimer = options.clearTimer || globalThis.clearTimeout;
       this.maxAttempts = options.maxAttempts || 3;
       this.baseDelayMs = options.baseDelayMs || 500;
+      this.responseTimeoutMs = options.responseTimeoutMs || 3000;
+      this.onExhausted = options.onExhausted || (() => {});
       this.attempts = 0;
       this.pending = false;
-      this.timer = null;
+      this.retryTimer = null;
+      this.responseTimer = null;
       this.preserveCompletedPlayback = false;
     }
 
     request({ retry = false, preserveCompletedPlayback = false } = {}) {
       this.preserveCompletedPlayback ||= preserveCompletedPlayback;
-      if (this.pending || this.timer) return true;
+      if (this.pending || this.retryTimer) return true;
       if (this.attempts >= this.maxAttempts) return false;
       const send = () => {
-        this.timer = null;
+        this.retryTimer = null;
         this.pending = true;
         this.attempts += 1;
         this.onRequest();
+        this.responseTimer = this.setTimer(() => {
+          this.responseTimer = null;
+          this.pending = false;
+          if (!this.request({ retry: true })) this.onExhausted();
+        }, this.responseTimeoutMs);
       };
       if (retry && this.attempts > 0) {
-        this.timer = this.setTimer(
+        this.retryTimer = this.setTimer(
           send,
           this.baseDelayMs * (2 ** (this.attempts - 1)),
         );
@@ -60,12 +68,16 @@
     }
 
     received() {
+      if (this.responseTimer) this.clearTimer(this.responseTimer);
+      this.responseTimer = null;
       this.pending = false;
     }
 
     reset() {
-      if (this.timer) this.clearTimer(this.timer);
-      this.timer = null;
+      if (this.retryTimer) this.clearTimer(this.retryTimer);
+      if (this.responseTimer) this.clearTimer(this.responseTimer);
+      this.retryTimer = null;
+      this.responseTimer = null;
       this.pending = false;
       this.attempts = 0;
       this.preserveCompletedPlayback = false;
@@ -154,10 +166,8 @@
         const wasAuthenticated = this.authenticated;
         this.socket = null;
         this.authenticated = false;
-        if (!this.activeRequest?.complete) {
-          if (this.activeRequest) this.failActive("socket_closed");
-          else if (!wasAuthenticated) this.failConnection("socket_closed");
-        }
+        if (!wasAuthenticated) this.failConnection("socket_closed");
+        else if (this.activeRequest && !this.activeRequest.complete) this.failActive("socket_closed");
         if (wasAuthenticated) {
           this.onEvent({
             type: "stream.closed",
@@ -314,7 +324,11 @@
       this.clearTimer(this.readyTimer);
       this.authenticated = false;
       if (!this.activeRequest?.complete) this.failActive(reason);
-      this.onEvent({ type: "stream.unavailable", reason });
+      this.onEvent({
+        type: "stream.unavailable",
+        reason,
+        preserveCompletedPlayback: Boolean(this.activeRequest?.complete),
+      });
     }
 
     failActive(reason) {

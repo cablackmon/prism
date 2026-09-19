@@ -257,6 +257,10 @@ const streamConfigRefresh = new KystVoiceStreaming.TicketRefreshController({
     { type:"kyst-voice-stream-ticket" },
     "https://kyst-wall-proxy.fly.dev",
   ),
+  onExhausted: () => setVoiceState(
+    "unavailable",
+    "NOX voice is unavailable. Reload to retry.",
+  ),
 });
 
 function requestStreamConfig(options = {}) {
