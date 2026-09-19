@@ -16,7 +16,7 @@ const EVIDENCE_DIR = process.env.KYST_VOICE_EVIDENCE_DIR;
 
 type LifecycleOptions = {
   clientAsset?: 'ok' | 'failed';
-  bridgeAsset?: 'ok' | 'failed';
+  bridgeAsset?: 'ok' | 'failed' | 'failed-once';
   bridgeLoadDelayMs?: number;
   suppressInitialBridgeReady?: boolean;
   automaticSocketReady?: boolean;
@@ -98,6 +98,8 @@ async function installLifecycle(
   socketRoutes: () => number;
   ticketRequests: () => number;
   batchRequests: () => number;
+  bridgeRequests: () => number;
+  closeSocket: () => Promise<void>;
 }> {
   const events: SafeEvent[] = [];
   const wall = await fs.readFile(path.join(VOICE_ASSET_ROOT, 'wall.html'), 'utf8');
@@ -105,6 +107,7 @@ async function installLifecycle(
   const bridge = bridgeFixture(options);
   let ticketRequestCount = 0;
   let batchRequestCount = 0;
+  let bridgeRequestCount = 0;
   let proxyBootstrapSeen = false;
   let socketRoute: WebSocketRoute | null = null;
   let socketAuthenticationCount = 0;
@@ -285,7 +288,11 @@ async function installLifecycle(
       return;
     }
     if (url.pathname === '/wall-bridge.js') {
-      if (options.bridgeAsset === 'failed') {
+      bridgeRequestCount += 1;
+      if (
+        options.bridgeAsset === 'failed' ||
+        (options.bridgeAsset === 'failed-once' && bridgeRequestCount === 1)
+      ) {
         await route.abort('failed');
       } else {
         await route.fulfill({ status: 200, contentType: 'application/javascript', body: bridge });
@@ -323,6 +330,11 @@ async function installLifecycle(
     socketRoutes: () => socketRouteCount,
     ticketRequests: () => ticketRequestCount,
     batchRequests: () => batchRequestCount,
+    bridgeRequests: () => bridgeRequestCount,
+    closeSocket: async () => {
+      if (!socketRoute) throw new Error('page-owned WebSocket has not connected');
+      await socketRoute.close({ code: 1012, reason: 'fixture_close' });
+    },
   };
 }
 
@@ -423,6 +435,25 @@ test.describe('wall parent + proxy iframe voice lifecycle', () => {
     await recordSafeEvents(lifecycle.events, 'fixed-batch-fallback-events');
   });
 
+  test('preserves the listening control when an authenticated socket closes mid-capture', async ({
+    page,
+  }) => {
+    const lifecycle = await installLifecycle(page, { fakeCapture: true });
+    await page.goto(`${BOARD}/api/household-auth/device?token=fixture`);
+    await expect(page.locator('#voice-status')).toHaveText('Tap to ask NOX');
+    await page.locator('#start').click();
+    await expect(page.locator('#start')).toBeHidden();
+    await page.locator('#mic').click();
+    await expect(page.locator('#voice-status')).toHaveText('Listening… tap to stop');
+
+    await lifecycle.closeSocket();
+    await expect(page.locator('#voice-status')).toHaveText('Listening… tap to stop');
+    await expect(page.locator('#mic')).toHaveAttribute('aria-label', 'Stop recording');
+    await page.locator('#mic').click();
+    await expect.poll(lifecycle.batchRequests).toBe(1);
+    await recordSafeEvents(lifecycle.events, 'fixed-listening-recovery-events');
+  });
+
   test('a failed client asset reaches a bounded reload-to-retry state instead of loading forever', async ({
     page,
   }) => {
@@ -456,6 +487,25 @@ test.describe('wall parent + proxy iframe voice lifecycle', () => {
     expect(lifecycle.ticketRequests()).toBe(0);
     expect(lifecycle.events.some((event) => event.kind === 'requestfailed')).toBe(true);
     await recordSafeEvents(lifecycle.events, 'fixed-bridge-unavailable-events');
+  });
+
+  test('a tap reloads and recovers an iframe whose bridge asset initially failed', async ({
+    page,
+  }) => {
+    const lifecycle = await installLifecycle(page, { bridgeAsset: 'failed-once' });
+    await page.goto(`${BOARD}/api/household-auth/device?token=fixture`);
+    await expect(page.locator('#voice-status')).toHaveText(
+      'NOX voice is unavailable. Tap to retry.',
+      { timeout: 7_000 }
+    );
+    expect(lifecycle.bridgeRequests()).toBe(1);
+
+    await page.locator('#start').click();
+    await expect(page.locator('#start')).toBeHidden();
+    await page.locator('#mic').click();
+    await expect(page.locator('#voice-status')).toHaveText('Tap to ask NOX', { timeout: 5_000 });
+    expect(lifecycle.bridgeRequests()).toBe(2);
+    await recordSafeEvents(lifecycle.events, 'fixed-bridge-retry-events');
   });
 
   test('a socket that never accepts the ready contract reaches a bounded tap-to-retry state', async ({

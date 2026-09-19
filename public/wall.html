@@ -250,6 +250,7 @@ if (!window.KystVoiceStreaming) {
 let bridgeReady = false;
 let bridgeProbeTimer = null;
 let bridgeProbeAttempts = 0;
+let bridgeProbeExhausted = false;
 const bridgeProbeMaxAttempts = 10;
 const bridgeProbeIntervalMs = 500;
 let recorder = null;
@@ -358,7 +359,7 @@ const streamClient = new KystVoiceStreaming.VoiceStreamClient({
     }
     if (message.type === "stream.unavailable" || message.type === "stream.closed") {
       if (bridgeReady) {
-        setVoiceState("thinking", "Reconnecting to NOX…");
+        if (!recorder) setVoiceState("thinking", "Reconnecting to NOX…");
         requestStreamConfig({
           retry:true,
           preserveCompletedPlayback:message.preserveCompletedPlayback === true,
@@ -638,6 +639,12 @@ function watchForSilence(stream, onPcm) {
 async function beginRecording() {
   setChatOpen(true);
   if (!bridgeReady) {
+    if (bridgeProbeExhausted) {
+      bridgeProbeExhausted = false;
+      setVoiceState("thinking", "Reconnecting to NOX…");
+      boardFrame.src = proxyRoot;
+      return;
+    }
     startBridgeProbe({ retry:true });
     return;
   }
@@ -743,6 +750,7 @@ window.addEventListener("message", async (event) => {
   if (message.type === "kyst-voice-bridge-ready") {
     if (bridgeReady) return;
     bridgeReady = true;
+    bridgeProbeExhausted = false;
     stopBridgeProbe();
     if (streamClient.ready) {
       if (!recorder && !activeRequestId) setVoiceState("ready", "Tap to ask NOX");
@@ -819,6 +827,7 @@ function pingVoiceBridge() {
   boardFrame.contentWindow?.postMessage({ type:"kyst-voice-ping" }, "https://kyst-wall-proxy.fly.dev");
   if (bridgeProbeAttempts >= bridgeProbeMaxAttempts) {
     bridgeProbeTimer = null;
+    bridgeProbeExhausted = true;
     setVoiceState("unavailable", "NOX voice is unavailable. Tap to retry.");
     return;
   }
@@ -833,6 +842,7 @@ function startBridgeProbe({ retry = false } = {}) {
   pingVoiceBridge();
 }
 boardFrame.addEventListener("load", () => {
+  bridgeProbeExhausted = false;
   streamConfigRefresh.reset();
   startBridgeProbe();
 });
