@@ -4,10 +4,21 @@ export const NIGHT_SKY_IDLE_SECONDS = 15 * 60;
 export const NIGHT_START_HOUR = 21;
 export const NIGHT_END_HOUR = 6;
 export const NIGHT_SKY_WINDOW_DAYS = 14;
+export const NIGHT_SKY_MESSAGE_TYPE = 'kyst:nightsky-data';
+export const COMET_DESCRIPTION_CHAR_LIMIT = 60;
+
+export type NightSkyFrameEvent = {
+  id: string;
+  title: string;
+  description: string;
+  startTime: string;
+  color: string;
+  calendarId: string;
+};
 
 export function isExpectedNightSkyResponse(
   response: Pick<Response, 'ok' | 'redirected' | 'url'>,
-  expectedUrl: string,
+  expectedUrl: string
 ): boolean {
   return response.ok && !response.redirected && response.url === expectedUrl;
 }
@@ -17,7 +28,10 @@ export function isExpectedNightSkyFrameUrl(frameUrl: string, expectedUrl: string
 }
 
 export function isNightSkyNight(date: Date): boolean {
-  const forced = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('nightSkyMode') : null;
+  const forced =
+    typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search).get('nightSkyMode')
+      : null;
   if (forced === 'night') return true;
   if (forced === 'day') return false;
   const hour = date.getHours();
@@ -44,10 +58,30 @@ export function nightSkyEvents(events: CalendarEvent[], now: Date) {
     .sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
 }
 
+export function truncateCometDescription(description = ''): string {
+  const normalized = description.replace(/\s+/g, ' ').trim();
+  if (normalized.length <= COMET_DESCRIPTION_CHAR_LIMIT) return normalized;
+  return `${normalized.slice(0, COMET_DESCRIPTION_CHAR_LIMIT - 1).trimEnd()}…`;
+}
+
+export function nightSkyFrameEvents(events: CalendarEvent[], now: Date): NightSkyFrameEvent[] {
+  return nightSkyEvents(events, now)
+    .slice(0, 24)
+    .map((event) => ({
+      id: event.id,
+      title: event.title,
+      description: truncateCometDescription(event.description),
+      startTime: event.startTime.toISOString(),
+      color: event.color,
+      calendarId: event.calendarId,
+    }));
+}
+
 export function tomorrowEvents(events: CalendarEvent[], now: Date) {
   const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
   const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2);
-  return events.filter((event) => event.startTime >= start && event.startTime < end)
+  return events
+    .filter((event) => event.startTime >= start && event.startTime < end)
     .sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
 }
 

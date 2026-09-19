@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useIdleDetection } from '@/lib/hooks/useIdleDetection';
 import type { WidgetConfig } from '@/lib/hooks/useLayouts';
 import { WIDGET_REGISTRY } from '@/components/widgets/widgetRegistry';
@@ -15,7 +15,9 @@ import { NightSky } from './NightSky';
 import {
   isExpectedNightSkyFrameUrl,
   isExpectedNightSkyResponse,
+  nightSkyFrameEvents,
   NIGHT_SKY_IDLE_SECONDS,
+  NIGHT_SKY_MESSAGE_TYPE,
 } from './nightSkyUtils';
 
 /**
@@ -49,11 +51,26 @@ export function Screensaver() {
   const [staticNightSkyAvailable, setStaticNightSkyAvailable] = useState<boolean | null>(null);
   const [staticNightSkyListenerReady, setStaticNightSkyListenerReady] = useState(false);
   const frameLoadTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const nightSkyFrame = useRef<HTMLIFrameElement>(null);
   const staticNightSkyLoaded = useRef(false);
+  const nightSkyDomains = useMemo(() => new Set(['calendar']), []);
+  const nightSkyData = useDashboardData(nightSkyDomains);
+  const frameEvents = useMemo(
+    () => nightSkyFrameEvents(nightSkyData.calendar.events, new Date()),
+    [nightSkyData.calendar.events]
+  );
+  const publishNightSkyData = useCallback(() => {
+    nightSkyFrame.current?.contentWindow?.postMessage(
+      { type: NIGHT_SKY_MESSAGE_TYPE, events: frameEvents },
+      window.location.origin
+    );
+  }, [frameEvents]);
 
   useEffect(() => {
     document.documentElement.dataset.kystScreensaver = isIdle ? 'active' : 'inactive';
-    return () => { delete document.documentElement.dataset.kystScreensaver; };
+    return () => {
+      delete document.documentElement.dataset.kystScreensaver;
+    };
   }, [isIdle]);
 
   useEffect(() => {
@@ -79,7 +96,9 @@ export function Screensaver() {
     const controller = new AbortController();
     const nightSkyUrl = new URL('/screensaver/nightsky.html', window.location.href).href;
     fetch('/screensaver/nightsky.html', { cache: 'no-store', signal: controller.signal })
-      .then((response) => setStaticNightSkyAvailable(isExpectedNightSkyResponse(response, nightSkyUrl)))
+      .then((response) =>
+        setStaticNightSkyAvailable(isExpectedNightSkyResponse(response, nightSkyUrl))
+      )
       .catch((error: unknown) => {
         if (!(error instanceof DOMException && error.name === 'AbortError')) {
           setStaticNightSkyAvailable(false);
@@ -138,10 +157,12 @@ export function Screensaver() {
     staticNightSkyLoaded.current = true;
     if (frameLoadTimeout.current) clearTimeout(frameLoadTimeout.current);
     frameLoadTimeout.current = null;
+    publishNightSkyData();
   };
 
-  const nightSkyDomains = useMemo(() => new Set(['calendar']), []);
-  const nightSkyData = useDashboardData(nightSkyDomains);
+  useEffect(() => {
+    if (staticNightSkyLoaded.current) publishNightSkyData();
+  }, [publishNightSkyData]);
 
   // Intentional: idle activates the screensaver at any hour. Night/day only
   // selects the palette inside NightSky; it is not an activation gate.
@@ -155,6 +176,7 @@ export function Screensaver() {
     >
       {staticNightSkyAvailable && staticNightSkyListenerReady ? (
         <iframe
+          ref={nightSkyFrame}
           src="/screensaver/nightsky.html"
           title="KYST Night Sky screensaver"
           className="pointer-events-none h-full w-full border-0"
@@ -171,29 +193,50 @@ export function Screensaver() {
 function ScreensaverGrid() {
   const layout = useMemo(() => loadScreensaverLayout(), []);
   const data = useDashboardData();
-  const widgetProps = useMemo(() =>
-    buildWidgetProps(
-      data,
-      async () => null, // no auth in screensaver
-      { setShowAddTask: () => {}, setShowAddMessage: () => {}, setShowAddChore: () => {}, setShowAddShopping: () => {} },
-      '',
-    ),
-  [data]);
+  const widgetProps = useMemo(
+    () =>
+      buildWidgetProps(
+        data,
+        async () => null, // no auth in screensaver
+        {
+          setShowAddTask: () => {},
+          setShowAddMessage: () => {},
+          setShowAddChore: () => {},
+          setShowAddShopping: () => {},
+        },
+        ''
+      ),
+    [data]
+  );
 
   const renderWidget = (w: WidgetConfig) => {
     const reg = WIDGET_REGISTRY[w.i];
     if (!reg) return null;
     const Component = reg.component;
-    const rawProps = { ...widgetProps[w.i] || {}, gridW: w.w, gridH: w.h };
+    const rawProps = { ...(widgetProps[w.i] || {}), gridW: w.w, gridH: w.h };
     // Strip interactive callbacks — screensaver widgets are display-only
     const {
-      onAddClick, onAddMeal, onListChange, onItemToggle, onTaskToggle,
-      onChoreComplete, onEventClick, onMessageClick, onDeleteClick,
-      onMarkCooked, onUnmarkCooked,
+      onAddClick,
+      onAddMeal,
+      onListChange,
+      onItemToggle,
+      onTaskToggle,
+      onChoreComplete,
+      onEventClick,
+      onMessageClick,
+      onDeleteClick,
+      onMarkCooked,
+      onUnmarkCooked,
       ...props
     } = rawProps as Record<string, unknown>;
     return (
-      <React.Suspense fallback={<div className="flex items-center justify-center h-full opacity-50 text-sm">Loading...</div>}>
+      <React.Suspense
+        fallback={
+          <div className="flex h-full items-center justify-center text-sm opacity-50">
+            Loading...
+          </div>
+        }
+      >
         <div className="h-full w-full [&_*:not([data-keep-bg])]:!bg-transparent [&_.bg-card]:!bg-white/10 [&_.border-border]:!border-white/20">
           <Component {...props} />
         </div>
@@ -207,9 +250,7 @@ function ScreensaverGrid() {
   // widget content that uses its own Tailwind text classes). Force it here, with
   // a soft shadow so it stays legible over bright photos too.
   const renderScreensaverWidget = (w: WidgetConfig) => (
-    <div className={SCREENSAVER_WIDGET_CLASS}>
-      {renderWidget(w)}
-    </div>
+    <div className={SCREENSAVER_WIDGET_CLASS}>{renderWidget(w)}</div>
   );
 
   return (
@@ -224,7 +265,7 @@ function ScreensaverGrid() {
         cols={GRID_COLS}
         containMode
         headerOffset={0}
-        className="w-full h-full"
+        className="h-full w-full"
       />
     </CalendarPrefsScopeContext.Provider>
   );
