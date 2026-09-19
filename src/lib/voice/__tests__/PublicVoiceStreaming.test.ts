@@ -2,14 +2,23 @@
 
 const {
   READY_FRAME,
+  TicketRefreshController,
   VOICE_URL,
   VoiceStreamClient,
 } = require('../../../../public/voice-streaming.js') as {
   READY_FRAME: Record<string, unknown>;
+  TicketRefreshController: new (options: Record<string, unknown>) => {
+    attempts: number;
+    request(options?: { retry?: boolean; preserveCompletedPlayback?: boolean }): boolean;
+    received(): void;
+    reset(): void;
+    takePreserveCompletedPlayback(): boolean;
+  };
   VOICE_URL: string;
   VoiceStreamClient: new (options: Record<string, unknown>) => {
     ready: boolean;
     connect(config: { url: string; token: string }): void;
+    begin(input: { requestId: string }): boolean;
   };
 };
 
@@ -126,5 +135,73 @@ describe('wall VoiceStreamClient first-frame contract', () => {
 
     expect(events).toEqual([{ type: 'stream.unavailable', reason: 'socket_closed' }]);
     expect(FakeSocket.instances).toHaveLength(1);
+  });
+
+  it('marks completed playback for preservation when a ready socket closes', () => {
+    const events: Array<Record<string, unknown>> = [];
+    const client = new VoiceStreamClient({
+      WebSocketClass: FakeSocket,
+      playAudio: () => undefined,
+      onEvent: (event: Record<string, unknown>) => events.push(event),
+    });
+    client.connect({ url: VOICE_URL, token: 'opaque-ticket' });
+    const socket = FakeSocket.instances[0];
+    socket.emit('open');
+    socket.emit('message', JSON.stringify(READY_FRAME));
+    client.begin({ requestId: 'completed-turn' });
+    socket.emit(
+      'message',
+      JSON.stringify({ type: 'audio.start', requestId: 'completed-turn', format: 'pcm16' })
+    );
+    socket.emit('message', new ArrayBuffer(2));
+    socket.emit('message', JSON.stringify({ type: 'complete', requestId: 'completed-turn' }));
+    socket.emit('close');
+
+    expect(events.at(-1)).toEqual({
+      type: 'stream.closed',
+      preserveCompletedPlayback: true,
+    });
+  });
+});
+
+describe('wall ticket refresh policy', () => {
+  it('backs off and stops after three fresh-ticket requests', () => {
+    const requests: number[] = [];
+    const timers: Array<{ handler: () => void; delay: number }> = [];
+    const refresh = new TicketRefreshController({
+      onRequest: () => requests.push(requests.length + 1),
+      setTimer: (handler: () => void, delay: number) => {
+        timers.push({ handler, delay });
+        return timers.length;
+      },
+      clearTimer: () => undefined,
+    });
+
+    expect(refresh.request()).toBe(true);
+    expect(requests).toHaveLength(1);
+    refresh.received();
+    expect(refresh.request({ retry: true })).toBe(true);
+    expect(timers[0].delay).toBe(500);
+    timers[0].handler();
+    refresh.received();
+    expect(refresh.request({ retry: true })).toBe(true);
+    expect(timers[1].delay).toBe(1_000);
+    timers[1].handler();
+    refresh.received();
+    expect(refresh.request({ retry: true })).toBe(false);
+    expect(requests).toHaveLength(3);
+    expect(refresh.attempts).toBe(3);
+  });
+
+  it('preserves completed playback across refresh and resets after ready', () => {
+    const refresh = new TicketRefreshController({ onRequest: () => undefined });
+    refresh.request();
+    refresh.received();
+    refresh.request({ retry: true, preserveCompletedPlayback: true });
+
+    expect(refresh.takePreserveCompletedPlayback()).toBe(true);
+    expect(refresh.takePreserveCompletedPlayback()).toBe(false);
+    refresh.reset();
+    expect(refresh.attempts).toBe(0);
   });
 });

@@ -69,7 +69,14 @@ async function installVoiceMocks(page: Page) {
         if (typeof data !== 'string') return;
         const message = JSON.parse(data) as { type: string; requestId?: string };
         if (message.type === 'auth') {
-          queueMicrotask(() => this.message({ type: 'ready' }));
+          queueMicrotask(() =>
+            this.message({
+              type: 'ready',
+              contract: 1,
+              pipeline: 'pipecat',
+              audioFormat: 'pcm16',
+            })
+          );
         } else if (message.type === 'start' && message.requestId) {
           this.requestId = message.requestId;
         } else if (message.type === 'end_of_speech') {

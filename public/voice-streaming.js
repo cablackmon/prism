@@ -25,6 +25,59 @@
     );
   }
 
+  class TicketRefreshController {
+    constructor(options = {}) {
+      this.onRequest = options.onRequest || (() => {});
+      this.setTimer = options.setTimer || globalThis.setTimeout;
+      this.clearTimer = options.clearTimer || globalThis.clearTimeout;
+      this.maxAttempts = options.maxAttempts || 3;
+      this.baseDelayMs = options.baseDelayMs || 500;
+      this.attempts = 0;
+      this.pending = false;
+      this.timer = null;
+      this.preserveCompletedPlayback = false;
+    }
+
+    request({ retry = false, preserveCompletedPlayback = false } = {}) {
+      this.preserveCompletedPlayback ||= preserveCompletedPlayback;
+      if (this.pending || this.timer) return true;
+      if (this.attempts >= this.maxAttempts) return false;
+      const send = () => {
+        this.timer = null;
+        this.pending = true;
+        this.attempts += 1;
+        this.onRequest();
+      };
+      if (retry && this.attempts > 0) {
+        this.timer = this.setTimer(
+          send,
+          this.baseDelayMs * (2 ** (this.attempts - 1)),
+        );
+      } else {
+        send();
+      }
+      return true;
+    }
+
+    received() {
+      this.pending = false;
+    }
+
+    reset() {
+      if (this.timer) this.clearTimer(this.timer);
+      this.timer = null;
+      this.pending = false;
+      this.attempts = 0;
+      this.preserveCompletedPlayback = false;
+    }
+
+    takePreserveCompletedPlayback() {
+      const preserve = this.preserveCompletedPlayback;
+      this.preserveCompletedPlayback = false;
+      return preserve;
+    }
+  }
+
   function pcm16FromFloat32(input, inputRate, state = {}) {
     const ratio = inputRate / TARGET_RATE;
     const tail = state.tail || new Float32Array(0);
@@ -105,7 +158,12 @@
           if (this.activeRequest) this.failActive("socket_closed");
           else if (!wasAuthenticated) this.failConnection("socket_closed");
         }
-        if (wasAuthenticated) this.onEvent({ type: "stream.closed" });
+        if (wasAuthenticated) {
+          this.onEvent({
+            type: "stream.closed",
+            preserveCompletedPlayback: Boolean(this.activeRequest?.complete),
+          });
+        }
       });
       this.socket = socket;
     }
@@ -272,5 +330,13 @@
     }
   }
 
-  return { TARGET_RATE, VOICE_URL, READY_FRAME, isReadyFrame, VoiceStreamClient, pcm16FromFloat32 };
+  return {
+    TARGET_RATE,
+    VOICE_URL,
+    READY_FRAME,
+    isReadyFrame,
+    TicketRefreshController,
+    VoiceStreamClient,
+    pcm16FromFloat32,
+  };
 });
