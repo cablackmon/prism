@@ -8,6 +8,99 @@
   const TARGET_RATE = 16000;
   const VOICE_URL = "wss://cb-threadripper.tail3a8e2d.ts.net:8445/voice";
   const RESPONSE_TIMEOUT_MS = 6000;
+  const READY_FRAME = Object.freeze({
+    type: "ready",
+    contract: 1,
+    pipeline: "pipecat",
+    audioFormat: "pcm16",
+  });
+
+  function isReadyFrame(value) {
+    return Boolean(
+      value &&
+      typeof value === "object" &&
+      !Array.isArray(value) &&
+      Object.keys(value).length === Object.keys(READY_FRAME).length &&
+      Object.entries(READY_FRAME).every(([key, expected]) => value[key] === expected),
+    );
+  }
+
+  class TicketRefreshController {
+    constructor(options = {}) {
+      this.onRequest = options.onRequest || (() => {});
+      this.setTimer = options.setTimer || globalThis.setTimeout;
+      this.clearTimer = options.clearTimer || globalThis.clearTimeout;
+      this.maxAttempts = options.maxAttempts || 3;
+      this.baseDelayMs = options.baseDelayMs || 500;
+      this.responseTimeoutMs = options.responseTimeoutMs || 3000;
+      this.onExhausted = options.onExhausted || (() => {});
+      this.attempts = 0;
+      this.pending = false;
+      this.pendingRequestId = null;
+      this.nextRequestId = 0;
+      this.retryTimer = null;
+      this.responseTimer = null;
+      this.preserveCompletedPlayback = false;
+    }
+
+    request({ retry = false, preserveCompletedPlayback = false } = {}) {
+      this.preserveCompletedPlayback ||= preserveCompletedPlayback;
+      if (this.pending || this.retryTimer) return true;
+      if (this.attempts >= this.maxAttempts) return false;
+      const send = () => {
+        this.retryTimer = null;
+        this.pending = true;
+        const requestId = String(++this.nextRequestId);
+        this.pendingRequestId = requestId;
+        this.attempts += 1;
+        this.onRequest(requestId);
+        this.responseTimer = this.setTimer(() => {
+          if (!this.pending || this.pendingRequestId !== requestId) return;
+          this.responseTimer = null;
+          this.pending = false;
+          this.pendingRequestId = null;
+          if (!this.request({ retry: true })) this.onExhausted();
+        }, this.responseTimeoutMs);
+      };
+      if (retry && this.attempts > 0) {
+        this.retryTimer = this.setTimer(
+          send,
+          this.baseDelayMs * (2 ** (this.attempts - 1)),
+        );
+      } else {
+        send();
+      }
+      return true;
+    }
+
+    received(requestId) {
+      if (!this.pending || String(requestId || "") !== this.pendingRequestId) {
+        return false;
+      }
+      if (this.responseTimer) this.clearTimer(this.responseTimer);
+      this.responseTimer = null;
+      this.pending = false;
+      this.pendingRequestId = null;
+      return true;
+    }
+
+    reset() {
+      if (this.retryTimer) this.clearTimer(this.retryTimer);
+      if (this.responseTimer) this.clearTimer(this.responseTimer);
+      this.retryTimer = null;
+      this.responseTimer = null;
+      this.pending = false;
+      this.pendingRequestId = null;
+      this.attempts = 0;
+      this.preserveCompletedPlayback = false;
+    }
+
+    takePreserveCompletedPlayback() {
+      const preserve = this.preserveCompletedPlayback;
+      this.preserveCompletedPlayback = false;
+      return preserve;
+    }
+  }
 
   function pcm16FromFloat32(input, inputRate, state = {}) {
     const ratio = inputRate / TARGET_RATE;
@@ -50,8 +143,6 @@
       this.audioRequestId = null;
       this.readyTimer = null;
       this.audioTimer = null;
-      this.reconnectTimer = null;
-      this.reconnectAttempts = 0;
     }
 
     get ready() {
@@ -62,7 +153,6 @@
       if (!url || !token) throw new Error("Streaming configuration is incomplete");
       if (url !== VOICE_URL) throw new Error("Unexpected streaming endpoint");
       if (this.ready && this.url === url && this.token === token) return false;
-      this.clearTimer(this.reconnectTimer);
       this.disconnect("reconfigure", { preserveCompletedPlayback });
       this.url = url;
       this.token = token;
@@ -75,7 +165,6 @@
           this.failConnection("ready_timeout");
           this.socket = null;
           if (socket.readyState < this.WebSocketClass.CLOSING) socket.close(4000, "ready_timeout");
-          this.scheduleReconnect();
         }, 3000);
       });
       socket.addEventListener("message", (event) => {
@@ -86,32 +175,24 @@
       });
       socket.addEventListener("close", () => {
         if (this.socket !== socket) return;
+        const wasAuthenticated = this.authenticated;
         this.socket = null;
         this.authenticated = false;
-        if (!this.activeRequest?.complete) this.failActive("socket_closed");
-        this.onEvent({ type: "stream.closed" });
-        this.scheduleReconnect();
+        if (!wasAuthenticated) this.failConnection("socket_closed");
+        else if (this.activeRequest && !this.activeRequest.complete) this.failActive("socket_closed");
+        if (wasAuthenticated) {
+          this.onEvent({
+            type: "stream.closed",
+            preserveCompletedPlayback: Boolean(this.activeRequest?.complete),
+          });
+        }
       });
       this.socket = socket;
-    }
-
-    scheduleReconnect() {
-      this.clearTimer(this.reconnectTimer);
-      if (!this.url || !this.token || this.reconnectAttempts >= 3) return;
-      const delay = 500 * (2 ** this.reconnectAttempts++);
-      this.reconnectTimer = this.setTimer(() => {
-        this.reconnectTimer = null;
-        this.connect(
-          { url: this.url, token: this.token },
-          { preserveCompletedPlayback: Boolean(this.activeRequest?.complete) },
-        );
-      }, delay);
     }
 
     disconnect(reason = "disconnect", { preserveCompletedPlayback = false } = {}) {
       if (!(preserveCompletedPlayback && this.activeRequest?.complete)) this.cancel(reason);
       this.clearTimer(this.readyTimer);
-      this.clearTimer(this.reconnectTimer);
       const socket = this.socket;
       this.socket = null;
       this.authenticated = false;
@@ -157,6 +238,13 @@
     }
 
     handleMessage(data) {
+      if (!this.authenticated) {
+        if (typeof data !== "string") return this.failReadyContract();
+        let ready;
+        try { ready = JSON.parse(data); } catch { return this.failReadyContract(); }
+        if (!isReadyFrame(ready)) return this.failReadyContract();
+        return this.handleControl(ready);
+      }
       if (typeof data === "string") {
         let message;
         try { message = JSON.parse(data); } catch { return; }
@@ -189,9 +277,9 @@
 
     handleControl(message) {
       if (message.type === "ready") {
+        if (!isReadyFrame(message) || this.authenticated) return this.failReadyContract();
         this.clearTimer(this.readyTimer);
         this.authenticated = true;
-        this.reconnectAttempts = 0;
         this.onEvent(message);
       } else if (message.type === "audio.start" && this.matchesActive(message)) {
         this.audioFormat = message.format;
@@ -211,6 +299,15 @@
         }
       } else if ((message.type === "fallback" || message.type === "error") && this.matchesActive(message)) {
         this.failActive(message.reason || message.type);
+      }
+    }
+
+    failReadyContract() {
+      const socket = this.socket;
+      this.failConnection("unexpected_ready_frame");
+      this.socket = null;
+      if (socket && socket.readyState < this.WebSocketClass.CLOSING) {
+        socket.close(4002, "unexpected_ready_frame");
       }
     }
 
@@ -239,7 +336,11 @@
       this.clearTimer(this.readyTimer);
       this.authenticated = false;
       if (!this.activeRequest?.complete) this.failActive(reason);
-      this.onEvent({ type: "stream.unavailable", reason });
+      this.onEvent({
+        type: "stream.unavailable",
+        reason,
+        preserveCompletedPlayback: Boolean(this.activeRequest?.complete),
+      });
     }
 
     failActive(reason) {
@@ -255,5 +356,13 @@
     }
   }
 
-  return { TARGET_RATE, VOICE_URL, VoiceStreamClient, pcm16FromFloat32 };
+  return {
+    TARGET_RATE,
+    VOICE_URL,
+    READY_FRAME,
+    isReadyFrame,
+    TicketRefreshController,
+    VoiceStreamClient,
+    pcm16FromFloat32,
+  };
 });

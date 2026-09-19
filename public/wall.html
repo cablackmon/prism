@@ -252,9 +252,21 @@ let batchSubmitted = false;
 let streamingRequest = false;
 const resampleState = {};
 const chatTurns = new Map();
+const streamConfigRefresh = new KystVoiceStreaming.TicketRefreshController({
+  onRequest: (requestId) => boardFrame.contentWindow?.postMessage(
+    { type:"kyst-voice-stream-ticket", requestId },
+    "https://kyst-wall-proxy.fly.dev",
+  ),
+  onExhausted: () => setVoiceState(
+    "unavailable",
+    "NOX voice is unavailable. Reload to retry.",
+  ),
+});
 
-function requestStreamConfig() {
-  boardFrame.contentWindow?.postMessage({ type:"kyst-voice-stream-ticket" }, "https://kyst-wall-proxy.fly.dev");
+function requestStreamConfig(options = {}) {
+  if (!streamConfigRefresh.request(options)) {
+    setVoiceState("unavailable", "NOX voice is unavailable. Reload to retry.");
+  }
 }
 
 function appendChatDelta(requestId, field, text) {
@@ -323,6 +335,14 @@ const streamClient = new KystVoiceStreaming.VoiceStreamClient({
     if (activeRecordingBlob) submitBatchFallback(requestId, reason);
   },
   onEvent: (message) => {
+    if (message.type === "ready") streamConfigRefresh.reset();
+    if (message.type === "stream.unavailable" || message.type === "stream.closed") {
+      if (bridgeReady) requestStreamConfig({
+        retry:true,
+        preserveCompletedPlayback:message.preserveCompletedPlayback === true,
+      });
+      return;
+    }
     if (message.requestId && message.requestId !== activeRequestId) return;
     if (message.type === "transcript.delta") appendChatDelta(message.requestId, "transcript", message.text);
     if (message.type === "answer.delta") {
@@ -692,15 +712,22 @@ window.addEventListener("message", async (event) => {
   const message = event.data || {};
   if (message.type === "kyst-voice-bridge-ready") {
     bridgeReady = true;
+    streamConfigRefresh.reset();
     requestStreamConfig();
     if (!recorder && !activeRequestId) setVoiceState("ready", "Tap to ask NOX");
     return;
   }
   if (message.type === "kyst-voice-stream-config") {
+    if (!streamConfigRefresh.received(message.requestId)) return;
+    const preserveCompletedPlayback = streamConfigRefresh.takePreserveCompletedPlayback();
     try {
-      streamClient.connect({ url:message.url, token:message.token });
+      streamClient.connect(
+        { url:message.url, token:message.token },
+        { preserveCompletedPlayback },
+      );
     } catch (error) {
       console.warn("kyst_voice_stream_config_rejected", error?.message || "invalid config");
+      requestStreamConfig({ retry:true, preserveCompletedPlayback });
     }
     return;
   }
