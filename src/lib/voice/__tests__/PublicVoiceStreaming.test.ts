@@ -10,7 +10,7 @@ const {
   TicketRefreshController: new (options: Record<string, unknown>) => {
     attempts: number;
     request(options?: { retry?: boolean; preserveCompletedPlayback?: boolean }): boolean;
-    received(): void;
+    received(requestId: string): boolean;
     reset(): void;
     takePreserveCompletedPlayback(): boolean;
   };
@@ -200,10 +200,10 @@ describe('wall VoiceStreamClient first-frame contract', () => {
 
 describe('wall ticket refresh policy', () => {
   it('backs off and stops after three fresh-ticket requests', () => {
-    const requests: number[] = [];
+    const requests: string[] = [];
     const timers: Array<{ handler: () => void; delay: number }> = [];
     const refresh = new TicketRefreshController({
-      onRequest: () => requests.push(requests.length + 1),
+      onRequest: (requestId: string) => requests.push(requestId),
       setTimer: (handler: () => void, delay: number) => {
         timers.push({ handler, delay });
         return timers.length;
@@ -213,26 +213,26 @@ describe('wall ticket refresh policy', () => {
 
     expect(refresh.request()).toBe(true);
     expect(requests).toHaveLength(1);
-    refresh.received();
+    expect(refresh.received(requests.at(-1)!)).toBe(true);
     expect(refresh.request({ retry: true })).toBe(true);
     expect(timers[1].delay).toBe(500);
     timers[1].handler();
-    refresh.received();
+    expect(refresh.received(requests.at(-1)!)).toBe(true);
     expect(refresh.request({ retry: true })).toBe(true);
     expect(timers[3].delay).toBe(1_000);
     timers[3].handler();
-    refresh.received();
+    expect(refresh.received(requests.at(-1)!)).toBe(true);
     expect(refresh.request({ retry: true })).toBe(false);
     expect(requests).toHaveLength(3);
     expect(refresh.attempts).toBe(3);
   });
 
   it('times out unanswered requests and exhausts after bounded retries', () => {
-    const requests: number[] = [];
+    const requests: string[] = [];
     const timers: Array<{ handler: () => void; delay: number }> = [];
     const exhausted = jest.fn();
     const refresh = new TicketRefreshController({
-      onRequest: () => requests.push(requests.length + 1),
+      onRequest: (requestId: string) => requests.push(requestId),
       onExhausted: exhausted,
       setTimer: (handler: () => void, delay: number) => {
         timers.push({ handler, delay });
@@ -255,10 +255,37 @@ describe('wall ticket refresh policy', () => {
     expect(exhausted).toHaveBeenCalledTimes(1);
   });
 
-  it('preserves completed playback across refresh and resets after ready', () => {
-    const refresh = new TicketRefreshController({ onRequest: () => undefined });
+  it('rejects a delayed response from an expired request generation', () => {
+    const requests: string[] = [];
+    const timers: Array<{ handler: () => void; delay: number }> = [];
+    const refresh = new TicketRefreshController({
+      onRequest: (requestId: string) => requests.push(requestId),
+      setTimer: (handler: () => void, delay: number) => {
+        timers.push({ handler, delay });
+        return timers.length;
+      },
+      clearTimer: () => undefined,
+    });
+
     refresh.request();
-    refresh.received();
+    const expiredRequestId = requests[0];
+    timers[0].handler();
+    timers[1].handler();
+    const currentRequestId = requests[1];
+
+    expect(refresh.received(currentRequestId)).toBe(true);
+    expect(refresh.received(expiredRequestId)).toBe(false);
+  });
+
+  it('preserves completed playback across refresh and resets after ready', () => {
+    let requestId = '';
+    const refresh = new TicketRefreshController({
+      onRequest: (value: string) => {
+        requestId = value;
+      },
+    });
+    refresh.request();
+    refresh.received(requestId);
     refresh.request({ retry: true, preserveCompletedPlayback: true });
 
     expect(refresh.takePreserveCompletedPlayback()).toBe(true);

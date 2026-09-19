@@ -253,8 +253,8 @@ let streamingRequest = false;
 const resampleState = {};
 const chatTurns = new Map();
 const streamConfigRefresh = new KystVoiceStreaming.TicketRefreshController({
-  onRequest: () => boardFrame.contentWindow?.postMessage(
-    { type:"kyst-voice-stream-ticket" },
+  onRequest: (requestId) => boardFrame.contentWindow?.postMessage(
+    { type:"kyst-voice-stream-ticket", requestId },
     "https://kyst-wall-proxy.fly.dev",
   ),
   onExhausted: () => setVoiceState(
@@ -718,7 +718,7 @@ window.addEventListener("message", async (event) => {
     return;
   }
   if (message.type === "kyst-voice-stream-config") {
-    streamConfigRefresh.received();
+    if (!streamConfigRefresh.received(message.requestId)) return;
     const preserveCompletedPlayback = streamConfigRefresh.takePreserveCompletedPlayback();
     try {
       streamClient.connect(

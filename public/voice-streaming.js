@@ -36,6 +36,8 @@
       this.onExhausted = options.onExhausted || (() => {});
       this.attempts = 0;
       this.pending = false;
+      this.pendingRequestId = null;
+      this.nextRequestId = 0;
       this.retryTimer = null;
       this.responseTimer = null;
       this.preserveCompletedPlayback = false;
@@ -48,11 +50,15 @@
       const send = () => {
         this.retryTimer = null;
         this.pending = true;
+        const requestId = String(++this.nextRequestId);
+        this.pendingRequestId = requestId;
         this.attempts += 1;
-        this.onRequest();
+        this.onRequest(requestId);
         this.responseTimer = this.setTimer(() => {
+          if (!this.pending || this.pendingRequestId !== requestId) return;
           this.responseTimer = null;
           this.pending = false;
+          this.pendingRequestId = null;
           if (!this.request({ retry: true })) this.onExhausted();
         }, this.responseTimeoutMs);
       };
@@ -67,10 +73,15 @@
       return true;
     }
 
-    received() {
+    received(requestId) {
+      if (!this.pending || String(requestId || "") !== this.pendingRequestId) {
+        return false;
+      }
       if (this.responseTimer) this.clearTimer(this.responseTimer);
       this.responseTimer = null;
       this.pending = false;
+      this.pendingRequestId = null;
+      return true;
     }
 
     reset() {
@@ -79,6 +90,7 @@
       this.retryTimer = null;
       this.responseTimer = null;
       this.pending = false;
+      this.pendingRequestId = null;
       this.attempts = 0;
       this.preserveCompletedPlayback = false;
     }
