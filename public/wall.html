@@ -234,7 +234,24 @@ const chatLog = document.getElementById("chat-log");
 const chatEmpty = document.getElementById("chat-empty");
 const chatProgress = document.getElementById("chat-progress");
 const chatProgressText = document.getElementById("chat-progress-text");
+function showVoiceClientUnavailable() {
+  const label = "NOX voice is unavailable. Tap to reload.";
+  mic.className = "unavailable";
+  mic.disabled = false;
+  mic.setAttribute("aria-label", "Reload NOX voice");
+  voiceStatus.textContent = label;
+  chatProgress.dataset.state = "unavailable";
+  chatProgressText.textContent = label;
+  mic.addEventListener("click", () => window.location.reload(), { once:true });
+}
+if (!window.KystVoiceStreaming) {
+  showVoiceClientUnavailable();
+} else {
 let bridgeReady = false;
+let bridgeProbeTimer = null;
+let bridgeProbeAttempts = 0;
+const bridgeProbeMaxAttempts = 10;
+const bridgeProbeIntervalMs = 500;
 let recorder = null;
 let recordingStream = null;
 let recordingChunks = [];
@@ -259,13 +276,13 @@ const streamConfigRefresh = new KystVoiceStreaming.TicketRefreshController({
   ),
   onExhausted: () => setVoiceState(
     "unavailable",
-    "NOX voice is unavailable. Reload to retry.",
+    "NOX voice is unavailable. Tap to retry.",
   ),
 });
 
 function requestStreamConfig(options = {}) {
   if (!streamConfigRefresh.request(options)) {
-    setVoiceState("unavailable", "NOX voice is unavailable. Reload to retry.");
+    setVoiceState("unavailable", "NOX voice is unavailable. Tap to retry.");
   }
 }
 
@@ -335,12 +352,18 @@ const streamClient = new KystVoiceStreaming.VoiceStreamClient({
     if (activeRecordingBlob) submitBatchFallback(requestId, reason);
   },
   onEvent: (message) => {
-    if (message.type === "ready") streamConfigRefresh.reset();
+    if (message.type === "ready") {
+      streamConfigRefresh.reset();
+      if (!recorder && !activeRequestId) setVoiceState("ready", "Tap to ask NOX");
+    }
     if (message.type === "stream.unavailable" || message.type === "stream.closed") {
-      if (bridgeReady) requestStreamConfig({
-        retry:true,
-        preserveCompletedPlayback:message.preserveCompletedPlayback === true,
-      });
+      if (bridgeReady) {
+        setVoiceState("thinking", "Reconnecting to NOX…");
+        requestStreamConfig({
+          retry:true,
+          preserveCompletedPlayback:message.preserveCompletedPlayback === true,
+        });
+      }
       return;
     }
     if (message.requestId && message.requestId !== activeRequestId) return;
@@ -614,7 +637,15 @@ function watchForSilence(stream, onPcm) {
 
 async function beginRecording() {
   setChatOpen(true);
-  if (!bridgeReady) return setVoiceState("unavailable", "Board is still loading. Try again.");
+  if (!bridgeReady) {
+    startBridgeProbe({ retry:true });
+    return;
+  }
+  if (!streamClient.ready) {
+    streamConfigRefresh.reset();
+    requestStreamConfig();
+    return setVoiceState("thinking", "Reconnecting to NOX…");
+  }
   if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
     return setVoiceState("unavailable", "Mic unavailable in this browser.");
   }
@@ -711,10 +742,12 @@ window.addEventListener("message", async (event) => {
   if (event.origin !== "https://kyst-wall-proxy.fly.dev" || event.source !== boardFrame.contentWindow) return;
   const message = event.data || {};
   if (message.type === "kyst-voice-bridge-ready") {
+    if (bridgeReady) return;
     bridgeReady = true;
+    stopBridgeProbe();
     streamConfigRefresh.reset();
+    setVoiceState("thinking", "Connecting to NOX…");
     requestStreamConfig();
-    if (!recorder && !activeRequestId) setVoiceState("ready", "Tap to ask NOX");
     return;
   }
   if (message.type === "kyst-voice-stream-config") {
@@ -772,11 +805,35 @@ window.addEventListener("message", async (event) => {
     }
   }
 });
-function pingVoiceBridge() {
-  boardFrame.contentWindow.postMessage({ type:"kyst-voice-ping" }, "https://kyst-wall-proxy.fly.dev");
+function stopBridgeProbe() {
+  clearTimeout(bridgeProbeTimer);
+  bridgeProbeTimer = null;
+  bridgeProbeAttempts = 0;
 }
-boardFrame.addEventListener("load", pingVoiceBridge);
-pingVoiceBridge();
+function pingVoiceBridge() {
+  if (bridgeReady) return;
+  bridgeProbeAttempts += 1;
+  boardFrame.contentWindow?.postMessage({ type:"kyst-voice-ping" }, "https://kyst-wall-proxy.fly.dev");
+  if (bridgeProbeAttempts >= bridgeProbeMaxAttempts) {
+    bridgeProbeTimer = null;
+    setVoiceState("unavailable", "NOX voice is unavailable. Tap to retry.");
+    return;
+  }
+  bridgeProbeTimer = setTimeout(pingVoiceBridge, bridgeProbeIntervalMs);
+}
+function startBridgeProbe({ retry = false } = {}) {
+  bridgeReady = false;
+  stopBridgeProbe();
+  setVoiceState("thinking", retry ? "Reconnecting to NOX…" : "Connecting to NOX…");
+  pingVoiceBridge();
+}
+boardFrame.addEventListener("load", () => {
+  streamClient.disconnect("bridge_navigation");
+  streamConfigRefresh.reset();
+  startBridgeProbe();
+});
+startBridgeProbe();
+}
 
 // Reboot the complete kiosk page at 03:00 browser-local time each night.
 function scheduleNightlyReload() {

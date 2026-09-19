@@ -28,8 +28,8 @@
   class TicketRefreshController {
     constructor(options = {}) {
       this.onRequest = options.onRequest || (() => {});
-      this.setTimer = options.setTimer || globalThis.setTimeout;
-      this.clearTimer = options.clearTimer || globalThis.clearTimeout;
+      this.setTimer = options.setTimer || ((callback, delay) => globalThis.setTimeout(callback, delay));
+      this.clearTimer = options.clearTimer || ((timer) => globalThis.clearTimeout(timer));
       this.maxAttempts = options.maxAttempts || 3;
       this.baseDelayMs = options.baseDelayMs || 500;
       this.responseTimeoutMs = options.responseTimeoutMs || 3000;
@@ -129,8 +129,8 @@
   class VoiceStreamClient {
     constructor(options = {}) {
       this.WebSocketClass = options.WebSocketClass || globalThis.WebSocket;
-      this.setTimer = options.setTimer || globalThis.setTimeout;
-      this.clearTimer = options.clearTimer || globalThis.clearTimeout;
+      this.setTimer = options.setTimer || ((callback, delay) => globalThis.setTimeout(callback, delay));
+      this.clearTimer = options.clearTimer || ((timer) => globalThis.clearTimeout(timer));
       this.now = options.now || (() => Date.now());
       this.onEvent = options.onEvent || (() => {});
       this.onFallback = options.onFallback || (() => {});
