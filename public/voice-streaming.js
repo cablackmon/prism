@@ -158,14 +158,17 @@
       this.token = token;
       const socket = new this.WebSocketClass(url);
       socket.binaryType = "arraybuffer";
+      this.readyTimer = this.setTimer(() => {
+        if (this.socket !== socket || this.authenticated) return;
+        const reason = socket.readyState === this.WebSocketClass.OPEN
+          ? "ready_timeout"
+          : "connect_timeout";
+        this.failConnection(reason);
+        this.socket = null;
+        if (socket.readyState < this.WebSocketClass.CLOSING) socket.close(4000, reason);
+      }, 3000);
       socket.addEventListener("open", () => {
         socket.send(JSON.stringify({ type: "auth", token }));
-        this.readyTimer = this.setTimer(() => {
-          if (this.socket !== socket) return;
-          this.failConnection("ready_timeout");
-          this.socket = null;
-          if (socket.readyState < this.WebSocketClass.CLOSING) socket.close(4000, "ready_timeout");
-        }, 3000);
       });
       socket.addEventListener("message", (event) => {
         if (this.socket === socket) this.handleMessage(event.data);

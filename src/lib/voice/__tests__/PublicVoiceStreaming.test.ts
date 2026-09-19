@@ -138,6 +138,33 @@ describe('wall VoiceStreamClient first-frame contract', () => {
     expect(FakeSocket.instances).toHaveLength(1);
   });
 
+  it('closes when the socket handshake never opens', () => {
+    const timers: Array<() => void> = [];
+    const events: Array<{ type: string; reason?: string }> = [];
+    const client = new VoiceStreamClient({
+      WebSocketClass: FakeSocket,
+      setTimer: (handler: () => void) => {
+        timers.push(handler);
+        return timers.length;
+      },
+      clearTimer: () => undefined,
+      onEvent: (event: { type: string; reason?: string }) => events.push(event),
+    });
+    client.connect({ url: VOICE_URL, token: 'single-use-ticket' });
+    const socket = required(FakeSocket.instances[0], 'connecting socket');
+    required(timers[0], 'connection timer')();
+
+    expect(socket.closed).toEqual([4000, 'connect_timeout']);
+    expect(events).toEqual([
+      {
+        type: 'stream.unavailable',
+        reason: 'connect_timeout',
+        preserveCompletedPlayback: false,
+      },
+    ]);
+    expect(FakeSocket.instances).toHaveLength(1);
+  });
+
   it('reports a close before ready and never reuses the single-use ticket', () => {
     const events: Array<{ type: string; reason?: string }> = [];
     const client = new VoiceStreamClient({

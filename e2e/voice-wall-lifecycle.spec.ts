@@ -20,6 +20,7 @@ type LifecycleOptions = {
   bridgeLoadDelayMs?: number;
   suppressInitialBridgeReady?: boolean;
   automaticSocketReady?: boolean;
+  fakeCapture?: boolean;
 };
 
 type SafeEvent = {
@@ -43,6 +44,16 @@ function bridgeFixture({ suppressInitialBridgeReady = false } = {}): string {
       if (event.origin !== parentOrigin || event.source !== window.parent) return;
       const message = event.data || {};
       if (message.type === 'kyst-voice-ping') return announceReady();
+      if (message.type === 'kyst-voice-ask') {
+        const requestId = String(message.requestId || '');
+        if (!requestId) return;
+        await fetch('/ask', { method: 'POST', body: message.audio || '' });
+        window.parent.postMessage(
+          { type: 'kyst-voice-error', requestId, status: 503, error: 'Fixture batch complete' },
+          parentOrigin
+        );
+        return;
+      }
       if (message.type !== 'kyst-voice-stream-ticket') return;
       const requestId = String(message.requestId || '');
       if (!requestId) return;
@@ -86,12 +97,14 @@ async function installLifecycle(
   socketAuthentications: () => number;
   socketRoutes: () => number;
   ticketRequests: () => number;
+  batchRequests: () => number;
 }> {
   const events: SafeEvent[] = [];
   const wall = await fs.readFile(path.join(VOICE_ASSET_ROOT, 'wall.html'), 'utf8');
   const voiceClient = await fs.readFile(path.join(VOICE_ASSET_ROOT, 'voice-streaming.js'), 'utf8');
   const bridge = bridgeFixture(options);
   let ticketRequestCount = 0;
+  let batchRequestCount = 0;
   let proxyBootstrapSeen = false;
   let socketRoute: WebSocketRoute | null = null;
   let socketAuthenticationCount = 0;
@@ -130,6 +143,61 @@ async function installLifecycle(
       new MutationObserver(report).observe(status, { childList: true, subtree: true });
     });
   });
+
+  await page.addInitScript((fakeCapture) => {
+    if (!fakeCapture) return;
+    const track = { getSettings: () => ({ sampleRate: 48_000 }), stop: () => undefined };
+    Object.defineProperty(navigator, 'mediaDevices', {
+      configurable: true,
+      value: {
+        getUserMedia: async () => ({
+          getAudioTracks: () => [track],
+          getTracks: () => [track],
+        }),
+      },
+    });
+    class FixtureMediaRecorder {
+      static isTypeSupported() {
+        return true;
+      }
+
+      state = 'inactive';
+      mimeType: string;
+      listeners = new Map<string, Array<(event: { data?: Blob }) => void>>();
+
+      constructor(_stream: unknown, options: { mimeType?: string } = {}) {
+        this.mimeType = options.mimeType || 'audio/webm';
+      }
+
+      addEventListener(type: string, listener: (event: { data?: Blob }) => void) {
+        this.listeners.set(type, [...(this.listeners.get(type) || []), listener]);
+      }
+
+      emit(type: string, event: { data?: Blob } = {}) {
+        for (const listener of this.listeners.get(type) || []) listener(event);
+      }
+
+      start() {
+        this.state = 'recording';
+        this.emit('dataavailable', {
+          data: new Blob([new Uint8Array(512)], { type: this.mimeType }),
+        });
+      }
+
+      stop() {
+        this.state = 'inactive';
+        this.emit('stop');
+      }
+    }
+    Object.defineProperty(window, 'MediaRecorder', {
+      configurable: true,
+      value: FixtureMediaRecorder,
+    });
+    Object.defineProperty(window, 'AudioContext', { configurable: true, value: undefined });
+    Object.defineProperty(window, 'webkitAudioContext', { configurable: true, value: undefined });
+    HTMLMediaElement.prototype.play = async () => undefined;
+    HTMLMediaElement.prototype.pause = () => undefined;
+  }, options.fakeCapture === true);
 
   await page.routeWebSocket(VOICE, (route) => {
     socketRouteCount += 1;
@@ -237,6 +305,11 @@ async function installLifecycle(
       });
       return;
     }
+    if (url.pathname === '/ask') {
+      batchRequestCount += 1;
+      await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+      return;
+    }
     await route.fulfill({ status: 404, body: 'not found' });
   });
 
@@ -249,6 +322,7 @@ async function installLifecycle(
     socketAuthentications: () => socketAuthenticationCount,
     socketRoutes: () => socketRouteCount,
     ticketRequests: () => ticketRequestCount,
+    batchRequests: () => batchRequestCount,
   };
 }
 
@@ -301,6 +375,52 @@ test.describe('wall parent + proxy iframe voice lifecycle', () => {
       value: `${PROXY}/bootstrap`,
     });
     await recordSafeEvents(lifecycle.events, 'fixed-late-bridge-events');
+  });
+
+  test('keeps an active parent-owned stream intact across an iframe refresh', async ({ page }) => {
+    const lifecycle = await installLifecycle(page, { fakeCapture: true });
+    await page.goto(`${BOARD}/api/household-auth/device?token=fixture`);
+    await expect(page.locator('#voice-status')).toHaveText('Tap to ask NOX');
+    await page.locator('#start').click();
+    await expect(page.locator('#start')).toBeHidden();
+    await page.locator('#mic').click();
+    await expect(page.locator('#voice-status')).toHaveText('Listening… tap to stop');
+
+    await page.locator('#board-frame').evaluate((frame: HTMLIFrameElement, proxy) => {
+      frame.src = `${proxy}/?fixture-reload=1`;
+    }, PROXY);
+    await expect
+      .poll(
+        () =>
+          lifecycle.events.filter(
+            (event) => event.kind === 'framenavigated' && event.value === `${PROXY}/`
+          ).length
+      )
+      .toBeGreaterThanOrEqual(2);
+    await page.waitForTimeout(100);
+    await expect(page.locator('#voice-status')).toHaveText('Listening… tap to stop');
+    expect(lifecycle.socketRoutes()).toBe(1);
+    await page.locator('#mic').click();
+    await recordSafeEvents(lifecycle.events, 'fixed-active-refresh-events');
+  });
+
+  test('records through the batch fallback while the streaming socket is unavailable', async ({
+    page,
+  }) => {
+    const lifecycle = await installLifecycle(page, {
+      automaticSocketReady: false,
+      fakeCapture: true,
+    });
+    await page.goto(`${BOARD}/api/household-auth/device?token=fixture`);
+    await expect.poll(lifecycle.socketAuthentications).toBeGreaterThanOrEqual(1);
+    await page.locator('#start').click();
+    await expect(page.locator('#start')).toBeHidden();
+
+    await page.locator('#mic').click();
+    await expect(page.locator('#voice-status')).toHaveText('Listening… tap to stop');
+    await page.locator('#mic').click();
+    await expect.poll(lifecycle.batchRequests).toBe(1);
+    await recordSafeEvents(lifecycle.events, 'fixed-batch-fallback-events');
   });
 
   test('a failed client asset reaches a bounded reload-to-retry state instead of loading forever', async ({

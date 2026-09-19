@@ -644,7 +644,6 @@ async function beginRecording() {
   if (!streamClient.ready) {
     streamConfigRefresh.reset();
     requestStreamConfig();
-    return setVoiceState("thinking", "Reconnecting to NOX…");
   }
   if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
     return setVoiceState("unavailable", "Mic unavailable in this browser.");
@@ -745,8 +744,12 @@ window.addEventListener("message", async (event) => {
     if (bridgeReady) return;
     bridgeReady = true;
     stopBridgeProbe();
+    if (streamClient.ready) {
+      if (!recorder && !activeRequestId) setVoiceState("ready", "Tap to ask NOX");
+      return;
+    }
     streamConfigRefresh.reset();
-    setVoiceState("thinking", "Connecting to NOX…");
+    if (!recorder && !activeRequestId) setVoiceState("thinking", "Connecting to NOX…");
     requestStreamConfig();
     return;
   }
@@ -824,11 +827,12 @@ function pingVoiceBridge() {
 function startBridgeProbe({ retry = false } = {}) {
   bridgeReady = false;
   stopBridgeProbe();
-  setVoiceState("thinking", retry ? "Reconnecting to NOX…" : "Connecting to NOX…");
+  if (!recorder && !activeRequestId) {
+    setVoiceState("thinking", retry ? "Reconnecting to NOX…" : "Connecting to NOX…");
+  }
   pingVoiceBridge();
 }
 boardFrame.addEventListener("load", () => {
-  streamClient.disconnect("bridge_navigation");
   streamConfigRefresh.reset();
   startBridgeProbe();
 });
