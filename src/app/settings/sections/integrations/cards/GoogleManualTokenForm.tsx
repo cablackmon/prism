@@ -27,7 +27,7 @@ const PASTEABLE: Array<{ key: GoogleCapability; blurb: string; note?: React.Reac
       <>
         The{' '}
         <code>{GOOGLE_CAPABILITIES.calendarReadonly.playgroundScopes.join(' ')}</code> line on its
-        own also works and gives you read-only calendars: their events show in Prism, but they are
+        own also works and gives you read-only calendars: their events show in KYST, but they are
         not offered when you add an event.
       </>
     ),
@@ -119,7 +119,7 @@ export function GoogleManualTokenForm({ onSaved }: { onSaved?: () => void }) {
       if (data.capabilities?.includes('calendarReadonly')) {
         parts.push(
           `${data.calendarCount ?? 0} calendar${data.calendarCount === 1 ? '' : 's'} imported, ` +
-          'read-only (Prism cannot add events to them)',
+          'read-only (KYST cannot add events to them)',
         );
       }
       if (data.capabilities?.includes('gmail')) parts.push('Gmail connected for bus tracking');
@@ -182,7 +182,7 @@ export function GoogleManualTokenForm({ onSaved }: { onSaved?: () => void }) {
         <p className="text-xs text-muted-foreground">
           One token can cover more than the calendar. The Playground&apos;s API list is long, so use the
           <strong> Input your own scopes</strong> box at the top of Step 1 and paste the lines you want,
-          space-separated. Paste only what you want Prism to use:
+          space-separated. Paste only what you want KYST to use:
         </p>
         <ul className="list-disc space-y-1.5 pl-5 text-xs text-muted-foreground">
           {PASTEABLE.map(({ key, blurb, note }) => (
@@ -196,7 +196,7 @@ export function GoogleManualTokenForm({ onSaved }: { onSaved?: () => void }) {
           ))}
         </ul>
         <p className="text-xs text-muted-foreground">
-          Leave one out and Prism simply will not enable it. A token cannot gain a scope later, so to add
+          Leave one out and KYST simply will not enable it. A token cannot gain a scope later, so to add
           one afterwards you generate a new token with the extra scope included and paste it here again.
         </p>
         <ul className="list-disc space-y-1 pl-5 text-xs text-muted-foreground">
@@ -205,7 +205,7 @@ export function GoogleManualTokenForm({ onSaved }: { onSaved?: () => void }) {
           <li><strong>Gmail API v1</strong> &mdash; bus tracking only, which reads transport emails</li>
         </ul>
         <p className="text-xs text-muted-foreground">
-          Leave one out and Prism simply will not enable it. A token cannot gain a scope later, so to add
+          Leave one out and KYST simply will not enable it. A token cannot gain a scope later, so to add
           one afterwards you generate a new token with the extra scope ticked and paste it here again.
         </p>
 

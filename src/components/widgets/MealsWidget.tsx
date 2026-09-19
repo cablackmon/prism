@@ -287,7 +287,11 @@ function WidgetAddMealModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+      data-widget-navigation-ignore
+      onClick={onClose}
+    >
       <div className="bg-card rounded-lg p-5 max-w-sm w-full mx-4 shadow-lg border border-border" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold">Add Meal</h2>

@@ -86,7 +86,7 @@ export function GoogleProviderCard({
   const handleDisconnect = async () => {
     const ok = await confirm(
       'Disconnect Google?',
-      'Removes all Google calendars and their events from Prism.',
+      'Removes all Google calendars and their events from KYST.',
     );
     if (!ok) return;
     setDisconnecting(true);
@@ -222,7 +222,7 @@ export function GoogleProviderCard({
           label="Connect without a public URL (advanced)"
           summary={
             browserFlowUnusable
-              ? "Google will not accept this address for its sign-in. Use this, or reopen Prism on a public https address or localhost"
+              ? "Google will not accept this address for its sign-in. Use this, or reopen KYST on a public https address or localhost"
               : "Paste a refresh token from Google's OAuth Playground — for LAN-only installs, or to re-paste an expired one"
           }
           // Opened by default where it is the only flow that can work, so a

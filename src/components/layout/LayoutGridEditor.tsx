@@ -646,7 +646,7 @@ export function LayoutGridEditor({
   // fixed-aspect fit is ever needed again for odd screens like iPad/e-readers.)
   if (isEditable && measureMode) {
     return (
-      <div className={className || ''}>
+      <div className={`kyst-board-measure-frame ${className || ''}`}>
         <CssGridDisplay
           layout={stableLayout}
           renderWidget={renderWidget}
@@ -657,6 +657,7 @@ export function LayoutGridEditor({
           bottomOffset={measureHideNav ? 0 : bottomOffset}
           targetRows={displayTargetRows}
           designOrientation={screenGuideOrientation}
+          className="kyst-board-measure-grid"
         />
       </div>
     );
@@ -726,7 +727,7 @@ export function LayoutGridEditor({
       minVisibleRows={minVisibleRows}
       targetRows={displayTargetRows}
       designOrientation={screenGuideOrientation}
-      className={className}
+      className={`kyst-board-display-grid ${className || ''}`}
     />
   );
 }

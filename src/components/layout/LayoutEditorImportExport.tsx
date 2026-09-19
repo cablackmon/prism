@@ -63,7 +63,7 @@ export function LayoutEditorImportDialog({
       const parsed = JSON.parse(importText);
       const validated = validateImport(parsed);
       if (!validated) {
-        setImportError('Invalid layout format. Expected a Prism layout export.');
+        setImportError('Invalid layout format. Expected a KYST layout export.');
         return;
       }
       const expectedMode = editingScreensaver ? 'screensaver' : 'dashboard';

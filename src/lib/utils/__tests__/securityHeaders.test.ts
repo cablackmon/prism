@@ -28,6 +28,14 @@ describe('buildSecurityHeaders', () => {
       expect(csp!.value).toContain("frame-ancestors 'self'");
     });
 
+    it('allows same-origin child frames without widening frame ancestors', () => {
+      const headers = buildSecurityHeaders();
+      const csp = headers.find((h: { key: string; value: string }) => h.key === 'Content-Security-Policy');
+      expect(csp!.value).toContain("frame-src 'self'");
+      expect(csp!.value).not.toContain('frame-src https:');
+      expect(csp!.value).toContain("frame-ancestors 'self'");
+    });
+
     it('always includes X-Content-Type-Options', () => {
       const headers = buildSecurityHeaders();
       const header = headers.find((h: { key: string; value: string }) => h.key === 'X-Content-Type-Options');

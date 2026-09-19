@@ -11,6 +11,7 @@
  */
 
 'use client';
+import { useBoardTheme } from '@/components/theme/KystTheme';
 
 import * as React from 'react';
 import { useTranslations, useLocale } from 'next-intl';
@@ -54,9 +55,10 @@ export const BirthdaysWidget = React.memo(function BirthdaysWidget({
   maxItems = 8,
   titleHref,
 }: BirthdaysWidgetProps) {
+  const nox = useBoardTheme() === 'nox';
   const t = useTranslations('birthdays');
   const locale = useLocale();
-  const items = birthdays.slice(0, maxItems);
+  const items = nox ? birthdays : birthdays.slice(0, maxItems);
 
   // Show only the whole rows that fit (no scrollbar, no half-cut last row).
   // Measure the REAL header + row heights from the rendered table rather than
@@ -84,7 +86,7 @@ export const BirthdaysWidget = React.memo(function BirthdaysWidget({
     ro.observe(el);
     return () => ro.disconnect();
   }, [items.length]);
-  const visible = items.slice(0, maxRows);
+  const visible = nox ? items : items.slice(0, maxRows);
 
   return (
     <WidgetContainer
@@ -100,7 +102,7 @@ export const BirthdaysWidget = React.memo(function BirthdaysWidget({
           message={t('empty')}
         />
       ) : (
-        <div ref={listRef} className="overflow-hidden h-full">
+        <div ref={listRef} className={cn(nox ? "overflow-auto" : "overflow-hidden", "h-full")}>
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b text-xs text-muted-foreground">

@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { Globe, List, Loader2, Moon, Sun, Route, MapPin, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PageWrapper } from '@/components/layout/PageWrapper';
+import { SubpageHeader } from '@/components/layout/SubpageHeader';
 import { useTravelData, TravelAuthError } from './useTravelData';
 import { useToast } from '@/components/ui/use-toast';
 import { PinList } from './components/PinList';
@@ -308,6 +309,10 @@ export function TravelView() {
   return (
     <PageWrapper>
       <div className="flex flex-col h-screen overflow-hidden">
+        <SubpageHeader
+          icon={<Globe className="h-5 w-5 text-primary" />}
+          title="Travel"
+        />
         {/* Tab bar */}
         <div className="flex items-center gap-1 px-4 pt-3 pb-0 border-b border-border shrink-0 bg-background">
           <button

@@ -216,7 +216,7 @@ export function ConnectedSourcesCard<S extends BaseSource>({
           <div>
             <CardTitle>Connected Sources</CardTitle>
             <CardDescription>
-              External lists syncing with Prism
+              External lists syncing with KYST
             </CardDescription>
           </div>
           {sources.filter(s => s.syncEnabled).length > 0 && (

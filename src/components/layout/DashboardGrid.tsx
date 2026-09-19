@@ -30,6 +30,7 @@
 'use client';
 
 import * as React from 'react';
+import { useBoardTheme, BoardWordmark } from '@/components/theme/KystTheme';
 import { cn } from '@/lib/utils';
 import { AwayModeToggle } from '@/components/away-mode';
 import { BabysitterModeToggle } from '@/components/babysitter-mode';
@@ -148,7 +149,7 @@ export function DashboardLayout({
     <div
       className={cn(
         // Full viewport
-        'min-h-screen w-full',
+        'kyst-dashboard-layout min-h-screen w-full',
         // Transparent background to allow wallpaper to show through
         // Flex column for header + content
         'flex flex-col',
@@ -156,7 +157,7 @@ export function DashboardLayout({
       )}
     >
       {/* Main content area */}
-      <main className="flex-1 overflow-hidden">
+      <main className="kyst-dashboard-content flex-1 overflow-hidden">
         {children}
       </main>
     </div>
@@ -197,6 +198,7 @@ export function DashboardHeader({
   onEditClick,
   onScreensaverClick,
 }: DashboardHeaderProps) {
+  const nox = useBoardTheme() === 'nox';
   const { uiHidden } = useAutoHideUI();
   const [measureHideChrome, setMeasureHideChrome] = React.useState(false);
 
@@ -220,6 +222,7 @@ export function DashboardHeader({
       hidden ? 'opacity-0 max-h-0 py-0' : 'max-h-20 py-2 delay-200'
     )}>
       <div className="flex items-center justify-end gap-2">
+        {nox && <BoardWordmark />}
         {onEditClick && (
           <button
             onClick={onEditClick}

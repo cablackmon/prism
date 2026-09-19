@@ -75,7 +75,7 @@ export function MicrosoftProviderCard({
   const handleDisconnect = async () => {
     const ok = await confirm(
       'Disconnect Microsoft?',
-      'This will remove all Microsoft task, shopping, and wish-list sources. OneDrive photo sources will also disconnect. Items already synced remain in Prism.',
+      'This will remove all Microsoft task, shopping, and wish-list sources. OneDrive photo sources will also disconnect. Items already synced remain in KYST.',
     );
     if (!ok) return;
     setDisconnecting(true);

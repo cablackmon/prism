@@ -660,7 +660,7 @@ export function CalendarsSection({ onSynced }: { onSynced?: () => void } = {}) {
 
       <RemovedItemsManager
         title="Removed calendars"
-        description="Google calendars you deleted from Prism. Discovery won't re-add them automatically — restore one to bring it back on your next Google sign-in."
+        description="Google calendars you deleted from KYST. Discovery won't re-add them automatically — restore one to bring it back on your next Google sign-in."
         items={removedCalendars}
         onRestore={handleRestoreCalendar}
         restoringId={restoringId}

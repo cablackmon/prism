@@ -24,7 +24,9 @@
  */
 
 'use client';
+import { useBoardTheme } from '@/components/theme/KystTheme';
 
+import { useBoardColor } from '@/components/theme/useBoardColor';
 import * as React from 'react';
 import { useMemo, useCallback } from 'react';
 import { format, isToday, isTomorrow, isPast } from 'date-fns';
@@ -101,6 +103,7 @@ export const TasksWidget = React.memo(function TasksWidget({
   titleHref,
   className,
 }: TasksWidgetProps) {
+  const nox = useBoardTheme() === 'nox';
   const allTasks = externalTasks || [];
 
   const { filteredTasks, displayTasks } = useMemo(() => {
@@ -114,8 +117,8 @@ export const TasksWidget = React.memo(function TasksWidget({
       if (a.dueDate && b.dueDate) return a.dueDate.getTime() - b.dueDate.getTime();
       return 0;
     });
-    return { filteredTasks: filtered, displayTasks: filtered.slice(0, maxTasks) };
-  }, [allTasks, userId, showCompleted, maxTasks]);
+    return { filteredTasks: filtered, displayTasks: nox ? filtered : filtered.slice(0, maxTasks) };
+  }, [allTasks, userId, showCompleted, maxTasks, nox]);
 
   // Handle toggle - calls external handler which manages auth
   // No optimistic update since auth might be cancelled
@@ -178,7 +181,7 @@ export const TasksWidget = React.memo(function TasksWidget({
           </div>
 
           {/* Show count of remaining tasks */}
-          {filteredTasks.length > maxTasks && (
+          {!nox && filteredTasks.length > maxTasks && (
             <div className="mt-3 text-center text-xs text-muted-foreground">
               +{filteredTasks.length - maxTasks} more tasks
             </div>
@@ -205,6 +208,7 @@ function TaskItem({
   onToggle: () => void;
   onClick?: () => void;
 }) {
+  const boardColor = useBoardColor();
   // Format due date
   const dueDateDisplay = task.dueDate ? formatDueDate(task.dueDate) : null;
 
@@ -224,12 +228,13 @@ function TaskItem({
           edit modal when the user is just toggling completion. */}
       <Checkbox
         checked={completed}
+        aria-label={`Mark ${task.title} ${completed ? "incomplete" : "complete"}`}
         onCheckedChange={onToggle}
         onClick={(e) => e.stopPropagation()}
         className="mt-0.5"
         style={
           task.assignedTo
-            ? { borderColor: task.assignedTo.color }
+            ? { borderColor: boardColor(task.assignedTo.color, task.assignedTo.name) }
             : undefined
         }
       />

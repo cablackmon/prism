@@ -20,7 +20,7 @@ import { SettingsPinGate } from './SettingsPinGate';
  */
 export const metadata = {
   title: 'Settings',
-  description: 'Configure your Prism family dashboard.',
+  description: 'Configure your KYST family dashboard.',
 };
 
 

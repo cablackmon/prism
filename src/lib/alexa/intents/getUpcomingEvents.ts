@@ -18,7 +18,7 @@ export async function handleGetUpcomingEvents(args: IntentArgs = {}): Promise<Al
   } catch (err) {
     if (err instanceof VoiceApiError) {
       logError('[alexa] getCalendarUpcoming failed', err);
-      return speak("Sorry, I couldn't reach Prism right now.");
+      return speak("Sorry, I couldn't reach KYST right now.");
     }
     throw err;
   }

@@ -1,8 +1,8 @@
 import { HelpView } from './HelpView';
 
 export const metadata = {
-  title: 'Help - Prism',
-  description: 'User guide for Prism family dashboard.',
+  title: 'Help - KYST',
+  description: 'User guide for KYST family dashboard.',
 };
 
 export default function HelpPage() {

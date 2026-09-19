@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
         {
           error: 'no_supported_scope',
           message:
-            'This token was not granted any scope Prism can use. In the OAuth Playground, select at least one of: ' +
+            'This token was not granted any scope KYST can use. In the OAuth Playground, select at least one of: ' +
             'Google Calendar API v3, Tasks API v1, or Gmail API v1 (for bus tracking), then authorize again.',
         },
         { status: 400 },
@@ -247,7 +247,7 @@ export async function POST(request: NextRequest) {
     if (err instanceof EncryptionKeyError) {
       logError('google/manual-token failed: encryption key invalid', err.message);
       return NextResponse.json(
-        { error: 'encryption_key_invalid', message: `Prism's encryption key is not configured correctly, so it cannot store the credentials. This is not a problem with your token. ${err.message}` },
+        { error: 'encryption_key_invalid', message: `KYST's encryption key is not configured correctly, so it cannot store the credentials. This is not a problem with your token. ${err.message}` },
         { status: 500 },
       );
     }
@@ -262,7 +262,7 @@ export async function POST(request: NextRequest) {
       {
         error: 'internal_error',
         message:
-          'Something went wrong on the Prism side while connecting, so this is not a problem with your token. Check the Prism logs for a line mentioning "google/manual-token" and include it if you report this.',
+          'Something went wrong on the KYST side while connecting, so this is not a problem with your token. Check the KYST logs for a line mentioning "google/manual-token" and include it if you report this.',
       },
       { status: 500 },
     );

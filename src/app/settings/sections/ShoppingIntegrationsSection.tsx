@@ -78,7 +78,7 @@ export function ShoppingIntegrationsSection({
 
       <EntityListCard
         title="Shopping Lists"
-        description="Connect your Prism shopping lists to Microsoft To-Do"
+        description="Connect your KYST shopping lists to Microsoft To-Do"
         entities={shoppingLists}
         loading={listsLoading}
         emptyText="No shopping lists yet. Create one from the Shopping page."

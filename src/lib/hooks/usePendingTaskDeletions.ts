@@ -63,7 +63,7 @@ export function usePendingTaskDeletions() {
         const body = await res.json().catch(() => null);
         return { ok: false, reason: body?.error || 'Could not apply that. Please try again.' };
       } catch {
-        return { ok: false, reason: 'Could not reach Prism. Please try again.' };
+        return { ok: false, reason: 'Could not reach KYST. Please try again.' };
       }
     },
     [refresh],

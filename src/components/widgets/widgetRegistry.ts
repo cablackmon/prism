@@ -38,6 +38,25 @@ export interface WidgetRegistryEntry {
   hasGrid?: boolean;
 }
 
+export const WIDGET_TYPES = [
+  'clock',
+  'weather',
+  'calendar',
+  'tasks',
+  'messages',
+  'chores',
+  'shopping',
+  'meals',
+  'birthdays',
+  'photos',
+  'points',
+  'wishes',
+  'busTracking',
+  'travel',
+] as const;
+
+export type WidgetType = (typeof WIDGET_TYPES)[number];
+
 export const WIDGET_REGISTRY: Record<string, WidgetRegistryEntry> = {
   clock: {
     component: ClockWidget,
@@ -167,6 +186,37 @@ export const WIDGET_REGISTRY: Record<string, WidgetRegistryEntry> = {
     defaultH: 12,
   },
 };
+
+export type WidgetPageRoute = `/${string}`;
+
+/**
+ * Full-function page opened by a dashboard widget's double-tap gesture.
+ *
+ * A null entry is intentional: that widget has no equivalent full page. Keep
+ * this map exhaustive so adding a widget requires an explicit navigation
+ * decision instead of silently reviving the retired magnify behavior.
+ */
+export const WIDGET_ROUTE_MAP = {
+  clock: null,
+  weather: null,
+  calendar: '/calendar',
+  tasks: '/tasks',
+  messages: '/messages',
+  chores: '/chores',
+  shopping: '/shopping',
+  meals: '/meals',
+  birthdays: '/calendar',
+  photos: '/photos',
+  points: '/goals',
+  wishes: '/wishes',
+  busTracking: null,
+  travel: '/travel',
+} as const satisfies Record<WidgetType, WidgetPageRoute | null>;
+
+export function getWidgetRoute(widgetId: string): WidgetPageRoute | null {
+  if (!(widgetId in WIDGET_ROUTE_MAP)) return null;
+  return WIDGET_ROUTE_MAP[widgetId as WidgetType];
+}
 
 export const ALL_WIDGET_TYPES = Object.keys(WIDGET_REGISTRY);
 

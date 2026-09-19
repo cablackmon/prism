@@ -5,7 +5,7 @@ import { eq } from 'drizzle-orm';
 import { SetupWizard } from './SetupWizard';
 
 export const metadata = {
-  title: 'Setup — Prism',
+  title: 'Setup — KYST',
 };
 
 export default async function SetupPage() {
