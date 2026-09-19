@@ -1,29 +1,25 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 
-const {
-  READY_FRAME,
-  TicketRefreshController,
-  VOICE_URL,
-  VoiceStreamClient,
-} = require('../../../../public/voice-streaming.js') as {
-  READY_FRAME: Record<string, unknown>;
-  TicketRefreshController: new (options: Record<string, unknown>) => {
-    attempts: number;
-    request(options?: { retry?: boolean; preserveCompletedPlayback?: boolean }): boolean;
-    received(requestId: string): boolean;
-    reset(): void;
-    takePreserveCompletedPlayback(): boolean;
+const { READY_FRAME, TicketRefreshController, VOICE_URL, VoiceStreamClient } =
+  require('../../../../public/voice-streaming.js') as {
+    READY_FRAME: Record<string, unknown>;
+    TicketRefreshController: new (options: Record<string, unknown>) => {
+      attempts: number;
+      request(options?: { retry?: boolean; preserveCompletedPlayback?: boolean }): boolean;
+      received(requestId: string): boolean;
+      reset(options?: { preserveCompletedPlayback?: boolean }): void;
+      takePreserveCompletedPlayback(): boolean;
+    };
+    VOICE_URL: string;
+    VoiceStreamClient: new (options: Record<string, unknown>) => {
+      ready: boolean;
+      connect(
+        config: { url: string; token: string },
+        options?: { preserveCompletedPlayback?: boolean }
+      ): void;
+      begin(input: { requestId: string }): boolean;
+    };
   };
-  VOICE_URL: string;
-  VoiceStreamClient: new (options: Record<string, unknown>) => {
-    ready: boolean;
-    connect(
-      config: { url: string; token: string },
-      options?: { preserveCompletedPlayback?: boolean }
-    ): void;
-    begin(input: { requestId: string }): boolean;
-  };
-};
 
 class FakeSocket {
   static readonly OPEN = 1;
@@ -58,6 +54,11 @@ class FakeSocket {
   }
 }
 
+function required<T>(value: T | undefined, label: string): T {
+  if (value === undefined) throw new Error(`missing test fixture: ${label}`);
+  return value;
+}
+
 describe('wall VoiceStreamClient first-frame contract', () => {
   beforeEach(() => {
     FakeSocket.instances.length = 0;
@@ -70,7 +71,7 @@ describe('wall VoiceStreamClient first-frame contract', () => {
       onEvent: (event: { type: string }) => events.push(event),
     });
     client.connect({ url: VOICE_URL, token: 'opaque-ticket' });
-    const socket = FakeSocket.instances[0];
+    const socket = required(FakeSocket.instances[0], 'initial socket');
     socket.emit('open');
     socket.emit('message', JSON.stringify(READY_FRAME));
 
@@ -94,7 +95,7 @@ describe('wall VoiceStreamClient first-frame contract', () => {
       onEvent: (event: { type: string; reason?: string }) => events.push(event),
     });
     client.connect({ url: VOICE_URL, token: 'opaque-ticket' });
-    const socket = FakeSocket.instances[0];
+    const socket = required(FakeSocket.instances[0], 'rejected socket');
     socket.emit('open');
     socket.emit('message', frame);
 
@@ -109,7 +110,43 @@ describe('wall VoiceStreamClient first-frame contract', () => {
     ]);
   });
 
-  it('closes on ready timeout and never reuses the single-use ticket', () => {
+  it('starts a fresh ready timeout after the handshake and never reuses the ticket', () => {
+    const timers: Array<{ handler: () => void; delay: number; cleared: boolean }> = [];
+    const events: Array<{ type: string; reason?: string }> = [];
+    const client = new VoiceStreamClient({
+      WebSocketClass: FakeSocket,
+      setTimer: (handler: () => void, delay: number) => {
+        timers.push({ handler, delay, cleared: false });
+        return timers.length;
+      },
+      clearTimer: (timer: number | null) => {
+        if (timer) required(timers[timer - 1], 'cleared timer').cleared = true;
+      },
+      onEvent: (event: { type: string; reason?: string }) => events.push(event),
+    });
+    client.connect({ url: VOICE_URL, token: 'single-use-ticket' });
+    const socket = required(FakeSocket.instances[0], 'timed-out socket');
+    expect(required(timers[0], 'connection timer')).toMatchObject({ delay: 3_000, cleared: false });
+    socket.emit('open');
+    expect(required(timers[0], 'connection timer').cleared).toBe(true);
+    expect(required(timers[1], 'fresh ready timer')).toMatchObject({
+      delay: 3_000,
+      cleared: false,
+    });
+    required(timers[1], 'fresh ready timer').handler();
+
+    expect(socket.closed).toEqual([4000, 'ready_timeout']);
+    expect(events).toEqual([
+      {
+        type: 'stream.unavailable',
+        reason: 'ready_timeout',
+        preserveCompletedPlayback: false,
+      },
+    ]);
+    expect(FakeSocket.instances).toHaveLength(1);
+  });
+
+  it('closes when the socket handshake never opens', () => {
     const timers: Array<() => void> = [];
     const events: Array<{ type: string; reason?: string }> = [];
     const client = new VoiceStreamClient({
@@ -122,15 +159,14 @@ describe('wall VoiceStreamClient first-frame contract', () => {
       onEvent: (event: { type: string; reason?: string }) => events.push(event),
     });
     client.connect({ url: VOICE_URL, token: 'single-use-ticket' });
-    const socket = FakeSocket.instances[0];
-    socket.emit('open');
-    timers[0]();
+    const socket = required(FakeSocket.instances[0], 'connecting socket');
+    required(timers[0], 'connection timer')();
 
-    expect(socket.closed).toEqual([4000, 'ready_timeout']);
+    expect(socket.closed).toEqual([4000, 'connect_timeout']);
     expect(events).toEqual([
       {
         type: 'stream.unavailable',
-        reason: 'ready_timeout',
+        reason: 'connect_timeout',
         preserveCompletedPlayback: false,
       },
     ]);
@@ -144,7 +180,7 @@ describe('wall VoiceStreamClient first-frame contract', () => {
       onEvent: (event: { type: string; reason?: string }) => events.push(event),
     });
     client.connect({ url: VOICE_URL, token: 'single-use-ticket' });
-    const socket = FakeSocket.instances[0];
+    const socket = required(FakeSocket.instances[0], 'closed socket');
     socket.emit('open');
     socket.emit('close');
 
@@ -166,7 +202,7 @@ describe('wall VoiceStreamClient first-frame contract', () => {
       onEvent: (event: Record<string, unknown>) => events.push(event),
     });
     client.connect({ url: VOICE_URL, token: 'opaque-ticket' });
-    const socket = FakeSocket.instances[0];
+    const socket = required(FakeSocket.instances[0], 'completed socket');
     socket.emit('open');
     socket.emit('message', JSON.stringify(READY_FRAME));
     client.begin({ requestId: 'completed-turn' });
@@ -183,11 +219,8 @@ describe('wall VoiceStreamClient first-frame contract', () => {
       preserveCompletedPlayback: true,
     });
 
-    client.connect(
-      { url: VOICE_URL, token: 'fresh-ticket' },
-      { preserveCompletedPlayback: true }
-    );
-    const replacement = FakeSocket.instances[1];
+    client.connect({ url: VOICE_URL, token: 'fresh-ticket' }, { preserveCompletedPlayback: true });
+    const replacement = required(FakeSocket.instances[1], 'replacement socket');
     replacement.emit('open');
     replacement.emit('close');
     expect(events.at(-1)).toEqual({
@@ -215,12 +248,12 @@ describe('wall ticket refresh policy', () => {
     expect(requests).toHaveLength(1);
     expect(refresh.received(requests.at(-1)!)).toBe(true);
     expect(refresh.request({ retry: true })).toBe(true);
-    expect(timers[1].delay).toBe(500);
-    timers[1].handler();
+    expect(required(timers[1], 'first backoff').delay).toBe(500);
+    required(timers[1], 'first backoff').handler();
     expect(refresh.received(requests.at(-1)!)).toBe(true);
     expect(refresh.request({ retry: true })).toBe(true);
-    expect(timers[3].delay).toBe(1_000);
-    timers[3].handler();
+    expect(required(timers[3], 'second backoff').delay).toBe(1_000);
+    required(timers[3], 'second backoff').handler();
     expect(refresh.received(requests.at(-1)!)).toBe(true);
     expect(refresh.request({ retry: true })).toBe(false);
     expect(requests).toHaveLength(3);
@@ -242,14 +275,14 @@ describe('wall ticket refresh policy', () => {
     });
 
     refresh.request();
-    expect(timers[0].delay).toBe(3_000);
-    timers[0].handler();
-    expect(timers[1].delay).toBe(500);
-    timers[1].handler();
-    timers[2].handler();
-    expect(timers[3].delay).toBe(1_000);
-    timers[3].handler();
-    timers[4].handler();
+    expect(required(timers[0], 'first response timeout').delay).toBe(3_000);
+    required(timers[0], 'first response timeout').handler();
+    expect(required(timers[1], 'first retry delay').delay).toBe(500);
+    required(timers[1], 'first retry delay').handler();
+    required(timers[2], 'second response timeout').handler();
+    expect(required(timers[3], 'second retry delay').delay).toBe(1_000);
+    required(timers[3], 'second retry delay').handler();
+    required(timers[4], 'third response timeout').handler();
 
     expect(requests).toHaveLength(3);
     expect(exhausted).toHaveBeenCalledTimes(1);
@@ -268,10 +301,10 @@ describe('wall ticket refresh policy', () => {
     });
 
     refresh.request();
-    const expiredRequestId = requests[0];
-    timers[0].handler();
-    timers[1].handler();
-    const currentRequestId = requests[1];
+    const expiredRequestId = required(requests[0], 'expired request id');
+    required(timers[0], 'expired request timeout').handler();
+    required(timers[1], 'replacement request delay').handler();
+    const currentRequestId = required(requests[1], 'current request id');
 
     expect(refresh.received(currentRequestId)).toBe(true);
     expect(refresh.received(expiredRequestId)).toBe(false);
@@ -286,6 +319,10 @@ describe('wall ticket refresh policy', () => {
     });
     refresh.request();
     refresh.received(requestId);
+    refresh.request({ retry: true, preserveCompletedPlayback: true });
+
+    refresh.reset({ preserveCompletedPlayback: true });
+    expect(refresh.takePreserveCompletedPlayback()).toBe(true);
     refresh.request({ retry: true, preserveCompletedPlayback: true });
 
     expect(refresh.takePreserveCompletedPlayback()).toBe(true);

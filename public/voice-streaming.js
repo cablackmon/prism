@@ -28,8 +28,8 @@
   class TicketRefreshController {
     constructor(options = {}) {
       this.onRequest = options.onRequest || (() => {});
-      this.setTimer = options.setTimer || globalThis.setTimeout;
-      this.clearTimer = options.clearTimer || globalThis.clearTimeout;
+      this.setTimer = options.setTimer || ((callback, delay) => globalThis.setTimeout(callback, delay));
+      this.clearTimer = options.clearTimer || ((timer) => globalThis.clearTimeout(timer));
       this.maxAttempts = options.maxAttempts || 3;
       this.baseDelayMs = options.baseDelayMs || 500;
       this.responseTimeoutMs = options.responseTimeoutMs || 3000;
@@ -84,7 +84,7 @@
       return true;
     }
 
-    reset() {
+    reset({ preserveCompletedPlayback = false } = {}) {
       if (this.retryTimer) this.clearTimer(this.retryTimer);
       if (this.responseTimer) this.clearTimer(this.responseTimer);
       this.retryTimer = null;
@@ -92,7 +92,7 @@
       this.pending = false;
       this.pendingRequestId = null;
       this.attempts = 0;
-      this.preserveCompletedPlayback = false;
+      if (!preserveCompletedPlayback) this.preserveCompletedPlayback = false;
     }
 
     takePreserveCompletedPlayback() {
@@ -129,8 +129,8 @@
   class VoiceStreamClient {
     constructor(options = {}) {
       this.WebSocketClass = options.WebSocketClass || globalThis.WebSocket;
-      this.setTimer = options.setTimer || globalThis.setTimeout;
-      this.clearTimer = options.clearTimer || globalThis.clearTimeout;
+      this.setTimer = options.setTimer || ((callback, delay) => globalThis.setTimeout(callback, delay));
+      this.clearTimer = options.clearTimer || ((timer) => globalThis.clearTimeout(timer));
       this.now = options.now || (() => Date.now());
       this.onEvent = options.onEvent || (() => {});
       this.onFallback = options.onFallback || (() => {});
@@ -141,6 +141,7 @@
       this.activeRequest = null;
       this.audioFormat = null;
       this.audioRequestId = null;
+      this.connectTimer = null;
       this.readyTimer = null;
       this.audioTimer = null;
     }
@@ -158,14 +159,23 @@
       this.token = token;
       const socket = new this.WebSocketClass(url);
       socket.binaryType = "arraybuffer";
+      this.connectTimer = this.setTimer(() => {
+        if (this.socket !== socket || socket.readyState === this.WebSocketClass.OPEN) return;
+        this.failConnection("connect_timeout");
+        this.socket = null;
+        if (socket.readyState < this.WebSocketClass.CLOSING) socket.close(4000, "connect_timeout");
+      }, 3000);
       socket.addEventListener("open", () => {
-        socket.send(JSON.stringify({ type: "auth", token }));
+        if (this.socket !== socket) return;
+        this.clearTimer(this.connectTimer);
+        this.connectTimer = null;
         this.readyTimer = this.setTimer(() => {
-          if (this.socket !== socket) return;
+          if (this.socket !== socket || this.authenticated) return;
           this.failConnection("ready_timeout");
           this.socket = null;
           if (socket.readyState < this.WebSocketClass.CLOSING) socket.close(4000, "ready_timeout");
         }, 3000);
+        socket.send(JSON.stringify({ type: "auth", token }));
       });
       socket.addEventListener("message", (event) => {
         if (this.socket === socket) this.handleMessage(event.data);
@@ -192,7 +202,10 @@
 
     disconnect(reason = "disconnect", { preserveCompletedPlayback = false } = {}) {
       if (!(preserveCompletedPlayback && this.activeRequest?.complete)) this.cancel(reason);
+      this.clearTimer(this.connectTimer);
       this.clearTimer(this.readyTimer);
+      this.connectTimer = null;
+      this.readyTimer = null;
       const socket = this.socket;
       this.socket = null;
       this.authenticated = false;
@@ -279,6 +292,7 @@
       if (message.type === "ready") {
         if (!isReadyFrame(message) || this.authenticated) return this.failReadyContract();
         this.clearTimer(this.readyTimer);
+        this.readyTimer = null;
         this.authenticated = true;
         this.onEvent(message);
       } else if (message.type === "audio.start" && this.matchesActive(message)) {
@@ -333,7 +347,10 @@
     }
 
     failConnection(reason) {
+      this.clearTimer(this.connectTimer);
       this.clearTimer(this.readyTimer);
+      this.connectTimer = null;
+      this.readyTimer = null;
       this.authenticated = false;
       if (!this.activeRequest?.complete) this.failActive(reason);
       this.onEvent({
