@@ -110,22 +110,30 @@ describe('wall VoiceStreamClient first-frame contract', () => {
     ]);
   });
 
-  it('closes on ready timeout and never reuses the single-use ticket', () => {
-    const timers: Array<() => void> = [];
+  it('starts a fresh ready timeout after the handshake and never reuses the ticket', () => {
+    const timers: Array<{ handler: () => void; delay: number; cleared: boolean }> = [];
     const events: Array<{ type: string; reason?: string }> = [];
     const client = new VoiceStreamClient({
       WebSocketClass: FakeSocket,
-      setTimer: (handler: () => void) => {
-        timers.push(handler);
+      setTimer: (handler: () => void, delay: number) => {
+        timers.push({ handler, delay, cleared: false });
         return timers.length;
       },
-      clearTimer: () => undefined,
+      clearTimer: (timer: number | null) => {
+        if (timer) required(timers[timer - 1], 'cleared timer').cleared = true;
+      },
       onEvent: (event: { type: string; reason?: string }) => events.push(event),
     });
     client.connect({ url: VOICE_URL, token: 'single-use-ticket' });
     const socket = required(FakeSocket.instances[0], 'timed-out socket');
+    expect(required(timers[0], 'connection timer')).toMatchObject({ delay: 3_000, cleared: false });
     socket.emit('open');
-    required(timers[0], 'ready timer')();
+    expect(required(timers[0], 'connection timer').cleared).toBe(true);
+    expect(required(timers[1], 'fresh ready timer')).toMatchObject({
+      delay: 3_000,
+      cleared: false,
+    });
+    required(timers[1], 'fresh ready timer').handler();
 
     expect(socket.closed).toEqual([4000, 'ready_timeout']);
     expect(events).toEqual([

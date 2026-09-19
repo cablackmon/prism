@@ -18,13 +18,14 @@ type LifecycleOptions = {
   clientAsset?: 'ok' | 'failed';
   bridgeAsset?: 'ok' | 'failed' | 'failed-once' | 'failed-after-first';
   bridgeLoadDelayMs?: number;
+  holdRecoveryBridge?: boolean;
   suppressInitialBridgeReady?: boolean;
   automaticSocketReady?: boolean;
   fakeCapture?: boolean;
 };
 
 type SafeEvent = {
-  kind: 'console' | 'pageerror' | 'requestfailed' | 'framenavigated' | 'state';
+  kind: 'console' | 'fixture' | 'pageerror' | 'requestfailed' | 'framenavigated' | 'state';
   value: string;
 };
 
@@ -33,17 +34,30 @@ function safeUrl(value: string): string {
   return `${url.origin}${url.pathname}`;
 }
 
-function bridgeFixture({ suppressInitialBridgeReady = false } = {}): string {
+function bridgeFixture({ suppressInitialBridgeReady = false, holdReady = false } = {}): string {
   return `(() => {
     const parentOrigin = ${JSON.stringify(BOARD)};
+    let holdReady = ${JSON.stringify(holdReady)};
     const announceReady = () => window.parent.postMessage(
       { type: 'kyst-voice-bridge-ready' }, parentOrigin
     );
-    ${suppressInitialBridgeReady ? '' : 'announceReady();'}
+    ${suppressInitialBridgeReady ? '' : 'if (!holdReady) announceReady();'}
+    window.__releaseKystVoiceBridge = () => {
+      holdReady = false;
+      announceReady();
+    };
+    if (holdReady) console.info('NOX_TEST_BRIDGE_HELD');
     window.addEventListener('message', async (event) => {
       if (event.origin !== parentOrigin || event.source !== window.parent) return;
       const message = event.data || {};
-      if (message.type === 'kyst-voice-ping') return announceReady();
+      if (message.type === 'fixture-release-bridge') {
+        window.__releaseKystVoiceBridge();
+        return;
+      }
+      if (message.type === 'kyst-voice-ping') {
+        if (!holdReady) announceReady();
+        return;
+      }
       if (message.type === 'kyst-voice-ask') {
         const requestId = String(message.requestId || '');
         if (!requestId) return;
@@ -98,7 +112,10 @@ async function installLifecycle(
   socketRoutes: () => number;
   ticketRequests: () => number;
   batchRequests: () => number;
+  bootstrapRequests: () => number;
   bridgeRequests: () => number;
+  releaseRecoveryBridge: () => Promise<void>;
+  failActiveStream: () => void;
   closeSocket: () => Promise<void>;
 }> {
   const events: SafeEvent[] = [];
@@ -107,9 +124,11 @@ async function installLifecycle(
   const bridge = bridgeFixture(options);
   let ticketRequestCount = 0;
   let batchRequestCount = 0;
+  let bootstrapRequestCount = 0;
   let bridgeRequestCount = 0;
   let proxyBootstrapSeen = false;
   let socketRoute: WebSocketRoute | null = null;
+  let activeSocketRequestId = '';
   let socketAuthenticationCount = 0;
   let socketRouteCount = 0;
 
@@ -117,6 +136,8 @@ async function installLifecycle(
     const text = message.text();
     if (text.startsWith('NOX_VOICE_STATE ')) {
       events.push({ kind: 'state', value: text.slice('NOX_VOICE_STATE '.length) });
+    } else if (text === 'NOX_TEST_BRIDGE_HELD') {
+      events.push({ kind: 'fixture', value: text });
     } else if (message.type() === 'error' || message.type() === 'warning') {
       events.push({ kind: 'console', value: `${message.type()}:${text}` });
     }
@@ -207,11 +228,14 @@ async function installLifecycle(
     socketRoute = route;
     route.onMessage((message) => {
       if (typeof message !== 'string') return;
-      const parsed = JSON.parse(message) as { type?: string; token?: string };
-      if (parsed.type !== 'auth' || parsed.token !== 'fixture-ticket') return;
-      socketAuthenticationCount += 1;
-      if (options.automaticSocketReady !== false) {
-        route.send(JSON.stringify(READY_FRAME));
+      const parsed = JSON.parse(message) as { type?: string; token?: string; requestId?: string };
+      if (parsed.type === 'auth' && parsed.token === 'fixture-ticket') {
+        socketAuthenticationCount += 1;
+        if (options.automaticSocketReady !== false) {
+          route.send(JSON.stringify(READY_FRAME));
+        }
+      } else if (parsed.type === 'start' && parsed.requestId) {
+        activeSocketRequestId = parsed.requestId;
       }
     });
   });
@@ -252,6 +276,7 @@ async function installLifecycle(
   await page.route(`${PROXY}/**`, async (route) => {
     const url = new URL(route.request().url());
     if (url.pathname === '/bootstrap') {
+      bootstrapRequestCount += 1;
       proxyBootstrapSeen = true;
       await route.fulfill({
         status: 200,
@@ -296,7 +321,18 @@ async function installLifecycle(
       ) {
         await route.abort('failed');
       } else {
-        await route.fulfill({ status: 200, contentType: 'application/javascript', body: bridge });
+        const bridgeSource =
+          options.holdRecoveryBridge && bridgeRequestCount > 1
+            ? bridgeFixture({
+                suppressInitialBridgeReady: options.suppressInitialBridgeReady,
+                holdReady: true,
+              })
+            : bridge;
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/javascript',
+          body: bridgeSource,
+        });
       }
       return;
     }
@@ -331,7 +367,21 @@ async function installLifecycle(
     socketRoutes: () => socketRouteCount,
     ticketRequests: () => ticketRequestCount,
     batchRequests: () => batchRequestCount,
+    bootstrapRequests: () => bootstrapRequestCount,
     bridgeRequests: () => bridgeRequestCount,
+    releaseRecoveryBridge: async () => {
+      await page.locator('#board-frame').evaluate((frame: HTMLIFrameElement, origin) => {
+        frame.contentWindow?.postMessage({ type: 'fixture-release-bridge' }, origin);
+      }, PROXY);
+    },
+    failActiveStream: () => {
+      if (!socketRoute || !activeSocketRequestId) {
+        throw new Error('active page-owned stream is not available');
+      }
+      socketRoute.send(
+        JSON.stringify({ type: 'fallback', requestId: activeSocketRequestId, reason: 'fixture' })
+      );
+    },
     closeSocket: async () => {
       if (!socketRoute) throw new Error('page-owned WebSocket has not connected');
       await socketRoute.close({ code: 1012, reason: 'fixture_close' });
@@ -505,6 +555,37 @@ test.describe('wall parent + proxy iframe voice lifecycle', () => {
     await recordSafeEvents(lifecycle.events, 'fixed-listening-recovery-events');
   });
 
+  test('queues batch fallback until the recovering iframe bridge is ready', async ({ page }) => {
+    const lifecycle = await installLifecycle(page, {
+      fakeCapture: true,
+      holdRecoveryBridge: true,
+    });
+    await page.goto(`${BOARD}/api/household-auth/device?token=fixture`);
+    await expect(page.locator('#voice-status')).toHaveText('Tap to ask NOX', { timeout: 5_000 });
+    await page.locator('#start').click();
+
+    await page.locator('#board-frame').evaluate((frame: HTMLIFrameElement, proxy) => {
+      frame.src = `${proxy}/?fixture-hold-bridge=1`;
+    }, PROXY);
+    await expect.poll(() => lifecycle.events.some((event) => event.kind === 'fixture')).toBe(true);
+    await expect(page.locator('#voice-status')).toHaveText('Connecting to NOX…', {
+      timeout: 2_000,
+    });
+
+    await page.locator('#mic').click();
+    await expect(page.locator('#voice-status')).toHaveText('Listening… tap to stop');
+    lifecycle.failActiveStream();
+    await page.waitForTimeout(100);
+    await page.locator('#mic').evaluate((button: HTMLButtonElement) => button.click());
+    await expect(page.locator('#voice-status')).toHaveText('NOX is thinking…');
+
+    expect(lifecycle.batchRequests()).toBe(0);
+    await lifecycle.releaseRecoveryBridge();
+    await expect.poll(lifecycle.batchRequests, { timeout: 5_000 }).toBe(1);
+    await expect(page.locator('#voice-status')).not.toHaveText('NOX is thinking…');
+    await recordSafeEvents(lifecycle.events, 'fixed-queued-fallback-events');
+  });
+
   test('a failed client asset reaches a bounded reload-to-retry state instead of loading forever', async ({
     page,
   }) => {
@@ -562,6 +643,36 @@ test.describe('wall parent + proxy iframe voice lifecycle', () => {
       ).length
     ).toBeGreaterThanOrEqual(2);
     await recordSafeEvents(lifecycle.events, 'fixed-bridge-retry-events');
+  });
+
+  test('does not replay an expired bootstrap handoff while retrying the bridge', async ({
+    page,
+  }) => {
+    const lifecycle = await installLifecycle(page, { bridgeAsset: 'failed' });
+    await page.goto(`${BOARD}/api/household-auth/device?token=fixture`);
+    await expect(page.locator('#voice-status')).toHaveText(
+      'NOX voice is unavailable. Tap to retry.',
+      { timeout: 7_000 }
+    );
+    expect(lifecycle.bootstrapRequests()).toBe(1);
+
+    await page.evaluate(() => {
+      const future = Date.now() + 61_000;
+      Date.now = () => future;
+    });
+    await page.locator('#start').click();
+    await page.locator('#mic').click();
+
+    await expect
+      .poll(
+        () =>
+          lifecycle.events.filter(
+            (event) => event.kind === 'framenavigated' && event.value === `${PROXY}/`
+          ).length
+      )
+      .toBeGreaterThanOrEqual(2);
+    expect(lifecycle.bootstrapRequests()).toBe(1);
+    await recordSafeEvents(lifecycle.events, 'fixed-expired-handoff-events');
   });
 
   test('a socket that never accepts the ready contract reaches a bounded tap-to-retry state', async ({
