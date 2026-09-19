@@ -320,6 +320,7 @@ test.describe('wall parent + proxy iframe voice lifecycle', () => {
     await recordSafeEvents(lifecycle.events, 'fixed-client-unavailable-events');
 
     await page.locator('#start').click();
+    await expect(page.locator('#start')).toBeHidden();
     await captureEvidence(page, 'fixed-desktop-client-unavailable');
   });
 
