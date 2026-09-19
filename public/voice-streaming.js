@@ -84,7 +84,7 @@
       return true;
     }
 
-    reset() {
+    reset({ preserveCompletedPlayback = false } = {}) {
       if (this.retryTimer) this.clearTimer(this.retryTimer);
       if (this.responseTimer) this.clearTimer(this.responseTimer);
       this.retryTimer = null;
@@ -92,7 +92,7 @@
       this.pending = false;
       this.pendingRequestId = null;
       this.attempts = 0;
-      this.preserveCompletedPlayback = false;
+      if (!preserveCompletedPlayback) this.preserveCompletedPlayback = false;
     }
 
     takePreserveCompletedPlayback() {

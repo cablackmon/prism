@@ -170,6 +170,7 @@ document.addEventListener("visibilitychange", () => {
 const boardFrame = document.querySelector("iframe");
 const proxyOrigin = "https://kyst-wall-proxy.fly.dev";
 const proxyRoot = proxyOrigin + "/";
+let handoffBootstrapPending = boardFrame.src.startsWith(`${proxyOrigin}/bootstrap?handoff=`);
 function notifyBoardActivity() {
   boardFrame.contentWindow?.postMessage({ type:"kyst-user-activity" }, proxyOrigin);
 }
@@ -359,7 +360,7 @@ const streamClient = new KystVoiceStreaming.VoiceStreamClient({
     }
     if (message.type === "stream.unavailable" || message.type === "stream.closed") {
       if (bridgeReady) {
-        if (!recorder) setVoiceState("thinking", "Reconnecting to NOX…");
+        if (!recorder && !activeRequestId) setVoiceState("thinking", "Reconnecting to NOX…");
         requestStreamConfig({
           retry:true,
           preserveCompletedPlayback:message.preserveCompletedPlayback === true,
@@ -638,11 +639,11 @@ function watchForSilence(stream, onPcm) {
 
 async function beginRecording() {
   setChatOpen(true);
-  if (!bridgeReady) {
+  if (!bridgeReady && !streamClient.ready) {
     if (bridgeProbeExhausted) {
       bridgeProbeExhausted = false;
       setVoiceState("thinking", "Reconnecting to NOX…");
-      boardFrame.src = proxyRoot;
+      boardFrame.src = handoffBootstrapPending ? boardFrame.src : proxyRoot;
       return;
     }
     startBridgeProbe({ retry:true });
@@ -750,13 +751,14 @@ window.addEventListener("message", async (event) => {
   if (message.type === "kyst-voice-bridge-ready") {
     if (bridgeReady) return;
     bridgeReady = true;
+    handoffBootstrapPending = false;
     bridgeProbeExhausted = false;
     stopBridgeProbe();
     if (streamClient.ready) {
       if (!recorder && !activeRequestId) setVoiceState("ready", "Tap to ask NOX");
       return;
     }
-    streamConfigRefresh.reset();
+    streamConfigRefresh.reset({ preserveCompletedPlayback:true });
     if (!recorder && !activeRequestId) setVoiceState("thinking", "Connecting to NOX…");
     requestStreamConfig();
     return;
@@ -845,7 +847,7 @@ function startBridgeProbe({ retry = false } = {}) {
 }
 boardFrame.addEventListener("load", () => {
   bridgeProbeExhausted = false;
-  streamConfigRefresh.reset();
+  streamConfigRefresh.reset({ preserveCompletedPlayback:true });
   startBridgeProbe();
 });
 startBridgeProbe();

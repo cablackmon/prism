@@ -443,6 +443,30 @@ test.describe('wall parent + proxy iframe voice lifecycle', () => {
     await recordSafeEvents(lifecycle.events, 'fixed-active-bridge-exhaustion-events');
   });
 
+  test('starts a new turn on an authenticated socket while the iframe bridge recovers', async ({
+    page,
+  }) => {
+    const lifecycle = await installLifecycle(page, {
+      fakeCapture: true,
+      bridgeAsset: 'failed-after-first',
+    });
+    await page.goto(`${BOARD}/api/household-auth/device?token=fixture`);
+    await expect(page.locator('#voice-status')).toHaveText('Tap to ask NOX');
+    await page.locator('#start').click();
+
+    await page.locator('#board-frame').evaluate((frame: HTMLIFrameElement, proxy) => {
+      frame.src = `${proxy}/?fixture-bridge-recovery=1`;
+    }, PROXY);
+    await expect.poll(lifecycle.bridgeRequests).toBe(2);
+    await page.locator('#mic').click();
+
+    await expect(page.locator('#voice-status')).toHaveText('Listening… tap to stop');
+    await expect(page.locator('#mic')).toHaveAttribute('aria-label', 'Stop recording');
+    expect(lifecycle.socketRoutes()).toBe(1);
+    await page.locator('#mic').click();
+    await recordSafeEvents(lifecycle.events, 'fixed-stream-during-bridge-recovery-events');
+  });
+
   test('records through the batch fallback while the streaming socket is unavailable', async ({
     page,
   }) => {
@@ -532,6 +556,11 @@ test.describe('wall parent + proxy iframe voice lifecycle', () => {
     await page.locator('#mic').click();
     await expect(page.locator('#voice-status')).toHaveText('Tap to ask NOX', { timeout: 5_000 });
     expect(lifecycle.bridgeRequests()).toBe(2);
+    expect(
+      lifecycle.events.filter(
+        (event) => event.kind === 'framenavigated' && event.value === `${PROXY}/bootstrap`
+      ).length
+    ).toBeGreaterThanOrEqual(2);
     await recordSafeEvents(lifecycle.events, 'fixed-bridge-retry-events');
   });
 

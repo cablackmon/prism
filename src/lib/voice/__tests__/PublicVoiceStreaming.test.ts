@@ -7,7 +7,7 @@ const { READY_FRAME, TicketRefreshController, VOICE_URL, VoiceStreamClient } =
       attempts: number;
       request(options?: { retry?: boolean; preserveCompletedPlayback?: boolean }): boolean;
       received(requestId: string): boolean;
-      reset(): void;
+      reset(options?: { preserveCompletedPlayback?: boolean }): void;
       takePreserveCompletedPlayback(): boolean;
     };
     VOICE_URL: string;
@@ -311,6 +311,10 @@ describe('wall ticket refresh policy', () => {
     });
     refresh.request();
     refresh.received(requestId);
+    refresh.request({ retry: true, preserveCompletedPlayback: true });
+
+    refresh.reset({ preserveCompletedPlayback: true });
+    expect(refresh.takePreserveCompletedPlayback()).toBe(true);
     refresh.request({ retry: true, preserveCompletedPlayback: true });
 
     expect(refresh.takePreserveCompletedPlayback()).toBe(true);
