@@ -1,6 +1,7 @@
 import {
   KystVoiceStreamClient,
   pcm16FromFloat32,
+  VOICE_READY_FRAME,
   VOICE_SOCKET_URL,
   type VoiceSocket,
 } from '../KystVoiceStreamClient';
@@ -47,7 +48,7 @@ describe('KystVoiceStreamClient', () => {
     await new Promise((resolve) => setImmediate(resolve));
     socket.emit('open');
     expect(JSON.parse(socket.sent[0] as string)).toEqual({ type: 'auth', token: 'signed-ticket' });
-    socket.emit('message', JSON.stringify({ type: 'ready', contract: 1 }));
+    socket.emit('message', JSON.stringify(VOICE_READY_FRAME));
     await connection;
 
     expect(client.startTurn('request-1')).toBe(true);
@@ -92,7 +93,7 @@ describe('KystVoiceStreamClient', () => {
     const connection = client.connect();
     await new Promise((resolve) => setImmediate(resolve));
     socket.emit('open');
-    socket.emit('message', JSON.stringify({ type: 'ready' }));
+    socket.emit('message', JSON.stringify(VOICE_READY_FRAME));
     await connection;
     client.startTurn('request-action');
 
@@ -118,7 +119,7 @@ describe('KystVoiceStreamClient', () => {
     const connection = client.connect();
     await new Promise((resolve) => setImmediate(resolve));
     socket.emit('open');
-    socket.emit('message', JSON.stringify({ type: 'ready' }));
+    socket.emit('message', JSON.stringify(VOICE_READY_FRAME));
     await connection;
 
     const requestId = 'AAAAAAAA-BBBB-4CCC-8DDD-EEEEEEEEEEEE';
@@ -143,6 +144,63 @@ describe('KystVoiceStreamClient', () => {
     expect(createSocket).not.toHaveBeenCalled();
   });
 
+  it.each([
+    ['incomplete', JSON.stringify({ type: 'ready' })],
+    ['extra-field', JSON.stringify({ ...VOICE_READY_FRAME, extra: true })],
+    ['malformed', 'not-json'],
+    ['binary', new ArrayBuffer(4)],
+  ])('rejects an %s first frame immediately', async (_label, frame) => {
+    const socket = new FakeSocket();
+    const client = new KystVoiceStreamClient({
+      fetchTicket: async () => ({ url: VOICE_SOCKET_URL, token: 'ticket' }),
+      createSocket: () => socket,
+    });
+    const connection = client.connect();
+    await new Promise((resolve) => setImmediate(resolve));
+    socket.emit('open');
+    socket.emit('message', frame);
+
+    await expect(connection).rejects.toThrow('protocol mismatch');
+    expect(socket.closed).toEqual([4002, 'unexpected_ready_frame']);
+    expect(client.ready).toBe(false);
+  });
+
+  it('fails closed when the ready frame times out', async () => {
+    jest.useFakeTimers();
+    const socket = new FakeSocket();
+    const client = new KystVoiceStreamClient({
+      fetchTicket: async () => ({ url: VOICE_SOCKET_URL, token: 'ticket' }),
+      createSocket: () => socket,
+    });
+    const connection = client.connect();
+    await Promise.resolve();
+    socket.emit('open');
+    jest.advanceTimersByTime(4_000);
+
+    await expect(connection).rejects.toThrow('timed out');
+    expect(socket.closed).toEqual([4000, 'ready_timeout']);
+    expect(client.ready).toBe(false);
+    jest.useRealTimers();
+  });
+
+  it('fails closed when the socket closes before ready', async () => {
+    const socket = new FakeSocket();
+    const events: string[] = [];
+    const client = new KystVoiceStreamClient({
+      fetchTicket: async () => ({ url: VOICE_SOCKET_URL, token: 'ticket' }),
+      createSocket: () => socket,
+      onEvent: (event) => events.push(event.type),
+    });
+    const connection = client.connect();
+    await new Promise((resolve) => setImmediate(resolve));
+    socket.emit('open');
+    socket.emit('close');
+
+    await expect(connection).rejects.toThrow('connection closed');
+    expect(events).toEqual(['stream.closed']);
+    expect(client.ready).toBe(false);
+  });
+
   it('accepts binary audio only after audio.start for the active request', async () => {
     const socket = new FakeSocket();
     const received: string[] = [];
@@ -154,7 +212,7 @@ describe('KystVoiceStreamClient', () => {
     const connection = client.connect();
     await new Promise((resolve) => setImmediate(resolve));
     socket.emit('open');
-    socket.emit('message', JSON.stringify({ type: 'ready' }));
+    socket.emit('message', JSON.stringify(VOICE_READY_FRAME));
     await connection;
 
     client.startTurn('request-old');
@@ -192,7 +250,7 @@ describe('KystVoiceStreamClient', () => {
     const connection = client.connect();
     await Promise.resolve();
     socket.emit('open');
-    socket.emit('message', JSON.stringify({ type: 'ready' }));
+    socket.emit('message', JSON.stringify(VOICE_READY_FRAME));
     await connection;
 
     client.startTurn('request-timeout');
@@ -217,7 +275,7 @@ describe('KystVoiceStreamClient', () => {
     const connection = client.connect();
     await new Promise((resolve) => setImmediate(resolve));
     socket.emit('open');
-    socket.emit('message', JSON.stringify({ type: 'ready' }));
+    socket.emit('message', JSON.stringify(VOICE_READY_FRAME));
     await connection;
 
     client.startTurn('request-late-playback');
@@ -253,7 +311,7 @@ describe('KystVoiceStreamClient', () => {
     const connection = client.connect();
     await new Promise((resolve) => setImmediate(resolve));
     socket.emit('open');
-    socket.emit('message', JSON.stringify({ type: 'ready' }));
+    socket.emit('message', JSON.stringify(VOICE_READY_FRAME));
     await connection;
 
     client.startTurn('request-discarded-playback');
@@ -287,7 +345,7 @@ describe('KystVoiceStreamClient', () => {
     const connection = client.connect();
     await Promise.resolve();
     socket.emit('open');
-    socket.emit('message', JSON.stringify({ type: 'ready' }));
+    socket.emit('message', JSON.stringify(VOICE_READY_FRAME));
     await connection;
 
     client.startTurn('request-server-vad');
@@ -315,7 +373,7 @@ describe('KystVoiceStreamClient', () => {
     const connection = client.connect();
     await new Promise((resolve) => setImmediate(resolve));
     socket.emit('open');
-    socket.emit('message', JSON.stringify({ type: 'ready' }));
+    socket.emit('message', JSON.stringify(VOICE_READY_FRAME));
     await connection;
 
     client.startTurn('request-no-audio');

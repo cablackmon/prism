@@ -8,6 +8,22 @@
   const TARGET_RATE = 16000;
   const VOICE_URL = "wss://cb-threadripper.tail3a8e2d.ts.net:8445/voice";
   const RESPONSE_TIMEOUT_MS = 6000;
+  const READY_FRAME = Object.freeze({
+    type: "ready",
+    contract: 1,
+    pipeline: "pipecat",
+    audioFormat: "pcm16",
+  });
+
+  function isReadyFrame(value) {
+    return Boolean(
+      value &&
+      typeof value === "object" &&
+      !Array.isArray(value) &&
+      Object.keys(value).length === Object.keys(READY_FRAME).length &&
+      Object.entries(READY_FRAME).every(([key, expected]) => value[key] === expected),
+    );
+  }
 
   function pcm16FromFloat32(input, inputRate, state = {}) {
     const ratio = inputRate / TARGET_RATE;
@@ -50,8 +66,6 @@
       this.audioRequestId = null;
       this.readyTimer = null;
       this.audioTimer = null;
-      this.reconnectTimer = null;
-      this.reconnectAttempts = 0;
     }
 
     get ready() {
@@ -62,7 +76,6 @@
       if (!url || !token) throw new Error("Streaming configuration is incomplete");
       if (url !== VOICE_URL) throw new Error("Unexpected streaming endpoint");
       if (this.ready && this.url === url && this.token === token) return false;
-      this.clearTimer(this.reconnectTimer);
       this.disconnect("reconfigure", { preserveCompletedPlayback });
       this.url = url;
       this.token = token;
@@ -75,7 +88,6 @@
           this.failConnection("ready_timeout");
           this.socket = null;
           if (socket.readyState < this.WebSocketClass.CLOSING) socket.close(4000, "ready_timeout");
-          this.scheduleReconnect();
         }, 3000);
       });
       socket.addEventListener("message", (event) => {
@@ -86,32 +98,21 @@
       });
       socket.addEventListener("close", () => {
         if (this.socket !== socket) return;
+        const wasAuthenticated = this.authenticated;
         this.socket = null;
         this.authenticated = false;
-        if (!this.activeRequest?.complete) this.failActive("socket_closed");
-        this.onEvent({ type: "stream.closed" });
-        this.scheduleReconnect();
+        if (!this.activeRequest?.complete) {
+          if (this.activeRequest) this.failActive("socket_closed");
+          else if (!wasAuthenticated) this.failConnection("socket_closed");
+        }
+        if (wasAuthenticated) this.onEvent({ type: "stream.closed" });
       });
       this.socket = socket;
-    }
-
-    scheduleReconnect() {
-      this.clearTimer(this.reconnectTimer);
-      if (!this.url || !this.token || this.reconnectAttempts >= 3) return;
-      const delay = 500 * (2 ** this.reconnectAttempts++);
-      this.reconnectTimer = this.setTimer(() => {
-        this.reconnectTimer = null;
-        this.connect(
-          { url: this.url, token: this.token },
-          { preserveCompletedPlayback: Boolean(this.activeRequest?.complete) },
-        );
-      }, delay);
     }
 
     disconnect(reason = "disconnect", { preserveCompletedPlayback = false } = {}) {
       if (!(preserveCompletedPlayback && this.activeRequest?.complete)) this.cancel(reason);
       this.clearTimer(this.readyTimer);
-      this.clearTimer(this.reconnectTimer);
       const socket = this.socket;
       this.socket = null;
       this.authenticated = false;
@@ -157,6 +158,13 @@
     }
 
     handleMessage(data) {
+      if (!this.authenticated) {
+        if (typeof data !== "string") return this.failReadyContract();
+        let ready;
+        try { ready = JSON.parse(data); } catch { return this.failReadyContract(); }
+        if (!isReadyFrame(ready)) return this.failReadyContract();
+        return this.handleControl(ready);
+      }
       if (typeof data === "string") {
         let message;
         try { message = JSON.parse(data); } catch { return; }
@@ -189,9 +197,9 @@
 
     handleControl(message) {
       if (message.type === "ready") {
+        if (!isReadyFrame(message) || this.authenticated) return this.failReadyContract();
         this.clearTimer(this.readyTimer);
         this.authenticated = true;
-        this.reconnectAttempts = 0;
         this.onEvent(message);
       } else if (message.type === "audio.start" && this.matchesActive(message)) {
         this.audioFormat = message.format;
@@ -211,6 +219,15 @@
         }
       } else if ((message.type === "fallback" || message.type === "error") && this.matchesActive(message)) {
         this.failActive(message.reason || message.type);
+      }
+    }
+
+    failReadyContract() {
+      const socket = this.socket;
+      this.failConnection("unexpected_ready_frame");
+      this.socket = null;
+      if (socket && socket.readyState < this.WebSocketClass.CLOSING) {
+        socket.close(4002, "unexpected_ready_frame");
       }
     }
 
@@ -255,5 +272,5 @@
     }
   }
 
-  return { TARGET_RATE, VOICE_URL, VoiceStreamClient, pcm16FromFloat32 };
+  return { TARGET_RATE, VOICE_URL, READY_FRAME, isReadyFrame, VoiceStreamClient, pcm16FromFloat32 };
 });

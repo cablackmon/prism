@@ -1,6 +1,21 @@
 export const VOICE_SOCKET_URL = 'wss://cb-threadripper.tail3a8e2d.ts.net:8445/voice';
 export const VOICE_SAMPLE_RATE = 16_000;
 const RESPONSE_TIMEOUT_MS = 6_000;
+export const VOICE_READY_FRAME = Object.freeze({
+  type: 'ready',
+  contract: 1,
+  pipeline: 'pipecat',
+  audioFormat: 'pcm16',
+} as const);
+
+export function isVoiceReadyFrame(value: unknown): value is typeof VOICE_READY_FRAME {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const record = value as Record<string, unknown>;
+  return (
+    Object.keys(record).length === Object.keys(VOICE_READY_FRAME).length &&
+    Object.entries(VOICE_READY_FRAME).every(([key, expected]) => record[key] === expected)
+  );
+}
 
 export type VoiceTicket = {
   url: string;
@@ -190,6 +205,34 @@ export class KystVoiceStreamClient {
       });
       socket.addEventListener('message', (event) => {
         if (this.socket !== socket) return;
+        if (!this.authenticated) {
+          if (typeof event.data !== 'string') {
+            socket.close(4002, 'unexpected_ready_frame');
+            failBeforeReady('NOX voice protocol mismatch.');
+            return;
+          }
+          let ready: unknown;
+          try {
+            ready = JSON.parse(event.data);
+          } catch {
+            socket.close(4002, 'unexpected_ready_frame');
+            failBeforeReady('NOX voice protocol mismatch.');
+            return;
+          }
+          if (!isVoiceReadyFrame(ready)) {
+            socket.close(4002, 'unexpected_ready_frame');
+            failBeforeReady('NOX voice protocol mismatch.');
+            return;
+          }
+          this.authenticated = true;
+          this.clearTimer(timeout);
+          if (!settled) {
+            settled = true;
+            resolve();
+          }
+          this.onEvent(ready);
+          return;
+        }
         if (typeof event.data !== 'string') {
           if (
             event.data.byteLength >= 2 &&
@@ -206,16 +249,6 @@ export class KystVoiceStreamClient {
         try {
           message = JSON.parse(event.data) as VoiceStreamEvent;
         } catch {
-          return;
-        }
-        if (message.type === 'ready') {
-          this.authenticated = true;
-          this.clearTimer(timeout);
-          if (!settled) {
-            settled = true;
-            resolve();
-          }
-          this.onEvent(message);
           return;
         }
         this.handleControl(message);

@@ -323,6 +323,10 @@ const streamClient = new KystVoiceStreaming.VoiceStreamClient({
     if (activeRecordingBlob) submitBatchFallback(requestId, reason);
   },
   onEvent: (message) => {
+    if (message.type === "stream.unavailable" || message.type === "stream.closed") {
+      if (bridgeReady) requestStreamConfig();
+      return;
+    }
     if (message.requestId && message.requestId !== activeRequestId) return;
     if (message.type === "transcript.delta") appendChatDelta(message.requestId, "transcript", message.text);
     if (message.type === "answer.delta") {
