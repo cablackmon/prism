@@ -265,6 +265,25 @@ describe('middleware', () => {
       );
     });
 
+    it('keeps the GPU capability gate behind the household auth wall', async () => {
+      // /diag/gpu (NOX-11768) reports GPU adapter strings and device geometry.
+      // Nothing links to it, but "unlinked" is not an access control.
+      const response = await middleware(makeRequest('/diag/gpu'));
+      expect(response.status).toBe(307);
+      expect(response.headers.get('location')).toBe(
+        'http://localhost:3000/auth/household?next=%2Fdiag%2Fgpu'
+      );
+    });
+
+    it('serves the GPU capability gate to an authenticated household session', async () => {
+      const cookie = await createHouseholdSession(authSecret);
+      const response = await middleware(
+        makeRequest('/diag/gpu', { headers: { cookie: `${HOUSEHOLD_COOKIE_NAME}=${cookie}` } })
+      );
+      expect(response.status).not.toBe(307);
+      expect(response.status).not.toBe(401);
+    });
+
     it('keeps the login wall and health checks public', async () => {
       expect((await middleware(makeRequest('/auth/household'))).status).not.toBe(401);
       expect((await middleware(makeRequest('/api/health'))).status).not.toBe(401);
