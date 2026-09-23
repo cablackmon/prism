@@ -1146,6 +1146,19 @@ export async function runBackend(
     renderer = await factory.create(canvas, mesh);
   } catch (error) {
     canvas.remove();
+
+    // Initialisation is the one await in this function that is not inside the
+    // loop, and so the one the loop-head guard below cannot see. `create()`
+    // takes no signal: an unmount during `requestAdapter()`/`requestDevice()`
+    // does not abort it, it simply rejects a moment later with an ordinary
+    // error while `signal.aborted` is already true. Returning here would turn
+    // that into "this backend is unavailable" — a report, not a cancellation —
+    // so the caller never enters its cancellation-aware catch, goes on to run
+    // the remaining backend, and publishes a decision that records WebGPU as
+    // absent on a board that has it. Reported failures must come from the
+    // hardware, never from the page having been closed.
+    throwIfBenchmarkCancelled(signal);
+
     return {
       backend: factory.backend,
       available: false,

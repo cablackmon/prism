@@ -53,8 +53,12 @@ function fakeRenderer(overrides: Partial<BenchRenderer> = {}): BenchRenderer {
   };
 }
 
-const sampleOf = (uniqueColors: number, flatColor: { r: number; g: number; b: number } | null) =>
-  async () => ({ uniqueColors, flatColor, meanLuma: 0 });
+const sampleOf =
+  (uniqueColors: number, flatColor: { r: number; g: number; b: number } | null) => async () => ({
+    uniqueColors,
+    flatColor,
+    meanLuma: 0,
+  });
 
 /**
  * Runs the measurement clock far faster than real time.
@@ -296,5 +300,68 @@ describe('runBackend cancellation', () => {
     const report = await runBackend(factory(renderer), mesh, BENCHMARK_RESOLUTIONS, () => {});
     expect(report.available).toBe(true);
     expect(report.error).toContain('context lost');
+  });
+
+  it('propagates cancellation when the abort lands inside renderer initialisation', async () => {
+    // `create()` takes no signal, so an unmount during `requestAdapter()` does
+    // not abort it — it rejects a moment later with an ordinary error while the
+    // signal is already aborted. The loop-head guard is below this catch and
+    // never runs, so without the guard in the catch itself the abort is
+    // reported as `available: false`: WebGPU recorded as absent on a board that
+    // has it, and the caller carries on to the remaining backend.
+    const controller = new AbortController();
+    let initialisationReached = false;
+
+    const cancellingFactory: BackendFactory = {
+      backend: 'webgpu',
+      create: async () => {
+        initialisationReached = true;
+        controller.abort();
+        throw new Error('adapter request interrupted');
+      },
+    };
+
+    const outcome = await runBackend(
+      cancellingFactory,
+      mesh,
+      BENCHMARK_RESOLUTIONS,
+      () => {},
+      undefined,
+      controller.signal
+    ).then(
+      (report) => report,
+      (error: unknown) => error
+    );
+
+    // Anchor: the test is only meaningful if initialisation actually ran and
+    // actually rejected. Without this, a create() that never threw would leave
+    // the assertion below passing for the wrong reason.
+    expect(initialisationReached).toBe(true);
+    expect(isBenchmarkCancelled(outcome)).toBe(true);
+    expect(outcome).toBeInstanceOf(BenchmarkCancelledError);
+  });
+
+  it('still reports an initialisation failure as unavailable when nothing aborted', async () => {
+    // The guard must not generalise: a board with no WebGPU rejects here on
+    // every load, and that has to stay a report so the WebGL2 numbers survive.
+    const failingFactory: BackendFactory = {
+      backend: 'webgpu',
+      create: async () => {
+        throw new Error('no WebGPU adapter');
+      },
+    };
+
+    const report = await runBackend(
+      failingFactory,
+      mesh,
+      BENCHMARK_RESOLUTIONS,
+      () => {},
+      undefined,
+      new AbortController().signal
+    );
+
+    expect(report.available).toBe(false);
+    expect(report.error).toContain('no WebGPU adapter');
+    expect(report.readbackControl).toBe('untested');
   });
 });
