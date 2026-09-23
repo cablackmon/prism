@@ -117,12 +117,13 @@ describe('refreshAccessToken', () => {
   it('sends refresh token to token endpoint', async () => {
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({
-        access_token: 'refreshed-token',
-        expires_in: 3600,
-        token_type: 'Bearer',
-        scope: 'Files.Read',
-      }),
+      json: () =>
+        Promise.resolve({
+          access_token: 'refreshed-token',
+          expires_in: 3600,
+          token_type: 'Bearer',
+          scope: 'Files.Read',
+        }),
     });
 
     const result = await refreshAccessToken('my-refresh-token');
@@ -140,7 +141,9 @@ describe('refreshAccessToken', () => {
       text: () => Promise.resolve('token_expired'),
     });
 
-    await expect(refreshAccessToken('expired-token')).rejects.toThrow('Failed to refresh Microsoft token');
+    await expect(refreshAccessToken('expired-token')).rejects.toThrow(
+      'Failed to refresh Microsoft token'
+    );
   });
 });
 
@@ -148,11 +151,10 @@ describe('listFolders', () => {
   it('fetches root folders when no parentId given', async () => {
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({
-        value: [
-          { id: 'folder-1', name: 'Photos', folder: { childCount: 10 } },
-        ],
-      }),
+      json: () =>
+        Promise.resolve({
+          value: [{ id: 'folder-1', name: 'Photos', folder: { childCount: 10 } }],
+        }),
     });
 
     const folders = await listFolders('access-token');
@@ -202,42 +204,42 @@ describe('listPhotosInFolder', () => {
   it('filters to only image MIME types', async () => {
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({
-        value: [
-          { id: '1', name: 'photo.jpg', file: { mimeType: 'image/jpeg' }, size: 1000 },
-          { id: '2', name: 'doc.pdf', file: { mimeType: 'application/pdf' }, size: 2000 },
-          { id: '3', name: 'photo.png', file: { mimeType: 'image/png' }, size: 1500 },
-          { id: '4', name: 'video.mp4', file: { mimeType: 'video/mp4' }, size: 5000 },
-        ],
-      }),
+      json: () =>
+        Promise.resolve({
+          value: [
+            { id: '1', name: 'photo.jpg', file: { mimeType: 'image/jpeg' }, size: 1000 },
+            { id: '2', name: 'doc.pdf', file: { mimeType: 'application/pdf' }, size: 2000 },
+            { id: '3', name: 'photo.png', file: { mimeType: 'image/png' }, size: 1500 },
+            { id: '4', name: 'video.mp4', file: { mimeType: 'video/mp4' }, size: 5000 },
+          ],
+        }),
     });
 
     const photos = await listPhotosInFolder('token', 'folder-id');
 
     expect(photos).toHaveLength(2);
-    expect(photos.map(p => p.name)).toEqual(['photo.jpg', 'photo.png']);
+    expect(photos.map((p) => p.name)).toEqual(['photo.jpg', 'photo.png']);
   });
 
   it('handles pagination with @odata.nextLink', async () => {
-    const mockFetch = jest.fn()
+    const mockFetch = jest
+      .fn()
       // First page
       .mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({
-          value: [
-            { id: '1', name: 'page1.jpg', file: { mimeType: 'image/jpeg' }, size: 100 },
-          ],
-          '@odata.nextLink': 'https://graph.microsoft.com/v1.0/next-page',
-        }),
+        json: () =>
+          Promise.resolve({
+            value: [{ id: '1', name: 'page1.jpg', file: { mimeType: 'image/jpeg' }, size: 100 }],
+            '@odata.nextLink': 'https://graph.microsoft.com/v1.0/next-page',
+          }),
       })
       // Second page (no more pages)
       .mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({
-          value: [
-            { id: '2', name: 'page2.jpg', file: { mimeType: 'image/jpeg' }, size: 200 },
-          ],
-        }),
+        json: () =>
+          Promise.resolve({
+            value: [{ id: '2', name: 'page2.jpg', file: { mimeType: 'image/jpeg' }, size: 200 }],
+          }),
       });
     global.fetch = mockFetch;
 
@@ -252,11 +254,10 @@ describe('listPhotosInFolder', () => {
   it('returns empty array when folder has no images', async () => {
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({
-        value: [
-          { id: '1', name: 'doc.txt', file: { mimeType: 'text/plain' }, size: 100 },
-        ],
-      }),
+      json: () =>
+        Promise.resolve({
+          value: [{ id: '1', name: 'doc.txt', file: { mimeType: 'text/plain' }, size: 100 }],
+        }),
     });
 
     const photos = await listPhotosInFolder('token', 'folder-id');
@@ -266,12 +267,13 @@ describe('listPhotosInFolder', () => {
   it('handles items without file property', async () => {
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({
-        value: [
-          { id: '1', name: 'subfolder', folder: { childCount: 5 }, size: 0 },
-          { id: '2', name: 'photo.jpg', file: { mimeType: 'image/jpeg' }, size: 100 },
-        ],
-      }),
+      json: () =>
+        Promise.resolve({
+          value: [
+            { id: '1', name: 'subfolder', folder: { childCount: 5 }, size: 0 },
+            { id: '2', name: 'photo.jpg', file: { mimeType: 'image/jpeg' }, size: 100 },
+          ],
+        }),
     });
 
     const photos = await listPhotosInFolder('token', 'folder-id');
@@ -282,7 +284,7 @@ describe('listPhotosInFolder', () => {
 
 describe('downloadPhoto', () => {
   it('returns Buffer from photo content', async () => {
-    const testData = new Uint8Array([0xFF, 0xD8, 0xFF, 0xE0]);
+    const testData = new Uint8Array([0xff, 0xd8, 0xff, 0xe0]);
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
       arrayBuffer: () => Promise.resolve(testData.buffer),
@@ -291,7 +293,7 @@ describe('downloadPhoto', () => {
     const result = await downloadPhoto('token', 'item-id');
 
     expect(Buffer.isBuffer(result)).toBe(true);
-    expect(result[0]).toBe(0xFF); // JPEG magic byte
+    expect(result[0]).toBe(0xff); // JPEG magic byte
   });
 
   it('uses correct Graph API URL', async () => {
@@ -312,6 +314,8 @@ describe('downloadPhoto', () => {
       statusText: 'Not Found',
     });
 
-    await expect(downloadPhoto('token', 'missing-id')).rejects.toThrow('Failed to download OneDrive photo');
+    await expect(downloadPhoto('token', 'missing-id')).rejects.toThrow(
+      'Failed to download OneDrive photo'
+    );
   });
 });

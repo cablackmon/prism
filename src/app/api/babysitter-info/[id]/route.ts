@@ -20,10 +20,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
     const body = await request.json();
 
-    const [existing] = await db
-      .select()
-      .from(babysitterInfo)
-      .where(eq(babysitterInfo.id, id));
+    const [existing] = await db.select().from(babysitterInfo).where(eq(babysitterInfo.id, id));
 
     if (!existing) {
       return NextResponse.json({ error: 'Item not found' }, { status: 404 });
@@ -76,10 +73,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     });
   } catch (error) {
     logError('Error updating babysitter info:', error);
-    return NextResponse.json(
-      { error: 'Failed to update babysitter info' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to update babysitter info' }, { status: 500 });
   }
 }
 
@@ -93,10 +87,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
   const { id } = await context.params;
 
   try {
-    const [existing] = await db
-      .select()
-      .from(babysitterInfo)
-      .where(eq(babysitterInfo.id, id));
+    const [existing] = await db.select().from(babysitterInfo).where(eq(babysitterInfo.id, id));
 
     if (!existing) {
       return NextResponse.json({ error: 'Item not found' }, { status: 404 });
@@ -109,9 +100,6 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     return NextResponse.json({ success: true });
   } catch (error) {
     logError('Error deleting babysitter info:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete babysitter info' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to delete babysitter info' }, { status: 500 });
   }
 }

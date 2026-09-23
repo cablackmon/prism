@@ -26,7 +26,6 @@ import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
-
 /**
  * BADGE VARIANTS
  * Defines the visual styles for different badge types.
@@ -51,28 +50,22 @@ const badgeVariants = cva(
     variants: {
       variant: {
         // Default - primary color
-        default:
-          'bg-primary text-primary-foreground hover:bg-primary/80',
+        default: 'bg-primary text-primary-foreground hover:bg-primary/80',
 
         // Secondary - muted, subtle
-        secondary:
-          'bg-secondary text-secondary-foreground hover:bg-secondary/80',
+        secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
 
         // Destructive - red, for warnings
-        destructive:
-          'bg-destructive text-destructive-foreground hover:bg-destructive/80',
+        destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/80',
 
         // Outline - bordered, transparent background
-        outline:
-          'border border-input bg-background text-foreground',
+        outline: 'border border-input bg-background text-foreground',
 
         // Success - green, for completed items
-        success:
-          'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+        success: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
 
         // Warning - yellow/orange, for attention needed
-        warning:
-          'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
+        warning: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
       },
     },
     defaultVariants: {
@@ -81,14 +74,11 @@ const badgeVariants = cva(
   }
 );
 
-
 /**
  * BADGE PROPS
  */
 export interface BadgeProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof badgeVariants> {}
-
+  extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof badgeVariants> {}
 
 /**
  * BADGE COMPONENT
@@ -107,12 +97,7 @@ export interface BadgeProps
  * <Badge variant="outline">Pending</Badge>
  */
 function Badge({ className, variant, ...props }: BadgeProps) {
-  return (
-    <div
-      className={cn(badgeVariants({ variant }), className)}
-      {...props}
-    />
-  );
+  return <div className={cn(badgeVariants({ variant }), className)} {...props} />;
 }
 
 export { Badge, badgeVariants };

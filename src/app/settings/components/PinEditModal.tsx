@@ -3,12 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DEFAULT_PIN_LENGTH, MAX_PIN_LENGTH } from '@/lib/constants';
 
 import type { FamilyMember } from '@/types';
@@ -114,7 +109,7 @@ export function PinEditModal({
               placeholder={`${pinLength} digits`}
               autoFocus={!member.hasPin}
             />
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="mt-1 text-xs text-muted-foreground">
               Leave blank to remove PIN (not recommended)
             </p>
           </div>
@@ -133,9 +128,7 @@ export function PinEditModal({
           </div>
 
           {error && (
-            <div className="text-sm text-destructive p-2 bg-destructive/10 rounded">
-              {error}
-            </div>
+            <div className="rounded bg-destructive/10 p-2 text-sm text-destructive">{error}</div>
           )}
 
           <div className="flex justify-end gap-2 pt-4">

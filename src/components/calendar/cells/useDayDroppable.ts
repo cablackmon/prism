@@ -28,7 +28,11 @@ interface UseDayDroppableResult {
  * When `enabled` is false, useDroppable still runs (rules-of-hooks) but is
  * disabled, so dragging a chore/task/meal onto the cell is a no-op.
  */
-export function useDayDroppable({ date, enabled, region }: UseDayDroppableOptions): UseDayDroppableResult {
+export function useDayDroppable({
+  date,
+  enabled,
+  region,
+}: UseDayDroppableOptions): UseDayDroppableResult {
   const base = format(date, 'yyyy-MM-dd');
   const droppableId = region ? `${base}:${region}` : base;
   const { setNodeRef, isOver } = useDroppable({

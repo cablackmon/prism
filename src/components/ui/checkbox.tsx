@@ -34,7 +34,6 @@ import * as CheckboxPrimitive from '@radix-ui/react-checkbox';
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-
 /**
  * CHECKBOX COMPONENT
  * An accessible checkbox built on Radix UI primitives.

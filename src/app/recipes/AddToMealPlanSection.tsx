@@ -13,7 +13,10 @@ import type { Recipe } from '@/lib/hooks/useRecipes';
 type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 const MEAL_TYPES: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack'];
 const MEAL_LABELS: Record<MealType, string> = {
-  breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snack: 'Snack',
+  breakfast: 'Breakfast',
+  lunch: 'Lunch',
+  dinner: 'Dinner',
+  snack: 'Snack',
 };
 
 // Build 2 full weeks starting from the week that contains today
@@ -46,7 +49,7 @@ export function AddToMealPlanSection({ recipe }: { recipe: Recipe }) {
 
   const handleAdd = async () => {
     if (!selectedDate) return;
-    if (!await requireAuth('Add to Meal Plan', 'Please log in to add meals')) return;
+    if (!(await requireAuth('Add to Meal Plan', 'Please log in to add meals'))) return;
     setSaving(true);
     try {
       const weekOf = format(startOfWeek(selectedDate, { weekStartsOn: 1 }), 'yyyy-MM-dd');
@@ -54,13 +57,24 @@ export function AddToMealPlanSection({ recipe }: { recipe: Recipe }) {
       const res = await fetch('/api/meals', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: recipe.name, recipeId: recipe.id, weekOf, dayOfWeek, mealType }),
+        body: JSON.stringify({
+          name: recipe.name,
+          recipeId: recipe.id,
+          weekOf,
+          dayOfWeek,
+          mealType,
+        }),
       });
       if (!res.ok) throw new Error();
-      const dayLabel = isSameDay(selectedDate, today) ? 'today'
-        : isSameDay(selectedDate, addDays(today, 1)) ? 'tomorrow'
-        : format(selectedDate, 'EEEE').toLowerCase();
-      toast({ title: `Added to ${dayLabel}'s ${MEAL_LABELS[mealType].toLowerCase()}`, variant: 'success' });
+      const dayLabel = isSameDay(selectedDate, today)
+        ? 'today'
+        : isSameDay(selectedDate, addDays(today, 1))
+          ? 'tomorrow'
+          : format(selectedDate, 'EEEE').toLowerCase();
+      toast({
+        title: `Added to ${dayLabel}'s ${MEAL_LABELS[mealType].toLowerCase()}`,
+        variant: 'success',
+      });
       setSelectedDate(null);
     } catch {
       toast({ title: 'Failed to add to meal plan', variant: 'destructive' });
@@ -70,7 +84,7 @@ export function AddToMealPlanSection({ recipe }: { recipe: Recipe }) {
   };
 
   return (
-    <div className="border-t pt-4 space-y-3">
+    <div className="space-y-3 border-t pt-4">
       <div className="flex items-center gap-2">
         <CalendarPlus className="h-4 w-4 text-muted-foreground" />
         <span className="text-sm font-medium">Add to Meal Plan</span>
@@ -79,9 +93,12 @@ export function AddToMealPlanSection({ recipe }: { recipe: Recipe }) {
       {/* Mini calendar grid */}
       <div className="select-none">
         {/* Day headers */}
-        <div className="grid grid-cols-7 mb-1">
+        <div className="mb-1 grid grid-cols-7">
           {dayHeaders.map((h, i) => (
-            <div key={i} className="text-center text-[11px] font-medium text-muted-foreground py-0.5">
+            <div
+              key={i}
+              className="py-0.5 text-center text-[11px] font-medium text-muted-foreground"
+            >
               {h}
             </div>
           ))}
@@ -98,19 +115,24 @@ export function AddToMealPlanSection({ recipe }: { recipe: Recipe }) {
                   <button
                     onClick={() => setSelectedDate(isSelected ? null : date)}
                     className={cn(
-                      'w-8 h-8 rounded-full text-sm font-medium transition-colors',
+                      'h-8 w-8 rounded-full text-sm font-medium transition-colors',
                       isSelected
                         ? 'bg-primary text-primary-foreground'
                         : isPastDay
-                        ? 'text-muted-foreground/50 hover:bg-accent'
-                        : 'hover:bg-accent text-foreground'
+                          ? 'text-muted-foreground/50 hover:bg-accent'
+                          : 'text-foreground hover:bg-accent'
                     )}
                   >
                     {format(date, 'd')}
                   </button>
                   {/* Today indicator dot */}
                   {isToday && (
-                    <div className={cn('w-1 h-1 rounded-full mt-0.5', isSelected ? 'bg-primary-foreground' : 'bg-primary')} />
+                    <div
+                      className={cn(
+                        'mt-0.5 h-1 w-1 rounded-full',
+                        isSelected ? 'bg-primary-foreground' : 'bg-primary'
+                      )}
+                    />
                   )}
                 </div>
               );
@@ -120,8 +142,8 @@ export function AddToMealPlanSection({ recipe }: { recipe: Recipe }) {
       </div>
 
       {/* Meal type toggle + confirm */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <div className="flex items-center border rounded-md overflow-hidden text-xs shrink-0">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex shrink-0 items-center overflow-hidden rounded-md border text-xs">
           {MEAL_TYPES.map((type) => (
             <button
               key={type}
@@ -129,7 +151,7 @@ export function AddToMealPlanSection({ recipe }: { recipe: Recipe }) {
               className={cn(
                 'px-2.5 py-1.5 transition-colors',
                 mealType === type
-                  ? 'bg-secondary text-secondary-foreground font-medium'
+                  ? 'bg-secondary font-medium text-secondary-foreground'
                   : 'text-muted-foreground hover:bg-accent'
               )}
             >

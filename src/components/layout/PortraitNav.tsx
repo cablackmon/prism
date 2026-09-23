@@ -42,12 +42,14 @@ export function PortraitNav({ user, onLogin, onLogout, uiHidden }: PortraitNavPr
   };
 
   return (
-    <nav className={cn(
-      'fixed bottom-0 left-0 right-0 bg-card/95 border-t border-border z-40 safe-area-bottom',
-      'transition-[transform,opacity] duration-300 ease-in-out',
-      uiHidden ? 'translate-y-full opacity-0 delay-100' : 'translate-y-0 opacity-100 delay-0'
-    )}>
-      <div className="flex items-center justify-center h-20 overflow-x-auto scrollbar-none px-4">
+    <nav
+      className={cn(
+        'safe-area-bottom fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-card/95',
+        'transition-[transform,opacity] duration-300 ease-in-out',
+        uiHidden ? 'translate-y-full opacity-0 delay-100' : 'translate-y-0 opacity-100 delay-0'
+      )}
+    >
+      <div className="scrollbar-none flex h-20 items-center justify-center overflow-x-auto px-4">
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.href);
@@ -56,7 +58,7 @@ export function PortraitNav({ user, onLogin, onLogout, uiHidden }: PortraitNavPr
               key={item.href}
               href={item.href}
               className={cn(
-                'flex flex-col items-center gap-1 py-2 px-4 min-w-[72px] shrink-0 transition-colors',
+                'flex min-w-[72px] shrink-0 flex-col items-center gap-1 px-4 py-2 transition-colors',
                 active ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
               )}
             >
@@ -70,7 +72,7 @@ export function PortraitNav({ user, onLogin, onLogout, uiHidden }: PortraitNavPr
         <button
           onClick={user ? onLogout : onLogin}
           className={cn(
-            'flex flex-col items-center gap-1 py-2 px-4 min-w-[72px] shrink-0 transition-colors',
+            'flex min-w-[72px] shrink-0 flex-col items-center gap-1 px-4 py-2 transition-colors',
             'text-muted-foreground hover:text-foreground'
           )}
           aria-label={user ? 'Log out' : 'Log in'}
@@ -78,11 +80,13 @@ export function PortraitNav({ user, onLogin, onLogout, uiHidden }: PortraitNavPr
           {user ? (
             <>
               <div
-                className="relative h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                className="relative flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold text-white"
                 style={{ backgroundColor: user.color || '#6B7280' }}
               >
                 {user.avatarUrl?.startsWith('emoji:') ? (
-                  <span className="text-base"><Emoji e={user.avatarUrl.slice(6)} /></span>
+                  <span className="text-base">
+                    <Emoji e={user.avatarUrl.slice(6)} />
+                  </span>
                 ) : user.avatarUrl ? (
                   <Image
                     src={user.avatarUrl}
@@ -95,7 +99,7 @@ export function PortraitNav({ user, onLogin, onLogout, uiHidden }: PortraitNavPr
                   user.name.charAt(0).toUpperCase()
                 )}
               </div>
-              <span className="text-xs font-medium truncate max-w-[72px]">{user.name}</span>
+              <span className="max-w-[72px] truncate text-xs font-medium">{user.name}</span>
             </>
           ) : (
             <>

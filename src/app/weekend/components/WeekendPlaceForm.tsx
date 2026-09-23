@@ -14,7 +14,12 @@ import type { WeekendPlace } from '../types';
 
 interface WeekendPlaceFormProps {
   initial?: Partial<WeekendPlace>;
-  onSave: (data: Omit<WeekendPlace, 'id' | 'visitCount' | 'lastVisitedDate' | 'createdBy' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  onSave: (
+    data: Omit<
+      WeekendPlace,
+      'id' | 'visitCount' | 'lastVisitedDate' | 'createdBy' | 'createdAt' | 'updatedAt'
+    >
+  ) => Promise<void>;
   onCancel: () => void;
   hideHeader?: boolean;
 }
@@ -31,7 +36,7 @@ export function WeekendPlaceForm({ initial, onSave, onCancel, hideHeader }: Week
   const [saving, setSaving] = useState(false);
 
   const toggleTag = (v: string) =>
-    setTags((prev) => prev.includes(v) ? prev.filter((t) => t !== v) : [...prev, v]);
+    setTags((prev) => (prev.includes(v) ? prev.filter((t) => t !== v) : [...prev, v]));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,17 +65,21 @@ export function WeekendPlaceForm({ initial, onSave, onCancel, hideHeader }: Week
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col h-full">
+    <form onSubmit={handleSubmit} className="flex h-full flex-col">
       {!hideHeader && (
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
-          <h2 className="font-semibold text-sm">{initial?.id ? 'Edit Place' : 'Add Place'}</h2>
-          <button type="button" onClick={onCancel} className="text-muted-foreground hover:text-foreground p-1">
+        <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
+          <h2 className="text-sm font-semibold">{initial?.id ? 'Edit Place' : 'Add Place'}</h2>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="p-1 text-muted-foreground hover:text-foreground"
+          >
             <X className="h-4 w-4" />
           </button>
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+      <div className="flex-1 space-y-3 overflow-y-auto px-4 py-3">
         <div>
           <Label htmlFor="wp-name">Name *</Label>
           <Input
@@ -108,16 +117,16 @@ export function WeekendPlaceForm({ initial, onSave, onCancel, hideHeader }: Week
         {/* Status */}
         <div>
           <Label>Status</Label>
-          <div className="flex gap-2 mt-1">
+          <div className="mt-1 flex gap-2">
             {(['backlog', 'visited'] as const).map((s) => (
               <button
                 key={s}
                 type="button"
                 onClick={() => setStatus(s)}
-                className={`flex-1 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
+                className={`flex-1 rounded-lg border py-1.5 text-xs font-medium transition-colors ${
                   status === s
-                    ? 'bg-primary text-primary-foreground border-primary'
-                    : 'bg-muted text-muted-foreground border-transparent hover:bg-accent'
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : 'border-transparent bg-muted text-muted-foreground hover:bg-accent'
                 }`}
               >
                 {s === 'backlog' ? 'Want to Try' : 'Been There'}
@@ -139,9 +148,9 @@ export function WeekendPlaceForm({ initial, onSave, onCancel, hideHeader }: Week
           <button
             type="button"
             onClick={() => setIsFavorite((v) => !v)}
-            className={`text-sm px-3 py-1.5 rounded-lg border transition-colors ${
+            className={`rounded-lg border px-3 py-1.5 text-sm transition-colors ${
               isFavorite
-                ? 'border-amber-400 bg-amber-50 dark:bg-amber-950 text-amber-600'
+                ? 'border-amber-400 bg-amber-50 text-amber-600 dark:bg-amber-950'
                 : 'border-transparent bg-muted text-muted-foreground hover:bg-accent'
             }`}
           >
@@ -152,7 +161,7 @@ export function WeekendPlaceForm({ initial, onSave, onCancel, hideHeader }: Week
         {/* Tags */}
         <div>
           <Label>Tags</Label>
-          <div className="flex flex-wrap gap-1.5 mt-1.5">
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
             {TAG_PRESETS.map((t) => (
               <TagChip
                 key={t.value}
@@ -177,7 +186,7 @@ export function WeekendPlaceForm({ initial, onSave, onCancel, hideHeader }: Week
         </div>
       </div>
 
-      <div className="px-4 py-3 border-t border-border flex gap-2 shrink-0">
+      <div className="flex shrink-0 gap-2 border-t border-border px-4 py-3">
         <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
           Cancel
         </Button>

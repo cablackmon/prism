@@ -46,7 +46,10 @@ export function DisplaysSection() {
           body: JSON.stringify({ fontScale: scale === 100 ? null : scale }),
         });
       } catch {
-        setLocalScales((prev) => ({ ...prev, [layoutId]: layouts.find(l => l.id === layoutId)?.fontScale ?? 100 }));
+        setLocalScales((prev) => ({
+          ...prev,
+          [layoutId]: layouts.find((l) => l.id === layoutId)?.fontScale ?? 100,
+        }));
       } finally {
         setSaving(null);
       }
@@ -58,15 +61,15 @@ export function DisplaysSection() {
       <div>
         <h2 className="text-2xl font-bold">Displays</h2>
         <p className="text-muted-foreground">
-          Configure per-display settings for each of your named dashboards.
-          Font scale lets you tune text size for screens that are farther away or have unusual DPI.
+          Configure per-display settings for each of your named dashboards. Font scale lets you tune
+          text size for screens that are farther away or have unusual DPI.
         </p>
       </div>
 
       {loading ? (
         <div className="space-y-3">
           {[1, 2].map((i) => (
-            <div key={i} className="h-20 bg-muted animate-pulse rounded-lg" />
+            <div key={i} className="h-20 animate-pulse rounded-lg bg-muted" />
           ))}
         </div>
       ) : layouts.length === 0 ? (
@@ -88,20 +91,24 @@ export function DisplaysSection() {
                       <Monitor className="h-4 w-4 text-muted-foreground" />
                       <CardTitle className="text-base">{layout.name}</CardTitle>
                       {layout.isDefault && (
-                        <Badge variant="secondary" className="text-xs">Default</Badge>
+                        <Badge variant="secondary" className="text-xs">
+                          Default
+                        </Badge>
                       )}
                     </div>
                     <Link
                       href={url}
-                      className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                      className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
                     >
                       <ExternalLink className="h-3.5 w-3.5" />
                       {layout.slug ? `/d/${layout.slug}` : '/'}
                     </Link>
                   </div>
                   {layout.slug && (
-                    <CardDescription className="text-xs mt-0.5">
-                      Subpages available at <code className="font-mono">/d/{layout.slug}/calendar</code>, <code className="font-mono">/tasks</code>, etc.
+                    <CardDescription className="mt-0.5 text-xs">
+                      Subpages available at{' '}
+                      <code className="font-mono">/d/{layout.slug}/calendar</code>,{' '}
+                      <code className="font-mono">/tasks</code>, etc.
                     </CardDescription>
                   )}
                 </CardHeader>
@@ -109,16 +116,18 @@ export function DisplaysSection() {
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium">Font Scale</span>
-                      <span className={cn(
-                        'text-sm tabular-nums',
-                        scale !== 100 ? 'text-primary font-medium' : 'text-muted-foreground'
-                      )}>
+                      <span
+                        className={cn(
+                          'text-sm tabular-nums',
+                          scale !== 100 ? 'font-medium text-primary' : 'text-muted-foreground'
+                        )}
+                      >
                         {scale}%
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground w-6">A</span>
-                      <div className="flex-1 relative">
+                      <span className="w-6 text-xs text-muted-foreground">A</span>
+                      <div className="relative flex-1">
                         <input
                           type="range"
                           min={75}
@@ -130,15 +139,15 @@ export function DisplaysSection() {
                         />
                         {/* 100% marker — sits at 33% from left on the 75–150 range */}
                         <div
-                          className="absolute top-1/2 -translate-y-1/2 w-0.5 h-2 bg-muted-foreground/40 pointer-events-none"
+                          className="pointer-events-none absolute top-1/2 h-2 w-0.5 -translate-y-1/2 bg-muted-foreground/40"
                           style={{ left: 'calc(33.3% - 1px)' }}
                           title="100% default"
                         />
                       </div>
-                      <span className="text-base text-muted-foreground w-6">A</span>
+                      <span className="w-6 text-base text-muted-foreground">A</span>
                     </div>
                     {/* Quick-select labels — positioned proportionally on the 75–150 scale */}
-                    <div className="relative h-5 mt-0.5">
+                    <div className="relative mt-0.5 h-5">
                       {[75, 100, 125, 150].map((s) => {
                         const pct = ((s - 75) / 75) * 100;
                         return (
@@ -146,9 +155,9 @@ export function DisplaysSection() {
                             key={s}
                             onClick={() => updateFontScale(layout.id, s)}
                             className={cn(
-                              'absolute text-xs px-0.5 py-0.5 rounded transition-colors -translate-x-1/2',
+                              'absolute -translate-x-1/2 rounded px-0.5 py-0.5 text-xs transition-colors',
                               scale === s
-                                ? 'text-primary font-medium'
+                                ? 'font-medium text-primary'
                                 : 'text-muted-foreground hover:text-foreground'
                             )}
                             style={{ left: `${pct}%` }}
@@ -160,10 +169,12 @@ export function DisplaysSection() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
+                  <div className="flex items-center gap-2 pt-1 text-xs text-muted-foreground">
                     <span className="capitalize">{layout.orientation || 'landscape'}</span>
                     <span>·</span>
-                    <span>{layout.widgets.length} widget{layout.widgets.length !== 1 ? 's' : ''}</span>
+                    <span>
+                      {layout.widgets.length} widget{layout.widgets.length !== 1 ? 's' : ''}
+                    </span>
                     {saving === layout.id && (
                       <>
                         <span>·</span>
@@ -181,7 +192,9 @@ export function DisplaysSection() {
       <Card className="border-dashed">
         <CardContent className="py-4">
           <p className="text-sm text-muted-foreground">
-            <strong>Tip:</strong> Set a dedicated device to open <code className="font-mono text-xs bg-muted px-1 py-0.5 rounded">/d/your-slug</code> as its home page, then tune font scale here to match its viewing distance and screen size.
+            <strong>Tip:</strong> Set a dedicated device to open{' '}
+            <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">/d/your-slug</code> as
+            its home page, then tune font scale here to match its viewing distance and screen size.
             Each named dashboard is independent — changes here don&apos;t affect other displays.
           </p>
         </CardContent>

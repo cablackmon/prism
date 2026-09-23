@@ -92,7 +92,10 @@ async function getConfig() {
 /**
  * Generate the Google OAuth authorization URL
  */
-export async function getGoogleAuthUrl(state?: string, redirectUriOverride?: string): Promise<string> {
+export async function getGoogleAuthUrl(
+  state?: string,
+  redirectUriOverride?: string
+): Promise<string> {
   const { clientId, redirectUri } = await getConfig();
 
   const params = new URLSearchParams({
@@ -114,7 +117,10 @@ export async function getGoogleAuthUrl(state?: string, redirectUriOverride?: str
 /**
  * Exchange authorization code for tokens
  */
-export async function exchangeCodeForTokens(code: string, redirectUriOverride?: string): Promise<GoogleTokens> {
+export async function exchangeCodeForTokens(
+  code: string,
+  redirectUriOverride?: string
+): Promise<GoogleTokens> {
   const { clientId, clientSecret, redirectUri } = await getConfig();
 
   const response = await fetch(GOOGLE_TOKEN_URL, {
@@ -154,7 +160,7 @@ export class TokenRevokedError extends Error {
  */
 export async function refreshAccessToken(
   refreshToken: string,
-  credentialsOverride?: { clientId: string; clientSecret: string },
+  credentialsOverride?: { clientId: string; clientSecret: string }
 ): Promise<GoogleTokens> {
   // The manual-token flow validates a pasted refresh token against pasted, not-
   // yet-stored credentials; every other caller uses the stored config.
@@ -176,7 +182,10 @@ export async function refreshAccessToken(
   if (!response.ok) {
     const errorText = await response.text();
     // Detect revoked/expired tokens
-    if (errorText.includes('invalid_grant') || errorText.includes('Token has been expired or revoked')) {
+    if (
+      errorText.includes('invalid_grant') ||
+      errorText.includes('Token has been expired or revoked')
+    ) {
       throw new TokenRevokedError(`Token expired or revoked: ${errorText}`);
     }
     throw new Error(`Failed to refresh token: ${errorText}`);
@@ -303,7 +312,7 @@ export async function createCalendarEvent(
     if (response.status === 404) {
       throw new Error(
         `Calendar not found (404). The calendar may have been deleted or unsubscribed in Google. ` +
-        `Please remove it in Settings and re-sync your calendars.`
+          `Please remove it in Settings and re-sync your calendars.`
       );
     }
     throw new Error(`Failed to create event: ${error}`);
@@ -378,7 +387,10 @@ export async function deleteCalendarEvent(
  * inclusive 23:59:59 ends, and guards against Google rejecting a zero-length
  * range by coercing malformed/legacy rows to a single day.
  */
-export function toGoogleAllDayRange(startTime: Date, endTime: Date): {
+export function toGoogleAllDayRange(
+  startTime: Date,
+  endTime: Date
+): {
   start: { date: string };
   end: { date: string };
 } {
@@ -390,14 +402,13 @@ export function toGoogleAllDayRange(startTime: Date, endTime: Date): {
   };
 
   const startDate = dateOnly(startTime);
-  const endIsExclusiveMidnight = endTime.getTime() > startTime.getTime()
-    && endTime.getUTCHours() === 0
-    && endTime.getUTCMinutes() === 0
-    && endTime.getUTCSeconds() === 0
-    && endTime.getUTCMilliseconds() === 0;
-  let endDate = endIsExclusiveMidnight
-    ? dateOnly(endTime)
-    : addUtcDay(dateOnly(endTime));
+  const endIsExclusiveMidnight =
+    endTime.getTime() > startTime.getTime() &&
+    endTime.getUTCHours() === 0 &&
+    endTime.getUTCMinutes() === 0 &&
+    endTime.getUTCSeconds() === 0 &&
+    endTime.getUTCMilliseconds() === 0;
+  let endDate = endIsExclusiveMidnight ? dateOnly(endTime) : addUtcDay(dateOnly(endTime));
 
   // Google rejects zero-length all-day ranges. Keep malformed/legacy local
   // rows editable by coercing them to a single-day event.

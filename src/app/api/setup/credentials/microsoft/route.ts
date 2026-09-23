@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
   if (forbidden) return forbidden;
 
   try {
-    const body = await request.json() as {
+    const body = (await request.json()) as {
       clientId?: string;
       clientSecret?: string;
       redirectUri?: string;
@@ -25,7 +25,10 @@ export async function POST(request: NextRequest) {
 
     const { clientId, clientSecret, redirectUri, tasksRedirectUri } = body;
     if (!clientId?.trim() || !clientSecret?.trim() || !redirectUri?.trim()) {
-      return NextResponse.json({ error: 'clientId, clientSecret, and redirectUri are required' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'clientId, clientSecret, and redirectUri are required' },
+        { status: 400 }
+      );
     }
 
     const value = {
@@ -35,7 +38,10 @@ export async function POST(request: NextRequest) {
       tasksRedirectUri: (tasksRedirectUri ?? redirectUri).trim(),
     };
 
-    const existing = await db.select().from(settings).where(eq(settings.key, 'credentials.microsoft'));
+    const existing = await db
+      .select()
+      .from(settings)
+      .where(eq(settings.key, 'credentials.microsoft'));
     if (existing.length > 0) {
       await db.update(settings).set({ value }).where(eq(settings.key, 'credentials.microsoft'));
     } else {

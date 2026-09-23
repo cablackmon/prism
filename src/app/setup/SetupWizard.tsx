@@ -39,26 +39,26 @@ export function SetupWizard() {
   const showProgress = currentStep !== 'welcome' && currentStep !== 'complete';
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
       {/* Progress bar */}
       {showProgress && (
-        <div className="w-full max-w-lg mb-6">
-          <div className="flex justify-between mb-2">
+        <div className="mb-6 w-full max-w-lg">
+          <div className="mb-2 flex justify-between">
             {CONTENT_STEPS.map((step, i) => (
               <div
                 key={step.id}
                 className={cn(
                   'text-xs font-medium transition-colors',
-                  i <= contentIndex ? 'text-primary' : 'text-muted-foreground',
+                  i <= contentIndex ? 'text-primary' : 'text-muted-foreground'
                 )}
               >
                 {step.label}
               </div>
             ))}
           </div>
-          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+          <div className="h-1.5 overflow-hidden rounded-full bg-muted">
             <div
-              className="h-full bg-primary rounded-full transition-all duration-500"
+              className="h-full rounded-full bg-primary transition-all duration-500"
               style={{ width: `${((contentIndex + 1) / CONTENT_STEPS.length) * 100}%` }}
             />
           </div>

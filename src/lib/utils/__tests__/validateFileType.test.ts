@@ -5,19 +5,19 @@ const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'] as 
 describe('validateMagicBytes', () => {
   describe('JPEG detection', () => {
     it('detects valid JPEG magic bytes', () => {
-      const buf = Buffer.from([0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10]);
+      const buf = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10]);
       expect(validateMagicBytes(buf, ALLOWED_TYPES)).toBe('image/jpeg');
     });
 
     it('detects JPEG with different JFIF marker', () => {
-      const buf = Buffer.from([0xFF, 0xD8, 0xFF, 0xE1, 0x00]);
+      const buf = Buffer.from([0xff, 0xd8, 0xff, 0xe1, 0x00]);
       expect(validateMagicBytes(buf, ALLOWED_TYPES)).toBe('image/jpeg');
     });
   });
 
   describe('PNG detection', () => {
     it('detects valid PNG magic bytes', () => {
-      const buf = Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00]);
+      const buf = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00]);
       expect(validateMagicBytes(buf, ALLOWED_TYPES)).toBe('image/png');
     });
   });
@@ -64,12 +64,12 @@ describe('validateMagicBytes', () => {
     });
 
     it('returns null for buffer too short for any signature', () => {
-      const buf = Buffer.from([0xFF, 0xD8]); // JPEG needs 3 bytes
+      const buf = Buffer.from([0xff, 0xd8]); // JPEG needs 3 bytes
       expect(validateMagicBytes(buf, ALLOWED_TYPES)).toBeNull();
     });
 
     it('returns null when type is not in allowed list', () => {
-      const jpegBuf = Buffer.from([0xFF, 0xD8, 0xFF, 0xE0]);
+      const jpegBuf = Buffer.from([0xff, 0xd8, 0xff, 0xe0]);
       expect(validateMagicBytes(jpegBuf, ['image/png'])).toBeNull();
     });
 

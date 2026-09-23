@@ -23,114 +23,114 @@ import { logError } from '@/lib/utils/logError';
  *   (no approvedBy/approvedAt). Voice can never approve.
  */
 export async function POST(request: NextRequest) {
-  return withAuth(async () => {
-    try {
-      const body = await request.json().catch(() => ({}));
-      const validation = validateRequest(voiceChoreCompleteSchema, body);
-      if (!validation.success) {
-        return voiceError("I didn't catch which chore. Please try again.", 400);
-      }
+  return withAuth(
+    async () => {
+      try {
+        const body = await request.json().catch(() => ({}));
+        const validation = validateRequest(voiceChoreCompleteSchema, body);
+        if (!validation.success) {
+          return voiceError("I didn't catch which chore. Please try again.", 400);
+        }
 
-      const { chore: choreName, assignee } = validation.data;
+        const { chore: choreName, assignee } = validation.data;
 
-      // Fuzzy match chores by title, joined with assignee info for disambiguation
-      const matches = await db
-        .select({
-          id: chores.id,
-          title: chores.title,
-          assignedTo: chores.assignedTo,
-          assigneeName: users.name,
-          requiresApproval: chores.requiresApproval,
-          pointValue: chores.pointValue,
-          enabled: chores.enabled,
-        })
-        .from(chores)
-        .leftJoin(users, eq(users.id, chores.assignedTo))
-        .where(and(
-          ilike(chores.title, `%${choreName}%`),
-          eq(chores.enabled, true),
-        ));
+        // Fuzzy match chores by title, joined with assignee info for disambiguation
+        const matches = await db
+          .select({
+            id: chores.id,
+            title: chores.title,
+            assignedTo: chores.assignedTo,
+            assigneeName: users.name,
+            requiresApproval: chores.requiresApproval,
+            pointValue: chores.pointValue,
+            enabled: chores.enabled,
+          })
+          .from(chores)
+          .leftJoin(users, eq(users.id, chores.assignedTo))
+          .where(and(ilike(chores.title, `%${choreName}%`), eq(chores.enabled, true)));
 
-      if (matches.length === 0) {
-        return voiceError(`I couldn't find a chore matching '${choreName}'.`, 404);
-      }
+        if (matches.length === 0) {
+          return voiceError(`I couldn't find a chore matching '${choreName}'.`, 404);
+        }
 
-      // If assignee provided, narrow down
-      let candidates = matches;
-      if (assignee) {
-        candidates = matches.filter(
-          (c) => c.assigneeName && c.assigneeName.toLowerCase().includes(assignee.toLowerCase())
-        );
-        if (candidates.length === 0) {
+        // If assignee provided, narrow down
+        let candidates = matches;
+        if (assignee) {
+          candidates = matches.filter(
+            (c) => c.assigneeName && c.assigneeName.toLowerCase().includes(assignee.toLowerCase())
+          );
+          if (candidates.length === 0) {
+            return voiceError(
+              `I couldn't find a chore matching '${choreName}' assigned to ${assignee}.`,
+              404
+            );
+          }
+        }
+
+        // Disambiguation: multiple candidates with distinct assignees
+        const distinctAssignees = new Set(candidates.map((c) => c.assignedTo).filter(Boolean));
+        if (candidates.length > 1 && distinctAssignees.size > 1) {
+          const names = candidates
+            .map((c) => c.assigneeName)
+            .filter((n): n is string => Boolean(n));
+          // ok:false (action didn't complete) but HTTP 200 (request was
+          // well-formed; we just need a follow-up). Caller branches on
+          // `data.ambiguous` and resends with `assignee`.
+          return NextResponse.json({
+            ok: false,
+            spoken: `Multiple chores match '${choreName}'. Which family member: ${names.join(', ')}?`,
+            data: {
+              ambiguous: true,
+              candidates: candidates.map((c) => ({
+                choreId: c.id,
+                title: c.title,
+                assigneeId: c.assignedTo,
+                assigneeName: c.assigneeName,
+              })),
+            },
+          });
+        }
+
+        const target = candidates[0]!;
+
+        if (!target.assignedTo) {
           return voiceError(
-            `I couldn't find a chore matching '${choreName}' assigned to ${assignee}.`,
-            404,
+            `That chore isn't assigned to anyone, so I can't mark it complete.`,
+            400
           );
         }
-      }
 
-      // Disambiguation: multiple candidates with distinct assignees
-      const distinctAssignees = new Set(candidates.map((c) => c.assignedTo).filter(Boolean));
-      if (candidates.length > 1 && distinctAssignees.size > 1) {
-        const names = candidates
-          .map((c) => c.assigneeName)
-          .filter((n): n is string => Boolean(n));
-        // ok:false (action didn't complete) but HTTP 200 (request was
-        // well-formed; we just need a follow-up). Caller branches on
-        // `data.ambiguous` and resends with `assignee`.
-        return NextResponse.json({
-          ok: false,
-          spoken: `Multiple chores match '${choreName}'. Which family member: ${names.join(', ')}?`,
-          data: {
-            ambiguous: true,
-            candidates: candidates.map((c) => ({
-              choreId: c.id,
-              title: c.title,
-              assigneeId: c.assignedTo,
-              assigneeName: c.assigneeName,
-            })),
-          },
-        });
-      }
+        const isPending = target.requiresApproval;
 
-      const target = candidates[0]!;
+        const [completion] = await db
+          .insert(choreCompletions)
+          .values({
+            choreId: target.id,
+            completedBy: target.assignedTo,
+            pointsAwarded: isPending ? null : target.pointValue,
+          })
+          .returning();
 
-      if (!target.assignedTo) {
-        return voiceError(
-          `That chore isn't assigned to anyone, so I can't mark it complete.`,
-          400,
-        );
-      }
+        await invalidateEntity('chores');
 
-      const isPending = target.requiresApproval;
+        const spoken = isPending
+          ? `Marked ${target.title} complete. A parent will need to approve in the app.`
+          : `Marked ${target.title} complete.`;
 
-      const [completion] = await db
-        .insert(choreCompletions)
-        .values({
+        return voiceOk(spoken, {
           choreId: target.id,
+          completionId: completion!.id,
           completedBy: target.assignedTo,
-          pointsAwarded: isPending ? null : target.pointValue,
-        })
-        .returning();
-
-      await invalidateEntity('chores');
-
-      const spoken = isPending
-        ? `Marked ${target.title} complete. A parent will need to approve in the app.`
-        : `Marked ${target.title} complete.`;
-
-      return voiceOk(spoken, {
-        choreId: target.id,
-        completionId: completion!.id,
-        completedBy: target.assignedTo,
-        pending: isPending,
-      });
-    } catch (error) {
-      logError('Voice API: chore/complete failed', error);
-      return voiceError('Sorry, I had trouble marking that chore complete.', 500);
+          pending: isPending,
+        });
+      } catch (error) {
+        logError('Voice API: chore/complete failed', error);
+        return voiceError('Sorry, I had trouble marking that chore complete.', 500);
+      }
+    },
+    {
+      tokenScope: 'voice',
+      rateLimit: { feature: 'voice-api', limit: 60, windowSeconds: 60 },
     }
-  }, {
-    tokenScope: 'voice',
-    rateLimit: { feature: 'voice-api', limit: 60, windowSeconds: 60 },
-  });
+  );
 }

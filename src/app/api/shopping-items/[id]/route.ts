@@ -39,10 +39,7 @@ interface RouteParams {
  *   notes?: string
  * }
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -60,10 +57,7 @@ export async function PATCH(
       .where(eq(shoppingItems.id, id));
 
     if (!existingItem) {
-      return NextResponse.json(
-        { error: 'Shopping item not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Shopping item not found' }, { status: 404 });
     }
 
     // Validate request body
@@ -108,33 +102,27 @@ export async function PATCH(
     if ('category' in validation.data) updateData.category = validation.data.category || null;
     if ('checked' in validation.data) updateData.checked = validation.data.checked;
     if ('recurring' in validation.data) updateData.recurring = validation.data.recurring;
-    if ('recurrenceInterval' in validation.data) updateData.recurrenceInterval = validation.data.recurrenceInterval || null;
+    if ('recurrenceInterval' in validation.data)
+      updateData.recurrenceInterval = validation.data.recurrenceInterval || null;
     if ('notes' in validation.data) updateData.notes = validation.data.notes || null;
 
     // Execute update
-    await db
-      .update(shoppingItems)
-      .set(updateData)
-      .where(eq(shoppingItems.id, id));
+    await db.update(shoppingItems).set(updateData).where(eq(shoppingItems.id, id));
 
     // Fetch and return updated item
-    const [updatedItem] = await db
-      .select()
-      .from(shoppingItems)
-      .where(eq(shoppingItems.id, id));
+    const [updatedItem] = await db.select().from(shoppingItems).where(eq(shoppingItems.id, id));
 
     if (!updatedItem) {
-      return NextResponse.json(
-        { error: 'Shopping item not found after update' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Shopping item not found after update' }, { status: 404 });
     }
 
     await invalidateEntity('shopping-lists');
 
     const checkedToggled = 'checked' in validation.data;
     const summary = checkedToggled
-      ? (validation.data.checked ? `Checked off: ${updatedItem.name}` : `Unchecked: ${updatedItem.name}`)
+      ? validation.data.checked
+        ? `Checked off: ${updatedItem.name}`
+        : `Unchecked: ${updatedItem.name}`
       : `Updated item: ${updatedItem.name}`;
 
     logActivity({
@@ -161,10 +149,7 @@ export async function PATCH(
     });
   } catch (error) {
     logError('Error updating shopping item:', error);
-    return NextResponse.json(
-      { error: 'Failed to update shopping item' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to update shopping item' }, { status: 500 });
   }
 }
 
@@ -172,10 +157,7 @@ export async function PATCH(
  * DELETE /api/shopping-items/[id]
  * Deletes a shopping item.
  */
-export async function DELETE(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -189,16 +171,11 @@ export async function DELETE(
       .where(eq(shoppingItems.id, id));
 
     if (!existingItem) {
-      return NextResponse.json(
-        { error: 'Shopping item not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Shopping item not found' }, { status: 404 });
     }
 
     // Delete the item
-    await db
-      .delete(shoppingItems)
-      .where(eq(shoppingItems.id, id));
+    await db.delete(shoppingItems).where(eq(shoppingItems.id, id));
 
     await invalidateEntity('shopping-lists');
 
@@ -219,9 +196,6 @@ export async function DELETE(
     });
   } catch (error) {
     logError('Error deleting shopping item:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete shopping item' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to delete shopping item' }, { status: 500 });
   }
 }

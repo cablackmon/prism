@@ -39,7 +39,10 @@ export function GoogleCredentialsForm({ onSaved }: { onSaved?: () => void }) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || 'Failed to save credentials');
       }
-      toast({ title: 'Google credentials saved', description: 'You can now connect Google Calendar / Tasks.' });
+      toast({
+        title: 'Google credentials saved',
+        description: 'You can now connect Google Calendar / Tasks.',
+      });
       setClientSecret('');
       onSaved?.();
     } catch (err) {
@@ -75,7 +78,7 @@ export function GoogleCredentialsForm({ onSaved }: { onSaved?: () => void }) {
         client&apos;s <span className="font-medium">Authorized redirect URIs</span>, and add your
         Google account as a <span className="font-medium">Test user</span> on the OAuth consent
         screen (or publish it). Then paste the Client ID and Secret here — no{' '}
-        <code className="text-xs bg-muted px-1 py-0.5 rounded">.env</code> editing needed.
+        <code className="rounded bg-muted px-1 py-0.5 text-xs">.env</code> editing needed.
       </p>
 
       <label className="block space-y-1">

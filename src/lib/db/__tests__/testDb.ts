@@ -24,9 +24,11 @@ function getDbPassword(): string {
     path.resolve(__dirname, '../../../../.env'),
     path.resolve(process.cwd(), '.env'),
   ];
-  const envPath = candidatePaths.find(p => fs.existsSync(p)) ?? candidatePaths[0];
+  const envPath = candidatePaths.find((p) => fs.existsSync(p)) ?? candidatePaths[0];
   if (!fs.existsSync(envPath!)) {
-    throw new Error(`.env not found (tried: ${candidatePaths.join(', ')}) — set DB_PASSWORD env var`);
+    throw new Error(
+      `.env not found (tried: ${candidatePaths.join(', ')}) — set DB_PASSWORD env var`
+    );
   }
 
   const envContents = fs.readFileSync(envPath!, 'utf-8');

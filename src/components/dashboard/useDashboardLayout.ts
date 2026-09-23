@@ -17,7 +17,9 @@ import { toast } from '@/components/ui/use-toast';
 
 interface LayoutsData {
   savedLayout: Layout | null;
-  saveLayout: (data: Partial<Layout> & { name: string; widgets: WidgetConfig[] }) => Promise<unknown>;
+  saveLayout: (
+    data: Partial<Layout> & { name: string; widgets: WidgetConfig[] }
+  ) => Promise<unknown>;
   deleteLayout: (id: string) => Promise<void>;
   allLayouts: Layout[];
   loading: boolean;
@@ -32,7 +34,7 @@ export function useDashboardLayout(layouts: LayoutsData, slug?: string) {
 
   // Resolve active layout: by slug if provided, otherwise default
   const activeLayout = slug
-    ? layouts.allLayouts.find(l => l.slug === slug) || null
+    ? layouts.allLayouts.find((l) => l.slug === slug) || null
     : layouts.savedLayout;
 
   const [ssLayout, setSsLayout] = useState<WidgetConfig[]>(() => {
@@ -88,8 +90,7 @@ export function useDashboardLayout(layouts: LayoutsData, slug?: string) {
   // no saved layout exists (genuine first-run / blank-slate install).
   const activeWidgets = isEditing
     ? editingWidgets
-    : activeLayout?.widgets
-      ?? (layouts.loading ? [] : DEFAULT_TEMPLATE.widgets);
+    : (activeLayout?.widgets ?? (layouts.loading ? [] : DEFAULT_TEMPLATE.widgets));
 
   const handleEditStart = useCallback(() => {
     // Auth gate: only logged-in parents can edit. Signed-out users get a
@@ -110,23 +111,26 @@ export function useDashboardLayout(layouts: LayoutsData, slug?: string) {
     setIsEditing(true);
   }, [activeLayout, activeUser]);
 
-  const handleSave = useCallback(async (name?: string) => {
-    try {
-      const saveData: Partial<Layout> & { name: string; widgets: WidgetConfig[] } = {
-        ...(activeLayout ? { id: activeLayout.id } : {}),
-        name: name || activeLayout?.name || 'My Layout',
-        widgets: editingWidgets,
-        isDefault: activeLayout?.isDefault ?? true,
-        screensaverWidgets: ssLayout,
-        orientation: activeLayout?.orientation || 'landscape',
-      };
-      await layouts.saveLayout(saveData);
-    } catch (err) {
-      console.error('Failed to save layout:', err);
-    } finally {
-      setIsEditing(false);
-    }
-  }, [activeLayout, editingWidgets, ssLayout, layouts]);
+  const handleSave = useCallback(
+    async (name?: string) => {
+      try {
+        const saveData: Partial<Layout> & { name: string; widgets: WidgetConfig[] } = {
+          ...(activeLayout ? { id: activeLayout.id } : {}),
+          name: name || activeLayout?.name || 'My Layout',
+          widgets: editingWidgets,
+          isDefault: activeLayout?.isDefault ?? true,
+          screensaverWidgets: ssLayout,
+          orientation: activeLayout?.orientation || 'landscape',
+        };
+        await layouts.saveLayout(saveData);
+      } catch (err) {
+        console.error('Failed to save layout:', err);
+      } finally {
+        setIsEditing(false);
+      }
+    },
+    [activeLayout, editingWidgets, ssLayout, layouts]
+  );
 
   // Save-As supports two modes:
   //   - { id }: overwrite an existing dashboard. Preserves the target's
@@ -136,36 +140,37 @@ export function useDashboardLayout(layouts: LayoutsData, slug?: string) {
   //     as the previous prompt() flow, just driven by a real dialog input.
   // Legacy callers passing a bare string (e.g. the Apply Community Layout
   // path) still get the new-dashboard branch via the string overload.
-  const handleSaveAs = useCallback(async (
-    opts?: string | { id: string } | { name: string },
-  ) => {
-    if (!opts) return;
-    if (typeof opts === 'string') opts = { name: opts };
+  const handleSaveAs = useCallback(
+    async (opts?: string | { id: string } | { name: string }) => {
+      if (!opts) return;
+      if (typeof opts === 'string') opts = { name: opts };
 
-    if ('id' in opts) {
-      const target = layouts.allLayouts.find(l => l.id === opts.id);
-      if (!target) return;
-      await layouts.saveLayout({
-        id: target.id,
-        name: target.name,
-        widgets: editingWidgets,
-        isDefault: target.isDefault,
-        screensaverWidgets: ssLayout,
-        orientation: target.orientation || 'landscape',
-      });
-    } else {
-      const name = opts.name.trim();
-      if (!name) return;
-      await layouts.saveLayout({
-        name,
-        widgets: editingWidgets,
-        isDefault: false,
-        screensaverWidgets: ssLayout,
-        orientation: activeLayout?.orientation || 'landscape',
-      });
-    }
-    setIsEditing(false);
-  }, [editingWidgets, ssLayout, activeLayout, layouts]);
+      if ('id' in opts) {
+        const target = layouts.allLayouts.find((l) => l.id === opts.id);
+        if (!target) return;
+        await layouts.saveLayout({
+          id: target.id,
+          name: target.name,
+          widgets: editingWidgets,
+          isDefault: target.isDefault,
+          screensaverWidgets: ssLayout,
+          orientation: target.orientation || 'landscape',
+        });
+      } else {
+        const name = opts.name.trim();
+        if (!name) return;
+        await layouts.saveLayout({
+          name,
+          widgets: editingWidgets,
+          isDefault: false,
+          screensaverWidgets: ssLayout,
+          orientation: activeLayout?.orientation || 'landscape',
+        });
+      }
+      setIsEditing(false);
+    },
+    [editingWidgets, ssLayout, activeLayout, layouts]
+  );
 
   const handleReset = useCallback(() => {
     setEditingWidgets(DEFAULT_TEMPLATE.widgets);
@@ -183,11 +188,11 @@ export function useDashboardLayout(layouts: LayoutsData, slug?: string) {
   }, []);
 
   const handleSsWidgetToggle = useCallback((widgetType: string, visible: boolean) => {
-    setSsLayout(prev => {
-      const exists = prev.find(w => w.i === widgetType);
+    setSsLayout((prev) => {
+      const exists = prev.find((w) => w.i === widgetType);
       let updated: WidgetConfig[];
       if (exists) {
-        updated = prev.map(w => w.i === widgetType ? { ...w, visible } : w);
+        updated = prev.map((w) => (w.i === widgetType ? { ...w, visible } : w));
       } else if (visible) {
         const { x, y } = findNextFreeSlot(prev, 3, 3);
         updated = [...prev, { i: widgetType, x, y, w: 3, h: 3, visible: true }];
@@ -226,20 +231,20 @@ export function useDashboardLayout(layouts: LayoutsData, slug?: string) {
   }, [ssLayout]);
 
   const handleSsReset = useCallback(() => {
-    const fresh = DEFAULT_SCREENSAVER_LAYOUT.map(w => ({ ...w }));
+    const fresh = DEFAULT_SCREENSAVER_LAYOUT.map((w) => ({ ...w }));
     setSsLayout(fresh);
     saveScreensaverLayout(fresh);
   }, []);
 
   const handleSelectSsTemplate = useCallback((templateWidgets: WidgetConfig[]) => {
-    const visibleIds = new Set(templateWidgets.filter(w => w.visible !== false).map(w => w.i));
-    const merged = DEFAULT_SCREENSAVER_LAYOUT.map(def => {
-      const tw = templateWidgets.find(t => t.i === def.i);
+    const visibleIds = new Set(templateWidgets.filter((w) => w.visible !== false).map((w) => w.i));
+    const merged = DEFAULT_SCREENSAVER_LAYOUT.map((def) => {
+      const tw = templateWidgets.find((t) => t.i === def.i);
       if (tw) return { ...tw, visible: true };
       return { ...def, visible: false };
     });
-    templateWidgets.forEach(tw => {
-      if (!merged.find(m => m.i === tw.i)) {
+    templateWidgets.forEach((tw) => {
+      if (!merged.find((m) => m.i === tw.i)) {
         merged.push({ ...tw, visible: visibleIds.has(tw.i) });
       }
     });
@@ -258,14 +263,28 @@ export function useDashboardLayout(layouts: LayoutsData, slug?: string) {
   }, []);
 
   return {
-    isEditing, setIsEditing,
-    editingWidgets, setEditingWidgets,
-    editingScreensaver, setEditingScreensaver,
-    ssLayout, ssPresets,
+    isEditing,
+    setIsEditing,
+    editingWidgets,
+    setEditingWidgets,
+    editingScreensaver,
+    setEditingScreensaver,
+    ssLayout,
+    ssPresets,
     activeWidgets,
     activeLayout,
-    handleEditStart, handleSave, handleSaveAs, handleReset, handleCancel,
-    handleSsLayoutChange, handleSsWidgetToggle, handleSsSave, handleSsSaveAs,
-    handleSsReset, handleSelectSsTemplate, handleSelectSsPreset, handleDeleteSsPreset,
+    handleEditStart,
+    handleSave,
+    handleSaveAs,
+    handleReset,
+    handleCancel,
+    handleSsLayoutChange,
+    handleSsWidgetToggle,
+    handleSsSave,
+    handleSsSaveAs,
+    handleSsReset,
+    handleSelectSsTemplate,
+    handleSelectSsPreset,
+    handleDeleteSsPreset,
   };
 }

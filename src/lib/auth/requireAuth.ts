@@ -48,10 +48,7 @@ export async function requireAuth(): Promise<AuthResult | NextResponse> {
   const sessionToken = cookieStore.get('prism_session')?.value;
 
   if (!sessionToken) {
-    return NextResponse.json(
-      { error: 'Authentication required' },
-      { status: 401 }
-    );
+    return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
   }
 
   const result = await validateSession(sessionToken);
@@ -62,10 +59,7 @@ export async function requireAuth(): Promise<AuthResult | NextResponse> {
         { status: 503 }
       );
     }
-    return NextResponse.json(
-      { error: 'Invalid or expired session' },
-      { status: 401 }
-    );
+    return NextResponse.json({ error: 'Invalid or expired session' }, { status: 401 });
   }
 
   return { userId: result.session.userId, role: result.session.role };
@@ -112,19 +106,13 @@ export function requireRole(
 ): NextResponse | null {
   if (auth.scopes !== undefined) {
     if (!auth.scopes.includes('*') && !auth.scopes.includes(permission)) {
-      return NextResponse.json(
-        { error: 'Forbidden' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
     return null;
   }
 
   if (!PERMISSIONS[auth.role][permission]) {
-    return NextResponse.json(
-      { error: 'Forbidden' },
-      { status: 403 }
-    );
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
   return null;
 }
@@ -138,10 +126,7 @@ export async function getDisplayAuth(): Promise<AuthResult | null> {
   if (auth) return auth;
 
   try {
-    const [setting] = await db
-      .select()
-      .from(settings)
-      .where(eq(settings.key, 'displayUserId'));
+    const [setting] = await db.select().from(settings).where(eq(settings.key, 'displayUserId'));
 
     if (!setting?.value) return null;
 

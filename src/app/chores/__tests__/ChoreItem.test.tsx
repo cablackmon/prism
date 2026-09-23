@@ -23,8 +23,13 @@ const chore = {
 describe('ChoreItem destructive-action safety', () => {
   it('keeps edit and destructive controls in separate, touch-sized groups', () => {
     render(
-      <ChoreItem chore={chore} onComplete={jest.fn()} onToggleEnabled={jest.fn()}
-        onEdit={jest.fn()} onDelete={jest.fn()} />
+      <ChoreItem
+        chore={chore}
+        onComplete={jest.fn()}
+        onToggleEnabled={jest.fn()}
+        onEdit={jest.fn()}
+        onDelete={jest.fn()}
+      />
     );
 
     const edit = screen.getByRole('button', { name: 'Edit chore' });
@@ -44,8 +49,13 @@ describe('ChoreItem destructive-action safety', () => {
     const onEdit = jest.fn();
     const onToggleEnabled = jest.fn();
     render(
-      <ChoreItem chore={chore} onComplete={jest.fn()} onToggleEnabled={onToggleEnabled}
-        onEdit={onEdit} onDelete={jest.fn()} />
+      <ChoreItem
+        chore={chore}
+        onComplete={jest.fn()}
+        onToggleEnabled={onToggleEnabled}
+        onEdit={onEdit}
+        onDelete={jest.fn()}
+      />
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit chore' }));

@@ -55,10 +55,7 @@ export async function GET(request: NextRequest) {
         .orderBy(desc(auditLogs.createdAt))
         .limit(limit)
         .offset(offset),
-      db
-        .select({ value: count() })
-        .from(auditLogs)
-        .where(whereClause),
+      db.select({ value: count() }).from(auditLogs).where(whereClause),
     ]);
 
     return NextResponse.json({
@@ -68,9 +65,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     logError('Error fetching audit logs:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch audit logs' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch audit logs' }, { status: 500 });
   }
 }

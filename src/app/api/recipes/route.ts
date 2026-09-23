@@ -52,10 +52,7 @@ async function fetchRecipes(
 
   if (search) {
     conditions.push(
-      or(
-        ilike(recipes.name, `%${search}%`),
-        ilike(recipes.description, `%${search}%`)
-      )
+      or(ilike(recipes.name, `%${search}%`), ilike(recipes.description, `%${search}%`))
     );
   }
 
@@ -82,13 +79,11 @@ async function fetchRecipes(
   const recipeList = await query;
 
   // Get total count for pagination
-  const countResult = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(recipes);
+  const countResult = await db.select({ count: sql<number>`count(*)::int` }).from(recipes);
   const totalCount = countResult[0]?.count ?? 0;
 
   return {
-    recipes: recipeList.map(row => formatRecipeRow(row)),
+    recipes: recipeList.map((row) => formatRecipeRow(row)),
     total: totalCount,
     limit,
     offset,
@@ -126,10 +121,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(result);
   } catch (error) {
     logError('Error fetching recipes:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch recipes' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch recipes' }, { status: 500 });
   }
 }
 
@@ -148,10 +140,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     if (!body.name || typeof body.name !== 'string' || body.name.trim().length === 0) {
-      return NextResponse.json(
-        { error: 'Recipe name is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Recipe name is required' }, { status: 400 });
     }
 
     const [newRecipe] = await db
@@ -224,9 +213,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(formatRecipeRow(fullRecipe), { status: 201 });
   } catch (error) {
     logError('Error creating recipe:', error);
-    return NextResponse.json(
-      { error: 'Failed to create recipe' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to create recipe' }, { status: 500 });
   }
 }

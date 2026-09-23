@@ -6,7 +6,10 @@ import type { AuthResult } from '../withAuth';
 
 const mockRequireAuth = jest.fn<Promise<AuthResult | NextResponse>, []>();
 const mockRequireRole = jest.fn<NextResponse | null, [AuthResult, string]>();
-const mockRateLimitGuard = jest.fn<Promise<NextResponse | null>, [string, string, number, number]>();
+const mockRateLimitGuard = jest.fn<
+  Promise<NextResponse | null>,
+  [string, string, number, number]
+>();
 
 jest.mock('@/lib/auth', () => ({
   requireAuth: (...args: unknown[]) => mockRequireAuth(...(args as [])),
@@ -14,7 +17,8 @@ jest.mock('@/lib/auth', () => ({
 }));
 
 jest.mock('@/lib/cache/rateLimit', () => ({
-  rateLimitGuard: (...args: unknown[]) => mockRateLimitGuard(...(args as [string, string, number, number])),
+  rateLimitGuard: (...args: unknown[]) =>
+    mockRateLimitGuard(...(args as [string, string, number, number])),
 }));
 
 // --- Helpers ---

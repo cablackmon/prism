@@ -62,7 +62,10 @@ export function useIntegrationSources<S extends BaseSource>(
   const [syncing, setSyncing] = useState<string | null>(null);
   const [syncingAll, setSyncingAll] = useState(false);
   const [updatingSource, setUpdatingSource] = useState<string | null>(null);
-  const [statusMessage, setStatusMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+  const [statusMessage, setStatusMessage] = useState<{
+    type: 'error' | 'success';
+    text: string;
+  } | null>(null);
 
   // MS List modal
   const [showMsListModal, setShowMsListModal] = useState(false);
@@ -79,7 +82,9 @@ export function useIntegrationSources<S extends BaseSource>(
   const [isNewConnection, setIsNewConnection] = useState(false);
 
   // Provider for current list selection flow
-  const [listSelectionProvider, setListSelectionProvider] = useState<'microsoft_todo' | 'google_tasks'>('microsoft_todo');
+  const [listSelectionProvider, setListSelectionProvider] = useState<
+    'microsoft_todo' | 'google_tasks'
+  >('microsoft_todo');
 
   // Handle OAuth URL params
   useEffect(() => {
@@ -189,7 +194,9 @@ export function useIntegrationSources<S extends BaseSource>(
   const fetchMsListsInternal = async (entityId: string) => {
     setLoadingMsLists(true);
     try {
-      const res = await fetch(`/api/task-sources/microsoft-lists?${config.oauthEntityParam}=${entityId}`);
+      const res = await fetch(
+        `/api/task-sources/microsoft-lists?${config.oauthEntityParam}=${entityId}`
+      );
       if (res.ok) {
         const data = await res.json();
         setMsLists(data.lists || []);
@@ -219,7 +226,8 @@ export function useIntegrationSources<S extends BaseSource>(
   const handleSelectMsList = async (externalListId: string, externalListName: string) => {
     if (!pendingEntityId) return;
 
-    const providerName = listSelectionProvider === 'google_tasks' ? 'Google Tasks' : 'Microsoft To-Do';
+    const providerName =
+      listSelectionProvider === 'google_tasks' ? 'Google Tasks' : 'Microsoft To-Do';
 
     setFinalizingConnection(true);
     try {
@@ -249,14 +257,21 @@ export function useIntegrationSources<S extends BaseSource>(
         });
         await fetchSources();
         // Preserve whichever section the user is currently on (legacy task/shopping/wish
-// vs the embedded-in-integrations case) instead of forcing back to config.section.
-{
-  const url = new URL(window.location.href);
-  for (const k of ['selectMsList', 'selectGoogleTasksList', 'newConnection', 'taskListId', 'shoppingListId', 'wishMemberId']) {
-    url.searchParams.delete(k);
-  }
-  window.history.replaceState({}, '', url.toString());
-}
+        // vs the embedded-in-integrations case) instead of forcing back to config.section.
+        {
+          const url = new URL(window.location.href);
+          for (const k of [
+            'selectMsList',
+            'selectGoogleTasksList',
+            'newConnection',
+            'taskListId',
+            'shoppingListId',
+            'wishMemberId',
+          ]) {
+            url.searchParams.delete(k);
+          }
+          window.history.replaceState({}, '', url.toString());
+        }
       } else {
         const data = await res.json();
         setStatusMessage({
@@ -283,8 +298,8 @@ export function useIntegrationSources<S extends BaseSource>(
         body: JSON.stringify({ syncEnabled: enabled }),
       });
       if (res.ok) {
-        setSources((prev) =>
-          prev.map((s) => (s.id === sourceId ? { ...s, syncEnabled: enabled } : s)) as S[]
+        setSources(
+          (prev) => prev.map((s) => (s.id === sourceId ? { ...s, syncEnabled: enabled } : s)) as S[]
         );
       }
     } catch (error) {
@@ -295,7 +310,7 @@ export function useIntegrationSources<S extends BaseSource>(
   };
 
   const handleDeleteSource = async (sourceId: string, sourceName: string) => {
-    if (!await confirm(`Disconnect "${sourceName}"?`, config.deleteConfirmSuffix)) {
+    if (!(await confirm(`Disconnect "${sourceName}"?`, config.deleteConfirmSuffix))) {
       return;
     }
 
@@ -337,7 +352,7 @@ export function useIntegrationSources<S extends BaseSource>(
   };
 
   const handleSyncAll = async () => {
-    const enabledSources = sources.filter(s => s.syncEnabled);
+    const enabledSources = sources.filter((s) => s.syncEnabled);
     if (enabledSources.length === 0) return;
 
     setSyncingAll(true);
@@ -354,7 +369,11 @@ export function useIntegrationSources<S extends BaseSource>(
           if (res.ok) {
             return { success: true as const, data, sourceName: source.externalListName };
           } else {
-            return { success: false as const, error: data.error, sourceName: source.externalListName };
+            return {
+              success: false as const,
+              error: data.error,
+              sourceName: source.externalListName,
+            };
           }
         })
       );
@@ -401,14 +420,21 @@ export function useIntegrationSources<S extends BaseSource>(
     setMsLists([]);
     setPendingEntityId(null);
     // Preserve whichever section the user is currently on (legacy task/shopping/wish
-// vs the embedded-in-integrations case) instead of forcing back to config.section.
-{
-  const url = new URL(window.location.href);
-  for (const k of ['selectMsList', 'selectGoogleTasksList', 'newConnection', 'taskListId', 'shoppingListId', 'wishMemberId']) {
-    url.searchParams.delete(k);
-  }
-  window.history.replaceState({}, '', url.toString());
-}
+    // vs the embedded-in-integrations case) instead of forcing back to config.section.
+    {
+      const url = new URL(window.location.href);
+      for (const k of [
+        'selectMsList',
+        'selectGoogleTasksList',
+        'newConnection',
+        'taskListId',
+        'shoppingListId',
+        'wishMemberId',
+      ]) {
+        url.searchParams.delete(k);
+      }
+      window.history.replaceState({}, '', url.toString());
+    }
   };
 
   const closeProviderPickerModal = () => {

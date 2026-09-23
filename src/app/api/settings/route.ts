@@ -23,10 +23,7 @@ export async function GET() {
     return NextResponse.json({ settings: result });
   } catch (error) {
     logError('Error fetching settings:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch settings' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch settings' }, { status: 500 });
   }
 }
 
@@ -38,17 +35,11 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
 
     if (!body.key || typeof body.key !== 'string') {
-      return NextResponse.json(
-        { error: 'key is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'key is required' }, { status: 400 });
     }
 
     if (body.value === undefined) {
-      return NextResponse.json(
-        { error: 'value is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'value is required' }, { status: 400 });
     }
 
     if (authResult instanceof NextResponse) {
@@ -62,8 +53,7 @@ export async function PATCH(request: NextRequest) {
       // against the default length instead of what's on screen, letting a
       // too-short PIN save — and once the real value is later persisted,
       // that member's PIN can never satisfy the login pad again (lockout).
-      const allowUnauthedSetup =
-        body.key === PIN_LENGTH_SETTING_KEY && !(await isSetupComplete());
+      const allowUnauthedSetup = body.key === PIN_LENGTH_SETTING_KEY && !(await isSetupComplete());
       if (!allowUnauthedSetup) return authResult;
       // auth stays null — proceed as an unauthenticated setup-bootstrap write.
     } else {
@@ -72,10 +62,7 @@ export async function PATCH(request: NextRequest) {
       if (forbidden) return forbidden;
     }
 
-    const [existing] = await db
-      .select()
-      .from(settings)
-      .where(eq(settings.key, body.key));
+    const [existing] = await db.select().from(settings).where(eq(settings.key, body.key));
 
     if (existing) {
       await db
@@ -83,9 +70,7 @@ export async function PATCH(request: NextRequest) {
         .set({ value: body.value, updatedAt: new Date() })
         .where(eq(settings.key, body.key));
     } else {
-      await db
-        .insert(settings)
-        .values({ key: body.key, value: body.value });
+      await db.insert(settings).values({ key: body.key, value: body.value });
     }
 
     if (auth) {
@@ -105,9 +90,6 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ key: body.key, value: body.value });
   } catch (error) {
     logError('Error updating setting:', error);
-    return NextResponse.json(
-      { error: 'Failed to update setting' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to update setting' }, { status: 500 });
   }
 }

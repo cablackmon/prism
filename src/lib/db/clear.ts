@@ -71,7 +71,7 @@ const USER_TABLES = ['users'];
 
 async function clearDatabase(keepUsers: boolean) {
   console.log('\n🗑️  PRISM Database Clear\n');
-  console.log('=' .repeat(50));
+  console.log('='.repeat(50));
 
   if (keepUsers) {
     console.log('Mode: Clearing data but KEEPING family members\n');
@@ -79,9 +79,7 @@ async function clearDatabase(keepUsers: boolean) {
     console.log('Mode: Clearing ALL data including family members\n');
   }
 
-  const tablesToClear = keepUsers
-    ? TABLES_TO_CLEAR
-    : [...TABLES_TO_CLEAR, ...USER_TABLES];
+  const tablesToClear = keepUsers ? TABLES_TO_CLEAR : [...TABLES_TO_CLEAR, ...USER_TABLES];
 
   let cleared = 0;
   let skipped = 0;
@@ -104,7 +102,7 @@ async function clearDatabase(keepUsers: boolean) {
     }
   }
 
-  console.log('\n' + '=' .repeat(50));
+  console.log('\n' + '='.repeat(50));
   console.log(`\n✅ Database cleared!`);
   console.log(`   Tables cleared: ${cleared}`);
   if (skipped > 0) {

@@ -41,7 +41,9 @@ describe('AddShoppingItemIntent slot handling', () => {
 
   it('passes item and optional list to the Voice API', async () => {
     mocked.postShoppingItem.mockResolvedValue({ ok: true, spoken: 'Added milk to Grocery.' });
-    await handleAddShoppingItem({ slots: { Item: { value: 'milk' }, ListName: { value: 'grocery' } } });
+    await handleAddShoppingItem({
+      slots: { Item: { value: 'milk' }, ListName: { value: 'grocery' } },
+    });
     expect(mocked.postShoppingItem).toHaveBeenCalledWith({ item: 'milk', list: 'grocery' });
   });
 
@@ -67,7 +69,9 @@ describe('CompleteChoreIntent slot handling', () => {
 
   it('forwards chore name and optional assignee', async () => {
     mocked.completeChore.mockResolvedValue({ ok: true, spoken: 'Marked feed the dog complete.' });
-    await handleCompleteChore({ slots: { Chore: { value: 'feed the dog' }, Assignee: { value: 'Emma' } } });
+    await handleCompleteChore({
+      slots: { Chore: { value: 'feed the dog' }, Assignee: { value: 'Emma' } },
+    });
     expect(mocked.completeChore).toHaveBeenCalledWith({ chore: 'feed the dog', assignee: 'Emma' });
   });
 

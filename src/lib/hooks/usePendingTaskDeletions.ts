@@ -66,7 +66,7 @@ export function usePendingTaskDeletions() {
         return { ok: false, reason: 'Could not reach KYST. Please try again.' };
       }
     },
-    [refresh],
+    [refresh]
   );
 
   return { pending, count: pending.length, loading, refresh, apply };

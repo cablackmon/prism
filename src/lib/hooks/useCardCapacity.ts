@@ -60,10 +60,13 @@ export function useCardCapacity({
     observerRef.current = ro;
   }, []);
 
-  useEffect(() => () => {
-    observerRef.current?.disconnect();
-    observerRef.current = null;
-  }, []);
+  useEffect(
+    () => () => {
+      observerRef.current?.disconnect();
+      observerRef.current = null;
+    },
+    []
+  );
 
   if (cellHeight === null || cardHeight === undefined || cardHeight <= 0) {
     return { cellRef, fitWithOverflow: null, fitWithoutOverflow: null };
@@ -109,10 +112,13 @@ export function useMeasuredHeight(): {
     observerRef.current = ro;
   }, []);
 
-  useEffect(() => () => {
-    observerRef.current?.disconnect();
-    observerRef.current = null;
-  }, []);
+  useEffect(
+    () => () => {
+      observerRef.current?.disconnect();
+      observerRef.current = null;
+    },
+    []
+  );
 
   return { ref, height };
 }

@@ -30,7 +30,6 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from './schema';
 
-
 /**
  * LAZY DATABASE CONNECTION
  * We use lazy initialization to avoid errors during Next.js build time.
@@ -44,8 +43,8 @@ function getConnectionString(): string {
   if (!connectionString) {
     throw new Error(
       'DATABASE_URL environment variable is not set. ' +
-      'Please check your .env file or environment configuration. ' +
-      'See .env.example for the expected format.'
+        'Please check your .env file or environment configuration. ' +
+        'See .env.example for the expected format.'
     );
   }
   return connectionString;
@@ -80,7 +79,6 @@ function getClient(): ReturnType<typeof postgres> {
   return _client;
 }
 
-
 /**
  * DRIZZLE ORM CLIENT
  * Wraps the postgres client with Drizzle ORM for type-safe queries.
@@ -109,7 +107,6 @@ export const db = new Proxy({} as ReturnType<typeof drizzle<typeof schema>>, {
   },
 });
 
-
 /**
  * DATABASE HEALTH CHECK
  * Verifies the database connection is working.
@@ -126,11 +123,10 @@ export async function checkDatabaseConnection(): Promise<boolean> {
     console.error('Database connection check failed:', error);
     throw new Error(
       'Failed to connect to database. ' +
-      'Please verify DATABASE_URL and that PostgreSQL is running.'
+        'Please verify DATABASE_URL and that PostgreSQL is running.'
     );
   }
 }
-
 
 /**
  * CLOSE DATABASE CONNECTION
@@ -144,7 +140,6 @@ export async function closeDatabase(): Promise<void> {
     _db = null;
   }
 }
-
 
 /**
  * EXPORT TYPES

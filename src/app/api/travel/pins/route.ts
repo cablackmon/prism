@@ -24,7 +24,11 @@ const createPinSchema = z.object({
   status: z.enum(['want_to_go', 'been_there']).default('want_to_go'),
   isBucketList: z.boolean().default(false),
   tripLabel: z.string().max(255).nullable().optional(),
-  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).nullable().optional(),
+  color: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/)
+    .nullable()
+    .optional(),
   visitedDate: z.string().nullable().optional(),
   visitedEndDate: z.string().nullable().optional(),
   year: z.number().int().nullable().optional(),
@@ -39,10 +43,12 @@ const createPinSchema = z.object({
   sortOrder: z.number().int().optional(),
 });
 
-function formatPin(row: typeof travelPins.$inferSelect & {
-  createdByName: string | null;
-  createdByColor: string | null;
-}) {
+function formatPin(
+  row: typeof travelPins.$inferSelect & {
+    createdByName: string | null;
+    createdByColor: string | null;
+  }
+) {
   return {
     id: row.id,
     name: row.name,
@@ -65,7 +71,9 @@ function formatPin(row: typeof travelPins.$inferSelect & {
     isHub: row.isHub,
     pinType: row.pinType,
     photoRadiusKm: row.photoRadiusKm ? parseFloat(row.photoRadiusKm as unknown as string) : 50,
-    createdBy: row.createdBy ? { id: row.createdBy, name: row.createdByName, color: row.createdByColor } : null,
+    createdBy: row.createdBy
+      ? { id: row.createdBy, name: row.createdByName, color: row.createdByColor }
+      : null,
     sortOrder: row.sortOrder,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -77,19 +85,23 @@ export async function GET() {
   if (!auth) return NextResponse.json({ pins: [] });
 
   try {
-    const data = await getCached('travel:pins', async () => {
-      const rows = await db
-        .select({
-          ...getTableColumns(travelPins),
-          createdByName: users.name,
-          createdByColor: users.color,
-        })
-        .from(travelPins)
-        .leftJoin(users, eq(travelPins.createdBy, users.id))
-        .orderBy(asc(travelPins.sortOrder), desc(travelPins.createdAt));
+    const data = await getCached(
+      'travel:pins',
+      async () => {
+        const rows = await db
+          .select({
+            ...getTableColumns(travelPins),
+            createdByName: users.name,
+            createdByColor: users.color,
+          })
+          .from(travelPins)
+          .leftJoin(users, eq(travelPins.createdBy, users.id))
+          .orderBy(asc(travelPins.sortOrder), desc(travelPins.createdAt));
 
-      return { pins: rows.map(formatPin) };
-    }, 300);
+        return { pins: rows.map(formatPin) };
+      },
+      300
+    );
 
     return NextResponse.json(data);
   } catch (error) {
@@ -158,13 +170,19 @@ export async function POST(request: NextRequest) {
 
     // Re-query with user join so createdBy is a proper { id, name, color } object
     const [withUser] = await db
-      .select({ ...getTableColumns(travelPins), createdByName: users.name, createdByColor: users.color })
+      .select({
+        ...getTableColumns(travelPins),
+        createdByName: users.name,
+        createdByColor: users.color,
+      })
       .from(travelPins)
       .leftJoin(users, eq(travelPins.createdBy, users.id))
       .where(eq(travelPins.id, newPin.id));
 
     return NextResponse.json(
-      withUser ? formatPin(withUser) : formatPin({ ...newPin, createdByName: null, createdByColor: null }),
+      withUser
+        ? formatPin(withUser)
+        : formatPin({ ...newPin, createdByName: null, createdByColor: null }),
       { status: 201 }
     );
   } catch (error) {

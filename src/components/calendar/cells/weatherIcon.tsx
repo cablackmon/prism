@@ -7,7 +7,10 @@ import type { WeatherCondition } from '@/components/widgets/WeatherWidget';
  * Tinted Lucide icon for a weather condition. Centralized so calendar views
  * stay consistent with /week's DayColumn.
  */
-export function weatherIcon(cond: WeatherCondition | undefined, size: 'sm' | 'lg' = 'sm'): React.ReactNode {
+export function weatherIcon(
+  cond: WeatherCondition | undefined,
+  size: 'sm' | 'lg' = 'sm'
+): React.ReactNode {
   const cls = size === 'lg' ? 'h-5 w-5' : 'h-4 w-4';
   switch (cond) {
     case 'sunny':

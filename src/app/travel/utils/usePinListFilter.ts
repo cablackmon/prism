@@ -16,16 +16,18 @@ export function usePinListFilter(pins: TravelPin[], pinsWithNpIds: Set<string>) 
   const [search, setSearch] = useState('');
   const [groupBy, setGroupBy] = useState<GroupBy>('year');
 
-  const stats = useMemo(() => ({
-    all: pins.length,
-    been_there: pins.filter((p) => p.status === 'been_there').length,
-    want_to_go: pins.filter((p) => p.status === 'want_to_go').length,
-    bucket_list: pins.filter((p) => p.isBucketList).length,
-    has_national_park: pins.filter((p) => pinsWithNpIds.has(p.id)).length,
-    countries: new Set(
-      pins.map((p) => getCountryFromPlaceName(p.placeName)).filter(Boolean)
-    ).size,
-  }), [pins, pinsWithNpIds]);
+  const stats = useMemo(
+    () => ({
+      all: pins.length,
+      been_there: pins.filter((p) => p.status === 'been_there').length,
+      want_to_go: pins.filter((p) => p.status === 'want_to_go').length,
+      bucket_list: pins.filter((p) => p.isBucketList).length,
+      has_national_park: pins.filter((p) => pinsWithNpIds.has(p.id)).length,
+      countries: new Set(pins.map((p) => getCountryFromPlaceName(p.placeName)).filter(Boolean))
+        .size,
+    }),
+    [pins, pinsWithNpIds]
+  );
 
   const filtered = useMemo(() => {
     return pins
@@ -35,9 +37,7 @@ export function usePinListFilter(pins: TravelPin[], pinsWithNpIds: Set<string>) 
         if (filter !== 'all') return p.status === filter;
         return true;
       })
-      .filter((p) =>
-        !search || p.name.toLowerCase().includes(search.toLowerCase())
-      )
+      .filter((p) => !search || p.name.toLowerCase().includes(search.toLowerCase()))
       .sort((a, b) => {
         // Visited: newest first; want-to-go: alphabetical
         if (a.status === 'been_there' && b.status === 'been_there') {
@@ -51,9 +51,7 @@ export function usePinListFilter(pins: TravelPin[], pinsWithNpIds: Set<string>) 
     if (groupBy === 'year') {
       const map = new Map<string, TravelPin[]>();
       for (const p of filtered) {
-        const y = p.visitedDate
-          ? String(new Date(p.visitedDate).getFullYear())
-          : 'No date';
+        const y = p.visitedDate ? String(new Date(p.visitedDate).getFullYear()) : 'No date';
         if (!map.has(y)) map.set(y, []);
         map.get(y)!.push(p);
       }

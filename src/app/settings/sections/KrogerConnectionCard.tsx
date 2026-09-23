@@ -42,9 +42,8 @@ export function KrogerConnectionCard() {
   const [credClientSecret, setCredClientSecret] = useState('');
   const [savingCreds, setSavingCreds] = useState(false);
 
-  const redirectUri = typeof window !== 'undefined'
-    ? `${window.location.origin}/api/auth/kroger/callback`
-    : '';
+  const redirectUri =
+    typeof window !== 'undefined' ? `${window.location.origin}/api/auth/kroger/callback` : '';
 
   const saveCredentials = async () => {
     if (!credClientId.trim() || !credClientSecret.trim()) return;
@@ -84,9 +83,7 @@ export function KrogerConnectionCard() {
     }
     setSearchingLocations(true);
     try {
-      const res = await fetch(
-        `/api/integrations/kroger/locations?zip=${zip}&chain=MARIANOS`,
-      );
+      const res = await fetch(`/api/integrations/kroger/locations?zip=${zip}&chain=MARIANOS`);
       if (!res.ok) throw new Error('Search failed');
       const data: { locations: KrogerLocation[] } = await res.json();
       // If Mariano's-only search returned nothing, fall back to all banners.
@@ -108,7 +105,9 @@ export function KrogerConnectionCard() {
     const friendlyName = [
       loc.name,
       [loc.address.city, loc.address.state].filter(Boolean).join(', '),
-    ].filter(Boolean).join(' — ');
+    ]
+      .filter(Boolean)
+      .join(' — ');
     try {
       const res = await fetch('/api/integrations/kroger/locations', {
         method: 'PATCH',
@@ -116,11 +115,15 @@ export function KrogerConnectionCard() {
         body: JSON.stringify({ locationId: loc.locationId, name: friendlyName }),
       });
       if (!res.ok) throw new Error('Save failed');
-      setStatus((s) => s ? {
-        ...s,
-        preferredLocationId: loc.locationId,
-        preferredLocationName: friendlyName,
-      } : s);
+      setStatus((s) =>
+        s
+          ? {
+              ...s,
+              preferredLocationId: loc.locationId,
+              preferredLocationName: friendlyName,
+            }
+          : s
+      );
       setShowPicker(false);
       setLocations(null);
       setZip('');
@@ -138,7 +141,7 @@ export function KrogerConnectionCard() {
         body: JSON.stringify({ locationId: null }),
       });
       if (!res.ok) throw new Error('Clear failed');
-      setStatus((s) => s ? { ...s, preferredLocationId: null, preferredLocationName: null } : s);
+      setStatus((s) => (s ? { ...s, preferredLocationId: null, preferredLocationName: null } : s));
       toast({ title: 'Default store cleared' });
     } catch {
       toast({ title: 'Failed to clear store', variant: 'destructive' });
@@ -189,7 +192,7 @@ export function KrogerConnectionCard() {
       const res = await fetch('/api/integrations/kroger/disconnect', { method: 'POST' });
       if (!res.ok) throw new Error('Disconnect failed');
       toast({ title: 'Disconnected from Kroger' });
-      setStatus((s) => s ? { ...s, connected: false, tokenExpiresAt: null } : s);
+      setStatus((s) => (s ? { ...s, connected: false, tokenExpiresAt: null } : s));
     } catch {
       toast({ title: 'Failed to disconnect Kroger', variant: 'destructive' });
     } finally {
@@ -205,38 +208,39 @@ export function KrogerConnectionCard() {
           <CardTitle>Kroger / Mariano&apos;s cart</CardTitle>
         </div>
         <CardDescription>
-          Push your shopping list to your Kroger online cart. Works with any
-          Kroger banner (Mariano&apos;s, Ralphs, Smith&apos;s, Fred Meyer, etc.) — one
-          account spans all of them.
+          Push your shopping list to your Kroger online cart. Works with any Kroger banner
+          (Mariano&apos;s, Ralphs, Smith&apos;s, Fred Meyer, etc.) — one account spans all of them.
         </CardDescription>
       </CardHeader>
       <CardContent>
         {loading ? (
           <div className="flex items-center text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin mr-2" /> Loading status…
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading status…
           </div>
         ) : !status?.configured ? (
           <div className="space-y-3">
             <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-sm">
               <div className="flex items-start gap-2">
-                <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600 dark:text-amber-400" />
                 <div>
                   <p className="font-medium">Kroger credentials not configured</p>
-                  <ol className="mt-2 space-y-1 list-decimal list-inside text-muted-foreground">
+                  <ol className="mt-2 list-inside list-decimal space-y-1 text-muted-foreground">
                     <li>
                       Register an app at{' '}
                       <a
                         href="https://developer.kroger.com/manage/apps/register"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-primary hover:underline inline-flex items-center gap-1"
+                        className="inline-flex items-center gap-1 text-primary hover:underline"
                       >
                         developer.kroger.com <ExternalLink className="h-3 w-3" />
                       </a>
                     </li>
                     <li>
                       Set the redirect URI to:
-                      <code className="block mt-1 text-xs bg-muted rounded px-2 py-1 break-all">{redirectUri}</code>
+                      <code className="mt-1 block break-all rounded bg-muted px-2 py-1 text-xs">
+                        {redirectUri}
+                      </code>
                       <button
                         onClick={copyRedirectUri}
                         className="mt-1 text-xs text-primary hover:underline"
@@ -245,9 +249,10 @@ export function KrogerConnectionCard() {
                       </button>
                     </li>
                     <li>
-                      Select scopes: <code className="text-xs bg-muted px-1 rounded">product.compact</code>,{' '}
-                      <code className="text-xs bg-muted px-1 rounded">cart.basic:write</code>,{' '}
-                      <code className="text-xs bg-muted px-1 rounded">profile.compact</code>
+                      Select scopes:{' '}
+                      <code className="rounded bg-muted px-1 text-xs">product.compact</code>,{' '}
+                      <code className="rounded bg-muted px-1 text-xs">cart.basic:write</code>,{' '}
+                      <code className="rounded bg-muted px-1 text-xs">profile.compact</code>
                     </li>
                     <li>Paste the Client ID and Secret below.</li>
                   </ol>
@@ -259,7 +264,7 @@ export function KrogerConnectionCard() {
                 Enter Kroger credentials
               </Button>
             ) : (
-              <div className="rounded-md border p-3 space-y-2">
+              <div className="space-y-2 rounded-md border p-3">
                 <div className="space-y-1">
                   <label className="text-xs text-muted-foreground">Client ID</label>
                   <Input
@@ -311,11 +316,11 @@ export function KrogerConnectionCard() {
               </Button>
             </div>
 
-            <div className="rounded-md border bg-muted/30 p-3 space-y-2">
+            <div className="space-y-2 rounded-md border bg-muted/30 p-3">
               <div className="flex items-center gap-2 text-sm">
                 <MapPin className="h-4 w-4 text-muted-foreground" />
                 <span className="font-medium">Default store</span>
-                <span className="text-muted-foreground flex-1 truncate">
+                <span className="flex-1 truncate text-muted-foreground">
                   {status.preferredLocationName ?? 'None set (uses Kroger default pricing)'}
                 </span>
               </div>
@@ -325,7 +330,9 @@ export function KrogerConnectionCard() {
                     {status.preferredLocationId ? 'Change' : 'Set store'}
                   </Button>
                   {status.preferredLocationId && (
-                    <Button variant="ghost" size="sm" onClick={clearStore}>Clear</Button>
+                    <Button variant="ghost" size="sm" onClick={clearStore}>
+                      Clear
+                    </Button>
                   )}
                 </div>
               ) : (
@@ -338,33 +345,49 @@ export function KrogerConnectionCard() {
                       maxLength={5}
                       inputMode="numeric"
                       className="h-8 max-w-[120px]"
-                      onKeyDown={(e) => { if (e.key === 'Enter') searchStores(); }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') searchStores();
+                      }}
                     />
                     <Button size="sm" onClick={searchStores} disabled={searchingLocations}>
                       {searchingLocations ? 'Searching…' : 'Search'}
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => { setShowPicker(false); setLocations(null); }}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setShowPicker(false);
+                        setLocations(null);
+                      }}
+                    >
                       Cancel
                     </Button>
                   </div>
                   {locations && (
-                    <ul className="max-h-60 overflow-y-auto space-y-1 border rounded p-1">
+                    <ul className="max-h-60 space-y-1 overflow-y-auto rounded border p-1">
                       {locations.length === 0 ? (
-                        <li className="text-sm text-muted-foreground p-2">No stores found near that zip.</li>
-                      ) : locations.map((loc) => (
-                        <li key={loc.locationId}>
-                          <button
-                            type="button"
-                            onClick={() => pickStore(loc)}
-                            className="w-full text-left p-2 text-sm rounded hover:bg-muted transition"
-                          >
-                            <div className="font-medium">{loc.name}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {loc.chain} • {[loc.address.addressLine1, loc.address.city, loc.address.state].filter(Boolean).join(', ')}
-                            </div>
-                          </button>
+                        <li className="p-2 text-sm text-muted-foreground">
+                          No stores found near that zip.
                         </li>
-                      ))}
+                      ) : (
+                        locations.map((loc) => (
+                          <li key={loc.locationId}>
+                            <button
+                              type="button"
+                              onClick={() => pickStore(loc)}
+                              className="w-full rounded p-2 text-left text-sm transition hover:bg-muted"
+                            >
+                              <div className="font-medium">{loc.name}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {loc.chain} •{' '}
+                                {[loc.address.addressLine1, loc.address.city, loc.address.state]
+                                  .filter(Boolean)
+                                  .join(', ')}
+                              </div>
+                            </button>
+                          </li>
+                        ))
+                      )}
                     </ul>
                   )}
                 </div>
@@ -376,7 +399,7 @@ export function KrogerConnectionCard() {
             <span className="text-sm text-muted-foreground">Not connected.</span>
             <Button asChild size="sm">
               <a href="/api/auth/kroger">
-                Connect Kroger <ExternalLink className="h-4 w-4 ml-1" />
+                Connect Kroger <ExternalLink className="ml-1 h-4 w-4" />
               </a>
             </Button>
           </div>

@@ -6,12 +6,7 @@ import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useShoppingCategories } from '@/lib/hooks/useShoppingCategories';
 import type { ShoppingItem, ShoppingList } from '@/types';
 
@@ -40,7 +35,7 @@ export function ItemModal({
   const { categories: dynamicCategories, getCategoryEmoji } = useShoppingCategories();
 
   // Get current list name for display
-  const currentList = lists?.find(l => l.id === selectedListId);
+  const currentList = lists?.find((l) => l.id === selectedListId);
   const currentListName = currentList?.name || 'Selected List';
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -65,7 +60,7 @@ export function ItemModal({
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-md overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{item ? 'Edit Item' : 'Add Item'}</DialogTitle>
         </DialogHeader>
@@ -79,7 +74,7 @@ export function ItemModal({
                 <select
                   value={selectedListId}
                   onChange={(e) => setSelectedListId(e.target.value)}
-                  className="w-full h-10 pl-3 pr-10 text-sm bg-background border border-input rounded-md appearance-none focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="h-10 w-full appearance-none rounded-md border border-input bg-background pl-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 >
                   {lists.map((list) => (
                     <option key={list.id} value={list.id}>
@@ -87,7 +82,7 @@ export function ItemModal({
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               </div>
             </div>
           )}
@@ -132,7 +127,7 @@ export function ItemModal({
 
           <div>
             <label className="text-sm font-medium">Category</label>
-            <div className="flex gap-2 mt-1 flex-wrap">
+            <div className="mt-1 flex flex-wrap gap-2">
               {dynamicCategories.map((cat) => (
                 <Button
                   key={cat.id}

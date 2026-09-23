@@ -69,11 +69,12 @@ export function SpanningEventRows({
           event.startTime,
           event.allDay,
           date,
-          displayTimezone,
+          displayTimezone
         );
-        const label = !event.allDay && startsToday
-          ? `${formatDisplayTime(event.startTime, timeFormat, {}, displayTimezone)} ${event.title}`
-          : event.title;
+        const label =
+          !event.allDay && startsToday
+            ? `${formatDisplayTime(event.startTime, timeFormat, {}, displayTimezone)} ${event.title}`
+            : event.title;
 
         return (
           <button

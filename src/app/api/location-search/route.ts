@@ -95,7 +95,9 @@ export async function GET(request: NextRequest) {
               country: data.country,
             });
           }
-        } catch { /* fall through */ }
+        } catch {
+          /* fall through */
+        }
       }
 
       if (results.length === 0) {
@@ -121,7 +123,9 @@ export async function GET(request: NextRequest) {
               });
             }
           }
-        } catch { /* fall through to free-text search */ }
+        } catch {
+          /* fall through to free-text search */
+        }
       }
 
       // A postal lookup resolved → return the clean result(s), skipping the
@@ -151,7 +155,7 @@ export async function GET(request: NextRequest) {
         const lat = parseFloat(item.lat);
         const lon = parseFloat(item.lon);
         const isDupe = results.some(
-          r => Math.abs(r.lat - lat) < 0.05 && Math.abs(r.lon - lon) < 0.05
+          (r) => Math.abs(r.lat - lat) < 0.05 && Math.abs(r.lon - lon) < 0.05
         );
         if (!isDupe) {
           const country = item.address?.country_code?.toUpperCase() ?? item.address?.country ?? '';

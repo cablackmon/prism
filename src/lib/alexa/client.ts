@@ -36,7 +36,11 @@ function token(): string {
   return t;
 }
 
-async function request<T>(method: 'GET' | 'POST', path: string, body?: unknown): Promise<VoiceResponse<T>> {
+async function request<T>(
+  method: 'GET' | 'POST',
+  path: string,
+  body?: unknown
+): Promise<VoiceResponse<T>> {
   const url = `${DEFAULT_BASE_URL}${path}`;
   const res = await fetch(url, {
     method,
@@ -59,35 +63,51 @@ async function request<T>(method: 'GET' | 'POST', path: string, body?: unknown):
 }
 
 export const voiceClient = {
-  getCalendarToday: () => request<{ count: number; events: unknown[] }>('GET', '/api/v1/voice/calendar/today'),
+  getCalendarToday: () =>
+    request<{ count: number; events: unknown[] }>('GET', '/api/v1/voice/calendar/today'),
   getCalendarUpcoming: (count = 3) =>
-    request<{ count: number; events: unknown[] }>('GET', `/api/v1/voice/calendar/upcoming?count=${count}`),
-  getTasksToday: () => request<{ count: number; tasks: unknown[] }>('GET', '/api/v1/voice/tasks/today'),
+    request<{ count: number; events: unknown[] }>(
+      'GET',
+      `/api/v1/voice/calendar/upcoming?count=${count}`
+    ),
+  getTasksToday: () =>
+    request<{ count: number; tasks: unknown[] }>('GET', '/api/v1/voice/tasks/today'),
   getRecentMessages: (count = 3) =>
-    request<{ count: number; messages: unknown[] }>('GET', `/api/v1/voice/message/recent?count=${count}`),
+    request<{ count: number; messages: unknown[] }>(
+      'GET',
+      `/api/v1/voice/message/recent?count=${count}`
+    ),
   postShoppingItem: (body: { item: string; list?: string; quantity?: number; unit?: string }) =>
     request('POST', '/api/v1/voice/shopping/add', body),
   completeChore: (body: { chore: string; assignee?: string }) =>
     request<{ candidates?: { title: string; assignee: string | null }[] }>(
       'POST',
       '/api/v1/voice/chore/complete',
-      body,
+      body
     ),
   postFamilyMessage: (body: { message: string }) =>
     request('POST', '/api/v1/voice/message/post', body),
   getFamily: () => request<{ count: number; members: unknown[] }>('GET', '/api/v1/voice/family'),
-  getMealsToday: () => request<{ count: number; meals: unknown[] }>('GET', '/api/v1/voice/meals/today'),
+  getMealsToday: () =>
+    request<{ count: number; meals: unknown[] }>('GET', '/api/v1/voice/meals/today'),
   getChoresToday: (assignee?: string) =>
     request<{ count: number; chores: unknown[] }>(
       'GET',
-      assignee ? `/api/v1/voice/chores/today?assignee=${encodeURIComponent(assignee)}` : '/api/v1/voice/chores/today',
+      assignee
+        ? `/api/v1/voice/chores/today?assignee=${encodeURIComponent(assignee)}`
+        : '/api/v1/voice/chores/today'
     ),
   getWeatherToday: () => request<unknown>('GET', '/api/v1/voice/weather/today'),
   getBusStatus: (student?: string) =>
     request<{ count: number; routes: unknown[] }>(
       'GET',
-      student ? `/api/v1/voice/bus/status?student=${encodeURIComponent(student)}` : '/api/v1/voice/bus/status',
+      student
+        ? `/api/v1/voice/bus/status?student=${encodeURIComponent(student)}`
+        : '/api/v1/voice/bus/status'
     ),
   getUpcomingBirthdays: (days = 30) =>
-    request<{ count: number; birthdays: unknown[] }>('GET', `/api/v1/voice/birthdays/upcoming?days=${days}`),
+    request<{ count: number; birthdays: unknown[] }>(
+      'GET',
+      `/api/v1/voice/birthdays/upcoming?days=${days}`
+    ),
 };

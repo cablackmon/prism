@@ -35,13 +35,15 @@ describe('useChoreModals disable safety', () => {
 
   it('uses the submitted chore identity and cancels before PATCH', async () => {
     const confirm = jest.fn().mockResolvedValue(false);
-    const { result } = renderHook(() => useChoreModals({
-      refreshChores,
-      setShowAddModal,
-      setEditingChore,
-      deleteChore,
-      confirm,
-    }));
+    const { result } = renderHook(() =>
+      useChoreModals({
+        refreshChores,
+        setShowAddModal,
+        setEditingChore,
+        deleteChore,
+        confirm,
+      })
+    );
 
     let saved = true;
     await act(async () => {
@@ -60,21 +62,26 @@ describe('useChoreModals disable safety', () => {
   it('PATCHes only after the shared disable confirmation is accepted', async () => {
     const confirm = jest.fn().mockResolvedValue(true);
     (global.fetch as jest.Mock).mockResolvedValue({ ok: true });
-    const { result } = renderHook(() => useChoreModals({
-      refreshChores,
-      setShowAddModal,
-      setEditingChore,
-      deleteChore,
-      confirm,
-    }));
+    const { result } = renderHook(() =>
+      useChoreModals({
+        refreshChores,
+        setShowAddModal,
+        setEditingChore,
+        deleteChore,
+        confirm,
+      })
+    );
 
     await act(async () => {
       await result.current.saveEditedChore(originalChore, updatedChore);
     });
 
-    expect(global.fetch).toHaveBeenCalledWith('/api/chores/chore-1', expect.objectContaining({
-      method: 'PATCH',
-    }));
+    expect(global.fetch).toHaveBeenCalledWith(
+      '/api/chores/chore-1',
+      expect.objectContaining({
+        method: 'PATCH',
+      })
+    );
     expect(refreshChores).toHaveBeenCalledTimes(1);
     expect(setEditingChore).toHaveBeenCalledWith(null);
   });

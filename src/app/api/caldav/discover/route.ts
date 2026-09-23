@@ -27,9 +27,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ calendars });
   } catch (error) {
     console.error('CalDAV discover error:', error);
-    return NextResponse.json(
-      { error: 'Failed to discover calendars' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to discover calendars' }, { status: 500 });
   }
 }

@@ -4,12 +4,7 @@ import * as React from 'react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import type { Task, FamilyMember } from '@/types';
 import { Trash2 } from 'lucide-react';
 
@@ -43,7 +38,9 @@ export function TaskModal({
   const [priority, setPriority] = useState<'high' | 'medium' | 'low'>(task?.priority || 'medium');
   const [assignedTo, setAssignedTo] = useState(task?.assignedTo?.id || '');
   const [category, setCategory] = useState(task?.category || '');
-  const [listId, setListId] = useState((task as Task & { listId?: string })?.listId || defaultListId || '');
+  const [listId, setListId] = useState(
+    (task as Task & { listId?: string })?.listId || defaultListId || ''
+  );
   // dueDate is stored as a full timestamp; split for the form into a date
   // (yyyy-MM-dd) and a time (HH:mm). We treat 23:59 as the "no time" sentinel.
   const initialDue = task?.dueDate ? new Date(task.dueDate) : null;
@@ -86,7 +83,7 @@ export function TaskModal({
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-md overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{task ? 'Edit Task' : 'Add Task'}</DialogTitle>
         </DialogHeader>
@@ -104,7 +101,7 @@ export function TaskModal({
 
           <div>
             <label className="text-sm font-medium">Priority</label>
-            <div className="flex gap-2 mt-1">
+            <div className="mt-1 flex gap-2">
               {(['high', 'medium', 'low'] as const).map((p) => (
                 <Button
                   key={p}
@@ -122,7 +119,7 @@ export function TaskModal({
 
           <div>
             <label className="text-sm font-medium">Assign To</label>
-            <div className="flex gap-2 mt-1 flex-wrap">
+            <div className="mt-1 flex flex-wrap gap-2">
               <Button
                 type="button"
                 variant={!assignedTo ? 'default' : 'outline'}
@@ -140,10 +137,7 @@ export function TaskModal({
                   onClick={() => setAssignedTo(member.id)}
                   className="gap-1"
                 >
-                  <div
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: member.color }}
-                  />
+                  <div className="h-3 w-3 rounded-full" style={{ backgroundColor: member.color }} />
                   {member.name}
                 </Button>
               ))}
@@ -169,7 +163,7 @@ export function TaskModal({
                 className="mt-1"
                 disabled={!dueDate}
               />
-              <p className="text-xs text-muted-foreground mt-1">Optional.</p>
+              <p className="mt-1 text-xs text-muted-foreground">Optional.</p>
             </div>
           </div>
 
@@ -185,7 +179,7 @@ export function TaskModal({
           {taskLists.length > 0 && (
             <div>
               <label className="text-sm font-medium">List</label>
-              <div className="flex gap-2 mt-1 flex-wrap">
+              <div className="mt-1 flex flex-wrap gap-2">
                 <Button
                   type="button"
                   variant={!listId ? 'default' : 'outline'}
@@ -204,7 +198,7 @@ export function TaskModal({
                     className="gap-1"
                   >
                     <div
-                      className="w-3 h-3 rounded-full"
+                      className="h-3 w-3 rounded-full"
                       style={{ backgroundColor: list.color || '#6B7280' }}
                     />
                     {list.name}
@@ -222,7 +216,7 @@ export function TaskModal({
               <Button
                 type="button"
                 variant="ghost"
-                className="text-destructive hover:text-destructive hover:bg-destructive/10 gap-1"
+                className="gap-1 text-destructive hover:bg-destructive/10 hover:text-destructive"
                 onClick={onDelete}
               >
                 <Trash2 className="h-4 w-4" />

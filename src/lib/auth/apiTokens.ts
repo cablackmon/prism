@@ -30,11 +30,7 @@ export function hashToken(rawToken: string): string {
 export async function validateApiToken(rawToken: string): Promise<ApiTokenAuthResult | null> {
   const hash = hashToken(rawToken);
 
-  const [token] = await db
-    .select()
-    .from(apiTokens)
-    .where(eq(apiTokens.tokenHash, hash))
-    .limit(1);
+  const [token] = await db.select().from(apiTokens).where(eq(apiTokens.tokenHash, hash)).limit(1);
 
   if (!token) return null;
 

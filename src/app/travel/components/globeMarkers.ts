@@ -3,17 +3,20 @@ import type { TravelPin } from '../types';
 import { STATUS_CONFIG, BUCKET_LIST_COLOR, NPS_COLOR } from '../types';
 
 export function getZoomTier(zoom: number): number {
-  if (zoom < 3) return 0; if (zoom < 5) return 1;
-  if (zoom < 7) return 2; if (zoom < 9) return 3; return 4;
+  if (zoom < 3) return 0;
+  if (zoom < 5) return 1;
+  if (zoom < 7) return 2;
+  if (zoom < 9) return 3;
+  return 4;
 }
 
 export function pinSize(zoom: number, selected: boolean, isChild: boolean): number {
   let base: number;
-  if (zoom < 3)       base = isChild ? 10 : 14;
-  else if (zoom < 5)  base = isChild ? 13 : 18;
-  else if (zoom < 7)  base = isChild ? 16 : 22;
-  else if (zoom < 9)  base = isChild ? 19 : 26;
-  else                base = isChild ? 22 : 30;
+  if (zoom < 3) base = isChild ? 10 : 14;
+  else if (zoom < 5) base = isChild ? 13 : 18;
+  else if (zoom < 7) base = isChild ? 16 : 22;
+  else if (zoom < 9) base = isChild ? 19 : 26;
+  else base = isChild ? 22 : 30;
   return selected ? base + 8 : base;
 }
 
@@ -30,7 +33,10 @@ function createDropPin(color: string, selected: boolean, size: number, icon?: st
   svg.style.cssText = `display: block; filter: drop-shadow(0 2px 4px rgba(0,0,0,${selected ? '0.45' : '0.3'}));`;
 
   const body = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  body.setAttribute('d', 'M12 1C6.2 1 1.5 5.7 1.5 11.5c0 8.2 10.5 21 10.5 21s10.5-12.8 10.5-21C22.5 5.7 17.8 1 12 1z');
+  body.setAttribute(
+    'd',
+    'M12 1C6.2 1 1.5 5.7 1.5 11.5c0 8.2 10.5 21 10.5 21s10.5-12.8 10.5-21C22.5 5.7 17.8 1 12 1z'
+  );
   body.setAttribute('fill', color);
   body.setAttribute('stroke', selected ? 'white' : 'rgba(255,255,255,0.85)');
   body.setAttribute('stroke-width', selected ? '2' : '1.5');
@@ -38,7 +44,10 @@ function createDropPin(color: string, selected: boolean, size: number, icon?: st
 
   if (selected) {
     const glow = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    glow.setAttribute('d', 'M12 1C6.2 1 1.5 5.7 1.5 11.5c0 8.2 10.5 21 10.5 21s10.5-12.8 10.5-21C22.5 5.7 17.8 1 12 1z');
+    glow.setAttribute(
+      'd',
+      'M12 1C6.2 1 1.5 5.7 1.5 11.5c0 8.2 10.5 21 10.5 21s10.5-12.8 10.5-21C22.5 5.7 17.8 1 12 1z'
+    );
     glow.setAttribute('fill', 'none');
     glow.setAttribute('stroke', color);
     glow.setAttribute('stroke-width', '3');
@@ -72,7 +81,12 @@ function createDropPin(color: string, selected: boolean, size: number, icon?: st
 }
 
 // Numbered badge circle for route/loop stops
-function createNumberedStop(color: string, selected: boolean, size: number, stopNumber: number): HTMLElement {
+function createNumberedStop(
+  color: string,
+  selected: boolean,
+  size: number,
+  stopNumber: number
+): HTMLElement {
   const wrapper = document.createElement('div');
   const fontSize = Math.max(8, Math.round(size * 0.48));
   wrapper.style.cssText = `
@@ -188,7 +202,8 @@ export function createPinElement(
   }
 
   // Root / standalone location pin — drop pin shape
-  const color = pin.color || (pin.isBucketList ? BUCKET_LIST_COLOR : STATUS_CONFIG[pin.status].color);
+  const color =
+    pin.color || (pin.isBucketList ? BUCKET_LIST_COLOR : STATUS_CONFIG[pin.status].color);
   const icon = pin.status === 'been_there' ? '✓' : undefined;
   const wrapper = createDropPin(color, selected, size, icon);
   wrapper.title = pin.name;

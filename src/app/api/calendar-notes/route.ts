@@ -57,10 +57,7 @@ export async function GET(request: NextRequest) {
         })
         .from(calendarNotes)
         .where(
-          and(
-            gte(calendarNotes.date, parsed.data.from),
-            lte(calendarNotes.date, parsed.data.to)
-          )
+          and(gte(calendarNotes.date, parsed.data.from), lte(calendarNotes.date, parsed.data.to))
         )
         .orderBy(asc(calendarNotes.date));
 
@@ -79,50 +76,53 @@ export async function GET(request: NextRequest) {
  * Upsert a note for a date. Empty content deletes the note.
  */
 export async function PUT(request: NextRequest) {
-  return withAuth(async (auth) => {
-  try {
-    const body = await request.json();
-    const parsed = upsertCalendarNoteSchema.safeParse(body);
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: 'Invalid request', details: parsed.error.flatten() },
-        { status: 400 }
-      );
-    }
+  return withAuth(
+    async (auth) => {
+      try {
+        const body = await request.json();
+        const parsed = upsertCalendarNoteSchema.safeParse(body);
+        if (!parsed.success) {
+          return NextResponse.json(
+            { error: 'Invalid request', details: parsed.error.flatten() },
+            { status: 400 }
+          );
+        }
 
-    const { date, content } = parsed.data;
+        const { date, content } = parsed.data;
 
-    // Empty content = delete the note
-    if (!content.trim()) {
-      await db.delete(calendarNotes).where(eq(calendarNotes.date, date));
-      await invalidateEntity('calendar-notes');
-      return NextResponse.json({ deleted: true, date });
-    }
+        // Empty content = delete the note
+        if (!content.trim()) {
+          await db.delete(calendarNotes).where(eq(calendarNotes.date, date));
+          await invalidateEntity('calendar-notes');
+          return NextResponse.json({ deleted: true, date });
+        }
 
-    // Upsert
-    const [note] = await db
-      .insert(calendarNotes)
-      .values({
-        date,
-        content,
-        createdBy: auth.userId,
-      })
-      .onConflictDoUpdate({
-        target: calendarNotes.date,
-        set: {
-          content,
-          createdBy: auth.userId,
-          updatedAt: new Date(),
-        },
-      })
-      .returning();
+        // Upsert
+        const [note] = await db
+          .insert(calendarNotes)
+          .values({
+            date,
+            content,
+            createdBy: auth.userId,
+          })
+          .onConflictDoUpdate({
+            target: calendarNotes.date,
+            set: {
+              content,
+              createdBy: auth.userId,
+              updatedAt: new Date(),
+            },
+          })
+          .returning();
 
-    await invalidateEntity('calendar-notes');
+        await invalidateEntity('calendar-notes');
 
-    return NextResponse.json({ note });
-  } catch (error) {
-    logError('Failed to upsert calendar note:', error);
-    return NextResponse.json({ error: 'Failed to save note' }, { status: 500 });
-  }
-  }, { rateLimit: { feature: 'calendar-notes', limit: 60, windowSeconds: 60 } });
+        return NextResponse.json({ note });
+      } catch (error) {
+        logError('Failed to upsert calendar note:', error);
+        return NextResponse.json({ error: 'Failed to save note' }, { status: 500 });
+      }
+    },
+    { rateLimit: { feature: 'calendar-notes', limit: 60, windowSeconds: 60 } }
+  );
 }

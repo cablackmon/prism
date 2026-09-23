@@ -1,13 +1,6 @@
 'use client';
 
-import {
-  format,
-  startOfWeek,
-  addDays,
-  isBefore,
-  startOfDay,
-  isSameDay,
-} from 'date-fns';
+import { format, startOfWeek, addDays, isBefore, startOfDay, isSameDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { NoteEditor } from './NoteEditor';
 import { useWidgetBgOverride } from '@/components/widgets/WidgetContainer';
@@ -81,12 +74,14 @@ export function WeekVerticalView({
 
   // Determine display groups (same logic as DayViewSideBySide)
   const showAllInOne = calendarGroups.length === 0 || mergedView;
-  const filteredGroups = selectedCalendarIds && !selectedCalendarIds.has('all')
-    ? calendarGroups.filter((g) => selectedCalendarIds.has(g.id))
-    : calendarGroups;
-  const displayGroups = showAllInOne || filteredGroups.length === 0
-    ? [{ id: 'all', name: 'All Events', color: '#3B82F6' }]
-    : filteredGroups;
+  const filteredGroups =
+    selectedCalendarIds && !selectedCalendarIds.has('all')
+      ? calendarGroups.filter((g) => selectedCalendarIds.has(g.id))
+      : calendarGroups;
+  const displayGroups =
+    showAllInOne || filteredGroups.length === 0
+      ? [{ id: 'all', name: 'All Events', color: '#3B82F6' }]
+      : filteredGroups;
 
   const getEventsForGroup = (dayEvents: CalendarEvent[], gid: string) => {
     if (showAllInOne || gid === 'all') return dayEvents;
@@ -100,9 +95,9 @@ export function WeekVerticalView({
         <div className="sticky top-0 z-10 flex">
           <div className="w-16 shrink-0" />
           {displayGroups.map((group) => (
-            <div key={group.id} className="flex-1 min-w-0 px-1 py-1">
+            <div key={group.id} className="min-w-0 flex-1 px-1 py-1">
               <div
-                className="text-sm font-medium text-center py-1 rounded"
+                className="rounded py-1 text-center text-sm font-medium"
                 style={{ backgroundColor: group.color, color: '#fff' }}
               >
                 {group.name}
@@ -112,7 +107,7 @@ export function WeekVerticalView({
           {showNotes && (
             <div className="w-2/5 min-w-[180px] border-l border-border px-1 py-1">
               <div
-                className="text-sm font-medium text-center py-1 rounded text-white"
+                className="rounded py-1 text-center text-sm font-medium text-white"
                 style={{ backgroundColor: '#6366f1' }}
               >
                 Notes
@@ -188,21 +183,19 @@ function WeekListDayRow({
   const isCurrentDay = isSameDay(day, today);
   const isPast = isBefore(dayStart, today);
 
-  const dayEvents = events.filter((event) => eventOccursOnDisplayDay(
-    event.startTime,
-    event.endTime,
-    event.allDay,
-    day,
-    displayTimezone,
-  ));
+  const dayEvents = events.filter((event) =>
+    eventOccursOnDisplayDay(event.startTime, event.endTime, event.allDay, day, displayTimezone)
+  );
 
   const allDayEvents = dayEvents.filter((e) => e.allDay);
-  const timedEvents = dayEvents.filter((e) => !e.allDay).sort((a, b) => {
-    const aStartsToday = eventStartsOnDisplayDay(a.startTime, false, day, displayTimezone);
-    const bStartsToday = eventStartsOnDisplayDay(b.startTime, false, day, displayTimezone);
-    if (aStartsToday !== bStartsToday) return aStartsToday ? 1 : -1;
-    return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
-  });
+  const timedEvents = dayEvents
+    .filter((e) => !e.allDay)
+    .sort((a, b) => {
+      const aStartsToday = eventStartsOnDisplayDay(a.startTime, false, day, displayTimezone);
+      const bStartsToday = eventStartsOnDisplayDay(b.startTime, false, day, displayTimezone);
+      if (aStartsToday !== bStartsToday) return aStartsToday ? 1 : -1;
+      return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
+    });
 
   const droppable = useDayDroppable({ date: day, enabled: cards && enableDnd });
 
@@ -214,40 +207,46 @@ function WeekListDayRow({
         'flex',
         bordered && 'border-b border-border',
         isPast && !isCurrentDay && !cellBgStyle && 'bg-muted/15',
-        cards && enableDnd && droppable.isOver && 'ring-2 ring-seasonal-accent shadow-lg',
+        cards && enableDnd && droppable.isOver && 'shadow-lg ring-2 ring-seasonal-accent'
       )}
       style={cellBgStyle}
     >
       <div
         className={cn(
-          'w-16 shrink-0 p-2 flex flex-col items-center justify-start',
+          'flex w-16 shrink-0 flex-col items-center justify-start p-2',
           bordered && 'border-r border-border',
           isPast && !isCurrentDay && 'bg-muted/15',
-          isCurrentDay && 'bg-primary text-primary-foreground',
+          isCurrentDay && 'bg-primary text-primary-foreground'
         )}
       >
-        <span className={cn(
-          'text-xs font-medium uppercase tracking-wide',
-          isCurrentDay ? 'text-primary-foreground' : 'text-muted-foreground'
-        )}>
+        <span
+          className={cn(
+            'text-xs font-medium uppercase tracking-wide',
+            isCurrentDay ? 'text-primary-foreground' : 'text-muted-foreground'
+          )}
+        >
           {format(day, 'EEE')}
         </span>
-        <span className={cn(
-          'text-2xl font-bold leading-tight',
-          isCurrentDay ? 'text-primary-foreground' : 'text-foreground'
-        )}>
+        <span
+          className={cn(
+            'text-2xl font-bold leading-tight',
+            isCurrentDay ? 'text-primary-foreground' : 'text-foreground'
+          )}
+        >
           {format(day, 'd')}
         </span>
-        <span className={cn(
-          'text-[10px]',
-          isCurrentDay ? 'text-primary-foreground/80' : 'text-muted-foreground'
-        )}>
+        <span
+          className={cn(
+            'text-[10px]',
+            isCurrentDay ? 'text-primary-foreground/80' : 'text-muted-foreground'
+          )}
+        >
           {format(day, 'MMM')}
         </span>
       </div>
 
       {displayGroups.length > 1 ? (
-        <div className="flex-1 flex min-w-0">
+        <div className="flex min-w-0 flex-1">
           {displayGroups.map((group) => {
             const groupAllDay = getEventsForGroup(allDayEvents, group.id);
             const groupTimed = getEventsForGroup(timedEvents, group.id);
@@ -263,19 +262,15 @@ function WeekListDayRow({
               ? {
                   meals: isFamily ? dayBucket.meals : [],
                   chores: dayBucket.chores.filter((c) =>
-                    c.assignedTo?.id === group.userId
-                      ? true
-                      : !c.assignedTo && isFamily
+                    c.assignedTo?.id === group.userId ? true : !c.assignedTo && isFamily
                   ),
                   tasks: dayBucket.tasks.filter((t) =>
-                    t.assignedTo?.id === group.userId
-                      ? true
-                      : !t.assignedTo && isFamily
+                    t.assignedTo?.id === group.userId ? true : !t.assignedTo && isFamily
                   ),
                 }
               : undefined;
             return (
-              <div key={group.id} className="flex-1 min-w-0 border-l border-border p-1 space-y-0.5">
+              <div key={group.id} className="min-w-0 flex-1 space-y-0.5 border-l border-border p-1">
                 <DayEventList
                   day={day}
                   allDayEvents={groupAllDay}
@@ -301,7 +296,7 @@ function WeekListDayRow({
           })}
         </div>
       ) : (
-        <div className="flex-1 p-1.5 min-w-0 space-y-1">
+        <div className="min-w-0 flex-1 space-y-1 p-1.5">
           <DayEventList
             day={day}
             allDayEvents={allDayEvents}
@@ -331,7 +326,7 @@ function WeekListDayRow({
             dateKey={format(day, 'yyyy-MM-dd')}
             content={notesByDate?.get(format(day, 'yyyy-MM-dd'))?.content || ''}
             onNoteChange={onNoteChange}
-            className="px-3 py-2 min-h-[48px] h-full"
+            className="h-full min-h-[48px] px-3 py-2"
           />
         </div>
       )}
@@ -369,8 +364,8 @@ function DayEventList({
           key={event.id}
           onClick={() => onEventClick(event)}
           className={cn(
-            'w-full text-left text-xs px-1.5 py-1 rounded hover:opacity-80 transition-opacity truncate block',
-            cards && 'bg-card/85 backdrop-blur-sm border border-border/40 shadow-sm',
+            'block w-full truncate rounded px-1.5 py-1 text-left text-xs transition-opacity hover:opacity-80',
+            cards && 'border border-border/40 bg-card/85 shadow-sm backdrop-blur-sm'
           )}
           style={
             cards
@@ -378,33 +373,33 @@ function DayEventList({
               : { backgroundColor: event.color, borderLeft: `3px solid ${event.color}` }
           }
         >
-          <span className={cn('font-medium', cards ? 'text-foreground' : 'text-white')}>{event.title}</span>
+          <span className={cn('font-medium', cards ? 'text-foreground' : 'text-white')}>
+            {event.title}
+          </span>
         </button>
       ))}
       {timedEvents.map((event) => {
-        const startsToday = eventStartsOnDisplayDay(
-          event.startTime,
-          false,
-          day,
-          displayTimezone,
-        );
-        const isPastEvent = isPastDay || (isCurrentDay && isCalendarEventPast(
-          event.startTime,
-          event.endTime,
-          false,
-          new Date(),
-          displayTimezone,
-        ));
+        const startsToday = eventStartsOnDisplayDay(event.startTime, false, day, displayTimezone);
+        const isPastEvent =
+          isPastDay ||
+          (isCurrentDay &&
+            isCalendarEventPast(
+              event.startTime,
+              event.endTime,
+              false,
+              new Date(),
+              displayTimezone
+            ));
         return (
           <button
             key={event.id}
             onClick={() => onEventClick(event)}
             className={cn(
-              'w-full text-left text-xs px-1.5 py-1 rounded hover:opacity-90 transition-opacity truncate block',
+              'block w-full truncate rounded px-1.5 py-1 text-left text-xs transition-opacity hover:opacity-90',
               cards
-                ? 'bg-card/85 backdrop-blur-sm border border-border/40 shadow-sm text-foreground'
+                ? 'border border-border/40 bg-card/85 text-foreground shadow-sm backdrop-blur-sm'
                 : 'text-white',
-              isPastEvent && 'opacity-70',
+              isPastEvent && 'opacity-70'
             )}
             style={
               cards
@@ -424,4 +419,3 @@ function DayEventList({
     </div>
   );
 }
-

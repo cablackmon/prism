@@ -12,27 +12,49 @@ jest.mock('@/components/widgets/WidgetContainer', () => ({
 import { TasksWidget } from '@/components/widgets/TasksWidget';
 import type { Task } from '@/types';
 
-const tasks = Array.from({ length: 9 }, (_, i) => ({
-  id: `task-${i}`, title: `Task number ${i}`, priority: 'low', completed: false,
-} as Task));
+const tasks = Array.from(
+  { length: 9 },
+  (_, i) =>
+    ({
+      id: `task-${i}`,
+      title: `Task number ${i}`,
+      priority: 'low',
+      completed: false,
+    }) as Task
+);
 
 beforeAll(() => {
   global.ResizeObserver = class {
-    observe() {} unobserve() {} disconnect() {}
+    observe() {}
+    unobserve() {}
+    disconnect() {}
   } as unknown as typeof ResizeObserver;
 });
 afterEach(cleanup);
 
-test.each([[undefined, 'nox'], ['nox', 'nox'], ['classic', 'classic'], ['typo', 'classic']])('runtime value %s selects %s', (value, expected) => {
+test.each([
+  [undefined, 'nox'],
+  ['nox', 'nox'],
+  ['classic', 'classic'],
+  ['typo', 'classic'],
+])('runtime value %s selects %s', (value, expected) => {
   expect(resolveKystTheme(value)).toBe(expected);
 });
 
 test('classic retains the cap; nox exposes every task and preserves its edit callback', () => {
   const onTaskClick = jest.fn();
-  const view = render(<BoardThemeContext.Provider value="classic"><TasksWidget tasks={tasks} maxTasks={2} onTaskClick={onTaskClick} /></BoardThemeContext.Provider>);
+  const view = render(
+    <BoardThemeContext.Provider value="classic">
+      <TasksWidget tasks={tasks} maxTasks={2} onTaskClick={onTaskClick} />
+    </BoardThemeContext.Provider>
+  );
   expect(screen.queryByText('Task number 8')).toBeNull();
   expect(screen.getByText('+7 more tasks')).toBeTruthy();
-  view.rerender(<BoardThemeContext.Provider value="nox"><TasksWidget tasks={tasks} maxTasks={2} onTaskClick={onTaskClick} /></BoardThemeContext.Provider>);
+  view.rerender(
+    <BoardThemeContext.Provider value="nox">
+      <TasksWidget tasks={tasks} maxTasks={2} onTaskClick={onTaskClick} />
+    </BoardThemeContext.Provider>
+  );
   expect(screen.queryByText('+7 more tasks')).toBeNull();
   fireEvent.click(screen.getByText('Task number 8'));
   expect(onTaskClick).toHaveBeenCalledWith(tasks[8]);
@@ -41,7 +63,13 @@ test('classic retains the cap; nox exposes every task and preserves its edit cal
 function ScrollFixture({ enabled = true }: { enabled?: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   useScrollEdges(ref, enabled, 'Tasks');
-  return <div ref={ref}><div data-board-scroll data-testid="scroll"><p>Task content</p></div></div>;
+  return (
+    <div ref={ref}>
+      <div data-board-scroll data-testid="scroll">
+        <p>Task content</p>
+      </div>
+    </div>
+  );
 }
 
 test('scroll region exposes focus and a fade only while more rows remain, then restores classic attributes', () => {
@@ -58,7 +86,8 @@ test('scroll region exposes focus and a fade only while more rows remain, then r
   expect(el.getAttribute('tabindex')).toBeNull();
   expect(el.getAttribute('aria-label')).toBeNull();
   expect(el.dataset.moreBelow).toBeUndefined();
-  height.mockRestore(); client.mockRestore();
+  height.mockRestore();
+  client.mockRestore();
 });
 
 test('short lists have no fade and no extra tab stop', () => {

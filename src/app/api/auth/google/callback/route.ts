@@ -30,8 +30,7 @@ export async function GET(request: Request) {
   // page — drops the user on the Google card with the Calendars sub-section
   // auto-expanded (see useIntegrationsHashRouter).
   const integrationsAnchor = '#google-calendars';
-  const anchorFor = (section: string) =>
-    section === 'integrations' ? integrationsAnchor : '';
+  const anchorFor = (section: string) => (section === 'integrations' ? integrationsAnchor : '');
   // Where to send the user after the OAuth round-trip. Calendar management moved
   // onto the Calendar page (Manage overlay), so a 'calendars' return goes there
   // and auto-opens the overlay; everything else stays a settings section.
@@ -54,7 +53,9 @@ export async function GET(request: Request) {
     // from attacker-controllable state.
     const consumed = await consumeOAuthState('google', state, auth.userId);
     if (consumed.status === 'invalid') {
-      return NextResponse.redirect(`${BASE_URL}/settings?section=integrations&error=google_state_mismatch${integrationsAnchor}`);
+      return NextResponse.redirect(
+        `${BASE_URL}/settings?section=integrations&error=google_state_mismatch${integrationsAnchor}`
+      );
     }
     const statePayload = consumed.status === 'ok' ? consumed.payload : {};
     const returnSection = (statePayload.returnSection as string) || 'integrations';
@@ -73,7 +74,10 @@ export async function GET(request: Request) {
 
     // Re-derive the same request-host redirect URI used at /authorize so the
     // token exchange's redirect_uri matches byte-for-byte (#124).
-    const tokens = await exchangeCodeForTokens(code, resolveRedirectUri(request, '/api/auth/google/callback'));
+    const tokens = await exchangeCodeForTokens(
+      code,
+      resolveRedirectUri(request, '/api/auth/google/callback')
+    );
     const tokenExpiresAt = new Date(Date.now() + tokens.expires_in * 1000);
 
     // Encrypt tokens before storing
@@ -91,7 +95,9 @@ export async function GET(request: Request) {
       const reAuthCalendars = await fetchCalendarList(tokens.access_token);
       const calendarIdSet = new Set(reAuthCalendars.map((c) => c.id));
 
-      const existingSources = await db.select().from(calendarSources)
+      const existingSources = await db
+        .select()
+        .from(calendarSources)
         .where(eq(calendarSources.provider, 'google'));
 
       for (const source of existingSources) {
@@ -99,16 +105,19 @@ export async function GET(request: Request) {
         if (!calendarIdSet.has(source.sourceCalendarId)) continue;
 
         const prev = (source.syncErrors as Record<string, unknown>) || {};
-        await db.update(calendarSources).set({
-          accessToken: encryptedAccessToken,
-          refreshToken: encryptedRefreshToken || undefined,
-          tokenExpiresAt,
-          // Only overwrite the email when we successfully fetched one, so a
-          // transient userinfo failure doesn't blank an existing label.
-          accountEmail: accountEmail ?? undefined,
-          syncErrors: prev.userOverride ? { userOverride: true } : null,
-          updatedAt: new Date(),
-        }).where(eq(calendarSources.id, source.id));
+        await db
+          .update(calendarSources)
+          .set({
+            accessToken: encryptedAccessToken,
+            refreshToken: encryptedRefreshToken || undefined,
+            tokenExpiresAt,
+            // Only overwrite the email when we successfully fetched one, so a
+            // transient userinfo failure doesn't blank an existing label.
+            accountEmail: accountEmail ?? undefined,
+            syncErrors: prev.userOverride ? { userOverride: true } : null,
+            updatedAt: new Date(),
+          })
+          .where(eq(calendarSources.id, source.id));
       }
 
       // Discover calendars added since the initial connect (e.g. one you
@@ -122,10 +131,7 @@ export async function GET(request: Request) {
         const isWritable = calendar.accessRole === 'writer' || calendar.accessRole === 'owner';
         const existing = await db.query.calendarSources.findFirst({
           where: (cs, { and, eq }) =>
-            and(
-              eq(cs.provider, 'google'),
-              eq(cs.sourceCalendarId, calendar.id)
-            ),
+            and(eq(cs.provider, 'google'), eq(cs.sourceCalendarId, calendar.id)),
         });
         if (existing) {
           await db
@@ -190,6 +196,8 @@ export async function GET(request: Request) {
     logError('Google OAuth callback error:', error);
     // The state nonce is single-use and already consumed here, so returnSection
     // can't be recovered — fall back to the consolidated Integrations section.
-    return NextResponse.redirect(`${BASE_URL}/settings?section=integrations&error=google_auth_failed${integrationsAnchor}`);
+    return NextResponse.redirect(
+      `${BASE_URL}/settings?section=integrations&error=google_auth_failed${integrationsAnchor}`
+    );
   }
 }

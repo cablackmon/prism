@@ -14,7 +14,12 @@ interface UseWeekMutationsResult {
   moveChore: (choreId: string, targetDate: Date) => Promise<void>;
   moveTask: (taskId: string, targetDate: Date, originalDue?: Date | null) => Promise<void>;
   moveMeal: (mealId: string, targetDate: Date) => Promise<void>;
-  moveEvent: (eventId: string, originalStart: Date, originalEnd: Date, targetDate: Date) => Promise<void>;
+  moveEvent: (
+    eventId: string,
+    originalStart: Date,
+    originalEnd: Date,
+    targetDate: Date
+  ) => Promise<void>;
 }
 
 async function patchJson(url: string, body: unknown): Promise<void> {
@@ -28,7 +33,9 @@ async function patchJson(url: string, body: unknown): Promise<void> {
     try {
       const data = await res.json();
       if (typeof data?.error === 'string') message = data.error;
-    } catch { /* swallow */ }
+    } catch {
+      /* swallow */
+    }
     throw new Error(message);
   }
 }
@@ -43,7 +50,7 @@ export function useWeekMutations({ refresh }: UseWeekMutationsOptions): UseWeekM
       });
       await refresh();
     },
-    [refresh],
+    [refresh]
   );
 
   const moveTask = useCallback(
@@ -56,14 +63,14 @@ export function useWeekMutations({ refresh }: UseWeekMutationsOptions): UseWeekM
         targetDate.getFullYear(),
         targetDate.getMonth(),
         targetDate.getDate(),
-        useExisting ? originalDue.getHours()   : 23,
+        useExisting ? originalDue.getHours() : 23,
         useExisting ? originalDue.getMinutes() : 59,
-        useExisting ? originalDue.getSeconds() : 59,
+        useExisting ? originalDue.getSeconds() : 59
       ).toISOString();
       await patchJson(`/api/tasks/${taskId}`, { dueDate: iso });
       await refresh();
     },
-    [refresh],
+    [refresh]
   );
 
   const moveMeal = useCallback(
@@ -76,7 +83,7 @@ export function useWeekMutations({ refresh }: UseWeekMutationsOptions): UseWeekM
       await patchJson(`/api/meals/${mealId}`, { dayOfWeek, weekOf });
       await refresh();
     },
-    [refresh, weekStartsOn],
+    [refresh, weekStartsOn]
   );
 
   const moveEvent = useCallback(
@@ -91,7 +98,7 @@ export function useWeekMutations({ refresh }: UseWeekMutationsOptions): UseWeekM
       });
       await refresh();
     },
-    [refresh],
+    [refresh]
   );
 
   return { moveChore, moveTask, moveMeal, moveEvent };

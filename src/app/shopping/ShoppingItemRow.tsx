@@ -25,26 +25,24 @@ export function ShoppingItemRow({
     <div
       id={`shopping-item-${item.id}`}
       className={cn(
-        'flex items-center gap-2 py-1 px-2 rounded cursor-pointer',
-        'hover:bg-muted/50 transition-all group',
+        'flex cursor-pointer items-center gap-2 rounded px-2 py-1',
+        'group transition-all hover:bg-muted/50',
         item.checked && 'opacity-60'
       )}
       onClick={onToggle}
     >
       {/* Content - tap to toggle */}
-      <div className="flex-1 min-w-0">
+      <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <span
-            className={cn(
-              'text-base',
-              item.checked && 'line-through text-muted-foreground'
-            )}
-          >
+          <span className={cn('text-base', item.checked && 'text-muted-foreground line-through')}>
             {item.name}
           </span>
 
           {item.source === 'scan' && (
-            <ScanBarcode className="h-3 w-3 text-muted-foreground/60 flex-shrink-0" aria-label="Added by scanner" />
+            <ScanBarcode
+              className="h-3 w-3 flex-shrink-0 text-muted-foreground/60"
+              aria-label="Added by scanner"
+            />
           )}
           {quantityDisplay && (
             <Badge variant="secondary" className="text-xs">
@@ -53,18 +51,23 @@ export function ShoppingItemRow({
           )}
         </div>
 
-        {item.notes && (
-          <p className="text-sm text-muted-foreground mt-0.5">{item.notes}</p>
-        )}
+        {item.notes && <p className="mt-0.5 text-sm text-muted-foreground">{item.notes}</p>}
       </div>
 
       {/* Actions - always visible for touch support */}
-      <div className="flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity">
+      <div className="flex items-center gap-1 opacity-60 transition-opacity hover:opacity-100">
         <Button
           variant="ghost"
           size="icon"
-          onClick={(e) => { e.stopPropagation(); onEdit(); }}
-          onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); onEdit(); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit();
+          }}
+          onTouchEnd={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            onEdit();
+          }}
           className="h-8 w-8"
           aria-label="Edit item"
         >
@@ -73,8 +76,15 @@ export function ShoppingItemRow({
         <Button
           variant="ghost"
           size="icon"
-          onClick={(e) => { e.stopPropagation(); onDelete(); }}
-          onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); onDelete(); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+          onTouchEnd={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            onDelete();
+          }}
           className="h-8 w-8 text-destructive"
           aria-label="Delete item"
         >

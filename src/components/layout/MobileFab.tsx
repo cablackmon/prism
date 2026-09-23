@@ -77,9 +77,7 @@ export function MobileFab({ user, onLogin, onLogout, uiHidden }: MobileFabProps)
 
   const toggleCard = useCallback((cardId: string) => {
     setHiddenCards((prev) => {
-      const next = prev.includes(cardId)
-        ? prev.filter((id) => id !== cardId)
-        : [...prev, cardId];
+      const next = prev.includes(cardId) ? prev.filter((id) => id !== cardId) : [...prev, cardId];
       saveHiddenCards(next);
       return next;
     });
@@ -116,45 +114,60 @@ export function MobileFab({ user, onLogin, onLogout, uiHidden }: MobileFabProps)
       onClick: () => setIsOpen(false),
       href: '/settings',
     },
-    ...(isShopping ? [
-      {
-        key: 'scan',
-        icon: <ScanLine className="h-5 w-5" />,
-        label: 'Scan Barcode',
-        onClick: () => {
-          setIsOpen(false);
-          window.dispatchEvent(new CustomEvent('prism:open-barcode-scanner'));
-        },
-      },
-    ] : []),
-    ...(isDashboard ? [
-      {
-        key: 'reorder',
-        icon: <ArrowUpDown className="h-5 w-5" />,
-        label: reorderMode ? 'Done' : 'Reorder',
-        onClick: toggleReorderMode,
-      },
-      {
-        // Dashboard-card visibility / theme / layout toggles — context-
-        // specific to the dashboard, not the same as /settings. Renamed
-        // from "Settings" to "Cards" so the two are distinguishable.
-        key: 'cards',
-        icon: <LayoutGrid className="h-5 w-5" />,
-        label: 'Cards',
-        onClick: () => { setIsOpen(false); setShowCards(true); },
-      },
-    ] : []),
+    ...(isShopping
+      ? [
+          {
+            key: 'scan',
+            icon: <ScanLine className="h-5 w-5" />,
+            label: 'Scan Barcode',
+            onClick: () => {
+              setIsOpen(false);
+              window.dispatchEvent(new CustomEvent('prism:open-barcode-scanner'));
+            },
+          },
+        ]
+      : []),
+    ...(isDashboard
+      ? [
+          {
+            key: 'reorder',
+            icon: <ArrowUpDown className="h-5 w-5" />,
+            label: reorderMode ? 'Done' : 'Reorder',
+            onClick: toggleReorderMode,
+          },
+          {
+            // Dashboard-card visibility / theme / layout toggles — context-
+            // specific to the dashboard, not the same as /settings. Renamed
+            // from "Settings" to "Cards" so the two are distinguishable.
+            key: 'cards',
+            icon: <LayoutGrid className="h-5 w-5" />,
+            label: 'Cards',
+            onClick: () => {
+              setIsOpen(false);
+              setShowCards(true);
+            },
+          },
+        ]
+      : []),
     {
       key: 'auth',
       icon: user ? (
         <div
-          className="relative h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
+          className="relative flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-white"
           style={{ backgroundColor: user.color || '#6B7280' }}
         >
           {user.avatarUrl?.startsWith('emoji:') ? (
-            <span className="text-sm"><Emoji e={user.avatarUrl.slice(6)} /></span>
+            <span className="text-sm">
+              <Emoji e={user.avatarUrl.slice(6)} />
+            </span>
           ) : user.avatarUrl ? (
-            <Image src={user.avatarUrl} alt={user.name} fill unoptimized className="rounded-full object-cover" />
+            <Image
+              src={user.avatarUrl}
+              alt={user.name}
+              fill
+              unoptimized
+              className="rounded-full object-cover"
+            />
           ) : (
             user.name.charAt(0).toUpperCase()
           )}
@@ -176,43 +189,51 @@ export function MobileFab({ user, onLogin, onLogout, uiHidden }: MobileFabProps)
       {/* Backdrop */}
       {(isOpen || showCards) && (
         <div
-          className="fixed inset-0 bg-black/30 z-40"
-          onClick={() => { setIsOpen(false); setShowCards(false); }}
+          className="fixed inset-0 z-40 bg-black/30"
+          onClick={() => {
+            setIsOpen(false);
+            setShowCards(false);
+          }}
         />
       )}
 
       {/* Cards settings panel */}
       {showCards && (
-        <div className="fixed inset-x-4 bottom-24 z-50 bg-card rounded-2xl shadow-2xl border border-border p-4 max-h-[60vh] overflow-y-auto safe-area-bottom animate-in fade-in slide-in-from-bottom-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold text-base">Dashboard Cards</h3>
+        <div className="safe-area-bottom fixed inset-x-4 bottom-24 z-50 max-h-[60vh] overflow-y-auto rounded-2xl border border-border bg-card p-4 shadow-2xl animate-in fade-in slide-in-from-bottom-4">
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="text-base font-semibold">Dashboard Cards</h3>
             <button
-              onClick={() => { setShowCards(false); window.location.reload(); }}
-              className="text-sm text-primary font-medium"
+              onClick={() => {
+                setShowCards(false);
+                window.location.reload();
+              }}
+              className="text-sm font-medium text-primary"
             >
               Done
             </button>
           </div>
           {/* Theme toggle */}
-          <div className="flex items-center justify-between p-3 rounded-lg border border-border mb-2">
+          <div className="mb-2 flex items-center justify-between rounded-lg border border-border p-3">
             <span className="text-sm font-medium">Theme</span>
             <button
               onClick={cycleTheme}
-              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
               <ThemeIcon className="h-4 w-4" />
               <span>{themeLabel}</span>
             </button>
           </div>
           {/* Layout toggle */}
-          <div className="flex items-center justify-between p-3 rounded-lg border border-border mb-3">
+          <div className="mb-3 flex items-center justify-between rounded-lg border border-border p-3">
             <span className="text-sm font-medium">Layout</span>
-            <div className="flex items-center border rounded-md overflow-hidden text-xs">
+            <div className="flex items-center overflow-hidden rounded-md border text-xs">
               <button
                 onClick={() => setLayout('rows')}
                 className={cn(
                   'flex items-center gap-1.5 px-3 py-1.5 transition-colors',
-                  layout === 'rows' ? 'bg-secondary text-secondary-foreground font-medium' : 'text-muted-foreground hover:bg-accent'
+                  layout === 'rows'
+                    ? 'bg-secondary font-medium text-secondary-foreground'
+                    : 'text-muted-foreground hover:bg-accent'
                 )}
               >
                 <Rows3 className="h-3.5 w-3.5" />
@@ -221,8 +242,10 @@ export function MobileFab({ user, onLogin, onLogout, uiHidden }: MobileFabProps)
               <button
                 onClick={() => setLayout('tiles')}
                 className={cn(
-                  'flex items-center gap-1.5 px-3 py-1.5 border-l transition-colors',
-                  layout === 'tiles' ? 'bg-secondary text-secondary-foreground font-medium' : 'text-muted-foreground hover:bg-accent'
+                  'flex items-center gap-1.5 border-l px-3 py-1.5 transition-colors',
+                  layout === 'tiles'
+                    ? 'bg-secondary font-medium text-secondary-foreground'
+                    : 'text-muted-foreground hover:bg-accent'
                 )}
               >
                 <LayoutDashboard className="h-3.5 w-3.5" />
@@ -231,7 +254,7 @@ export function MobileFab({ user, onLogin, onLogout, uiHidden }: MobileFabProps)
             </div>
           </div>
 
-          <p className="text-xs text-muted-foreground mb-3">
+          <p className="mb-3 text-xs text-muted-foreground">
             Toggle which cards appear on your mobile dashboard.
           </p>
           <div className="space-y-1">
@@ -241,7 +264,7 @@ export function MobileFab({ user, onLogin, onLogout, uiHidden }: MobileFabProps)
                 <button
                   key={card.id}
                   onClick={() => toggleCard(card.id)}
-                  className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-accent transition-colors"
+                  className="flex w-full items-center justify-between rounded-lg p-3 transition-colors hover:bg-accent"
                 >
                   <span className={cn('text-sm font-medium', isHidden && 'text-muted-foreground')}>
                     {card.label}
@@ -260,17 +283,17 @@ export function MobileFab({ user, onLogin, onLogout, uiHidden }: MobileFabProps)
 
       {/* Action items */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 z-50 flex flex-col-reverse items-end gap-3 safe-area-bottom">
+        <div className="safe-area-bottom fixed bottom-24 right-6 z-50 flex flex-col-reverse items-end gap-3">
           {actions.map((action, i) => {
             const content = (
               <div
                 className="flex items-center gap-3 animate-in fade-in slide-in-from-bottom-2"
                 style={{ animationDelay: `${i * 50}ms`, animationFillMode: 'both' }}
               >
-                <span className="text-sm font-medium text-foreground bg-card/95 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-md border border-border">
+                <span className="rounded-full border border-border bg-card/95 px-3 py-1.5 text-sm font-medium text-foreground shadow-md backdrop-blur-sm">
                   {action.label}
                 </span>
-                <div className="w-11 h-11 rounded-full bg-card shadow-lg border border-border flex items-center justify-center text-foreground">
+                <div className="flex h-11 w-11 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-lg">
                   {action.icon}
                 </div>
               </div>
@@ -294,10 +317,16 @@ export function MobileFab({ user, onLogin, onLogout, uiHidden }: MobileFabProps)
 
       {/* FAB button */}
       <button
-        onClick={() => { if (showCards) { setShowCards(false); } else { setIsOpen(!isOpen); } }}
+        onClick={() => {
+          if (showCards) {
+            setShowCards(false);
+          } else {
+            setIsOpen(!isOpen);
+          }
+        }}
         aria-label={isOpen || showCards ? 'Close menu' : 'Open menu'}
         className={cn(
-          'fixed right-6 z-50 w-14 h-14 rounded-full',
+          'fixed right-6 z-50 h-14 w-14 rounded-full',
           'bg-primary text-primary-foreground shadow-lg',
           'flex items-center justify-center',
           'transition-all duration-300 ease-in-out',

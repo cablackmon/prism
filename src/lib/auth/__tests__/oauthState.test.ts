@@ -34,7 +34,7 @@ describe('createOAuthState', () => {
     expect(mockRedisClient.setEx).toHaveBeenCalledWith(
       `google-oauth-state:${nonce}`,
       OAUTH_STATE_TTL,
-      expect.any(String),
+      expect.any(String)
     );
     const stored = JSON.parse(mockRedisClient.setEx.mock.calls[0][2]);
     expect(stored).toEqual({ userId: 'user-1', returnSection: 'integrations' });
@@ -62,7 +62,7 @@ describe('createOAuthState', () => {
 describe('consumeOAuthState', () => {
   it('returns ok with the payload and deletes the key (single-use) on a valid match', async () => {
     mockRedisClient.get.mockResolvedValueOnce(
-      JSON.stringify({ userId: 'user-1', returnSection: 'integrations' }),
+      JSON.stringify({ userId: 'user-1', returnSection: 'integrations' })
     );
 
     const result = await consumeOAuthState('google', 'nonce-123', 'user-1');

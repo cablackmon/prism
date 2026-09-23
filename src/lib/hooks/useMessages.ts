@@ -46,7 +46,13 @@ function transformMessages(json: unknown): FamilyMessage[] {
 export function useMessages(options: UseMessagesOptions = {}) {
   const { limit = 20, refreshInterval = 2 * 60 * 1000, enabled } = options;
 
-  const { data: messages, setData: setMessages, loading, error, refresh } = useFetch<FamilyMessage[]>({
+  const {
+    data: messages,
+    setData: setMessages,
+    loading,
+    error,
+    refresh,
+  } = useFetch<FamilyMessage[]>({
     url: `/api/messages?limit=${limit}`,
     initialData: [],
     transform: transformMessages,
@@ -72,7 +78,10 @@ export function useMessages(options: UseMessagesOptions = {}) {
   );
 
   const updateMessage = useCallback(
-    async (messageId: string, updates: { message?: string; pinned?: boolean; important?: boolean }) => {
+    async (
+      messageId: string,
+      updates: { message?: string; pinned?: boolean; important?: boolean }
+    ) => {
       try {
         const response = await fetch(`/api/messages/${messageId}`, {
           method: 'PATCH',
@@ -84,7 +93,12 @@ export function useMessages(options: UseMessagesOptions = {}) {
         setMessages((prev) =>
           prev.map((msg) =>
             msg.id === messageId
-              ? { ...msg, message: updated.message, pinned: updated.pinned, important: updated.important }
+              ? {
+                  ...msg,
+                  message: updated.message,
+                  pinned: updated.pinned,
+                  important: updated.important,
+                }
               : msg
           )
         );

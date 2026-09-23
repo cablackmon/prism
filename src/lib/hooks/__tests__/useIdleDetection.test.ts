@@ -223,11 +223,13 @@ describe('useIdleDetection', () => {
 
     act(() => {
       jest.advanceTimersByTime(4000);
-      window.dispatchEvent(new MessageEvent('message', {
-        source: window.parent,
-        origin: 'https://kyst-board.fly.dev',
-        data: { type: 'kyst-user-activity' },
-      }));
+      window.dispatchEvent(
+        new MessageEvent('message', {
+          source: window.parent,
+          origin: 'https://kyst-board.fly.dev',
+          data: { type: 'kyst-user-activity' },
+        })
+      );
       jest.advanceTimersByTime(4999);
     });
     expect(result.current.isIdle).toBe(false);
@@ -241,11 +243,13 @@ describe('useIdleDetection', () => {
 
     act(() => {
       result.current.forceIdle();
-      window.dispatchEvent(new MessageEvent('message', {
-        source: window.parent,
-        origin: 'https://kyst-board.fly.dev',
-        data: { type: 'kyst-user-activity' },
-      }));
+      window.dispatchEvent(
+        new MessageEvent('message', {
+          source: window.parent,
+          origin: 'https://kyst-board.fly.dev',
+          data: { type: 'kyst-user-activity' },
+        })
+      );
     });
     expect(result.current.isIdle).toBe(false);
 
@@ -260,11 +264,13 @@ describe('useIdleDetection', () => {
 
     act(() => {
       jest.advanceTimersByTime(4000);
-      window.dispatchEvent(new MessageEvent('message', {
-        source: window.parent,
-        origin: 'https://example.com',
-        data: { type: 'kyst-user-activity' },
-      }));
+      window.dispatchEvent(
+        new MessageEvent('message', {
+          source: window.parent,
+          origin: 'https://example.com',
+          data: { type: 'kyst-user-activity' },
+        })
+      );
       jest.advanceTimersByTime(1000);
     });
 
@@ -393,9 +399,7 @@ describe('useIdleDetection', () => {
 
     // Change timeout to 2 seconds via custom event
     act(() => {
-      window.dispatchEvent(
-        new CustomEvent('prism:screensaver-timeout-change', { detail: 2 })
-      );
+      window.dispatchEvent(new CustomEvent('prism:screensaver-timeout-change', { detail: 2 }));
     });
 
     // Old timeout (999s) should not apply — new 2s timeout should
@@ -412,9 +416,7 @@ describe('useIdleDetection', () => {
 
     act(() => jest.advanceTimersByTime(10_000));
     act(() => {
-      window.dispatchEvent(
-        new CustomEvent('prism:screensaver-timeout-change', { detail: 5 })
-      );
+      window.dispatchEvent(new CustomEvent('prism:screensaver-timeout-change', { detail: 5 }));
     });
 
     expect(Number(localStorage.getItem('prism-last-activity'))).toBe(Date.now());

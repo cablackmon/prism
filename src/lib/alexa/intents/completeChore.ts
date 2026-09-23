@@ -2,7 +2,9 @@ import { speak, type AlexaResponse } from '../responses';
 import { voiceClient, VoiceApiError } from '../client';
 import { logError } from '@/lib/utils/logError';
 
-interface AlexaSlot { value?: string }
+interface AlexaSlot {
+  value?: string;
+}
 interface IntentArgs {
   slots?: Record<string, AlexaSlot | undefined>;
 }
@@ -24,7 +26,7 @@ export async function handleCompleteChore(args: IntentArgs = {}): Promise<AlexaR
   const assignee = args.slots?.Assignee?.value?.trim() || undefined;
 
   if (!chore) {
-    return speak("Which chore?");
+    return speak('Which chore?');
   }
 
   try {

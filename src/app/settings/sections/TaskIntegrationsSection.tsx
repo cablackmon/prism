@@ -2,13 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { toast } from '@/components/ui/use-toast';
-import {
-  Plus,
-  Trash2,
-  ListTodo,
-  Pencil,
-  Link2,
-} from 'lucide-react';
+import { Plus, Trash2, ListTodo, Pencil, Link2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -49,7 +43,13 @@ export function TaskIntegrationsSection({
   embedded = false,
   providerFilter,
 }: TaskIntegrationsSectionProps = {}) {
-  const { lists: taskLists, loading: listsLoading, createList, updateList, deleteList } = useTaskLists();
+  const {
+    lists: taskLists,
+    loading: listsLoading,
+    createList,
+    updateList,
+    deleteList,
+  } = useTaskLists();
   // Derived config keeps this hook instance scoped to its provider's URL
   // triggers (selectMsList vs selectGoogleTasksList) so two embedded
   // instances (under Google + Microsoft cards) don't both pop modals.
@@ -90,7 +90,10 @@ export function TaskIntegrationsSection({
   };
 
   // Task-specific: new connection flow (no pre-selected KYST list)
-  const [selectedMsListForNew, setSelectedMsListForNew] = useState<{ id: string; name: string } | null>(null);
+  const [selectedMsListForNew, setSelectedMsListForNew] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const [showPrismListPickerModal, setShowPrismListPickerModal] = useState(false);
   const [newPrismListName, setNewPrismListName] = useState('');
   const [finalizingNewConnection, setFinalizingNewConnection] = useState(false);
@@ -124,10 +127,14 @@ export function TaskIntegrationsSection({
     await integration.handleSelectMsList(externalListId, externalListName);
   };
 
-  const handleFinalizeNewConnection = async (taskListId: string | null, newListNameVal: string | null) => {
+  const handleFinalizeNewConnection = async (
+    taskListId: string | null,
+    newListNameVal: string | null
+  ) => {
     if (!selectedMsListForNew) return;
 
-    const providerName = integration.listSelectionProvider === 'google_tasks' ? 'Google Tasks' : 'Microsoft To-Do';
+    const providerName =
+      integration.listSelectionProvider === 'google_tasks' ? 'Google Tasks' : 'Microsoft To-Do';
 
     setFinalizingNewConnection(true);
     try {
@@ -266,7 +273,10 @@ export function TaskIntegrationsSection({
       setEditingList(null);
       setEditListName('');
     } catch (err) {
-      toast({ title: err instanceof Error ? err.message : 'Failed to update list', variant: 'destructive' });
+      toast({
+        title: err instanceof Error ? err.message : 'Failed to update list',
+        variant: 'destructive',
+      });
     } finally {
       setSavingList(false);
     }
@@ -277,9 +287,7 @@ export function TaskIntegrationsSection({
       {!embedded && (
         <div>
           <h2 className="text-2xl font-bold">Task Sync</h2>
-          <p className="text-muted-foreground">
-            Manage task list sync with external apps
-          </p>
+          <p className="text-muted-foreground">Manage task list sync with external apps</p>
         </div>
       )}
 
@@ -308,11 +316,13 @@ export function TaskIntegrationsSection({
         }
         emptyExtra={
           embedded ? null : (
-            <p className="text-sm mt-1">
+            <p className="mt-1 text-sm">
               or set up your account in{' '}
               <button
-                onClick={() => { window.location.href = '/settings?section=integrations'; }}
-                className="text-primary hover:underline font-medium"
+                onClick={() => {
+                  window.location.href = '/settings?section=integrations';
+                }}
+                className="font-medium text-primary hover:underline"
               >
                 Integrations
               </button>
@@ -342,22 +352,20 @@ export function TaskIntegrationsSection({
         entities={taskLists}
         loading={listsLoading}
         emptyText="No task lists yet. Create one to organize your tasks."
-        entityIcon={<div className="w-3 h-3 rounded-full shrink-0 bg-gray-500" />}
+        entityIcon={<div className="h-3 w-3 shrink-0 rounded-full bg-gray-500" />}
         renderEntityIcon={(list) => (
           <div
-            className="w-3 h-3 rounded-full shrink-0"
+            className="h-3 w-3 shrink-0 rounded-full"
             style={{ backgroundColor: list.color || '#6B7280' }}
           />
         )}
         sources={displayedSources}
         config={TASK_CONFIG}
-        getSourceForEntity={(list) =>
-          displayedSources.find((s) => s.taskListId === list.id)
-        }
+        getSourceForEntity={(list) => displayedSources.find((s) => s.taskListId === list.id)}
         onConnect={handleConnectEntity}
         headerActions={
           <Button size="sm" onClick={() => setShowNewListModal(true)}>
-            <Plus className="h-4 w-4 mr-1" />
+            <Plus className="mr-1 h-4 w-4" />
             New List
           </Button>
         }
@@ -370,98 +378,106 @@ export function TaskIntegrationsSection({
               (providerFilter === 'microsoft_todo' && !msConfigured));
 
           return (
-          <>
-            {connectedSource ? (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  handleConnectEntity(list.id);
-                }}
-              >
-                Change
-              </Button>
-            ) : (list as { linkedProvider?: string }).linkedProvider === 'caldav' ? (
-              // CalDAV-backed lists are already sourced from the CalDAV
+            <>
+              {connectedSource ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    handleConnectEntity(list.id);
+                  }}
+                >
+                  Change
+                </Button>
+              ) : (list as { linkedProvider?: string }).linkedProvider ===
+                'caldav' ? // CalDAV-backed lists are already sourced from the CalDAV
               // calendar_source — the "From Apple iCloud" badge under the
               // name says so. Hide the Connect button (it would just dump
               // the user into a provider picker that doesn't include
               // CalDAV / Apple as a target).
-              null
-            ) : providerNotConfigured ? (
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled
-                className="gap-1"
-                title="Needs a one-time admin setup before this can connect"
-              >
-                <Link2 className="h-4 w-4" />
-                Connect
-              </Button>
-            ) : googleBrowserFlowUnusable ? (
-              // Google refuses a redirect URI on this address, so Connect
-              // would bounce off its consent screen with an error only Google
-              // words. Say so here instead of offering a button that cannot
-              // work; the paste-a-token flow needs no redirect URI at all.
+              null : providerNotConfigured ? (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled
+                  className="gap-1"
+                  title="Needs a one-time admin setup before this can connect"
+                >
+                  <Link2 className="h-4 w-4" />
+                  Connect
+                </Button>
+              ) : googleBrowserFlowUnusable ? (
+                // Google refuses a redirect URI on this address, so Connect
+                // would bounce off its consent screen with an error only Google
+                // words. Say so here instead of offering a button that cannot
+                // work; the paste-a-token flow needs no redirect URI at all.
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled
+                  className="gap-1 text-muted-foreground"
+                  title={
+                    'Google will not accept this address as a sign-in redirect. ' +
+                    'Reopen KYST on a public https address, or on localhost (an SSH tunnel works), ' +
+                    'and Connect will work here. Otherwise use "Connect without a public URL ' +
+                    '(advanced)" on the Google card, which needs no redirect address at all.'
+                  }
+                >
+                  <Link2 className="h-4 w-4" />
+                  Not from this address
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleConnectEntity(list.id)}
+                  className="gap-1"
+                >
+                  <Link2 className="h-4 w-4" />
+                  Connect
+                </Button>
+              )}
               <Button
                 variant="ghost"
-                size="sm"
-                disabled
-                className="gap-1 text-muted-foreground"
-                title={
-                  'Google will not accept this address as a sign-in redirect. ' +
-                  'Reopen KYST on a public https address, or on localhost (an SSH tunnel works), ' +
-                  'and Connect will work here. Otherwise use "Connect without a public URL ' +
-                  '(advanced)" on the Google card, which needs no redirect address at all.'
-                }
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => {
+                  setEditingList({ id: list.id, name: list.name });
+                  setEditListName(list.name);
+                  setShowEditListModal(true);
+                }}
               >
-                <Link2 className="h-4 w-4" />
-                Not from this address
+                <Pencil className="h-4 w-4" />
               </Button>
-            ) : (
               <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleConnectEntity(list.id)}
-                className="gap-1"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                disabled={deletingListId === list.id}
+                onClick={async () => {
+                  if (
+                    !(await integration.confirm(
+                      `Delete "${list.name}"?`,
+                      'Tasks in this list will be unassigned.'
+                    ))
+                  )
+                    return;
+                  setDeletingListId(list.id);
+                  try {
+                    await deleteList(list.id);
+                  } catch (err) {
+                    toast({
+                      title: err instanceof Error ? err.message : 'Failed to delete list',
+                      variant: 'destructive',
+                    });
+                  } finally {
+                    setDeletingListId(null);
+                  }
+                }}
               >
-                <Link2 className="h-4 w-4" />
-                Connect
+                <Trash2 className="h-4 w-4" />
               </Button>
-            )}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => {
-                setEditingList({ id: list.id, name: list.name });
-                setEditListName(list.name);
-                setShowEditListModal(true);
-              }}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-              disabled={deletingListId === list.id}
-              onClick={async () => {
-                if (!await integration.confirm(`Delete "${list.name}"?`, 'Tasks in this list will be unassigned.')) return;
-                setDeletingListId(list.id);
-                try {
-                  await deleteList(list.id);
-                } catch (err) {
-                  toast({ title: err instanceof Error ? err.message : 'Failed to delete list', variant: 'destructive' });
-                } finally {
-                  setDeletingListId(null);
-                }
-              }}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </>
+            </>
           );
         }}
       />
@@ -474,24 +490,48 @@ export function TaskIntegrationsSection({
         description={
           <>
             Choose which task service to sync with{' '}
-            <strong>{taskLists.find(l => l.id === integration.connectingEntityId)?.name}</strong>
+            <strong>{taskLists.find((l) => l.id === integration.connectingEntityId)?.name}</strong>
           </>
         }
-        onSelectMsTodo={msConfigured ? () => {
-          integration.setShowProviderPickerModal(false);
-          if (integration.connectingEntityId) {
-            window.location.href = `/api/auth/microsoft-tasks?taskListId=${integration.connectingEntityId}`;
-          }
-        } : undefined}
-        onSelectGoogleTasks={googleConfigured ? () => {
-          integration.setShowProviderPickerModal(false);
-          if (integration.connectingEntityId) {
-            window.location.href = `/api/auth/google-tasks?taskListId=${integration.connectingEntityId}`;
-          }
-        } : undefined}
+        onSelectMsTodo={
+          msConfigured
+            ? () => {
+                integration.setShowProviderPickerModal(false);
+                if (integration.connectingEntityId) {
+                  window.location.href = `/api/auth/microsoft-tasks?taskListId=${integration.connectingEntityId}`;
+                }
+              }
+            : undefined
+        }
+        onSelectGoogleTasks={
+          googleConfigured
+            ? () => {
+                integration.setShowProviderPickerModal(false);
+                if (integration.connectingEntityId) {
+                  window.location.href = `/api/auth/google-tasks?taskListId=${integration.connectingEntityId}`;
+                }
+              }
+            : undefined
+        }
         disabledProviders={[
-          ...(!msConfigured ? [{ icon: MS_TODO_ICON_SM, name: 'Microsoft To-Do', label: 'Needs a one-time admin setup' }] : []),
-          ...(!googleConfigured ? [{ icon: GOOGLE_TASKS_ICON_SM, name: 'Google Tasks', label: 'Needs a one-time admin setup' }] : []),
+          ...(!msConfigured
+            ? [
+                {
+                  icon: MS_TODO_ICON_SM,
+                  name: 'Microsoft To-Do',
+                  label: 'Needs a one-time admin setup',
+                },
+              ]
+            : []),
+          ...(!googleConfigured
+            ? [
+                {
+                  icon: GOOGLE_TASKS_ICON_SM,
+                  name: 'Google Tasks',
+                  label: 'Needs a one-time admin setup',
+                },
+              ]
+            : []),
         ]}
       />
 
@@ -503,17 +543,31 @@ export function TaskIntegrationsSection({
         loading={integration.loadingMsLists}
         finalizingConnection={integration.finalizingConnection}
         onSelect={handleSelectMsListOverride}
-        title={integration.listSelectionProvider === 'google_tasks' ? 'Select Google Tasks List' : 'Select Microsoft To-Do List'}
-        description={integration.listSelectionProvider === 'google_tasks'
-          ? 'Choose which Google Tasks list to sync with your KYST list'
-          : 'Choose which Microsoft To-Do list to sync with your KYST list'}
-        loadingText={integration.listSelectionProvider === 'google_tasks'
-          ? 'Loading lists from Google Tasks...'
-          : 'Loading lists from Microsoft To-Do...'}
-        emptyText={integration.listSelectionProvider === 'google_tasks'
-          ? 'No lists found in Google Tasks'
-          : 'No lists found in Microsoft To-Do'}
-        listIcon={integration.listSelectionProvider === 'google_tasks' ? GOOGLE_TASKS_ICON_SM : MS_TODO_ICON_SM}
+        title={
+          integration.listSelectionProvider === 'google_tasks'
+            ? 'Select Google Tasks List'
+            : 'Select Microsoft To-Do List'
+        }
+        description={
+          integration.listSelectionProvider === 'google_tasks'
+            ? 'Choose which Google Tasks list to sync with your KYST list'
+            : 'Choose which Microsoft To-Do list to sync with your KYST list'
+        }
+        loadingText={
+          integration.listSelectionProvider === 'google_tasks'
+            ? 'Loading lists from Google Tasks...'
+            : 'Loading lists from Microsoft To-Do...'
+        }
+        emptyText={
+          integration.listSelectionProvider === 'google_tasks'
+            ? 'No lists found in Google Tasks'
+            : 'No lists found in Microsoft To-Do'
+        }
+        listIcon={
+          integration.listSelectionProvider === 'google_tasks'
+            ? GOOGLE_TASKS_ICON_SM
+            : MS_TODO_ICON_SM
+        }
       />
 
       {/* New List Modal */}
@@ -548,10 +602,16 @@ export function TaskIntegrationsSection({
       </Dialog>
 
       {/* Edit List Modal */}
-      <Dialog open={showEditListModal} onOpenChange={(open) => {
-        setShowEditListModal(open);
-        if (!open) { setEditingList(null); setEditListName(''); }
-      }}>
+      <Dialog
+        open={showEditListModal}
+        onOpenChange={(open) => {
+          setShowEditListModal(open);
+          if (!open) {
+            setEditingList(null);
+            setEditListName('');
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Task List</DialogTitle>
@@ -571,11 +631,14 @@ export function TaskIntegrationsSection({
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setShowEditListModal(false);
-              setEditingList(null);
-              setEditListName('');
-            }}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowEditListModal(false);
+                setEditingList(null);
+                setEditListName('');
+              }}
+            >
               Cancel
             </Button>
             <Button onClick={handleSaveEditList} disabled={!editListName.trim() || savingList}>
@@ -602,29 +665,34 @@ export function TaskIntegrationsSection({
       />
 
       {/* KYST List Picker Modal (for new connections) */}
-      <Dialog open={showPrismListPickerModal} onOpenChange={(open) => {
-        if (!open) {
-          setShowPrismListPickerModal(false);
-          setSelectedMsListForNew(null);
-          setNewPrismListName('');
-          // isNewConnection is managed by the shared hook
-          window.history.replaceState({}, '', '/settings?section=tasks');
-        }
-      }}>
+      <Dialog
+        open={showPrismListPickerModal}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowPrismListPickerModal(false);
+            setSelectedMsListForNew(null);
+            setNewPrismListName('');
+            // isNewConnection is managed by the shared hook
+            window.history.replaceState({}, '', '/settings?section=tasks');
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Choose KYST List</DialogTitle>
           </DialogHeader>
           <div className="py-4">
-            <p className="text-sm text-muted-foreground mb-4">
+            <p className="mb-4 text-sm text-muted-foreground">
               Syncing with <strong>{selectedMsListForNew?.name}</strong> from{' '}
-              {integration.listSelectionProvider === 'google_tasks' ? 'Google Tasks' : 'Microsoft To-Do'}.
-              Where should these tasks go in KYST?
+              {integration.listSelectionProvider === 'google_tasks'
+                ? 'Google Tasks'
+                : 'Microsoft To-Do'}
+              . Where should these tasks go in KYST?
             </p>
 
             <div className="space-y-4">
-              <div className="p-3 rounded-md border border-border">
-                <div className="flex items-center gap-2 mb-2">
+              <div className="rounded-md border border-border p-3">
+                <div className="mb-2 flex items-center gap-2">
                   <Plus className="h-4 w-4" />
                   <span className="font-medium">Create new list</span>
                 </div>
@@ -646,17 +714,17 @@ export function TaskIntegrationsSection({
 
               {taskLists.length > 0 && (
                 <div>
-                  <p className="text-sm font-medium mb-2">Or connect to existing list:</p>
-                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                  <p className="mb-2 text-sm font-medium">Or connect to existing list:</p>
+                  <div className="max-h-48 space-y-2 overflow-y-auto">
                     {taskLists.map((list) => (
                       <button
                         key={list.id}
                         onClick={() => handleFinalizeNewConnection(list.id, null)}
                         disabled={finalizingNewConnection}
-                        className="w-full flex items-center gap-3 p-3 rounded-md border border-border hover:bg-accent transition-colors text-left disabled:opacity-50"
+                        className="flex w-full items-center gap-3 rounded-md border border-border p-3 text-left transition-colors hover:bg-accent disabled:opacity-50"
                       >
                         <div
-                          className="w-3 h-3 rounded-full shrink-0"
+                          className="h-3 w-3 shrink-0 rounded-full"
                           style={{ backgroundColor: list.color || '#6B7280' }}
                         />
                         <span className="font-medium">{list.name}</span>

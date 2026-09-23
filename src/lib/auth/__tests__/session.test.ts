@@ -92,10 +92,7 @@ describe('createSession', () => {
   it('adds token to user_sessions set', async () => {
     const result = await createSession('user-1', 'parent');
 
-    expect(mockRedisClient.sAdd).toHaveBeenCalledWith(
-      'user_sessions:user-1',
-      result!.token
-    );
+    expect(mockRedisClient.sAdd).toHaveBeenCalledWith('user_sessions:user-1', result!.token);
   });
 
   it('returns null when Redis is unavailable', async () => {
@@ -134,8 +131,10 @@ describe('validateSession', () => {
 
   it('returns session data for a valid session', async () => {
     const sessionData = {
-      userId: 'user-1', role: 'parent',
-      createdAt: Date.now(), expiresAt: Date.now() + 60000,
+      userId: 'user-1',
+      role: 'parent',
+      createdAt: Date.now(),
+      expiresAt: Date.now() + 60000,
     };
     mockRedisClient.get.mockResolvedValueOnce(JSON.stringify(sessionData));
 
@@ -152,8 +151,10 @@ describe('validateSession', () => {
 
   it('refreshes TTL on successful validation (sliding window)', async () => {
     const sessionData = {
-      userId: 'user-1', role: 'parent',
-      createdAt: Date.now(), expiresAt: Date.now() + 60000,
+      userId: 'user-1',
+      role: 'parent',
+      createdAt: Date.now(),
+      expiresAt: Date.now() + 60000,
     };
     mockRedisClient.get.mockResolvedValueOnce(JSON.stringify(sessionData));
 
@@ -176,8 +177,10 @@ describe('validateSession', () => {
 
   it('returns invalid and deletes expired session', async () => {
     const expiredSession = {
-      userId: 'user-1', role: 'parent',
-      createdAt: Date.now() - 120000, expiresAt: Date.now() - 60000, // expired 1 min ago
+      userId: 'user-1',
+      role: 'parent',
+      createdAt: Date.now() - 120000,
+      expiresAt: Date.now() - 60000, // expired 1 min ago
     };
     mockRedisClient.get.mockResolvedValueOnce(JSON.stringify(expiredSession));
 
@@ -191,7 +194,8 @@ describe('validateSession', () => {
     // createdAt is 31 days ago (parent absolute cap is 30 days), but the
     // sliding expiresAt is still in the future — a stolen cookie kept alive.
     const ancientButActive = {
-      userId: 'user-1', role: 'parent',
+      userId: 'user-1',
+      role: 'parent',
       createdAt: Date.now() - 31 * 24 * 60 * 60 * 1000,
       expiresAt: Date.now() + 60000,
     };
@@ -207,7 +211,8 @@ describe('validateSession', () => {
 
   it('honors the shorter guest absolute lifetime (1 hour)', async () => {
     const oldGuest = {
-      userId: 'guest-1', role: 'guest',
+      userId: 'guest-1',
+      role: 'guest',
       createdAt: Date.now() - 2 * 60 * 60 * 1000, // 2h old, cap is 1h
       expiresAt: Date.now() + 60000,
     };
@@ -219,7 +224,8 @@ describe('validateSession', () => {
 
   it('allows a session within its absolute lifetime', async () => {
     const youngSession = {
-      userId: 'user-1', role: 'parent',
+      userId: 'user-1',
+      role: 'parent',
       createdAt: Date.now() - 2 * 24 * 60 * 60 * 1000, // 2 days old, cap 30
       expiresAt: Date.now() + 60000,
     };

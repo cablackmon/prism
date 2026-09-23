@@ -2,15 +2,8 @@ import { NextResponse } from 'next/server';
 import { getDisplayAuth, requireAuth, requireRole } from '@/lib/auth';
 import { APP_VERSION } from '@/lib/constants';
 import { logError } from '@/lib/utils/logError';
-import {
-  TELEMETRY_SETTING_KEYS,
-  getTelemetryEndpoint,
-} from '@/lib/telemetry/constants';
-import {
-  buildPayload,
-  isTelemetryEnabled,
-  runCheckIn,
-} from '@/lib/telemetry/checkIn';
+import { TELEMETRY_SETTING_KEYS, getTelemetryEndpoint } from '@/lib/telemetry/constants';
+import { buildPayload, isTelemetryEnabled, runCheckIn } from '@/lib/telemetry/checkIn';
 import { isNotifiableUpdate } from '@/lib/telemetry/version';
 import { readSetting } from '@/lib/telemetry/store';
 

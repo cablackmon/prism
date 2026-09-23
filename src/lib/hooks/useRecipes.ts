@@ -95,7 +95,14 @@ export function useRecipes(options: UseRecipesOptions = {}) {
     if (options.limit) params.set('limit', options.limit.toString());
     if (options.offset) params.set('offset', options.offset.toString());
     return `/api/recipes${params.toString() ? `?${params}` : ''}`;
-  }, [options.search, options.category, options.cuisine, options.favorite, options.limit, options.offset]);
+  }, [
+    options.search,
+    options.category,
+    options.cuisine,
+    options.favorite,
+    options.limit,
+    options.offset,
+  ]);
 
   const cached = navCacheGet<{ recipes: Recipe[]; total: number }>(cacheKey);
   const [recipes, setRecipes] = useState<Recipe[]>(() => cached?.recipes ?? []);
@@ -142,27 +149,30 @@ export function useRecipes(options: UseRecipesOptions = {}) {
     }
 
     const newRecipe = await res.json();
-    setRecipes(prev => [newRecipe, ...prev]);
-    setTotal(prev => prev + 1);
+    setRecipes((prev) => [newRecipe, ...prev]);
+    setTotal((prev) => prev + 1);
     return newRecipe;
   }, []);
 
-  const updateRecipe = useCallback(async (id: string, updates: UpdateRecipeInput): Promise<Recipe> => {
-    const res = await fetch(`/api/recipes/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updates),
-    });
+  const updateRecipe = useCallback(
+    async (id: string, updates: UpdateRecipeInput): Promise<Recipe> => {
+      const res = await fetch(`/api/recipes/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
 
-    if (!res.ok) {
-      const data = await res.json();
-      throw new Error(data.error || 'Failed to update recipe');
-    }
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to update recipe');
+      }
 
-    const updated = await res.json();
-    setRecipes(prev => prev.map(r => r.id === id ? updated : r));
-    return updated;
-  }, []);
+      const updated = await res.json();
+      setRecipes((prev) => prev.map((r) => (r.id === id ? updated : r)));
+      return updated;
+    },
+    []
+  );
 
   const deleteRecipe = useCallback(async (id: string): Promise<void> => {
     const res = await fetch(`/api/recipes/${id}`, {
@@ -174,76 +184,97 @@ export function useRecipes(options: UseRecipesOptions = {}) {
       throw new Error(data.error || 'Failed to delete recipe');
     }
 
-    setRecipes(prev => prev.filter(r => r.id !== id));
-    setTotal(prev => prev - 1);
+    setRecipes((prev) => prev.filter((r) => r.id !== id));
+    setTotal((prev) => prev - 1);
   }, []);
 
-  const importFromUrl = useCallback(async (url: string, preview = false): Promise<Recipe | { preview: true; recipe: Partial<Recipe> }> => {
-    const res = await fetch('/api/recipes/import-url', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url, preview }),
-    });
+  const importFromUrl = useCallback(
+    async (
+      url: string,
+      preview = false
+    ): Promise<Recipe | { preview: true; recipe: Partial<Recipe> }> => {
+      const res = await fetch('/api/recipes/import-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url, preview }),
+      });
 
-    if (!res.ok) {
-      let errorMsg = 'Failed to import recipe';
-      try {
-        const data = await res.json();
-        errorMsg = data.error || errorMsg;
-      } catch {
-        // Response wasn't JSON (e.g. HTML error page)
+      if (!res.ok) {
+        let errorMsg = 'Failed to import recipe';
+        try {
+          const data = await res.json();
+          errorMsg = data.error || errorMsg;
+        } catch {
+          // Response wasn't JSON (e.g. HTML error page)
+        }
+        throw new Error(errorMsg);
       }
-      throw new Error(errorMsg);
-    }
 
-    const data = await res.json();
-
-    if (!preview && !data.preview) {
-      setRecipes(prev => [data, ...prev]);
-      setTotal(prev => prev + 1);
-    }
-
-    return data;
-  }, []);
-
-  const importFromPaprika = useCallback(async (html: string, preview = false): Promise<{ imported?: number; recipes: Recipe[] } | { preview: true; count: number; recipes: Partial<Recipe>[] }> => {
-    const res = await fetch('/api/recipes/import-paprika', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ html, preview }),
-    });
-
-    if (!res.ok) {
       const data = await res.json();
-      throw new Error(data.error || 'Failed to import Paprika recipes');
-    }
 
-    const data = await res.json();
+      if (!preview && !data.preview) {
+        setRecipes((prev) => [data, ...prev]);
+        setTotal((prev) => prev + 1);
+      }
 
-    if (!preview && data.recipes) {
-      setRecipes(prev => [...data.recipes, ...prev]);
-      setTotal(prev => prev + data.imported);
-    }
+      return data;
+    },
+    []
+  );
 
-    return data;
-  }, []);
+  const importFromPaprika = useCallback(
+    async (
+      html: string,
+      preview = false
+    ): Promise<
+      | { imported?: number; recipes: Recipe[] }
+      | { preview: true; count: number; recipes: Partial<Recipe>[] }
+    > => {
+      const res = await fetch('/api/recipes/import-paprika', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ html, preview }),
+      });
 
-  const toggleFavorite = useCallback(async (id: string): Promise<Recipe> => {
-    const recipe = recipes.find(r => r.id === id);
-    if (!recipe) throw new Error('Recipe not found');
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to import Paprika recipes');
+      }
 
-    return updateRecipe(id, { isFavorite: !recipe.isFavorite });
-  }, [recipes, updateRecipe]);
+      const data = await res.json();
 
-  const markAsMade = useCallback(async (id: string): Promise<Recipe> => {
-    const recipe = recipes.find(r => r.id === id);
-    if (!recipe) throw new Error('Recipe not found');
+      if (!preview && data.recipes) {
+        setRecipes((prev) => [...data.recipes, ...prev]);
+        setTotal((prev) => prev + data.imported);
+      }
 
-    return updateRecipe(id, {
-      timesMade: recipe.timesMade + 1,
-      lastMadeAt: new Date().toISOString(),
-    });
-  }, [recipes, updateRecipe]);
+      return data;
+    },
+    []
+  );
+
+  const toggleFavorite = useCallback(
+    async (id: string): Promise<Recipe> => {
+      const recipe = recipes.find((r) => r.id === id);
+      if (!recipe) throw new Error('Recipe not found');
+
+      return updateRecipe(id, { isFavorite: !recipe.isFavorite });
+    },
+    [recipes, updateRecipe]
+  );
+
+  const markAsMade = useCallback(
+    async (id: string): Promise<Recipe> => {
+      const recipe = recipes.find((r) => r.id === id);
+      if (!recipe) throw new Error('Recipe not found');
+
+      return updateRecipe(id, {
+        timesMade: recipe.timesMade + 1,
+        lastMadeAt: new Date().toISOString(),
+      });
+    },
+    [recipes, updateRecipe]
+  );
 
   return {
     recipes,

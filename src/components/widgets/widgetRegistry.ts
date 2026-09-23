@@ -3,18 +3,36 @@ import { ClockWidget } from './ClockWidget';
 import { WeatherWidget } from './WeatherWidget';
 
 // Lazy-load non-default widgets to reduce initial bundle size
-const CalendarWidget = lazy(() => import('./CalendarWidget').then(m => ({ default: m.CalendarWidget })));
-const TasksWidget = lazy(() => import('./TasksWidget').then(m => ({ default: m.TasksWidget })));
-const MessagesWidget = lazy(() => import('./MessagesWidget').then(m => ({ default: m.MessagesWidget })));
-const ChoresWidget = lazy(() => import('./ChoresWidget').then(m => ({ default: m.ChoresWidget })));
-const ShoppingWidget = lazy(() => import('./ShoppingWidget').then(m => ({ default: m.ShoppingWidget })));
-const MealsWidget = lazy(() => import('./MealsWidget').then(m => ({ default: m.MealsWidget })));
-const BirthdaysWidget = lazy(() => import('./BirthdaysWidget').then(m => ({ default: m.BirthdaysWidget })));
-const PhotoWidget = lazy(() => import('./PhotoWidget').then(m => ({ default: m.PhotoWidget })));
-const PointsWidget = lazy(() => import('./PointsWidget').then(m => ({ default: m.PointsWidget })));
-const WishesWidget = lazy(() => import('./WishesWidget').then(m => ({ default: m.WishesWidget })));
-const BusTrackingWidget = lazy(() => import('./BusTrackingWidget').then(m => ({ default: m.BusTrackingWidget })));
-const TravelWidget = lazy(() => import('./TravelWidget').then(m => ({ default: m.TravelWidget })));
+const CalendarWidget = lazy(() =>
+  import('./CalendarWidget').then((m) => ({ default: m.CalendarWidget }))
+);
+const TasksWidget = lazy(() => import('./TasksWidget').then((m) => ({ default: m.TasksWidget })));
+const MessagesWidget = lazy(() =>
+  import('./MessagesWidget').then((m) => ({ default: m.MessagesWidget }))
+);
+const ChoresWidget = lazy(() =>
+  import('./ChoresWidget').then((m) => ({ default: m.ChoresWidget }))
+);
+const ShoppingWidget = lazy(() =>
+  import('./ShoppingWidget').then((m) => ({ default: m.ShoppingWidget }))
+);
+const MealsWidget = lazy(() => import('./MealsWidget').then((m) => ({ default: m.MealsWidget })));
+const BirthdaysWidget = lazy(() =>
+  import('./BirthdaysWidget').then((m) => ({ default: m.BirthdaysWidget }))
+);
+const PhotoWidget = lazy(() => import('./PhotoWidget').then((m) => ({ default: m.PhotoWidget })));
+const PointsWidget = lazy(() =>
+  import('./PointsWidget').then((m) => ({ default: m.PointsWidget }))
+);
+const WishesWidget = lazy(() =>
+  import('./WishesWidget').then((m) => ({ default: m.WishesWidget }))
+);
+const BusTrackingWidget = lazy(() =>
+  import('./BusTrackingWidget').then((m) => ({ default: m.BusTrackingWidget }))
+);
+const TravelWidget = lazy(() =>
+  import('./TravelWidget').then((m) => ({ default: m.TravelWidget }))
+);
 
 export interface WidgetProps {
   className?: string;

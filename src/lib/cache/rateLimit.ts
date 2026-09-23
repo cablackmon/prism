@@ -92,7 +92,10 @@ export async function checkRateLimit(
       resetIn: ttl > 0 ? ttl : windowSeconds,
     };
   } catch (error) {
-    console.error('Rate limit check failed, using memory fallback:', error instanceof Error ? error.message : 'Unknown');
+    console.error(
+      'Rate limit check failed, using memory fallback:',
+      error instanceof Error ? error.message : 'Unknown'
+    );
     return checkMemoryRateLimit(key, maxRequests, windowSeconds);
   }
 }

@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
     const conditions = [];
     if (category) {
       const validCategories = ['car', 'home', 'appliance', 'yard', 'other'] as const;
-      type Category = typeof validCategories[number];
+      type Category = (typeof validCategories)[number];
       if (validCategories.includes(category as Category)) {
         conditions.push(eq(maintenanceReminders.category, category as Category));
       }
@@ -70,15 +70,15 @@ export async function GET(request: NextRequest) {
       // Show items due within the next 30 days
       const thirtyDaysFromNow = new Date();
       thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-      conditions.push(lte(maintenanceReminders.nextDue, thirtyDaysFromNow.toISOString().split('T')[0]!));
+      conditions.push(
+        lte(maintenanceReminders.nextDue, thirtyDaysFromNow.toISOString().split('T')[0]!)
+      );
     }
 
-    const results = conditions.length > 0
-      ? await query.where(and(...conditions))
-      : await query;
+    const results = conditions.length > 0 ? await query.where(and(...conditions)) : await query;
 
     // Format response
-    const formattedReminders = results.map(reminder => ({
+    const formattedReminders = results.map((reminder) => ({
       id: reminder.id,
       title: reminder.title,
       category: reminder.category,
@@ -89,20 +89,19 @@ export async function GET(request: NextRequest) {
       nextDue: reminder.nextDue,
       notes: reminder.notes,
       createdAt: reminder.createdAt.toISOString(),
-      assignedTo: reminder.assignedUserId ? {
-        id: reminder.assignedUserId,
-        name: reminder.assignedUserName,
-        color: reminder.assignedUserColor,
-      } : null,
+      assignedTo: reminder.assignedUserId
+        ? {
+            id: reminder.assignedUserId,
+            name: reminder.assignedUserName,
+            color: reminder.assignedUserColor,
+          }
+        : null,
     }));
 
     return NextResponse.json({ reminders: formattedReminders });
   } catch (error) {
     logError('Error fetching maintenance reminders:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch maintenance reminders' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch maintenance reminders' }, { status: 500 });
   }
 }
 
@@ -168,29 +167,26 @@ export async function POST(request: NextRequest) {
       .returning();
 
     if (!newReminder) {
-      return NextResponse.json(
-        { error: 'Failed to create maintenance reminder' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to create maintenance reminder' }, { status: 500 });
     }
 
-    return NextResponse.json({
-      id: newReminder.id,
-      title: newReminder.title,
-      category: newReminder.category,
-      description: newReminder.description,
-      schedule: newReminder.schedule,
-      customIntervalDays: newReminder.customIntervalDays,
-      lastCompleted: newReminder.lastCompleted?.toISOString() || null,
-      nextDue: newReminder.nextDue,
-      notes: newReminder.notes,
-      createdAt: newReminder.createdAt.toISOString(),
-    }, { status: 201 });
+    return NextResponse.json(
+      {
+        id: newReminder.id,
+        title: newReminder.title,
+        category: newReminder.category,
+        description: newReminder.description,
+        schedule: newReminder.schedule,
+        customIntervalDays: newReminder.customIntervalDays,
+        lastCompleted: newReminder.lastCompleted?.toISOString() || null,
+        nextDue: newReminder.nextDue,
+        notes: newReminder.notes,
+        createdAt: newReminder.createdAt.toISOString(),
+      },
+      { status: 201 }
+    );
   } catch (error) {
     logError('Error creating maintenance reminder:', error);
-    return NextResponse.json(
-      { error: 'Failed to create maintenance reminder' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to create maintenance reminder' }, { status: 500 });
   }
 }

@@ -32,15 +32,13 @@ export function findNextFreeSlot(
   existing: PlaceableWidget[],
   newW: number,
   newH: number,
-  gridCols: number = GRID_COLS,
+  gridCols: number = GRID_COLS
 ): { x: number; y: number } {
-  const visible = existing.filter(w => w.visible !== false);
+  const visible = existing.filter((w) => w.visible !== false);
   const maxY = visible.reduce((m, o) => Math.max(m, o.y + o.h), 0);
 
   const collides = (x: number, y: number) =>
-    visible.some(o =>
-      x < o.x + o.w && o.x < x + newW && y < o.y + o.h && o.y < y + newH,
-    );
+    visible.some((o) => x < o.x + o.w && o.x < x + newW && y < o.y + o.h && o.y < y + newH);
 
   for (let y = 0; y <= maxY; y++) {
     for (let x = 0; x <= gridCols - newW; x++) {

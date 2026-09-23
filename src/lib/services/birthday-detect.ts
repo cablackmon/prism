@@ -75,11 +75,24 @@ const ANNIVERSARY_KEYWORD = /(hochzeits|jahres)tag|jubiläum|anniversary/i;
 const NEGATIVE_KEYWORDS = new RegExp(
   [
     // English
-    'prep', 'party', 'dinner', 'lunch', 'brunch', 'bbq', 'sleepover', 'celebrat', 'no school',
+    'prep',
+    'party',
+    'dinner',
+    'lunch',
+    'brunch',
+    'bbq',
+    'sleepover',
+    'celebrat',
+    'no school',
     // German
-    'feier', 'vorbereitung', 'abendessen', 'mittagessen', 'schulfrei', 'kein unterricht',
+    'feier',
+    'vorbereitung',
+    'abendessen',
+    'mittagessen',
+    'schulfrei',
+    'kein unterricht',
   ].join('|'),
-  'i',
+  'i'
 );
 
 /**
@@ -121,7 +134,7 @@ export function parseEventTitle(
   eventDate: string,
   description: string | null,
   isLifeEventsCalendar: boolean,
-  isRecurring = false,
+  isRecurring = false
 ): ParsedEvent | null {
   if (!title.trim()) return null;
 
@@ -170,9 +183,9 @@ export function parseEventTitle(
   if (yearMatch) year = parseInt(yearMatch[1]!, 10);
 
   name = name
-    .replace(/\s*\(\d{4}\)\s*/g, ' ')   // drop "(1993)"
-    .replace(/['’]s?\s*$/, '')          // drop a trailing possessive
-    .replace(/[!?.]+\s*$/, '')          // drop trailing punctuation: "Halvorsen's Birthday!"
+    .replace(/\s*\(\d{4}\)\s*/g, ' ') // drop "(1993)"
+    .replace(/['’]s?\s*$/, '') // drop a trailing possessive
+    .replace(/[!?.]+\s*$/, '') // drop trailing punctuation: "Halvorsen's Birthday!"
     .replace(/\s+/g, ' ')
     .trim();
   if (!name) name = title;
@@ -182,7 +195,11 @@ export function parseEventTitle(
 
 /** Matches normalize() in birthday-merge.ts so tombstones line up with merges. */
 function normalizeName(s: string): string {
-  return s.replace(/[^\w\s]/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
+  return s
+    .replace(/[^\w\s]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
 }
 
 /**
@@ -218,7 +235,7 @@ export async function detectBirthdaysFromEvents(): Promise<DetectResult> {
         t.normalizedName === normalizeName(name) &&
         t.birthMonth === month &&
         t.birthDay === day &&
-        t.eventType === type,
+        t.eventType === type
     );
 
   for (const row of rows) {
@@ -231,7 +248,7 @@ export async function detectBirthdaysFromEvents(): Promise<DetectResult> {
       isoDate(row.startTime),
       row.description,
       isLifeEvents,
-      row.recurring,
+      row.recurring
     );
     if (!parsed) continue;
 
@@ -241,7 +258,8 @@ export async function detectBirthdaysFromEvents(): Promise<DetectResult> {
     if (!month || !day) continue;
     const birthDate = `${parsed.year ?? 1904}-${month}-${day}`;
 
-    if (isDismissed(parsed.name, parseInt(month, 10), parseInt(day, 10), parsed.eventType)) continue;
+    if (isDismissed(parsed.name, parseInt(month, 10), parseInt(day, 10), parsed.eventType))
+      continue;
 
     try {
       const outcome = await upsertBirthday({

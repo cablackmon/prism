@@ -34,33 +34,33 @@ describe('verifyAlexaRequest input validation', () => {
   };
 
   it('throws when cert chain URL is missing', async () => {
-    await expect(
-      verifyAlexaRequest({ ...baseArgs, certChainUrl: null }),
-    ).rejects.toBeInstanceOf(AlexaSignatureError);
+    await expect(verifyAlexaRequest({ ...baseArgs, certChainUrl: null })).rejects.toBeInstanceOf(
+      AlexaSignatureError
+    );
   });
 
   it('throws when both signatures are missing', async () => {
     await expect(
-      verifyAlexaRequest({ ...baseArgs, signature: null, signature256: null }),
+      verifyAlexaRequest({ ...baseArgs, signature: null, signature256: null })
     ).rejects.toBeInstanceOf(AlexaSignatureError);
   });
 
   it('throws when timestamp is missing', async () => {
-    await expect(
-      verifyAlexaRequest({ ...baseArgs, parsedTimestamp: null }),
-    ).rejects.toBeInstanceOf(AlexaSignatureError);
+    await expect(verifyAlexaRequest({ ...baseArgs, parsedTimestamp: null })).rejects.toBeInstanceOf(
+      AlexaSignatureError
+    );
   });
 
   it('throws when timestamp is too old', async () => {
     const oldTs = new Date(Date.now() - 10 * 60 * 1000).toISOString();
-    await expect(
-      verifyAlexaRequest({ ...baseArgs, parsedTimestamp: oldTs }),
-    ).rejects.toThrow(/tolerance/i);
+    await expect(verifyAlexaRequest({ ...baseArgs, parsedTimestamp: oldTs })).rejects.toThrow(
+      /tolerance/i
+    );
   });
 
   it('throws when cert chain URL is malformed', async () => {
     await expect(
-      verifyAlexaRequest({ ...baseArgs, certChainUrl: 'http://evil.com/cert.pem' }),
+      verifyAlexaRequest({ ...baseArgs, certChainUrl: 'http://evil.com/cert.pem' })
     ).rejects.toThrow(/cert URL/i);
   });
 });

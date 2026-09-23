@@ -22,7 +22,10 @@ import { encrypt } from '@/lib/utils/crypto';
 import { logError } from '@/lib/utils/logError';
 import { EncryptionKeyError } from '@/lib/utils/crypto';
 import { detectCapabilities, describeCapabilities } from '@/lib/integrations/googleManualScopes';
-import { stashGoogleTasksTokens, storeGmailBusCredentials } from '@/lib/integrations/googleManualConnect';
+import {
+  stashGoogleTasksTokens,
+  storeGmailBusCredentials,
+} from '@/lib/integrations/googleManualConnect';
 import { logActivity } from '@/lib/services/auditLog';
 import { getGoogleCredentials } from '@/lib/integrations/credentialStore';
 import { refreshAccessToken, TokenRevokedError } from '@/lib/integrations/google-calendar';
@@ -36,7 +39,7 @@ const CREDENTIALS_KEY = 'credentials.google';
 async function upsertGoogleClientCredentials(
   clientId: string,
   clientSecret: string,
-  existing: { redirectUri?: string; gmailRedirectUri?: string } | null,
+  existing: { redirectUri?: string; gmailRedirectUri?: string } | null
 ): Promise<void> {
   const value = {
     clientId: encrypt(clientId),
@@ -64,14 +67,17 @@ export async function POST(request: NextRequest) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: 'invalid_input', message: 'Request body must be JSON.' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'invalid_input', message: 'Request body must be JSON.' },
+      { status: 400 }
+    );
   }
   const parsed = googleManualTokenSchema.safeParse(body);
   if (!parsed.success) {
     const field = parsed.error.issues[0]?.path.join('.') || 'input';
     return NextResponse.json(
       { error: 'invalid_input', message: `The ${field} field is missing or malformed.` },
-      { status: 400 },
+      { status: 400 }
     );
   }
   const { clientId, clientSecret, refreshToken, overwriteCredentials } = parsed.data;
@@ -88,7 +94,7 @@ export async function POST(request: NextRequest) {
           message:
             'A different Google client is already configured. Replacing it will break any calendars connected through the browser flow until they are re-authenticated.',
         },
-        { status: 409 },
+        { status: 409 }
       );
     }
 
@@ -105,20 +111,23 @@ export async function POST(request: NextRequest) {
             message:
               'Google rejected the refresh token. It may be revoked, expired (consent screens in "Testing" mode expire refresh tokens after 7 days), or minted with a different client ID/secret than the ones you pasted.',
           },
-          { status: 400 },
+          { status: 400 }
         );
       }
       if (/invalid_client|unauthorized_client/i.test(msg)) {
         return NextResponse.json(
           { error: 'invalid_client', message: 'Google rejected the client ID / secret pair.' },
-          { status: 400 },
+          { status: 400 }
         );
       }
       // Network / unexpected — log a fixed category only, never the message body.
       logError('google/manual-token: token validation failed', 'network_or_unexpected');
       return NextResponse.json(
-        { error: 'google_unreachable', message: 'Could not reach Google to validate the token. Please try again.' },
-        { status: 502 },
+        {
+          error: 'google_unreachable',
+          message: 'Could not reach Google to validate the token. Please try again.',
+        },
+        { status: 502 }
       );
     }
 
@@ -135,7 +144,7 @@ export async function POST(request: NextRequest) {
             'This token was not granted any scope KYST can use. In the OAuth Playground, select at least one of: ' +
             'Google Calendar API v3, Tasks API v1, or Gmail API v1 (for bus tracking), then authorize again.',
         },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -151,30 +160,38 @@ export async function POST(request: NextRequest) {
     // does not return a new one.
     let result: { calendarCount: number; accountEmail?: string | null } = { calendarCount: 0 };
     if (capabilities.includes('calendar') || capabilities.includes('calendarReadonly')) {
-    try {
-      result = await storeGoogleCalendarConnection({
-        userId: auth.userId,
-        tokens: { accessToken: tokens.access_token, refreshToken, expiresIn: tokens.expires_in },
-        accountEmail,
-        readOnly: capabilities.includes('calendarReadonly'),
-      });
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : '';
-      if (/accessNotConfigured|SERVICE_DISABLED|has not been used|PERMISSION_DENIED|Calendar API/i.test(msg)) {
+      try {
+        result = await storeGoogleCalendarConnection({
+          userId: auth.userId,
+          tokens: { accessToken: tokens.access_token, refreshToken, expiresIn: tokens.expires_in },
+          accountEmail,
+          readOnly: capabilities.includes('calendarReadonly'),
+        });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : '';
+        if (
+          /accessNotConfigured|SERVICE_DISABLED|has not been used|PERMISSION_DENIED|Calendar API/i.test(
+            msg
+          )
+        ) {
+          return NextResponse.json(
+            {
+              error: 'calendar_api_disabled',
+              message:
+                'Enable the Google Calendar API for this project in the Google Cloud Console.',
+            },
+            { status: 400 }
+          );
+        }
+        logError('google/manual-token: reading calendar list failed', 'unexpected');
         return NextResponse.json(
           {
-            error: 'calendar_api_disabled',
-            message: 'Enable the Google Calendar API for this project in the Google Cloud Console.',
+            error: 'google_unreachable',
+            message: 'Could not read your calendar list from Google. Please try again.',
           },
-          { status: 400 },
+          { status: 502 }
         );
       }
-      logError('google/manual-token: reading calendar list failed', 'unexpected');
-      return NextResponse.json(
-        { error: 'google_unreachable', message: 'Could not read your calendar list from Google. Please try again.' },
-        { status: 502 },
-      );
-    }
     }
 
     // Tasks: hand off to the flow the browser callback already feeds. It parks
@@ -191,10 +208,16 @@ export async function POST(request: NextRequest) {
           accountEmail,
         });
       } catch (err) {
-        logError('google/manual-token: stashing tasks tokens failed', err instanceof Error ? err.name : 'error');
+        logError(
+          'google/manual-token: stashing tasks tokens failed',
+          err instanceof Error ? err.name : 'error'
+        );
         return NextResponse.json(
-          { error: 'tasks_stash_failed', message: 'Connected, but could not start the Tasks list picker. Please try again.' },
-          { status: 502 },
+          {
+            error: 'tasks_stash_failed',
+            message: 'Connected, but could not start the Tasks list picker. Please try again.',
+          },
+          { status: 502 }
         );
       }
     }
@@ -210,10 +233,16 @@ export async function POST(request: NextRequest) {
           accountEmail,
         });
       } catch (err) {
-        logError('google/manual-token: storing gmail credentials failed', err instanceof Error ? err.name : 'error');
+        logError(
+          'google/manual-token: storing gmail credentials failed',
+          err instanceof Error ? err.name : 'error'
+        );
         return NextResponse.json(
-          { error: 'gmail_store_failed', message: 'Could not save the Gmail connection. Please try again.' },
-          { status: 502 },
+          {
+            error: 'gmail_store_failed',
+            message: 'Could not save the Gmail connection. Please try again.',
+          },
+          { status: 502 }
         );
       }
     }
@@ -247,8 +276,11 @@ export async function POST(request: NextRequest) {
     if (err instanceof EncryptionKeyError) {
       logError('google/manual-token failed: encryption key invalid', err.message);
       return NextResponse.json(
-        { error: 'encryption_key_invalid', message: `KYST's encryption key is not configured correctly, so it cannot store the credentials. This is not a problem with your token. ${err.message}` },
-        { status: 500 },
+        {
+          error: 'encryption_key_invalid',
+          message: `KYST's encryption key is not configured correctly, so it cannot store the credentials. This is not a problem with your token. ${err.message}`,
+        },
+        { status: 500 }
       );
     }
     // Never surface or log the request body / credentials.
@@ -264,7 +296,7 @@ export async function POST(request: NextRequest) {
         message:
           'Something went wrong on the KYST side while connecting, so this is not a problem with your token. Check the KYST logs for a line mentioning "google/manual-token" and include it if you report this.',
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

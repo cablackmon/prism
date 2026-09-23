@@ -1,13 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import {
-  Settings2,
-  Calendar,
-  UtensilsCrossed,
-  ListChecks,
-  CheckSquare,
-} from 'lucide-react';
+import { Settings2, Calendar, UtensilsCrossed, ListChecks, CheckSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
@@ -75,19 +69,22 @@ function CheckRow({ checked, onChange, label, Icon, disabled }: CheckRowProps) {
         'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm',
         !disabled && 'hover:bg-accent hover:text-accent-foreground',
         'transition-colors',
-        disabled && 'opacity-50 cursor-not-allowed',
-        checked ? 'text-foreground' : 'text-muted-foreground',
+        disabled && 'cursor-not-allowed opacity-50',
+        checked ? 'text-foreground' : 'text-muted-foreground'
       )}
     >
       <span
         className={cn(
           'flex h-4 w-4 items-center justify-center rounded border',
-          checked ? 'bg-primary border-primary' : 'border-muted-foreground/40',
+          checked ? 'border-primary bg-primary' : 'border-muted-foreground/40'
         )}
         aria-hidden
       >
         {checked && (
-          <svg viewBox="0 0 12 12" className="h-3 w-3 fill-none stroke-primary-foreground stroke-[2.5]">
+          <svg
+            viewBox="0 0 12 12"
+            className="h-3 w-3 fill-none stroke-primary-foreground stroke-[2.5]"
+          >
             <path d="M2 6.5l2.5 2.5L10 3" />
           </svg>
         )}
@@ -146,7 +143,7 @@ export function ViewOptionsMenu({
           size="sm"
           aria-label="View options"
           title="View options"
-          className={cn('gap-1.5 h-9', triggerClassName)}
+          className={cn('h-9 gap-1.5', triggerClassName)}
         >
           <Settings2 className="h-4 w-4" />
           <span className="hidden sm:inline">View</span>
@@ -161,7 +158,12 @@ export function ViewOptionsMenu({
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent aria-label="View options" align="end" className="w-64 p-2 z-[10000]" data-screensaver-keep>
+      <PopoverContent
+        aria-label="View options"
+        align="end"
+        className="z-[10000] w-64 p-2"
+        data-screensaver-keep
+      >
         <div className="space-y-3">
           <section>
             <p className="mb-1.5 px-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
@@ -176,16 +178,18 @@ export function ViewOptionsMenu({
                     className={cn(
                       'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
                       'hover:bg-accent hover:text-accent-foreground',
-                      displayMode === 'cards' ? 'text-foreground' : 'text-muted-foreground',
+                      displayMode === 'cards' ? 'text-foreground' : 'text-muted-foreground'
                     )}
                   >
                     <span
                       className={cn(
                         'flex h-4 w-4 items-center justify-center rounded-full border',
-                        displayMode === 'cards' ? 'border-primary' : 'border-muted-foreground/40',
+                        displayMode === 'cards' ? 'border-primary' : 'border-muted-foreground/40'
                       )}
                     >
-                      {displayMode === 'cards' && <span className="h-2 w-2 rounded-full bg-primary" />}
+                      {displayMode === 'cards' && (
+                        <span className="h-2 w-2 rounded-full bg-primary" />
+                      )}
                     </span>
                     <span className="flex-1 text-left">Cards</span>
                   </button>
@@ -195,16 +199,18 @@ export function ViewOptionsMenu({
                     className={cn(
                       'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
                       'hover:bg-accent hover:text-accent-foreground',
-                      displayMode === 'inline' ? 'text-foreground' : 'text-muted-foreground',
+                      displayMode === 'inline' ? 'text-foreground' : 'text-muted-foreground'
                     )}
                   >
                     <span
                       className={cn(
                         'flex h-4 w-4 items-center justify-center rounded-full border',
-                        displayMode === 'inline' ? 'border-primary' : 'border-muted-foreground/40',
+                        displayMode === 'inline' ? 'border-primary' : 'border-muted-foreground/40'
                       )}
                     >
-                      {displayMode === 'inline' && <span className="h-2 w-2 rounded-full bg-primary" />}
+                      {displayMode === 'inline' && (
+                        <span className="h-2 w-2 rounded-full bg-primary" />
+                      )}
                     </span>
                     <span className="flex-1 text-left">Inline blocks</span>
                   </button>
@@ -223,11 +229,7 @@ export function ViewOptionsMenu({
                 />
               )}
               {notesApplicable && (
-                <CheckRow
-                  checked={showNotes}
-                  onChange={onShowNotesChange}
-                  label="Notes column"
-                />
+                <CheckRow checked={showNotes} onChange={onShowNotesChange} label="Notes column" />
               )}
               {mergeApplicable && onMergedViewChange && (
                 <CheckRow
@@ -268,7 +270,7 @@ export function ViewOptionsMenu({
               <button
                 type="button"
                 onClick={onReset}
-                className="flex w-full items-center justify-center rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+                className="flex w-full items-center justify-center rounded-md px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
               >
                 Reset to defaults
               </button>

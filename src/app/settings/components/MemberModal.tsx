@@ -8,23 +8,27 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { UserAvatar } from '@/components/ui/avatar';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { PIN_LENGTH_OPTIONS, DEFAULT_PIN_LENGTH } from '@/lib/constants';
 import type { FamilyMember } from './PinEditModal';
 
 const EmojiPicker = dynamic(
-  () => import('@emoji-mart/react').then((m) => ({ default: m.default as React.ComponentType<Record<string, unknown>> })),
-  { ssr: false },
+  () =>
+    import('@emoji-mart/react').then((m) => ({
+      default: m.default as React.ComponentType<Record<string, unknown>>,
+    })),
+  { ssr: false }
 );
 
 const colorOptions = [
-  '#3B82F6', '#EC4899', '#10B981', '#F59E0B',
-  '#8B5CF6', '#EF4444', '#06B6D4', '#84CC16',
+  '#3B82F6',
+  '#EC4899',
+  '#10B981',
+  '#F59E0B',
+  '#8B5CF6',
+  '#EF4444',
+  '#06B6D4',
+  '#84CC16',
 ];
 
 export interface MemberModalSaveData {
@@ -126,7 +130,7 @@ export function MemberModal({
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-md overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{member ? 'Edit Member' : 'Add Family Member'}</DialogTitle>
         </DialogHeader>
@@ -135,7 +139,7 @@ export function MemberModal({
           {/* Avatar Section */}
           <div>
             <label className="text-sm font-medium">Avatar</label>
-            <div className="flex items-center gap-3 mt-1">
+            <div className="mt-1 flex items-center gap-3">
               <UserAvatar
                 name={name || '?'}
                 color={color}
@@ -150,17 +154,12 @@ export function MemberModal({
                   size="sm"
                   onClick={() => fileInputRef.current?.click()}
                 >
-                  <Upload className="h-4 w-4 mr-1" />
+                  <Upload className="mr-1 h-4 w-4" />
                   Upload
                 </Button>
                 {(avatarUrl || avatarFile) && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={removeAvatar}
-                  >
-                    <Trash2 className="h-4 w-4 mr-1" />
+                  <Button type="button" variant="outline" size="sm" onClick={removeAvatar}>
+                    <Trash2 className="mr-1 h-4 w-4" />
                     Remove
                   </Button>
                 )}
@@ -175,7 +174,7 @@ export function MemberModal({
             </div>
 
             {/* Emoji picker */}
-            <div className="mt-3 relative">
+            <div className="relative mt-3">
               <Button
                 type="button"
                 variant="outline"
@@ -191,7 +190,9 @@ export function MemberModal({
                   <div className="fixed inset-0 z-40" onClick={() => setShowEmojiPicker(false)} />
                   <div className="absolute left-0 top-10 z-50">
                     <EmojiPicker
-                      onEmojiSelect={(e: Record<string, unknown>) => selectEmoji(e.native as string)}
+                      onEmojiSelect={(e: Record<string, unknown>) =>
+                        selectEmoji(e.native as string)
+                      }
                       theme="auto"
                       previewPosition="none"
                       skinTonePosition="none"
@@ -214,7 +215,7 @@ export function MemberModal({
 
           <div>
             <label className="text-sm font-medium">Role</label>
-            <div className="flex gap-2 mt-1">
+            <div className="mt-1 flex gap-2">
               {(['parent', 'child', 'guest'] as const).map((r) => (
                 <Button
                   key={r}
@@ -222,7 +223,7 @@ export function MemberModal({
                   variant={role === r ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setRole(r)}
-                  className="capitalize flex-1"
+                  className="flex-1 capitalize"
                 >
                   {r}
                 </Button>
@@ -232,15 +233,15 @@ export function MemberModal({
 
           <div>
             <label className="text-sm font-medium">Color</label>
-            <div className="flex gap-2 mt-1 flex-wrap">
+            <div className="mt-1 flex flex-wrap gap-2">
               {colorOptions.map((c) => (
                 <button
                   key={c}
                   type="button"
                   onClick={() => setColor(c)}
                   className={cn(
-                    'w-8 h-8 rounded-full border-2 transition-transform',
-                    color === c ? 'border-foreground scale-110' : 'border-transparent'
+                    'h-8 w-8 rounded-full border-2 transition-transform',
+                    color === c ? 'scale-110 border-foreground' : 'border-transparent'
                   )}
                   style={{ backgroundColor: c }}
                 />
@@ -250,7 +251,7 @@ export function MemberModal({
 
           <div>
             <label className="text-sm font-medium">PIN length</label>
-            <div className="flex gap-2 mt-1">
+            <div className="mt-1 flex gap-2">
               {PIN_LENGTH_OPTIONS.map((len) => (
                 <Button
                   key={len}
@@ -265,8 +266,9 @@ export function MemberModal({
                 </Button>
               ))}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              How many digits {member ? `${name || 'this member'}'s` : "this member's"} PIN pad will require.
+            <p className="mt-1 text-xs text-muted-foreground">
+              How many digits {member ? `${name || 'this member'}'s` : "this member's"} PIN pad will
+              require.
             </p>
           </div>
 

@@ -75,7 +75,9 @@ async function fetchAndVerifyCert(url: string): Promise<CachedCert> {
   }
 
   const subjectAltName = cert.subjectAltName || '';
-  if (!subjectAltName.split(',').some((entry) => entry.trim().toLowerCase() === `dns:${ALEXA_SAN}`)) {
+  if (
+    !subjectAltName.split(',').some((entry) => entry.trim().toLowerCase() === `dns:${ALEXA_SAN}`)
+  ) {
     throw new AlexaSignatureError(`Alexa cert is missing SAN ${ALEXA_SAN}`);
   }
 
@@ -98,7 +100,7 @@ function verifyBodySignature(
   body: string,
   signatureB64: string,
   publicKey: string,
-  algorithm: 'RSA-SHA1' | 'RSA-SHA256',
+  algorithm: 'RSA-SHA1' | 'RSA-SHA256'
 ): boolean {
   const verifier = createVerify(algorithm);
   verifier.update(body);

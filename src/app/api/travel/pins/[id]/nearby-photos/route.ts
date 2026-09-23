@@ -19,16 +19,11 @@ function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): nu
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
   const a =
     Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) ** 2;
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await getDisplayAuth();
   if (!auth) return NextResponse.json({ photos: [] });
 
@@ -43,9 +38,7 @@ export async function GET(
 
     if (!pin) return NextResponse.json({ error: 'Pin not found' }, { status: 404 });
 
-    const radiusKm = pin.photoRadiusKm
-      ? parseFloat(pin.photoRadiusKm as unknown as string)
-      : 50;
+    const radiusKm = pin.photoRadiusKm ? parseFloat(pin.photoRadiusKm as unknown as string) : 50;
 
     // Collect anchor points: parent pin + all child pins (stops, national parks)
     const childPins = await db
@@ -54,9 +47,15 @@ export async function GET(
       .where(eq(travelPins.parentId, id));
 
     const anchorPoints = [
-      { lat: parseFloat(pin.latitude as unknown as string), lng: parseFloat(pin.longitude as unknown as string) },
+      {
+        lat: parseFloat(pin.latitude as unknown as string),
+        lng: parseFloat(pin.longitude as unknown as string),
+      },
       ...childPins
-        .map((c) => ({ lat: parseFloat(c.latitude as unknown as string), lng: parseFloat(c.longitude as unknown as string) }))
+        .map((c) => ({
+          lat: parseFloat(c.latitude as unknown as string),
+          lng: parseFloat(c.longitude as unknown as string),
+        }))
         .filter((c) => isFinite(c.lat) && isFinite(c.lng)),
     ].filter((a) => isFinite(a.lat) && isFinite(a.lng));
 
@@ -65,11 +64,12 @@ export async function GET(
     // Bounding box pre-filter in SQL to avoid full table scan in JS
     const degPerKm = 1 / 111;
     const latMargin = radiusKm * degPerKm;
-    const lngMargin = radiusKm * degPerKm / Math.max(Math.cos((anchorPoints[0]!.lat * Math.PI) / 180), 0.01);
-    const minLat = Math.min(...anchorPoints.map(a => a.lat)) - latMargin;
-    const maxLat = Math.max(...anchorPoints.map(a => a.lat)) + latMargin;
-    const minLng = Math.min(...anchorPoints.map(a => a.lng)) - lngMargin;
-    const maxLng = Math.max(...anchorPoints.map(a => a.lng)) + lngMargin;
+    const lngMargin =
+      (radiusKm * degPerKm) / Math.max(Math.cos((anchorPoints[0]!.lat * Math.PI) / 180), 0.01);
+    const minLat = Math.min(...anchorPoints.map((a) => a.lat)) - latMargin;
+    const maxLat = Math.max(...anchorPoints.map((a) => a.lat)) + latMargin;
+    const minLng = Math.min(...anchorPoints.map((a) => a.lng)) - lngMargin;
+    const maxLng = Math.max(...anchorPoints.map((a) => a.lng)) + lngMargin;
 
     const geoPhotos = await db
       .select({
@@ -83,14 +83,16 @@ export async function GET(
         height: photos.height,
       })
       .from(photos)
-      .where(and(
-        isNotNull(photos.latitude),
-        isNotNull(photos.longitude),
-        gte(sql`CAST(${photos.latitude} AS DECIMAL)`, minLat),
-        lte(sql`CAST(${photos.latitude} AS DECIMAL)`, maxLat),
-        gte(sql`CAST(${photos.longitude} AS DECIMAL)`, minLng),
-        lte(sql`CAST(${photos.longitude} AS DECIMAL)`, maxLng),
-      ));
+      .where(
+        and(
+          isNotNull(photos.latitude),
+          isNotNull(photos.longitude),
+          gte(sql`CAST(${photos.latitude} AS DECIMAL)`, minLat),
+          lte(sql`CAST(${photos.latitude} AS DECIMAL)`, maxLat),
+          gte(sql`CAST(${photos.longitude} AS DECIMAL)`, minLng),
+          lte(sql`CAST(${photos.longitude} AS DECIMAL)`, maxLng)
+        )
+      );
 
     const nearby = geoPhotos
       .filter((p) => {
@@ -116,7 +118,12 @@ export async function GET(
         height: p.height,
       }));
 
-    return NextResponse.json({ photos: nearby, total: nearby.length, radiusKm, anchors: anchorPoints.length });
+    return NextResponse.json({
+      photos: nearby,
+      total: nearby.length,
+      radiusKm,
+      anchors: anchorPoints.length,
+    });
   } catch (error) {
     logError('Error fetching nearby photos:', error);
     return NextResponse.json({ error: 'Failed to fetch nearby photos' }, { status: 500 });

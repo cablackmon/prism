@@ -2,7 +2,9 @@ import { speak, type AlexaResponse } from '../responses';
 import { voiceClient, VoiceApiError } from '../client';
 import { logError } from '@/lib/utils/logError';
 
-interface AlexaSlot { value?: string }
+interface AlexaSlot {
+  value?: string;
+}
 interface IntentArgs {
   slots?: Record<string, AlexaSlot | undefined>;
 }

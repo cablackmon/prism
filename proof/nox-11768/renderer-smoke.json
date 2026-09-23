@@ -1,0 +1,207 @@
+{
+  "mesh": {
+    "vertexCount": 4029,
+    "triangleCount": 7800
+  },
+  "planMesh": {
+    "vertexCount": 100149,
+    "triangleCount": 199000
+  },
+  "webgl2Info": {
+    "unmaskedRenderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "unmaskedVendor": "Google Inc. (Google)",
+    "renderer": "WebKit WebGL",
+    "vendor": "WebKit",
+    "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+    "maxTextureSize": 8192
+  },
+  "webgpuInfo": {
+    "supported": true,
+    "adapterPresent": true,
+    "vendor": "google",
+    "architecture": "swiftshader",
+    "device": "",
+    "description": "",
+    "isFallbackAdapter": null,
+    "preferredCanvasFormat": "rgba8unorm",
+    "error": null
+  },
+  "backends": [
+    {
+      "backend": "webgl2",
+      "available": true,
+      "error": null,
+      "runs": [
+        {
+          "resolution": {
+            "key": "1440p",
+            "label": "640 x 360 (scaled stand-in for 2560x1440)",
+            "width": 640,
+            "height": 360
+          },
+          "stats": {
+            "frames": 12914,
+            "elapsedMs": 12901.399999141693,
+            "meanFps": 1000.9766382608976,
+            "minFps": 0.22271218903692347,
+            "longestFrameMs": 4490.100000023842
+          },
+          "wallElapsedMs": 21176.099999904633,
+          "interruptedByVisibilityChange": false,
+          "gpuFenced": true,
+          "fenceError": null,
+          "pixelCheck": {
+            "status": "content",
+            "uniqueColors": 128,
+            "meanLuma": 62.135127314814746,
+            "error": null
+          },
+          "readbackControl": "working",
+          "drawingBuffer": {
+            "requestedWidth": 640,
+            "requestedHeight": 360,
+            "actualWidth": 640,
+            "actualHeight": 360
+          }
+        },
+        {
+          "resolution": {
+            "key": "2160p",
+            "label": "960 x 540 (scaled stand-in for 3840x2160)",
+            "width": 960,
+            "height": 540
+          },
+          "stats": {
+            "frames": 10478,
+            "elapsedMs": 12072.899999856949,
+            "meanFps": 867.89420935518,
+            "minFps": 0.11409013120365089,
+            "longestFrameMs": 8765
+          },
+          "wallElapsedMs": 23528.300000071526,
+          "interruptedByVisibilityChange": false,
+          "gpuFenced": true,
+          "fenceError": null,
+          "pixelCheck": {
+            "status": "content",
+            "uniqueColors": 119,
+            "meanLuma": 62.09302662037039,
+            "error": null
+          },
+          "readbackControl": "working",
+          "drawingBuffer": {
+            "requestedWidth": 960,
+            "requestedHeight": 540,
+            "actualWidth": 960,
+            "actualHeight": 540
+          }
+        }
+      ],
+      "benchmarkedAdapter": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "readbackControl": "working"
+    },
+    {
+      "backend": "webgpu",
+      "available": true,
+      "error": null,
+      "runs": [
+        {
+          "resolution": {
+            "key": "1440p",
+            "label": "640 x 360 (scaled stand-in for 2560x1440)",
+            "width": 640,
+            "height": 360
+          },
+          "stats": {
+            "frames": 2304,
+            "elapsedMs": 9864.899996757507,
+            "meanFps": 233.5553326194185,
+            "minFps": 67.11409406712247,
+            "longestFrameMs": 14.899999976158142
+          },
+          "wallElapsedMs": 10210.700000047684,
+          "interruptedByVisibilityChange": false,
+          "gpuFenced": true,
+          "fenceError": null,
+          "pixelCheck": {
+            "status": "unavailable",
+            "uniqueColors": 1,
+            "meanLuma": 0,
+            "error": "readback returned uniform zeroes, and the clear-only control frame came back black too — readback is broken on this backend, so the canvas could not be read rather than being empty"
+          },
+          "readbackControl": "broken",
+          "drawingBuffer": {
+            "requestedWidth": 640,
+            "requestedHeight": 360,
+            "actualWidth": 640,
+            "actualHeight": 360
+          }
+        },
+        {
+          "resolution": {
+            "key": "2160p",
+            "label": "960 x 540 (scaled stand-in for 3840x2160)",
+            "width": 960,
+            "height": 540
+          },
+          "stats": {
+            "frames": 1518,
+            "elapsedMs": 9900.19999909401,
+            "meanFps": 153.33023576684468,
+            "minFps": 102.04081682302912,
+            "longestFrameMs": 9.799999952316284
+          },
+          "wallElapsedMs": 10225.800000071526,
+          "interruptedByVisibilityChange": false,
+          "gpuFenced": true,
+          "fenceError": null,
+          "pixelCheck": {
+            "status": "unavailable",
+            "uniqueColors": 1,
+            "meanLuma": 0,
+            "error": "readback returned uniform zeroes, and the clear-only control frame came back black too — readback is broken on this backend, so the canvas could not be read rather than being empty"
+          },
+          "readbackControl": "broken",
+          "drawingBuffer": {
+            "requestedWidth": 960,
+            "requestedHeight": 540,
+            "actualWidth": 960,
+            "actualHeight": 540
+          }
+        }
+      ],
+      "benchmarkedAdapter": "google / swiftshader",
+      "readbackControl": "broken"
+    }
+  ],
+  "evidence": {
+    "webgl2": {
+      "meanFps": 1000.9766382608976,
+      "measurementFenced": true,
+      "contentCredit": "verified",
+      "resolutionStatus": "matched",
+      "sampleInvalidReason": null
+    },
+    "webgpu": {
+      "meanFps": 233.5553326194185,
+      "measurementFenced": true,
+      "contentCredit": "readbackBroken",
+      "resolutionStatus": "matched",
+      "sampleInvalidReason": null
+    }
+  },
+  "decision": {
+    "decision": "webgpu",
+    "reason": "WebGPU adapter present and the WebGPU run held 233.6 fps at 1440p (bar 45). Browser WebGPU path."
+  },
+  "blankControl": {
+    "status": "blank",
+    "uniqueColors": 1,
+    "meanLuma": 9.33333333333323,
+    "error": "readback succeeded and found a single flat colour, so no fragments were drawn"
+  },
+  "wallMs": 65313.200000047684,
+  "benchmarkDurationMs": 10000,
+  "warmupFrames": 30
+}

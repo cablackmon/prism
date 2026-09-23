@@ -18,7 +18,15 @@ import type { LayoutEditorProps } from './LayoutEditorTypes';
 
 export type { SavedLayout, DashboardInfo, LayoutEditorProps } from './LayoutEditorTypes';
 
-type ActivePopover = 'dashboard' | 'widgets' | 'templates' | 'community' | 'preview' | 'more' | 'save' | null;
+type ActivePopover =
+  | 'dashboard'
+  | 'widgets'
+  | 'templates'
+  | 'community'
+  | 'preview'
+  | 'more'
+  | 'save'
+  | null;
 
 export function LayoutEditor({
   widgets,
@@ -67,12 +75,12 @@ export function LayoutEditor({
   const toolbarRef = useRef<HTMLDivElement>(null);
 
   const currentWidgets = useMemo(
-    () => editingScreensaver ? (screensaverWidgets || []) : widgets,
-    [editingScreensaver, screensaverWidgets, widgets],
+    () => (editingScreensaver ? screensaverWidgets || [] : widgets),
+    [editingScreensaver, screensaverWidgets, widgets]
   );
   const visibleWidgets = useMemo(
-    () => currentWidgets.filter(w => w.visible !== false),
-    [currentWidgets],
+    () => currentWidgets.filter((w) => w.visible !== false),
+    [currentWidgets]
   );
 
   const closePopover = useCallback(() => setActivePopover(null), []);
@@ -97,7 +105,7 @@ export function LayoutEditor({
   });
 
   const togglePopover = useCallback((name: ActivePopover) => {
-    setActivePopover(prev => prev === name ? null : name);
+    setActivePopover((prev) => (prev === name ? null : name));
   }, []);
 
   // Close popover when clicking outside toolbar
@@ -129,8 +137,8 @@ export function LayoutEditor({
 
   return (
     <>
-      <div ref={toolbarRef} className="relative z-[200] bg-card/85 backdrop-blur-sm px-4 py-2">
-        <div className="flex items-center justify-between gap-2 flex-wrap">
+      <div ref={toolbarRef} className="relative z-[200] bg-card/85 px-4 py-2 backdrop-blur-sm">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <LayoutEditorToolbarLeft
             editingScreensaver={editingScreensaver}
             layoutName={layoutName}
@@ -162,7 +170,10 @@ export function LayoutEditor({
             allDashboards={allDashboards}
             currentDashboardId={currentDashboardId}
             onSwitchDashboard={onSwitchDashboard}
-            onCreateOpen={() => { state.setShowCreateDialog(true); setActivePopover(null); }}
+            onCreateOpen={() => {
+              state.setShowCreateDialog(true);
+              setActivePopover(null);
+            }}
             onRenameOpen={state.handleRenameOpen}
           />
           <LayoutEditorToolbarRight
@@ -177,13 +188,22 @@ export function LayoutEditor({
             onToggleMeasureMode={toggleMeasureMode}
             onToggleScreensaverEdit={onToggleScreensaverEdit}
             onSave={state.handleSave}
-            onSaveAs={() => { state.setShowSaveAsDialog(true); setActivePopover(null); }}
+            onSaveAs={() => {
+              state.setShowSaveAsDialog(true);
+              setActivePopover(null);
+            }}
             onReset={onReset}
             onScreensaverReset={onScreensaverReset}
             onCancel={onCancel}
             onExport={state.handleExport}
-            onImportOpen={() => { state.setShowImportDialog(true); setActivePopover(null); }}
-            onShareOpen={() => { state.setShowShareDialog(true); setActivePopover(null); }}
+            onImportOpen={() => {
+              state.setShowImportDialog(true);
+              setActivePopover(null);
+            }}
+            onShareOpen={() => {
+              state.setShowShareDialog(true);
+              setActivePopover(null);
+            }}
             onDeleteDashboard={onDeleteDashboard}
             onHandleDelete={state.handleDelete}
           />
@@ -193,7 +213,10 @@ export function LayoutEditor({
       <CreateDashboardDialog
         open={state.showCreateDialog}
         onClose={() => state.setShowCreateDialog(false)}
-        onCreate={(name, startFrom) => { onCreateDashboard?.(name, startFrom); state.setShowCreateDialog(false); }}
+        onCreate={(name, startFrom) => {
+          onCreateDashboard?.(name, startFrom);
+          state.setShowCreateDialog(false);
+        }}
       />
 
       <SaveAsDialog
@@ -219,7 +242,8 @@ export function LayoutEditor({
         onClose={() => state.setShowImportDialog(false)}
         editingScreensaver={editingScreensaver}
         onApply={(importedWidgets) => {
-          if (editingScreensaver && onSelectScreensaverPreset) onSelectScreensaverPreset(importedWidgets);
+          if (editingScreensaver && onSelectScreensaverPreset)
+            onSelectScreensaverPreset(importedWidgets);
           else onWidgetsChange(importedWidgets);
         }}
       />

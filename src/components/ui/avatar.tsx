@@ -36,7 +36,6 @@ import { useBoardTheme } from '@/components/theme/KystTheme';
 import { contrastText } from '@/lib/utils/color';
 import { Emoji } from '@/components/ui/Emoji';
 
-
 /**
  * AVATAR
  * The root container for the avatar.
@@ -62,7 +61,6 @@ const Avatar = React.forwardRef<
 ));
 Avatar.displayName = AvatarPrimitive.Root.displayName;
 
-
 /**
  * AVATAR IMAGE
  * The profile picture.
@@ -85,7 +83,6 @@ const AvatarImage = React.forwardRef<
   />
 ));
 AvatarImage.displayName = AvatarPrimitive.Image.displayName;
-
 
 /**
  * AVATAR FALLBACK
@@ -119,7 +116,6 @@ const AvatarFallback = React.forwardRef<
 ));
 AvatarFallback.displayName = AvatarPrimitive.Fallback.displayName;
 
-
 // HELPER COMPONENTS
 
 /**
@@ -136,7 +132,6 @@ export function getInitials(name: string): string {
     .toUpperCase()
     .slice(0, 2);
 }
-
 
 /**
  * USER AVATAR
@@ -171,13 +166,7 @@ const sizeClasses = {
   xl: 'h-16 w-16 text-lg',
 };
 
-export function UserAvatar({
-  name,
-  imageUrl,
-  color,
-  size = 'md',
-  className,
-}: UserAvatarProps) {
+export function UserAvatar({ name, imageUrl, color, size = 'md', className }: UserAvatarProps) {
   const boardColor = useBoardColor();
   const nox = useBoardTheme() === 'nox';
   color = color ? boardColor(color, name) : color;
@@ -190,29 +179,30 @@ export function UserAvatar({
       <div
         className={cn(
           sizeClasses[size],
-          'rounded-full flex items-center justify-center shrink-0',
+          'flex shrink-0 items-center justify-center rounded-full',
           className
         )}
         style={color ? { backgroundColor: color } : { backgroundColor: 'hsl(var(--muted))' }}
       >
-        <span className="leading-none"><Emoji e={emoji} label={name} /></span>
+        <span className="leading-none">
+          <Emoji e={emoji} label={name} />
+        </span>
       </div>
     );
   }
 
   return (
     <Avatar className={cn(sizeClasses[size], className)}>
-      {imageUrl && (
-        <AvatarImage src={imageUrl} alt={name} />
-      )}
+      {imageUrl && <AvatarImage src={imageUrl} alt={name} />}
       <AvatarFallback
-        style={color ? { backgroundColor: color, color: nox ? contrastText(color) : 'white' } : undefined}
+        style={
+          color ? { backgroundColor: color, color: nox ? contrastText(color) : 'white' } : undefined
+        }
       >
         {initials}
       </AvatarFallback>
     </Avatar>
   );
 }
-
 
 export { Avatar, AvatarImage, AvatarFallback };

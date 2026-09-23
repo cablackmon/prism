@@ -40,23 +40,24 @@ export function AccountSection() {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold">Account &amp; Profile</h2>
-        <p className="text-muted-foreground">
-          Current session and dashboard defaults
-        </p>
+        <p className="text-muted-foreground">Current session and dashboard defaults</p>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle>Current Session</CardTitle>
           <CardDescription>
-            {authLoading ? 'Checking authentication...' :
-             currentUser ? 'You are currently logged in' : 'You are not logged in'}
+            {authLoading
+              ? 'Checking authentication...'
+              : currentUser
+                ? 'You are currently logged in'
+                : 'You are not logged in'}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {authLoading ? (
             <div className="flex items-center justify-center py-4">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
             </div>
           ) : currentUser ? (
             <div className="flex items-center gap-3">
@@ -69,16 +70,14 @@ export function AccountSection() {
               />
               <div>
                 <div className="font-medium">{currentUser.name}</div>
-                <Badge
-                  variant={currentUser.role === 'parent' ? 'default' : 'secondary'}
-                >
+                <Badge variant={currentUser.role === 'parent' ? 'default' : 'secondary'}>
                   {currentUser.role}
                 </Badge>
               </div>
             </div>
           ) : (
-            <div className="text-center py-4">
-              <User className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-50" />
+            <div className="py-4 text-center">
+              <User className="mx-auto mb-3 h-12 w-12 text-muted-foreground opacity-50" />
               <p className="text-muted-foreground">
                 Click your avatar in the side navigation to log in
               </p>
@@ -98,7 +97,7 @@ function DefaultDisplayUserCard() {
   const [saving, setSaving] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
-  const parentMembers = members.filter(m => m.role === 'parent');
+  const parentMembers = members.filter((m) => m.role === 'parent');
 
   const fetchSetting = useCallback(async () => {
     try {
@@ -107,7 +106,9 @@ function DefaultDisplayUserCard() {
         const data = await res.json();
         setDisplayUserId((data.settings?.displayUserId as string) || '');
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     setLoaded(true);
   }, []);
 
@@ -127,7 +128,9 @@ function DefaultDisplayUserCard() {
           value: value || null,
         }),
       });
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     setSaving(false);
   };
 
@@ -146,7 +149,7 @@ function DefaultDisplayUserCard() {
           value={displayUserId}
           onChange={(e) => handleChange(e.target.value)}
           disabled={saving}
-          className="w-full border border-border rounded px-3 py-2 text-sm bg-background"
+          className="w-full rounded border border-border bg-background px-3 py-2 text-sm"
         >
           <option value="">None (empty dashboard when logged out)</option>
           {parentMembers.map((m) => (
@@ -155,9 +158,7 @@ function DefaultDisplayUserCard() {
             </option>
           ))}
         </select>
-        {saving && (
-          <p className="text-xs text-muted-foreground">Saving...</p>
-        )}
+        {saving && <p className="text-xs text-muted-foreground">Saving...</p>}
       </CardContent>
     </Card>
   );

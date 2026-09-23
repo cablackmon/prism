@@ -73,9 +73,7 @@ describe('useAwayModeTimeout', () => {
 
     // Simulate another component dispatching a timeout change
     act(() => {
-      window.dispatchEvent(
-        new CustomEvent('prism:away-mode-timeout-change', { detail: 96 })
-      );
+      window.dispatchEvent(new CustomEvent('prism:away-mode-timeout-change', { detail: 96 }));
     });
 
     expect(result.current.timeout).toBe(96);

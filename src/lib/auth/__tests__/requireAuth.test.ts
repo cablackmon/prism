@@ -13,15 +13,17 @@ let mockCookies: Record<string, string> = {};
 let mockHeaders: Record<string, string> = {};
 
 jest.mock('next/headers', () => ({
-  cookies: () => Promise.resolve({
-    get: (name: string) => {
-      const value = mockCookies[name];
-      return value ? { value } : undefined;
-    },
-  }),
-  headers: () => Promise.resolve({
-    get: (name: string) => mockHeaders[name.toLowerCase()] ?? null,
-  }),
+  cookies: () =>
+    Promise.resolve({
+      get: (name: string) => {
+        const value = mockCookies[name];
+        return value ? { value } : undefined;
+      },
+    }),
+  headers: () =>
+    Promise.resolve({
+      get: (name: string) => mockHeaders[name.toLowerCase()] ?? null,
+    }),
 }));
 
 const mockValidateSession = jest.fn();
@@ -74,7 +76,12 @@ describe('requireAuth', () => {
     mockCookies['prism_session'] = 'session-token-abc';
     mockValidateSession.mockResolvedValue({
       ok: true,
-      session: { userId: 'user-1', role: 'child', createdAt: Date.now(), expiresAt: Date.now() + 60000 },
+      session: {
+        userId: 'user-1',
+        role: 'child',
+        createdAt: Date.now(),
+        expiresAt: Date.now() + 60000,
+      },
     });
 
     const result = await requireAuth();
@@ -162,7 +169,12 @@ describe('optionalAuth', () => {
     mockCookies['prism_session'] = 'valid-session';
     mockValidateSession.mockResolvedValue({
       ok: true,
-      session: { userId: 'u2', role: 'child', createdAt: Date.now(), expiresAt: Date.now() + 60000 },
+      session: {
+        userId: 'u2',
+        role: 'child',
+        createdAt: Date.now(),
+        expiresAt: Date.now() + 60000,
+      },
     });
 
     const result = await optionalAuth();
@@ -205,7 +217,12 @@ describe('getDisplayAuth', () => {
     mockCookies['prism_session'] = 'valid';
     mockValidateSession.mockResolvedValue({
       ok: true,
-      session: { userId: 'u1', role: 'parent', createdAt: Date.now(), expiresAt: Date.now() + 60000 },
+      session: {
+        userId: 'u1',
+        role: 'parent',
+        createdAt: Date.now(),
+        expiresAt: Date.now() + 60000,
+      },
     });
 
     const result = await getDisplayAuth();

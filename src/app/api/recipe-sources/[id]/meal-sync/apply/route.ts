@@ -52,7 +52,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     if (!stored) {
       return NextResponse.json(
         { error: 'This sync preview expired — please re-run the sync and review again.' },
-        { status: 409 },
+        { status: 409 }
       );
     }
 

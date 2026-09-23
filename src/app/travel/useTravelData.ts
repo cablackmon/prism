@@ -5,7 +5,10 @@ import { useVisibilityPolling } from '@/lib/hooks/useVisibilityPolling';
 import type { TravelPin, TravelTrip } from './types';
 
 export class TravelAuthError extends Error {
-  constructor() { super('Not logged in'); this.name = 'TravelAuthError'; }
+  constructor() {
+    super('Not logged in');
+    this.name = 'TravelAuthError';
+  }
 }
 
 function checkResponse(res: Response, action: string): void {
@@ -37,22 +40,27 @@ export function useTravelData() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
   useVisibilityPolling(load, 300_000);
 
   // ── Pins ──────────────────────────────────────────────────────────────────
 
-  const addPin = useCallback(async (payload: Omit<TravelPin, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'>) => {
-    const res = await fetch('/api/travel/pins', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    checkResponse(res, 'create pin');
-    const pin = await res.json() as TravelPin;
-    setPins((prev) => [pin, ...prev]);
-    return pin;
-  }, []);
+  const addPin = useCallback(
+    async (payload: Omit<TravelPin, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'>) => {
+      const res = await fetch('/api/travel/pins', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      checkResponse(res, 'create pin');
+      const pin = (await res.json()) as TravelPin;
+      setPins((prev) => [pin, ...prev]);
+      return pin;
+    },
+    []
+  );
 
   const updatePin = useCallback(async (id: string, payload: Partial<TravelPin>) => {
     const res = await fetch(`/api/travel/pins/${id}`, {
@@ -61,7 +69,7 @@ export function useTravelData() {
       body: JSON.stringify(payload),
     });
     checkResponse(res, 'update pin');
-    const updated = await res.json() as TravelPin;
+    const updated = (await res.json()) as TravelPin;
     setPins((prev) => prev.map((p) => (p.id === id ? { ...p, ...updated } : p)));
     return updated;
   }, []);
@@ -74,17 +82,20 @@ export function useTravelData() {
 
   // ── Trips ─────────────────────────────────────────────────────────────────
 
-  const addTrip = useCallback(async (payload: Omit<TravelTrip, 'id' | 'createdAt' | 'updatedAt' | 'createdBy' | 'stops'>) => {
-    const res = await fetch('/api/travel/trips', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    checkResponse(res, 'create trip');
-    const trip = await res.json() as TravelTrip;
-    setTrips((prev) => [trip, ...prev]);
-    return trip;
-  }, []);
+  const addTrip = useCallback(
+    async (payload: Omit<TravelTrip, 'id' | 'createdAt' | 'updatedAt' | 'createdBy' | 'stops'>) => {
+      const res = await fetch('/api/travel/trips', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      checkResponse(res, 'create trip');
+      const trip = (await res.json()) as TravelTrip;
+      setTrips((prev) => [trip, ...prev]);
+      return trip;
+    },
+    []
+  );
 
   const updateTrip = useCallback(async (id: string, payload: Partial<TravelTrip>) => {
     const res = await fetch(`/api/travel/trips/${id}`, {
@@ -93,7 +104,7 @@ export function useTravelData() {
       body: JSON.stringify(payload),
     });
     checkResponse(res, 'update trip');
-    const updated = await res.json() as TravelTrip;
+    const updated = (await res.json()) as TravelTrip;
     setTrips((prev) => prev.map((t) => (t.id === id ? { ...t, ...updated } : t)));
     return updated;
   }, []);
@@ -106,5 +117,16 @@ export function useTravelData() {
     setPins((prev) => prev.filter((p) => p.tripId !== id));
   }, []);
 
-  return { pins, trips, loading, addPin, updatePin, deletePin, addTrip, updateTrip, deleteTrip, refresh: load };
+  return {
+    pins,
+    trips,
+    loading,
+    addPin,
+    updatePin,
+    deletePin,
+    addTrip,
+    updateTrip,
+    deleteTrip,
+    refresh: load,
+  };
 }

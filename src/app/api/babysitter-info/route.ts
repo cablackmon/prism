@@ -44,10 +44,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ items });
   } catch (error) {
     logError('Error fetching babysitter info:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch babysitter info' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch babysitter info' }, { status: 500 });
   }
 }
 
@@ -65,10 +62,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     if (!body.section || !body.content) {
-      return NextResponse.json(
-        { error: 'section and content are required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'section and content are required' }, { status: 400 });
     }
 
     const validSections = ['emergency_contact', 'house_info', 'child_info', 'house_rule'];
@@ -117,9 +111,6 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     logError('Error creating babysitter info:', error);
-    return NextResponse.json(
-      { error: 'Failed to create babysitter info' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to create babysitter info' }, { status: 500 });
   }
 }

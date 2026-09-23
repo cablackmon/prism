@@ -26,7 +26,9 @@ import { isSetupComplete } from '@/lib/setup';
 function isValidIcalUrl(url: string): boolean {
   try {
     const parsed = new URL(url);
-    return parsed.protocol === 'http:' || parsed.protocol === 'https:' || parsed.protocol === 'webcal:';
+    return (
+      parsed.protocol === 'http:' || parsed.protocol === 'https:' || parsed.protocol === 'webcal:'
+    );
   } catch {
     return false;
   }
@@ -63,7 +65,9 @@ export async function POST(request: NextRequest) {
 
     if (body.type && body.type !== 'ical') {
       return NextResponse.json(
-        { error: `Unsupported source type "${body.type}"; only "ical" is currently supported here` },
+        {
+          error: `Unsupported source type "${body.type}"; only "ical" is currently supported here`,
+        },
         { status: 400 }
       );
     }
@@ -115,10 +119,7 @@ export async function POST(request: NextRequest) {
       .returning();
 
     if (!created) {
-      return NextResponse.json(
-        { error: 'Failed to create calendar source' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to create calendar source' }, { status: 500 });
     }
 
     // Initial sync runs in the background — don't block the response.
@@ -143,9 +144,6 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     logError('Error creating calendar source:', error);
-    return NextResponse.json(
-      { error: 'Failed to create calendar source' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to create calendar source' }, { status: 500 });
   }
 }

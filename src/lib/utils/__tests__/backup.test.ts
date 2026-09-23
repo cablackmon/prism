@@ -13,9 +13,15 @@ jest.mock('fs/promises', () => ({
 }));
 
 jest.mock('child_process', () => ({
-  exec: jest.fn((_cmd: string, _opts: unknown, cb: (err: Error | null, result: { stdout: string; stderr: string }) => void) => {
-    cb(null, { stdout: '', stderr: '' });
-  }),
+  exec: jest.fn(
+    (
+      _cmd: string,
+      _opts: unknown,
+      cb: (err: Error | null, result: { stdout: string; stderr: string }) => void
+    ) => {
+      cb(null, { stdout: '', stderr: '' });
+    }
+  ),
 }));
 
 const originalEnv = process.env;
@@ -145,7 +151,7 @@ describe('formatBytes (via listBackups internals)', () => {
 
     // Only .sql and .sql.gz files
     expect(backups.length).toBe(2);
-    const filenames = backups.map(b => b.filename);
+    const filenames = backups.map((b) => b.filename);
     expect(filenames).toContain('backup.sql.gz');
     expect(filenames).toContain('backup.sql');
     expect(filenames).not.toContain('readme.md');
@@ -161,9 +167,10 @@ describe('formatBytes (via listBackups internals)', () => {
       callCount++;
       return Promise.resolve({
         size: 500,
-        mtime: callCount === 1
-          ? new Date('2026-01-01T10:00:00Z')  // old
-          : new Date('2026-03-15T10:00:00Z'), // new
+        mtime:
+          callCount === 1
+            ? new Date('2026-01-01T10:00:00Z') // old
+            : new Date('2026-03-15T10:00:00Z'), // new
       });
     });
 

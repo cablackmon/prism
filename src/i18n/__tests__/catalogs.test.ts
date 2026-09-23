@@ -19,7 +19,7 @@ function flatten(obj: Dict, prefix = ''): string[] {
   return Object.entries(obj).flatMap(([key, value]) =>
     value && typeof value === 'object' && !Array.isArray(value)
       ? flatten(value as Dict, `${prefix}${key}.`)
-      : [`${prefix}${key}`],
+      : [`${prefix}${key}`]
   );
 }
 

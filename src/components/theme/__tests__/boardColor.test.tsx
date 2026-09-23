@@ -6,7 +6,9 @@ import { useBoardColor } from '../useBoardColor';
 
 test('NOX maps explicit member identities without mistaking shared colors for identity', () => {
   const { result } = renderHook(useBoardColor, {
-    wrapper: ({ children }) => <BoardThemeContext.Provider value="nox">{children}</BoardThemeContext.Provider>,
+    wrapper: ({ children }) => (
+      <BoardThemeContext.Provider value="nox">{children}</BoardThemeContext.Provider>
+    ),
   });
   expect(result.current('#123456', 'Parker')).toBe('#35c7ff');
   expect(result.current('#123456', 'Sawyer')).toBe('#ff4d9e');

@@ -16,18 +16,27 @@ export function FilterBar({ children, className }: FilterBarProps) {
 
   if (isMobile) {
     return (
-      <div className={cn('flex-shrink-0 border-b border-border bg-card/85 backdrop-blur-sm', className)}>
+      <div
+        className={cn(
+          'flex-shrink-0 border-b border-border bg-card/85 backdrop-blur-sm',
+          className
+        )}
+      >
         <button
           onClick={() => setExpanded(!expanded)}
-          className="flex items-center justify-between w-full px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          className="flex w-full items-center justify-between px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
         >
           <span>Filters</span>
-          <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', expanded && 'rotate-180')} />
+          <ChevronDown
+            className={cn('h-3.5 w-3.5 transition-transform', expanded && 'rotate-180')}
+          />
         </button>
-        <div className={cn(
-          'grid transition-[grid-template-rows] duration-200',
-          expanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
-        )}>
+        <div
+          className={cn(
+            'grid transition-[grid-template-rows] duration-200',
+            expanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+          )}
+        >
           <div className="overflow-hidden">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-3 pb-2">
               {children}
@@ -39,10 +48,13 @@ export function FilterBar({ children, className }: FilterBarProps) {
   }
 
   return (
-    <div className={cn('flex-shrink-0 border-b border-border bg-card/85 backdrop-blur-sm px-3 py-1.5 max-h-24 overflow-y-auto', className)}>
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-        {children}
-      </div>
+    <div
+      className={cn(
+        'max-h-24 flex-shrink-0 overflow-y-auto border-b border-border bg-card/85 px-3 py-1.5 backdrop-blur-sm',
+        className
+      )}
+    >
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">{children}</div>
     </div>
   );
 }

@@ -24,7 +24,7 @@ function applyClass(on: boolean): void {
 
 function broadcast(on: boolean): void {
   window.dispatchEvent(
-    new CustomEvent<PerformanceModeChangeDetail>(CHANGE_EVENT, { detail: { enabled: on } }),
+    new CustomEvent<PerformanceModeChangeDetail>(CHANGE_EVENT, { detail: { enabled: on } })
   );
 }
 
@@ -63,7 +63,8 @@ export function usePerformanceMode() {
       localStorage.setItem(STORAGE_KEY, String(on));
       params.delete('perf');
       const newSearch = params.toString();
-      const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : '') + window.location.hash;
+      const newUrl =
+        window.location.pathname + (newSearch ? `?${newSearch}` : '') + window.location.hash;
       window.history.replaceState(null, '', newUrl);
     } else {
       const stored = localStorage.getItem(STORAGE_KEY);

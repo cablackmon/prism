@@ -34,9 +34,14 @@ async function resolveLocation(queryLocation: string | null): Promise<LocationPa
     if (row?.value) {
       const val = row.value as {
         // New format: geocoded lat/lon
-        lat?: number; lon?: number; displayName?: string;
+        lat?: number;
+        lon?: number;
+        displayName?: string;
         // Legacy format: free-text fields
-        zipCode?: string; city?: string; state?: string; country?: string;
+        zipCode?: string;
+        city?: string;
+        state?: string;
+        country?: string;
       };
       if (val.lat !== undefined && val.lon !== undefined) {
         // Pass displayName through. Dropping it here is what pinned the
@@ -48,13 +53,15 @@ async function resolveLocation(queryLocation: string | null): Promise<LocationPa
       if (val.zipCode) return `${val.zipCode},US`;
       if (val.city) return [val.city, val.state, val.country || 'US'].filter(Boolean).join(',');
     }
-  } catch { /* fall through */ }
+  } catch {
+    /* fall through */
+  }
 
   return process.env.WEATHER_LOCATION || 'Chicago,IL,US';
 }
 
 const IMPERIAL: WeatherUnits = { temperature: 'F', windSpeed: 'mph', precipitation: 'in' };
-const METRIC:   WeatherUnits = { temperature: 'C', windSpeed: 'km/h', precipitation: 'mm' };
+const METRIC: WeatherUnits = { temperature: 'C', windSpeed: 'km/h', precipitation: 'mm' };
 
 /**
  * Resolve display units: `weather.units` setting ("imperial" | "metric").
@@ -70,7 +77,9 @@ async function resolveUnits(): Promise<WeatherUnits> {
       if (val.units === 'metric') return METRIC;
       if (val.units === 'imperial') return IMPERIAL;
     }
-  } catch { /* fall through */ }
+  } catch {
+    /* fall through */
+  }
 
   if ((process.env.WEATHER_UNITS ?? '').toLowerCase() === 'metric') return METRIC;
   return IMPERIAL;
@@ -92,9 +101,10 @@ export async function GET(request: NextRequest) {
     // Cache key includes the provider AND the units so switching either
     // doesn't serve a stale response shaped by the previous selection.
     const provider = process.env.WEATHER_PROVIDER ?? 'meteo';
-    const locationKey = typeof location === 'string'
-      ? location.toLowerCase().replace(/\s+/g, '-')
-      : `${location.lat.toFixed(2)},${location.lon.toFixed(2)}`;
+    const locationKey =
+      typeof location === 'string'
+        ? location.toLowerCase().replace(/\s+/g, '-')
+        : `${location.lat.toFixed(2)},${location.lon.toFixed(2)}`;
     const cacheKey = `weather:${provider}:${units.temperature}:${locationKey}`;
 
     // Get from cache or fetch fresh
@@ -116,9 +126,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json(
-      { error: 'Failed to fetch weather data' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch weather data' }, { status: 500 });
   }
 }

@@ -29,7 +29,7 @@ function NumberKey({
       disabled={disabled}
       aria-label={ariaLabel}
       className={cn(
-        'w-16 h-16 rounded-full',
+        'h-16 w-16 rounded-full',
         'flex items-center justify-center',
         'text-xl font-semibold',
         'transition-all duration-100',
@@ -37,14 +37,14 @@ function NumberKey({
         'select-none',
         variant === 'default' && [
           'bg-secondary hover:bg-secondary/80',
-          'active:bg-primary active:text-primary-foreground active:scale-95',
+          'active:scale-95 active:bg-primary active:text-primary-foreground',
         ],
         variant === 'secondary' && [
           'bg-muted hover:bg-muted/80',
-          'active:bg-accent active:scale-95',
+          'active:scale-95 active:bg-accent',
           'text-muted-foreground',
         ],
-        disabled && 'opacity-50 cursor-not-allowed'
+        disabled && 'cursor-not-allowed opacity-50'
       )}
     >
       {children}
@@ -87,7 +87,7 @@ export function NumberPad({
   return (
     <div className={cn('grid gap-3', className)}>
       {rows.map((row, rowIndex) => (
-        <div key={rowIndex} className="flex gap-3 justify-center">
+        <div key={rowIndex} className="flex justify-center gap-3">
           {row.map((key) => {
             if (key === 'clear') {
               return (

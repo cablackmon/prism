@@ -6,7 +6,7 @@ import { useShouldSkipMotion } from '@/lib/hooks/useShouldSkipMotion';
 export function PlaneCelebration({
   show,
   userName,
-  onComplete
+  onComplete,
 }: {
   show: boolean;
   userName: string;
@@ -73,12 +73,12 @@ export function PlaneCelebration({
   const message = `Way to go, ${userName}!`;
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
+    <div className="pointer-events-none fixed inset-0 z-50 overflow-hidden">
       {/* Animated plane with trailing banner */}
-      <div className="absolute animate-plane-fly">
-        <div className="relative flex items-center flex-row-reverse">
+      <div className="animate-plane-fly absolute">
+        <div className="relative flex flex-row-reverse items-center">
           {/* Prop Plane (now first due to flex-row-reverse, appears on right/front) */}
-          <svg viewBox="0 0 120 60" className="w-24 h-12">
+          <svg viewBox="0 0 120 60" className="h-12 w-24">
             {/* Fuselage */}
             <ellipse cx="60" cy="30" rx="35" ry="12" fill="#E53935" />
             <ellipse cx="60" cy="30" rx="32" ry="10" fill="#EF5350" />
@@ -99,7 +99,7 @@ export function PlaneCelebration({
             <circle cx="95" cy="30" r="4" fill="#424242" />
 
             {/* Spinning propeller */}
-            <g className="origin-center animate-spin-fast" style={{ transformOrigin: '95px 30px' }}>
+            <g className="animate-spin-fast origin-center" style={{ transformOrigin: '95px 30px' }}>
               <ellipse cx="95" cy="30" rx="2" ry="15" fill="#757575" />
               <ellipse cx="95" cy="30" rx="15" ry="2" fill="#757575" />
             </g>
@@ -112,13 +112,8 @@ export function PlaneCelebration({
           </svg>
 
           {/* Rope connecting plane to banner */}
-          <svg viewBox="0 0 40 20" className="w-10 h-5 -mx-1">
-            <path
-              d="M0 10 Q10 5 20 10 Q30 15 40 10"
-              fill="none"
-              stroke="#8B4513"
-              strokeWidth="2"
-            />
+          <svg viewBox="0 0 40 20" className="-mx-1 h-5 w-10">
+            <path d="M0 10 Q10 5 20 10 Q30 15 40 10" fill="none" stroke="#8B4513" strokeWidth="2" />
           </svg>
 
           {/* Trailing Banner (now last due to flex-row-reverse, appears on left/behind) */}
@@ -139,7 +134,7 @@ export function PlaneCelebration({
                 x="150"
                 y="35"
                 textAnchor="middle"
-                className="text-lg font-bold fill-amber-900"
+                className="fill-amber-900 text-lg font-bold"
                 style={{ fontSize: '16px', fontFamily: 'system-ui' }}
               >
                 {message}
@@ -158,7 +153,6 @@ export function PlaneCelebration({
           </div>
         </div>
       </div>
-
     </div>
   );
 }

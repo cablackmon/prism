@@ -163,10 +163,7 @@ export async function GET() {
     });
   } catch (error) {
     logError('Error fetching calendar sources:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch calendar sources' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch calendar sources' }, { status: 500 });
   }
 }
 
@@ -183,10 +180,7 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     if (!body.name || typeof body.name !== 'string') {
-      return NextResponse.json(
-        { error: 'Calendar name is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Calendar name is required' }, { status: 400 });
     }
 
     // Validate color format if provided
@@ -212,10 +206,7 @@ export async function POST(request: NextRequest) {
       .returning();
 
     if (!newCalendar) {
-      return NextResponse.json(
-        { error: 'Failed to create calendar' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to create calendar' }, { status: 500 });
     }
 
     return NextResponse.json(
@@ -232,9 +223,6 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     logError('Error creating calendar:', error);
-    return NextResponse.json(
-      { error: 'Failed to create calendar' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to create calendar' }, { status: 500 });
   }
 }

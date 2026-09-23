@@ -35,7 +35,7 @@ export function deriveCardDAVUrl(serverUrl: string): string {
 export async function fetchCardDAVBirthdays(
   serverUrl: string,
   username: string,
-  password: string,
+  password: string
 ): Promise<ContactBirthday[]> {
   // Validate the *derived* URL, since deriveCardDAVUrl() (icloud host swap)
   // is what tsdav actually fetches. Blocks an authenticated parent from
@@ -65,7 +65,7 @@ export async function fetchCardDAVBirthdays(
     } catch (err) {
       console.error(
         `[carddav] failed to fetch from ${book.url}:`,
-        err instanceof Error ? err.message : err,
+        err instanceof Error ? err.message : err
       );
     }
   }
@@ -114,24 +114,40 @@ function normalizeBday(raw: string): string | null {
 
   // YYYY-MM-DD (vCard 4.0 + ical.js normalized form)
   let m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (m) { year = m[1]!; month = m[2]!; day = m[3]!; }
+  if (m) {
+    year = m[1]!;
+    month = m[2]!;
+    day = m[3]!;
+  }
 
   // YYYYMMDD (vCard 3.0 basic)
   if (!year) {
     m = s.match(/^(\d{4})(\d{2})(\d{2})$/);
-    if (m) { year = m[1]!; month = m[2]!; day = m[3]!; }
+    if (m) {
+      year = m[1]!;
+      month = m[2]!;
+      day = m[3]!;
+    }
   }
 
   // --MMDD or --MM-DD (vCard 4.0 explicit year-omitted form)
   if (!year) {
     m = s.match(/^--(\d{2})-?(\d{2})$/);
-    if (m) { year = '1904'; month = m[1]!; day = m[2]!; }
+    if (m) {
+      year = '1904';
+      month = m[1]!;
+      day = m[2]!;
+    }
   }
 
   // ISO datetime — strip the time portion
   if (!year) {
     m = s.match(/^(\d{4})-(\d{2})-(\d{2})T/);
-    if (m) { year = m[1]!; month = m[2]!; day = m[3]!; }
+    if (m) {
+      year = m[1]!;
+      month = m[2]!;
+      day = m[3]!;
+    }
   }
 
   if (!year || !month || !day) return null;

@@ -62,9 +62,7 @@ function isPrivateIPv4(host: string): boolean {
 
 function isPrivateIPv6(host: string): boolean {
   // Strip surrounding brackets the URL parser leaves on bracketed IPv6.
-  const stripped = host.startsWith('[') && host.endsWith(']')
-    ? host.slice(1, -1)
-    : host;
+  const stripped = host.startsWith('[') && host.endsWith(']') ? host.slice(1, -1) : host;
   const lower = stripped.toLowerCase();
   // Loopback ::1
   if (lower === '::1') return true;
@@ -112,7 +110,10 @@ export function isPrivateHostname(host: string): boolean {
  */
 export function parseAllowedInternalHosts(raw: string | undefined): string[] {
   if (!raw) return [];
-  return raw.split(/[\s,]+/).map((s) => s.trim()).filter(Boolean);
+  return raw
+    .split(/[\s,]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
 }
 
 function ipv4ToInt(s: string): number | null {
@@ -182,10 +183,7 @@ export interface ValidatePublicUrlOptions {
  * flows working. Hosts on PRISM_ALLOWED_INTERNAL_HOSTS are always
  * permitted (how a LAN self-hosted integration is allowed).
  */
-export function validatePublicUrl(
-  rawUrl: string,
-  options: ValidatePublicUrlOptions = {},
-): URL {
+export function validatePublicUrl(rawUrl: string, options: ValidatePublicUrlOptions = {}): URL {
   if (typeof rawUrl !== 'string' || rawUrl.length === 0) {
     throw new UnsafeUrlError('URL is required');
   }
@@ -262,7 +260,7 @@ const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
 export async function safeFetch(
   rawUrl: string,
   init: RequestInit = {},
-  options: SafeFetchOptions = {},
+  options: SafeFetchOptions = {}
 ): Promise<Response> {
   const maxRedirects = options.maxRedirects ?? 5;
   let currentUrl = validatePublicUrl(rawUrl, options).toString();

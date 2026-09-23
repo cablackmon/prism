@@ -63,7 +63,6 @@ import { DemoBanner } from '@/components/layout/DemoBanner';
 // Toast notifications
 import { Toaster } from '@/components/ui/toaster';
 
-
 /**
  * FONT CONFIGURATION
  * We use Inter, a highly readable sans-serif font designed for screens.
@@ -84,7 +83,6 @@ const inter = Inter({
   variable: '--font-inter',
   display: 'swap',
 });
-
 
 /**
  * METADATA
@@ -161,17 +159,16 @@ export const metadata: Metadata = {
     locale: 'en_US',
     siteName: 'KYST',
     title: 'KYST - Family Dashboard',
-    description: 'Your family\'s digital home',
+    description: "Your family's digital home",
   },
 
   // Twitter Card metadata (for Twitter/X sharing)
   twitter: {
     card: 'summary_large_image',
     title: 'KYST - Family Dashboard',
-    description: 'Your family\'s digital home',
+    description: "Your family's digital home",
   },
 };
-
 
 /**
  * VIEWPORT CONFIGURATION
@@ -211,7 +208,6 @@ export const viewport: Viewport = {
   ],
 };
 
-
 /**
  * ROOT LAYOUT COMPONENT
  * The main layout component that wraps all pages.
@@ -231,11 +227,7 @@ export const viewport: Viewport = {
  * - Can't use hooks or browser APIs directly
  * - For client-side features, wrap in a Client Component
  */
-export default async function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
   await connection();
   const kystTheme = resolveKystTheme(process.env.KYST_THEME);
   return (
@@ -261,15 +253,7 @@ export default async function RootLayout({
         Remove this if you want pages to scroll.
       */}
       <body
-        className={`
-          ${inter.variable}
-          font-sans
-          antialiased
-          bg-background
-          text-foreground
-          min-h-screen
-          md:overflow-hidden
-        `}
+        className={` ${inter.variable} min-h-screen bg-background font-sans text-foreground antialiased md:overflow-hidden`}
       >
         {/*
           PROVIDERS
@@ -277,12 +261,12 @@ export default async function RootLayout({
         */}
         <ErrorBoundary>
           <KystThemeProvider value={kystTheme}>
-          <Providers>
-            <DemoBanner />
-            {children}
-            <LazyOverlays />
-            <Toaster />
-          </Providers>
+            <Providers>
+              <DemoBanner />
+              {children}
+              <LazyOverlays />
+              <Toaster />
+            </Providers>
           </KystThemeProvider>
         </ErrorBoundary>
       </body>

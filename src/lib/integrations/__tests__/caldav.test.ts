@@ -69,36 +69,38 @@ describe('testCalDAVConnection', () => {
 
 describe('exported functions throw UnsafeUrlError on a private serverUrl', () => {
   it('discoverCalendars', async () => {
-    await expect(discoverCalendars('http://10.0.0.5', 'u', 'p')).rejects.toBeInstanceOf(UnsafeUrlError);
+    await expect(discoverCalendars('http://10.0.0.5', 'u', 'p')).rejects.toBeInstanceOf(
+      UnsafeUrlError
+    );
     expect(mockCreateDAVClient).not.toHaveBeenCalled();
   });
   it('fetchCalDAVEvents', async () => {
     await expect(
-      fetchCalDAVEvents('http://127.0.0.1', 'u', 'p', '/cal', new Date(), new Date()),
+      fetchCalDAVEvents('http://127.0.0.1', 'u', 'p', '/cal', new Date(), new Date())
     ).rejects.toBeInstanceOf(UnsafeUrlError);
     expect(mockCreateDAVClient).not.toHaveBeenCalled();
   });
   it('fetchCalDAVTasks', async () => {
-    await expect(
-      fetchCalDAVTasks('http://192.168.0.2', 'u', 'p', '/cal'),
-    ).rejects.toBeInstanceOf(UnsafeUrlError);
+    await expect(fetchCalDAVTasks('http://192.168.0.2', 'u', 'p', '/cal')).rejects.toBeInstanceOf(
+      UnsafeUrlError
+    );
     expect(mockCreateDAVClient).not.toHaveBeenCalled();
   });
   it('createCalDAVEvent', async () => {
     await expect(
-      createCalDAVEvent('http://169.254.169.254', 'u', 'p', '/cal', EV),
+      createCalDAVEvent('http://169.254.169.254', 'u', 'p', '/cal', EV)
     ).rejects.toBeInstanceOf(UnsafeUrlError);
     expect(mockCreateDAVClient).not.toHaveBeenCalled();
   });
   it('updateCalDAVEvent', async () => {
     await expect(
-      updateCalDAVEvent('http://[::1]', 'u', 'p', '/cal/o.ics', undefined, EV),
+      updateCalDAVEvent('http://[::1]', 'u', 'p', '/cal/o.ics', undefined, EV)
     ).rejects.toBeInstanceOf(UnsafeUrlError);
     expect(mockCreateDAVClient).not.toHaveBeenCalled();
   });
   it('deleteCalDAVEvent', async () => {
     await expect(
-      deleteCalDAVEvent('http://localhost', 'u', 'p', '/cal/o.ics'),
+      deleteCalDAVEvent('http://localhost', 'u', 'p', '/cal/o.ics')
     ).rejects.toBeInstanceOf(UnsafeUrlError);
     expect(mockCreateDAVClient).not.toHaveBeenCalled();
   });

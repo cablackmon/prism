@@ -81,7 +81,7 @@ export function LayoutEditorToolbarRight({
       {editingScreensaver ? (
         <button
           onClick={onSave}
-          className="px-2 py-1.5 text-xs rounded-md whitespace-nowrap bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+          className="whitespace-nowrap rounded-md bg-primary px-2 py-1.5 text-xs text-primary-foreground transition-colors hover:bg-primary/90"
         >
           {saveLabel}
         </button>
@@ -89,21 +89,24 @@ export function LayoutEditorToolbarRight({
         <div className="relative flex">
           <button
             onClick={onSave}
-            className="px-2 py-1.5 text-xs rounded-l-md whitespace-nowrap bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+            className="whitespace-nowrap rounded-l-md bg-primary px-2 py-1.5 text-xs text-primary-foreground transition-colors hover:bg-primary/90"
           >
             {saveFeedback || saveLabel}
           </button>
           <button
             onClick={() => onTogglePopover('save')}
-            className="px-1.5 py-1.5 rounded-r-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors border-l border-primary-foreground/20"
+            className="rounded-r-md border-l border-primary-foreground/20 bg-primary px-1.5 py-1.5 text-primary-foreground transition-colors hover:bg-primary/90"
             aria-label="Save options"
           >
             <ChevronIcon open={activePopover === 'save'} />
           </button>
           {activePopover === 'save' && (
-            <div className="absolute right-0 top-full mt-1 z-50 min-w-[120px] bg-popover border border-border rounded-md shadow-md py-1">
+            <div className="absolute right-0 top-full z-50 mt-1 min-w-[120px] rounded-md border border-border bg-popover py-1 shadow-md">
               <button
-                onClick={() => { onSaveAs(); onTogglePopover('save'); }}
+                onClick={() => {
+                  onSaveAs();
+                  onTogglePopover('save');
+                }}
                 className={moreItemClass}
               >
                 Save As...
@@ -122,35 +125,47 @@ export function LayoutEditorToolbarRight({
         align="right"
       >
         <div className="py-1">
-          {!editingScreensaver && currentDashboardId && (() => {
-            const current = allDashboards.find(d => d.id === currentDashboardId);
-            const alreadyDefault = current?.isDefault === true;
-            return (
-              <button
-                onClick={async () => {
-                  if (alreadyDefault) return;
-                  try {
-                    const res = await fetch(`/api/layouts/${currentDashboardId}/default`, { method: 'POST' });
-                    if (res.ok) window.location.reload();
-                  } catch { /* ignore — UI stays put on failure */ }
-                  onTogglePopover('more');
-                }}
-                className={`${moreItemClass} ${alreadyDefault ? 'text-muted-foreground cursor-not-allowed' : ''}`}
-                disabled={alreadyDefault}
-                title={alreadyDefault ? 'Already the default dashboard' : 'Make this the dashboard shown at /'}
-              >
-                {alreadyDefault ? 'Default Dashboard ✓' : 'Set as Default'}
-              </button>
-            );
-          })()}
+          {!editingScreensaver &&
+            currentDashboardId &&
+            (() => {
+              const current = allDashboards.find((d) => d.id === currentDashboardId);
+              const alreadyDefault = current?.isDefault === true;
+              return (
+                <button
+                  onClick={async () => {
+                    if (alreadyDefault) return;
+                    try {
+                      const res = await fetch(`/api/layouts/${currentDashboardId}/default`, {
+                        method: 'POST',
+                      });
+                      if (res.ok) window.location.reload();
+                    } catch {
+                      /* ignore — UI stays put on failure */
+                    }
+                    onTogglePopover('more');
+                  }}
+                  className={`${moreItemClass} ${alreadyDefault ? 'cursor-not-allowed text-muted-foreground' : ''}`}
+                  disabled={alreadyDefault}
+                  title={
+                    alreadyDefault
+                      ? 'Already the default dashboard'
+                      : 'Make this the dashboard shown at /'
+                  }
+                >
+                  {alreadyDefault ? 'Default Dashboard ✓' : 'Set as Default'}
+                </button>
+              );
+            })()}
           {!editingScreensaver && currentDashboardId && (
-            <div className="border-t border-border my-1" />
+            <div className="my-1 border-t border-border" />
           )}
           {!editingScreensaver && onDeleteDashboard && (
             <button
               onClick={onHandleDelete}
               className={`${moreItemClass} ${
-                allDashboards.length <= 1 ? 'text-muted-foreground cursor-not-allowed' : 'text-destructive'
+                allDashboards.length <= 1
+                  ? 'cursor-not-allowed text-muted-foreground'
+                  : 'text-destructive'
               }`}
               disabled={allDashboards.length <= 1}
             >
@@ -158,7 +173,7 @@ export function LayoutEditorToolbarRight({
             </button>
           )}
           {!editingScreensaver && onDeleteDashboard && (
-            <div className="border-t border-border my-1" />
+            <div className="my-1 border-t border-border" />
           )}
           <button
             onClick={() => {
@@ -173,15 +188,19 @@ export function LayoutEditorToolbarRight({
           <button onClick={onExport} className={moreItemClass}>
             {exportFeedback || 'Export'}
           </button>
-          <button onClick={onImportOpen} className={moreItemClass}>Import</button>
-          <button onClick={onShareOpen} className={moreItemClass}>Share</button>
+          <button onClick={onImportOpen} className={moreItemClass}>
+            Import
+          </button>
+          <button onClick={onShareOpen} className={moreItemClass}>
+            Share
+          </button>
         </div>
       </PopoverButton>
 
       {/* Cancel */}
       <button
         onClick={onCancel}
-        className="px-2 py-1.5 text-xs rounded-md bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors"
+        className="rounded-md bg-destructive px-2 py-1.5 text-xs text-destructive-foreground transition-colors hover:bg-destructive/90"
       >
         Cancel
       </button>

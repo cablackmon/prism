@@ -91,7 +91,7 @@ export interface CalDAVConnectionConfig {
 export async function testCalDAVConnection(
   serverUrl: string,
   username: string,
-  password: string,
+  password: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
     // Reject private/loopback/metadata targets *before* the fetch so this
@@ -112,7 +112,10 @@ export async function testCalDAVConnection(
     return { success: true };
   } catch (error) {
     if (error instanceof UnsafeUrlError) {
-      return { success: false, error: 'Server URL is not allowed (points at a private or local address).' };
+      return {
+        success: false,
+        error: 'Server URL is not allowed (points at a private or local address).',
+      };
     }
     const msg = error instanceof Error ? error.message : String(error);
     if (msg.includes('401') || msg.includes('Unauthorized')) {
@@ -131,7 +134,7 @@ export async function testCalDAVConnection(
 export async function discoverCalendars(
   serverUrl: string,
   username: string,
-  password: string,
+  password: string
 ): Promise<CalDAVCalendar[]> {
   assertSafeCalDAVUrl(serverUrl);
 
@@ -148,7 +151,8 @@ export async function discoverCalendars(
     .filter((cal: DAVCalendar) => {
       // Include calendars that support VEVENT or VTODO
       const components = cal.components as string[] | undefined;
-      if (components && !components.includes('VEVENT') && !components.includes('VTODO')) return false;
+      if (components && !components.includes('VEVENT') && !components.includes('VTODO'))
+        return false;
       return true;
     })
     .map((cal: DAVCalendar) => {
@@ -158,7 +162,9 @@ export async function discoverCalendars(
         displayName: String(cal.displayName || 'Unnamed Calendar'),
         color: normalizeCalDAVColor((cal as Record<string, unknown>).calendarColor),
         description: cal.description ? String(cal.description) : null,
-        ctag: (cal as Record<string, unknown>).ctag ? String((cal as Record<string, unknown>).ctag) : null,
+        ctag: (cal as Record<string, unknown>).ctag
+          ? String((cal as Record<string, unknown>).ctag)
+          : null,
         supportsEvents: !components || components.includes('VEVENT'),
         supportsTasks: !!components && components.includes('VTODO'),
       };
@@ -190,7 +196,7 @@ export async function fetchCalDAVEvents(
   password: string,
   calendarHref: string,
   timeMin: Date,
-  timeMax: Date,
+  timeMax: Date
 ): Promise<CalDAVEvent[]> {
   assertSafeCalDAVUrl(serverUrl);
 
@@ -226,7 +232,10 @@ export async function fetchCalDAVEvents(
       const parsed = parseICalObject(obj, timeMin, timeMax);
       events.push(...parsed);
     } catch (error) {
-      console.error('Failed to parse CalDAV event:', error instanceof Error ? error.message : error);
+      console.error(
+        'Failed to parse CalDAV event:',
+        error instanceof Error ? error.message : error
+      );
     }
   }
 
@@ -237,11 +246,7 @@ export async function fetchCalDAVEvents(
  * Parse a single iCalendar object into one or more events.
  * Handles recurring events by expanding instances within the time range.
  */
-function parseICalObject(
-  obj: DAVObject,
-  rangeStart: Date,
-  rangeEnd: Date,
-): CalDAVEvent[] {
+function parseICalObject(obj: DAVObject, rangeStart: Date, rangeEnd: Date): CalDAVEvent[] {
   const data = obj.data;
   if (!data) return [];
 
@@ -313,7 +318,7 @@ function makeEvent(
   event: ICAL.Event,
   vevent: ICAL.Component,
   href: string | null,
-  etag: string | null,
+  etag: string | null
 ): CalDAVEvent {
   return {
     uid: event.uid,
@@ -338,7 +343,7 @@ export async function fetchCalDAVTasks(
   serverUrl: string,
   username: string,
   password: string,
-  calendarHref: string,
+  calendarHref: string
 ): Promise<CalDAVTask[]> {
   assertSafeCalDAVUrl(serverUrl);
 
@@ -361,14 +366,16 @@ export async function fetchCalDAVTasks(
   // without it the response is empty even for Reminders-list calendars.
   const objects = await client.fetchCalendarObjects({
     calendar,
-    filters: [{
-      'comp-filter': {
-        _attributes: { name: 'VCALENDAR' },
+    filters: [
+      {
         'comp-filter': {
-          _attributes: { name: 'VTODO' },
+          _attributes: { name: 'VCALENDAR' },
+          'comp-filter': {
+            _attributes: { name: 'VTODO' },
+          },
         },
       },
-    }],
+    ],
   });
 
   console.log(`[caldav-tasks] ${calendarHref}: fetched ${objects.length} object(s)`);
@@ -432,9 +439,17 @@ function parseVTodoObject(obj: DAVObject): CalDAVTask | null {
     description: description ? String(description) : null,
     dueDate: due ? (due instanceof ICAL.Time ? due.toJSDate() : new Date(String(due))) : null,
     completed: status === 'COMPLETED' || !!completed,
-    completedAt: completed ? (completed instanceof ICAL.Time ? completed.toJSDate() : new Date(String(completed))) : null,
+    completedAt: completed
+      ? completed instanceof ICAL.Time
+        ? completed.toJSDate()
+        : new Date(String(completed))
+      : null,
     priority: prismPriority,
-    categories: categories ? (Array.isArray(categories) ? categories.map(String) : [String(categories)]) : [],
+    categories: categories
+      ? Array.isArray(categories)
+        ? categories.map(String)
+        : [String(categories)]
+      : [],
   };
 }
 
@@ -446,7 +461,10 @@ function isAllDay(vevent: ICAL.Component): boolean {
 }
 
 function formatICalDate(date: Date): string {
-  return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  return date
+    .toISOString()
+    .replace(/[-:]/g, '')
+    .replace(/\.\d{3}/, '');
 }
 
 /**
@@ -510,7 +528,7 @@ export async function createCalDAVEvent(
   username: string,
   password: string,
   calendarHref: string,
-  ev: CalDAVEventWrite,
+  ev: CalDAVEventWrite
 ): Promise<{ href: string }> {
   assertSafeCalDAVUrl(serverUrl);
 
@@ -550,7 +568,7 @@ export async function updateCalDAVEvent(
   password: string,
   calendarObjectHref: string,
   etag: string | undefined,
-  ev: CalDAVEventWrite,
+  ev: CalDAVEventWrite
 ): Promise<void> {
   assertSafeCalDAVUrl(serverUrl);
 
@@ -583,7 +601,7 @@ export async function deleteCalDAVEvent(
   username: string,
   password: string,
   calendarObjectHref: string,
-  etag?: string,
+  etag?: string
 ): Promise<void> {
   assertSafeCalDAVUrl(serverUrl);
 

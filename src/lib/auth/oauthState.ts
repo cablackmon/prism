@@ -35,7 +35,7 @@ function stateKey(provider: string, nonce: string): string {
 export async function createOAuthState(
   provider: string,
   userId: string,
-  payload: Record<string, unknown> = {},
+  payload: Record<string, unknown> = {}
 ): Promise<string> {
   const nonce = randomUUID();
   const redis = await getRedisClient();
@@ -43,7 +43,7 @@ export async function createOAuthState(
     await redis.setEx(
       stateKey(provider, nonce),
       OAUTH_STATE_TTL,
-      JSON.stringify({ userId, ...payload }),
+      JSON.stringify({ userId, ...payload })
     );
   }
   return nonce;
@@ -68,7 +68,7 @@ export type ConsumeOAuthStateResult =
 export async function consumeOAuthState(
   provider: string,
   nonce: string | null,
-  expectedUserId: string,
+  expectedUserId: string
 ): Promise<ConsumeOAuthStateResult> {
   const redis = await getRedisClient();
   if (!redis) return { status: 'unavailable' };

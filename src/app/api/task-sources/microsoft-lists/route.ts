@@ -36,10 +36,7 @@ export async function GET(request: NextRequest) {
   try {
     const redis = await getRedisClient();
     if (!redis) {
-      return NextResponse.json(
-        { error: 'Redis unavailable' },
-        { status: 503 }
-      );
+      return NextResponse.json({ error: 'Redis unavailable' }, { status: 503 });
     }
 
     // Determine the temp key based on what type of connection this is
@@ -81,9 +78,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ lists });
   } catch (error) {
     logError('Error fetching MS lists:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch Microsoft To-Do lists' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch Microsoft To-Do lists' }, { status: 500 });
   }
 }

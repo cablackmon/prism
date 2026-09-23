@@ -94,8 +94,10 @@ export async function POST(request: NextRequest) {
       : [];
     const action = body.action === 'keep' ? 'keep' : body.action === 'delete' ? 'delete' : null;
 
-    if (!action) return NextResponse.json({ error: "action must be 'delete' or 'keep'." }, { status: 400 });
-    if (taskIds.length === 0) return NextResponse.json({ error: 'No tasks selected.' }, { status: 400 });
+    if (!action)
+      return NextResponse.json({ error: "action must be 'delete' or 'keep'." }, { status: 400 });
+    if (taskIds.length === 0)
+      return NextResponse.json({ error: 'No tasks selected.' }, { status: 400 });
 
     // Only act on tasks that are actually flagged, so stale ids from a cached
     // page are no-ops rather than deletions.

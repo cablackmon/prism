@@ -105,24 +105,35 @@ export const ShoppingWidget = React.memo(function ShoppingWidget({
   // Local state for optimistic updates
   const [localChecked, setLocalChecked] = useState<Record<string, boolean>>({});
 
-  const handleToggle = useCallback((itemId: string, currentChecked: boolean) => {
-    const newChecked = !currentChecked;
-    setLocalChecked((prev) => ({ ...prev, [itemId]: newChecked }));
-    onItemToggle?.(itemId, newChecked);
-  }, [onItemToggle]);
+  const handleToggle = useCallback(
+    (itemId: string, currentChecked: boolean) => {
+      const newChecked = !currentChecked;
+      setLocalChecked((prev) => ({ ...prev, [itemId]: newChecked }));
+      onItemToggle?.(itemId, newChecked);
+    },
+    [onItemToggle]
+  );
 
-  const handleListChange = useCallback((newListId: string) => {
-    setSelectedListId(newListId);
-    onListChange?.(newListId);
-  }, [onListChange]);
+  const handleListChange = useCallback(
+    (newListId: string) => {
+      setSelectedListId(newListId);
+      onListChange?.(newListId);
+    },
+    [onListChange]
+  );
 
   const { items, checkedCount, totalCount, progress } = useMemo(() => {
     const items = activeList?.items || [];
-    const checkedCount = items.filter(
-      (item) => localChecked[item.id] !== undefined ? localChecked[item.id] : item.checked
+    const checkedCount = items.filter((item) =>
+      localChecked[item.id] !== undefined ? localChecked[item.id] : item.checked
     ).length;
     const totalCount = items.length;
-    return { items, checkedCount, totalCount, progress: totalCount > 0 ? (checkedCount / totalCount) * 100 : 0 };
+    return {
+      items,
+      checkedCount,
+      totalCount,
+      progress: totalCount > 0 ? (checkedCount / totalCount) * 100 : 0,
+    };
   }, [activeList, localChecked]);
 
   return (
@@ -138,21 +149,14 @@ export const ShoppingWidget = React.memo(function ShoppingWidget({
           {allLists.length > 1 && activeList && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 gap-1 px-2 text-xs font-normal"
-                >
+                <Button variant="ghost" size="sm" className="h-6 gap-1 px-2 text-xs font-normal">
                   {activeList.name}
                   <ChevronDown className="h-3 w-3" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
                 {allLists.map((list) => (
-                  <DropdownMenuItem
-                    key={list.id}
-                    onClick={() => handleListChange(list.id)}
-                  >
+                  <DropdownMenuItem key={list.id} onClick={() => handleListChange(list.id)}>
                     {list.name}
                   </DropdownMenuItem>
                 ))}
@@ -195,13 +199,13 @@ export const ShoppingWidget = React.memo(function ShoppingWidget({
           {totalCount > 0 && (
             <div className="mb-3 space-y-1">
               <Progress value={progress} className="h-2" />
-              <p className="text-xs text-muted-foreground text-center">
+              <p className="text-center text-xs text-muted-foreground">
                 {checkedCount} of {totalCount} checked
               </p>
             </div>
           )}
 
-          <div className="overflow-auto h-full -mr-2 pr-2">
+          <div className="-mr-2 h-full overflow-auto pr-2">
             <div className="space-y-2">
               {items.map((item) => {
                 const isChecked: boolean =
@@ -250,30 +254,30 @@ function ShoppingItemRow({
   return (
     <div
       className={cn(
-        'flex items-start gap-3 p-2 rounded-lg',
-        'hover:bg-accent/50 transition-colors',
+        'flex items-start gap-3 rounded-lg p-2',
+        'transition-colors hover:bg-accent/50',
         'touch-action-manipulation',
         checked && 'opacity-60'
       )}
     >
       {/* Checkbox */}
-      <Checkbox
-        checked={checked}
-        onCheckedChange={onToggle}
-        className="mt-0.5"
-      />
+      <Checkbox checked={checked} onCheckedChange={onToggle} className="mt-0.5" />
 
       {/* Item content */}
-      <div className="flex-1 min-w-0">
+      <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           {/* Category emoji */}
-          {categoryEmoji && <span className="text-sm"><Emoji e={categoryEmoji} /></span>}
+          {categoryEmoji && (
+            <span className="text-sm">
+              <Emoji e={categoryEmoji} />
+            </span>
+          )}
 
           {/* Name */}
           <span
             className={cn(
-              'text-sm font-medium truncate',
-              checked && 'line-through text-muted-foreground'
+              'truncate text-sm font-medium',
+              checked && 'text-muted-foreground line-through'
             )}
           >
             {item.name}
@@ -281,16 +285,14 @@ function ShoppingItemRow({
 
           {/* Quantity */}
           {quantityDisplay && (
-            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+            <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
               {quantityDisplay}
             </Badge>
           )}
         </div>
 
         {/* Notes */}
-        {item.notes && (
-          <p className="text-xs text-muted-foreground mt-0.5">{item.notes}</p>
-        )}
+        {item.notes && <p className="mt-0.5 text-xs text-muted-foreground">{item.notes}</p>}
       </div>
     </div>
   );
@@ -320,4 +322,3 @@ function getCategoryEmoji(category?: string): string | null {
       return null;
   }
 }
-

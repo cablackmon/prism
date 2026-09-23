@@ -3,7 +3,17 @@
 import { useState, useEffect } from 'react';
 import { Emoji } from '@/components/ui/Emoji';
 import { toast } from '@/components/ui/use-toast';
-import { ShoppingCart, Plus, Settings, Maximize2, Minimize2, Tags, Send, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  ShoppingCart,
+  Plus,
+  Settings,
+  Maximize2,
+  Minimize2,
+  Tags,
+  Send,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -34,15 +44,20 @@ import type { ShoppingItem } from '@/types';
 import dynamic from 'next/dynamic';
 
 const CameraScannerOverlay = dynamic(
-  () => import('@/components/input/CameraScannerOverlay').then(m => m.CameraScannerOverlay),
+  () => import('@/components/input/CameraScannerOverlay').then((m) => m.CameraScannerOverlay),
   { ssr: false }
 );
 
 export function getCategoryEmoji(category: string): string {
   // Fallback function — components should prefer the hook's getCategoryEmoji
   const defaults: Record<string, string> = {
-    produce: '🥬', dairy: '🥛', meat: '🥩', bakery: '🥖',
-    frozen: '🧊', pantry: '🥫', household: '🧴',
+    produce: '🥬',
+    dairy: '🥛',
+    meat: '🥩',
+    bakery: '🥖',
+    frozen: '🧊',
+    pantry: '🥫',
+    household: '🧴',
   };
   return defaults[category] || '🛒';
 }
@@ -54,17 +69,32 @@ export function ShoppingView() {
   const { scan, clearScan, handleCameraScan, handleListChosen, doAdd } = useShoppingScanFlow();
 
   const {
-    lists, loading, error, refreshLists, familyMembers,
-    requireAuth, apiAddItem,
-    activeListId, setActiveListId,
-    showChecked, setShowChecked,
-    showAddItemModal, setShowAddItemModal,
-    editingItem, setEditingItem,
-    showListModal, setShowListModal,
-    editingList, setEditingList,
-    activeList, filteredItems,
-    toggleItem, deleteItem,
-    totalItems, checkedItems, progress,
+    lists,
+    loading,
+    error,
+    refreshLists,
+    familyMembers,
+    requireAuth,
+    apiAddItem,
+    activeListId,
+    setActiveListId,
+    showChecked,
+    setShowChecked,
+    showAddItemModal,
+    setShowAddItemModal,
+    editingItem,
+    setEditingItem,
+    showListModal,
+    setShowListModal,
+    editingList,
+    setEditingList,
+    activeList,
+    filteredItems,
+    toggleItem,
+    deleteItem,
+    totalItems,
+    checkedItems,
+    progress,
   } = useShoppingViewData();
 
   // Auto-advance: if only 1 list, skip list picker and go straight to category
@@ -101,7 +131,9 @@ export function ShoppingView() {
 
   const {
     categories: dynamicCategories,
-    addCategory, removeCategory, reorderCategories,
+    addCategory,
+    removeCategory,
+    reorderCategories,
     getCategoryEmoji: getDynCategoryEmoji,
     getCategoryColor: getDynCategoryColor,
   } = useShoppingCategories();
@@ -109,23 +141,36 @@ export function ShoppingView() {
   const [defaultCategory, setDefaultCategory] = useState<string | null>(null);
   const [showCategoriesModal, setShowCategoriesModal] = useState(false);
 
-  const categoryOrder = dynamicCategories.map(c => c.id);
+  const categoryOrder = dynamicCategories.map((c) => c.id);
   const effectiveCategoryOrder = activeList?.visibleCategories
-    ? categoryOrder.filter(id => activeList.visibleCategories!.includes(id))
+    ? categoryOrder.filter((id) => activeList.visibleCategories!.includes(id))
     : categoryOrder;
 
   const {
     draggedCategory,
-    handleDragStart, handleDragOver, handleDragEnd,
-    handleTouchStart, handleTouchMove, handleTouchEnd,
+    handleDragStart,
+    handleDragOver,
+    handleDragEnd,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
   } = useShoppingDragReorder({ categoryOrder, dynamicCategories, reorderCategories });
 
   const {
-    inlineInputs, setInlineInputs, inputRefs, extraRows,
-    handleInlineKeyDown, handleInlineBlur, addExtraRows,
+    inlineInputs,
+    setInlineInputs,
+    inputRefs,
+    extraRows,
+    handleInlineKeyDown,
+    handleInlineBlur,
+    addExtraRows,
   } = useShoppingInlineInput({ activeList, requireAuth, apiAddItem });
 
-  const { showCelebration, setShowCelebration } = useShoppingCelebration(activeListId, checkedItems, totalItems);
+  const { showCelebration, setShowCelebration } = useShoppingCelebration(
+    activeListId,
+    checkedItems,
+    totalItems
+  );
 
   const orientation = useOrientation();
   const isMobile = useIsMobile();
@@ -161,105 +206,189 @@ export function ShoppingView() {
   );
 
   const {
-    handleAddItem, handleNewList, handleEditItem, handleDeleteItem,
-    handleSaveNewItem, handleUpdateItem, handleSaveList, handleDeleteList,
+    handleAddItem,
+    handleNewList,
+    handleEditItem,
+    handleDeleteItem,
+    handleSaveNewItem,
+    handleUpdateItem,
+    handleSaveList,
+    handleDeleteList,
   } = useShoppingCrudHandlers({
-    requireAuth, refreshLists,
-    setShowAddItemModal, setDefaultCategory, setEditingItem,
-    setShowListModal, setEditingList, setActiveListId,
-    deleteItem, apiAddItem,
-    activeList, editingItem, editingList, lists,
+    requireAuth,
+    refreshLists,
+    setShowAddItemModal,
+    setDefaultCategory,
+    setEditingItem,
+    setShowListModal,
+    setEditingList,
+    setActiveListId,
+    deleteItem,
+    apiAddItem,
+    activeList,
+    editingItem,
+    editingList,
+    lists,
   });
 
   return (
     <PageWrapper>
-      <div className="h-screen flex flex-col">
+      <div className="flex h-screen flex-col">
         {!shoppingMode && (
           <>
             <SubpageHeader
               icon={<ShoppingCart className="h-5 w-5 text-primary" />}
               title="Shopping"
-              badge={activeList ? <Badge variant="secondary">{checkedItems}/{totalItems}</Badge> : undefined}
-              actions={<>
-                <UndoButton />
-                {activeList && activeList.items.some((i) => !i.checked) && (
+              badge={
+                activeList ? (
+                  <Badge variant="secondary">
+                    {checkedItems}/{totalItems}
+                  </Badge>
+                ) : undefined
+              }
+              actions={
+                <>
+                  <UndoButton />
+                  {activeList && activeList.items.some((i) => !i.checked) && (
+                    <Button
+                      variant="outline"
+                      size={isMobile ? 'icon' : 'sm'}
+                      onClick={async () => {
+                        const user = await requireAuth('Send to Kroger');
+                        if (!user) return;
+                        setShowKrogerModal(true);
+                      }}
+                      title="Send unchecked items to Kroger / Mariano's cart"
+                      aria-label="Send to Kroger"
+                    >
+                      <Send className={cn('h-4 w-4', !isMobile && 'mr-1')} />
+                      {!isMobile && 'Send to Kroger'}
+                    </Button>
+                  )}
                   <Button
-                    variant="outline"
-                    size={isMobile ? 'icon' : 'sm'}
-                    onClick={async () => {
-                      const user = await requireAuth('Send to Kroger');
-                      if (!user) return;
-                      setShowKrogerModal(true);
-                    }}
-                    title="Send unchecked items to Kroger / Mariano's cart"
-                    aria-label="Send to Kroger"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShoppingMode(true)}
+                    title="Enter shopping mode"
                   >
-                    <Send className={cn('h-4 w-4', !isMobile && 'mr-1')} />
-                    {!isMobile && 'Send to Kroger'}
+                    <Maximize2 className="h-4 w-4" />
                   </Button>
-                )}
-                <Button variant="ghost" size="icon" onClick={() => setShoppingMode(true)} title="Enter shopping mode">
-                  <Maximize2 className="h-4 w-4" />
-                </Button>
-                <Button onClick={handleNewList} size={isMobile ? 'icon' : 'sm'} aria-label="Add List" title="Add List">
-                  <Plus className={cn('h-4 w-4', !isMobile && 'mr-1')} />
-                  {!isMobile && 'Add List'}
-                </Button>
-              </>}
-              overflow={[
-                ...(activeList ? [{
-                  label: 'Edit List',
-                  icon: Settings,
-                  onClick: async () => {
-                    const user = await requireAuth("Who's editing this list?");
-                    if (user && user.role === 'parent') { setEditingList(activeList); setShowListModal(true); }
-                    else if (user) toast({ title: 'Only parents can edit list settings', variant: 'warning' });
+                  <Button
+                    onClick={handleNewList}
+                    size={isMobile ? 'icon' : 'sm'}
+                    aria-label="Add List"
+                    title="Add List"
+                  >
+                    <Plus className={cn('h-4 w-4', !isMobile && 'mr-1')} />
+                    {!isMobile && 'Add List'}
+                  </Button>
+                </>
+              }
+              overflow={
+                [
+                  ...(activeList
+                    ? [
+                        {
+                          label: 'Edit List',
+                          icon: Settings,
+                          onClick: async () => {
+                            const user = await requireAuth("Who's editing this list?");
+                            if (user && user.role === 'parent') {
+                              setEditingList(activeList);
+                              setShowListModal(true);
+                            } else if (user)
+                              toast({
+                                title: 'Only parents can edit list settings',
+                                variant: 'warning',
+                              });
+                          },
+                        },
+                      ]
+                    : []),
+                  {
+                    label: 'Manage Categories',
+                    icon: Tags,
+                    onClick: () => setShowCategoriesModal(true),
                   },
-                }] : []),
-                { label: 'Manage Categories', icon: Tags, onClick: () => setShowCategoriesModal(true) },
-                { label: showChecked ? 'Hide Checked Items' : 'Show Checked Items', checked: showChecked, onClick: () => setShowChecked(!showChecked) },
-              ] as OverflowItem[]}
+                  {
+                    label: showChecked ? 'Hide Checked Items' : 'Show Checked Items',
+                    checked: showChecked,
+                    onClick: () => setShowChecked(!showChecked),
+                  },
+                ] as OverflowItem[]
+              }
             />
 
             {isMobile && lists.length > 1 ? (
-              <div className="flex-shrink-0 border-b border-border bg-card/85 backdrop-blur-sm px-2 py-1">
+              <div className="flex-shrink-0 border-b border-border bg-card/85 px-2 py-1 backdrop-blur-sm">
                 <div className="flex items-center justify-between gap-2">
-                  <Button size="icon" variant="ghost" onClick={goPrevList}
-                    disabled={currentListIdx <= 0} aria-label="Previous list" className="h-8 w-8 shrink-0">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={goPrevList}
+                    disabled={currentListIdx <= 0}
+                    aria-label="Previous list"
+                    className="h-8 w-8 shrink-0"
+                  >
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
-                  <div className="flex flex-col items-center min-w-0 flex-1">
-                    <span className="font-semibold text-sm truncate max-w-full">{activeList?.name}</span>
-                    <div className="flex gap-1 mt-0.5">
+                  <div className="flex min-w-0 flex-1 flex-col items-center">
+                    <span className="max-w-full truncate text-sm font-semibold">
+                      {activeList?.name}
+                    </span>
+                    <div className="mt-0.5 flex gap-1">
                       {lists.map((l, i) => (
-                        <span key={l.id} className={cn(
-                          'rounded-full transition-all',
-                          i === currentListIdx ? 'bg-primary w-3 h-1.5' : 'bg-muted-foreground/40 w-1.5 h-1.5'
-                        )} />
+                        <span
+                          key={l.id}
+                          className={cn(
+                            'rounded-full transition-all',
+                            i === currentListIdx
+                              ? 'h-1.5 w-3 bg-primary'
+                              : 'h-1.5 w-1.5 bg-muted-foreground/40'
+                          )}
+                        />
                       ))}
                     </div>
                   </div>
-                  <Button size="icon" variant="ghost" onClick={goNextList}
-                    disabled={currentListIdx >= lists.length - 1} aria-label="Next list" className="h-8 w-8 shrink-0">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={goNextList}
+                    disabled={currentListIdx >= lists.length - 1}
+                    aria-label="Next list"
+                    className="h-8 w-8 shrink-0"
+                  >
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
             ) : !isMobile ? (
-              <div className="flex-shrink-0 border-b border-border bg-card/85 backdrop-blur-sm px-3 py-1">
+              <div className="flex-shrink-0 border-b border-border bg-card/85 px-3 py-1 backdrop-blur-sm">
                 <div className="overflow-x-auto">
-                  <div className="flex gap-1 items-center min-w-max">
+                  <div className="flex min-w-max items-center gap-1">
                     {lists.map((list) => {
-                      const assignedMember = list.assignedTo ? familyMembers.find(m => m.id === list.assignedTo) : null;
+                      const assignedMember = list.assignedTo
+                        ? familyMembers.find((m) => m.id === list.assignedTo)
+                        : null;
                       return (
-                        <Button key={list.id} variant={activeListId === list.id ? 'secondary' : 'ghost'} size="sm"
-                          onClick={() => setActiveListId(list.id)} className="relative">
+                        <Button
+                          key={list.id}
+                          variant={activeListId === list.id ? 'secondary' : 'ghost'}
+                          size="sm"
+                          onClick={() => setActiveListId(list.id)}
+                          className="relative"
+                        >
                           {list.name}
                           {assignedMember && (
-                            <span className="ml-1.5 w-3 h-3 rounded-full inline-block"
-                              style={{ backgroundColor: assignedMember.color }} title={`Assigned to ${assignedMember.name}`} />
+                            <span
+                              className="ml-1.5 inline-block h-3 w-3 rounded-full"
+                              style={{ backgroundColor: assignedMember.color }}
+                              title={`Assigned to ${assignedMember.name}`}
+                            />
                           )}
-                          <Badge variant="outline" className="ml-2 text-xs">{list.items.length}</Badge>
+                          <Badge variant="outline" className="ml-2 text-xs">
+                            {list.items.length}
+                          </Badge>
                         </Button>
                       );
                     })}
@@ -271,16 +400,23 @@ export function ShoppingView() {
         )}
 
         {shoppingMode && (
-          <header className="flex-shrink-0 border-b border-border bg-card/85 backdrop-blur-sm px-3 py-1 safe-area-top">
+          <header className="safe-area-top flex-shrink-0 border-b border-border bg-card/85 px-3 py-1 backdrop-blur-sm">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <ShoppingCart className="h-4 w-4 text-primary" />
                 <span className="font-medium">{activeList?.name}</span>
-                <Badge variant="secondary" className="text-xs">{checkedItems}/{totalItems}</Badge>
+                <Badge variant="secondary" className="text-xs">
+                  {checkedItems}/{totalItems}
+                </Badge>
               </div>
               <div className="flex items-center gap-2">
                 <Progress value={progress} className="h-2 w-24" />
-                <Button variant="ghost" size="sm" onClick={() => setShoppingMode(false)} title="Exit shopping mode">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShoppingMode(false)}
+                  title="Exit shopping mode"
+                >
                   <Minimize2 className="h-4 w-4" />
                 </Button>
               </div>
@@ -289,10 +425,10 @@ export function ShoppingView() {
         )}
 
         {activeList && totalItems > 0 && !shoppingMode && (
-          <div className="flex-shrink-0 px-3 py-1 bg-card/85 backdrop-blur-sm">
-            <div className="max-w-6xl mx-auto flex items-center gap-3">
+          <div className="flex-shrink-0 bg-card/85 px-3 py-1 backdrop-blur-sm">
+            <div className="mx-auto flex max-w-6xl items-center gap-3">
               <Progress value={progress} className="h-2 flex-1" />
-              <span className="text-sm text-muted-foreground whitespace-nowrap">
+              <span className="whitespace-nowrap text-sm text-muted-foreground">
                 {checkedItems}/{totalItems} ({Math.round(progress)}%)
               </span>
             </div>
@@ -301,21 +437,25 @@ export function ShoppingView() {
 
         <div ref={swipeRef} className="flex-1 overflow-y-auto p-2">
           {loading ? (
-            <div className="flex items-center justify-center h-full">
+            <div className="flex h-full items-center justify-center">
               <PageLoader label="Loading shopping lists..." />
             </div>
           ) : error ? (
-            <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-              <ShoppingCart className="h-12 w-12 mb-4 opacity-50" />
-              <p className="text-destructive text-lg">Error: {error}</p>
-              <p className="text-base mt-2">Please check your connection</p>
+            <div className="flex h-full flex-col items-center justify-center text-muted-foreground">
+              <ShoppingCart className="mb-4 h-12 w-12 opacity-50" />
+              <p className="text-lg text-destructive">Error: {error}</p>
+              <p className="mt-2 text-base">Please check your connection</p>
             </div>
           ) : !activeList ? (
-            <div className="flex items-center justify-center h-full">
+            <div className="flex h-full items-center justify-center">
               <EmptyState
                 icon={<ShoppingCart />}
                 title="No shopping lists yet"
-                action={<Button variant="outline" size="sm" onClick={handleNewList}>Create your first list</Button>}
+                action={
+                  <Button variant="outline" size="sm" onClick={handleNewList}>
+                    Create your first list
+                  </Button>
+                }
               />
             </div>
           ) : activeList ? (
@@ -324,11 +464,13 @@ export function ShoppingView() {
             // putting it on the scroll container instead skewed EmptyState's
             // centering upward (min-h-full centers within the padded content
             // box, and that box's center shifts when top/bottom padding differ).
-            <div className="max-w-7xl mx-auto pb-24">
-              <div className={cn(
-                'grid gap-2',
-                isMobile ? 'grid-cols-1' : isPortrait ? 'grid-cols-2' : 'grid-cols-3'
-              )}>
+            <div className="mx-auto max-w-7xl pb-24">
+              <div
+                className={cn(
+                  'grid gap-2',
+                  isMobile ? 'grid-cols-1' : isPortrait ? 'grid-cols-2' : 'grid-cols-3'
+                )}
+              >
                 {groceryCategoryItems.map(({ category, items }) => {
                   const categoryExtraRows = extraRows[category] || 0;
                   const totalEmptyLines = BASE_EMPTY_LINES + categoryExtraRows;
@@ -356,7 +498,9 @@ export function ShoppingView() {
                       onEditItem={handleEditItem}
                       onDeleteItem={(itemId) => handleDeleteItem(itemId)}
                       onAddItem={handleAddItem}
-                      onInlineInputChange={(cat, value) => setInlineInputs(prev => ({ ...prev, [cat]: value }))}
+                      onInlineInputChange={(cat, value) =>
+                        setInlineInputs((prev) => ({ ...prev, [cat]: value }))
+                      }
                       onInlineKeyDown={handleInlineKeyDown}
                       onInlineBlur={handleInlineBlur}
                       onAddExtraRows={addExtraRows}
@@ -370,16 +514,25 @@ export function ShoppingView() {
                 <div className="mt-6 space-y-4">
                   <h3 className="text-lg font-semibold text-muted-foreground">Other Items</h3>
                   {otherItems.map(([category, items]) => (
-                    <div key={category} className="border rounded-lg p-3 bg-card/90 backdrop-blur-sm">
-                      <h4 className="text-base font-semibold text-muted-foreground mb-2 capitalize flex items-center gap-2">
-                        <span><Emoji e={getDynCategoryEmoji(category)} /></span><span>{category}</span>
+                    <div
+                      key={category}
+                      className="rounded-lg border bg-card/90 p-3 backdrop-blur-sm"
+                    >
+                      <h4 className="mb-2 flex items-center gap-2 text-base font-semibold capitalize text-muted-foreground">
+                        <span>
+                          <Emoji e={getDynCategoryEmoji(category)} />
+                        </span>
+                        <span>{category}</span>
                       </h4>
                       <div className="space-y-1">
                         {(items as ShoppingItem[]).map((item) => (
-                          <ShoppingItemRow key={item.id} item={item}
+                          <ShoppingItemRow
+                            key={item.id}
+                            item={item}
                             onToggle={() => toggleItem(item.id)}
                             onEdit={() => handleEditItem(item)}
-                            onDelete={() => handleDeleteItem(item.id)} />
+                            onDelete={() => handleDeleteItem(item.id)}
+                          />
                         ))}
                       </div>
                     </div>
@@ -391,20 +544,39 @@ export function ShoppingView() {
         </div>
 
         {showAddItemModal && activeList && (
-          <ItemModal listId={activeList.id} lists={lists} defaultCategory={defaultCategory || undefined}
-            onClose={() => { setShowAddItemModal(false); setDefaultCategory(null); }}
-            onSave={handleSaveNewItem} />
+          <ItemModal
+            listId={activeList.id}
+            lists={lists}
+            defaultCategory={defaultCategory || undefined}
+            onClose={() => {
+              setShowAddItemModal(false);
+              setDefaultCategory(null);
+            }}
+            onSave={handleSaveNewItem}
+          />
         )}
 
         {editingItem && (
-          <ItemModal listId={editingItem.listId} item={editingItem}
-            onClose={() => setEditingItem(null)} onSave={handleUpdateItem} />
+          <ItemModal
+            listId={editingItem.listId}
+            item={editingItem}
+            onClose={() => setEditingItem(null)}
+            onSave={handleUpdateItem}
+          />
         )}
 
         {showListModal && (
-          <ListModal list={editingList} familyMembers={familyMembers} categories={dynamicCategories}
-            onClose={() => { setShowListModal(false); setEditingList(null); }}
-            onSave={handleSaveList} onDelete={handleDeleteList} />
+          <ListModal
+            list={editingList}
+            familyMembers={familyMembers}
+            categories={dynamicCategories}
+            onClose={() => {
+              setShowListModal(false);
+              setEditingList(null);
+            }}
+            onSave={handleSaveList}
+            onDelete={handleDeleteList}
+          />
         )}
 
         <ManageCategoriesModal open={showCategoriesModal} onOpenChange={setShowCategoriesModal} />

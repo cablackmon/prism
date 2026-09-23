@@ -10,10 +10,21 @@ import type { RemoteItem, LocalItem } from '../types';
 
 type P = { name: string };
 
-function remote(externalId: string, updatedAt: Date | null, name = externalId, fingerprint?: string): RemoteItem<P> {
+function remote(
+  externalId: string,
+  updatedAt: Date | null,
+  name = externalId,
+  fingerprint?: string
+): RemoteItem<P> {
   return { externalId, updatedAt, fingerprint, label: name, payload: { name } };
 }
-function local(localId: string, externalId: string | null, updatedAt: Date, name = externalId ?? localId, fingerprint?: string): LocalItem {
+function local(
+  localId: string,
+  externalId: string | null,
+  updatedAt: Date,
+  name = externalId ?? localId,
+  fingerprint?: string
+): LocalItem {
   return { localId, externalId, updatedAt, fingerprint, label: name };
 }
 
@@ -52,7 +63,7 @@ describe('computeSyncDiff — updates (last-write-wins)', () => {
     const d = computeSyncDiff(
       [remote('r1', null, 'r1', 'fp-A')],
       [local('l1', 'r1', T2, 'r1', 'fp-A')],
-      OPTS(),
+      OPTS()
     );
     expect(d.changes).toHaveLength(0);
   });
@@ -61,7 +72,7 @@ describe('computeSyncDiff — updates (last-write-wins)', () => {
     const d = computeSyncDiff(
       [remote('r1', null, 'r1', 'fp-B')],
       [local('l1', 'r1', T2, 'r1', 'fp-A')],
-      OPTS(),
+      OPTS()
     );
     expect(d.counts.update).toBe(1);
     expect(d.changes[0]!.reason).toMatch(/changed in source/i);
@@ -95,8 +106,7 @@ describe('computeSyncDiff — deletes', () => {
 });
 
 describe('computeSyncDiff — mass-delete guard', () => {
-  const synced = (n: number) =>
-    Array.from({ length: n }, (_, i) => local(`l${i}`, `r${i}`, T0));
+  const synced = (n: number) => Array.from({ length: n }, (_, i) => local(`l${i}`, `r${i}`, T0));
 
   it('withholds ALL deletes when more than maxItems would be deleted', () => {
     // 12 synced rows, remote empty → 12 deletes > default maxItems (10) → withheld
@@ -126,7 +136,10 @@ describe('computeSyncDiff — mass-delete guard', () => {
 
   it('adds/updates are unaffected when the delete guard trips', () => {
     const localRows = synced(12);
-    const d = computeSyncDiff([remote('new1', T2)], localRows, { lastSynced: T1, massDelete: { maxFraction: 1 } });
+    const d = computeSyncDiff([remote('new1', T2)], localRows, {
+      lastSynced: T1,
+      massDelete: { maxFraction: 1 },
+    });
     expect(d.massDeleteGuardTripped).toBe(true);
     expect(d.counts.add).toBe(1);
     expect(d.counts.delete).toBe(0);

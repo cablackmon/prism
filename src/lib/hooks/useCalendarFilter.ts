@@ -77,35 +77,42 @@ export function useCalendarFilter(): UseCalendarFilterResult {
     return groups;
   }, [apiGroups, calendarSources]);
 
-  const toggleCalendar = useCallback((id: string) => {
-    setSelectedCalendarIds((prev) => {
-      const newSet = new Set(prev);
-      if (id === 'all') {
-        if (newSet.has('all')) {
-          return new Set();
+  const toggleCalendar = useCallback(
+    (id: string) => {
+      setSelectedCalendarIds((prev) => {
+        const newSet = new Set(prev);
+        if (id === 'all') {
+          if (newSet.has('all')) {
+            return new Set();
+          } else {
+            const all = new Set(['all']);
+            calendarGroups.forEach((g) => all.add(g.id));
+            return all;
+          }
         } else {
-          const all = new Set(['all']);
-          calendarGroups.forEach((g) => all.add(g.id));
-          return all;
+          newSet.delete('all');
+          if (newSet.has(id)) {
+            newSet.delete(id);
+          } else {
+            newSet.add(id);
+          }
+          if (newSet.size === calendarGroups.length) {
+            newSet.add('all');
+          }
+          return newSet;
         }
-      } else {
-        newSet.delete('all');
-        if (newSet.has(id)) {
-          newSet.delete(id);
-        } else {
-          newSet.add(id);
-        }
-        if (newSet.size === calendarGroups.length) {
-          newSet.add('all');
-        }
-        return newSet;
-      }
-    });
-  }, [calendarGroups]);
+      });
+    },
+    [calendarGroups]
+  );
 
   // Initialize selected calendars to 'all' when calendar groups load
   useEffect(() => {
-    if (calendarGroups.length > 0 && selectedCalendarIds.size === 1 && selectedCalendarIds.has('all')) {
+    if (
+      calendarGroups.length > 0 &&
+      selectedCalendarIds.size === 1 &&
+      selectedCalendarIds.has('all')
+    ) {
       const all = new Set(['all']);
       calendarGroups.forEach((g) => all.add(g.id));
       setSelectedCalendarIds(all);
@@ -116,7 +123,12 @@ export function useCalendarFilter(): UseCalendarFilterResult {
   const sourceGroupMap = useMemo(() => {
     const map = new Map<string, string>();
     for (const src of calendarSources) {
-      const s = src as { id: string; groupId?: string | null; isFamily?: boolean; user?: { id: string } };
+      const s = src as {
+        id: string;
+        groupId?: string | null;
+        isFamily?: boolean;
+        user?: { id: string };
+      };
       if (s.groupId) {
         map.set(s.id, s.groupId);
       } else if (s.isFamily) {
@@ -129,32 +141,37 @@ export function useCalendarFilter(): UseCalendarFilterResult {
     return map;
   }, [calendarSources, calendarGroups]);
 
-  const filterEvents = useCallback((events: CalendarEvent[]): CalendarEvent[] => {
-    return events
-      .filter((event) => {
-        if (selectedCalendarIds.has('all')) return true;
-        if (selectedCalendarIds.size === 0) return false;
+  const filterEvents = useCallback(
+    (events: CalendarEvent[]): CalendarEvent[] => {
+      return (
+        events
+          .filter((event) => {
+            if (selectedCalendarIds.has('all')) return true;
+            if (selectedCalendarIds.size === 0) return false;
 
-        const gid = sourceGroupMap.get(event.calendarId);
-        if (gid && selectedCalendarIds.has(gid)) return true;
+            const gid = sourceGroupMap.get(event.calendarId);
+            if (gid && selectedCalendarIds.has(gid)) return true;
 
-        // Legacy fallback
-        const calSource = calendarSources.find((c) => c.id === event.calendarId);
-        if (!calSource) return false;
-        if ((calSource as { isFamily?: boolean }).isFamily) {
-          const familyGroup = calendarGroups.find((g) => g.name === 'Family');
-          if (familyGroup && selectedCalendarIds.has(familyGroup.id)) return true;
-        }
-        if (calSource.user && selectedCalendarIds.has(calSource.user.id)) return true;
+            // Legacy fallback
+            const calSource = calendarSources.find((c) => c.id === event.calendarId);
+            if (!calSource) return false;
+            if ((calSource as { isFamily?: boolean }).isFamily) {
+              const familyGroup = calendarGroups.find((g) => g.name === 'Family');
+              if (familyGroup && selectedCalendarIds.has(familyGroup.id)) return true;
+            }
+            if (calSource.user && selectedCalendarIds.has(calSource.user.id)) return true;
 
-        return false;
-      })
-      // Enrich events with groupId for split-column views
-      .map((event) => {
-        const gid = sourceGroupMap.get(event.calendarId);
-        return gid && gid !== event.groupId ? { ...event, groupId: gid } : event;
-      });
-  }, [selectedCalendarIds, calendarSources, calendarGroups, sourceGroupMap]);
+            return false;
+          })
+          // Enrich events with groupId for split-column views
+          .map((event) => {
+            const gid = sourceGroupMap.get(event.calendarId);
+            return gid && gid !== event.groupId ? { ...event, groupId: gid } : event;
+          })
+      );
+    },
+    [selectedCalendarIds, calendarSources, calendarGroups, sourceGroupMap]
+  );
 
   return {
     selectedCalendarIds,

@@ -1,11 +1,7 @@
 import { db } from '@/lib/db/client';
 import { photos, photoSources, excludedPhotos } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import {
-  listPhotosInFolder,
-  downloadPhoto,
-  refreshAccessToken,
-} from '@/lib/integrations/onedrive';
+import { listPhotosInFolder, downloadPhoto, refreshAccessToken } from '@/lib/integrations/onedrive';
 import { fetchSharedLink, type ImmichShareCredentials } from '@/lib/integrations/immich';
 import { savePhoto, deletePhoto, getPhotoPath } from './photo-storage';
 import { clearPhotoCache } from './photo-cache';
@@ -47,7 +43,7 @@ function generateFilename(originalName: string): string {
 export function computeDedupeKey(
   takenAt: Date | null,
   width: number | null,
-  height: number | null,
+  height: number | null
 ): string | null {
   if (!takenAt || width == null || height == null) return null;
   // Truncate to the second — sub-second jitter between a service's copies
@@ -92,10 +88,7 @@ export async function syncOneDriveSource(sourceId: string) {
   const remotePhotos = await listPhotosInFolder(accessToken, source.onedriveFolderId);
 
   // Get existing photos for this source
-  const existingPhotos = await db
-    .select()
-    .from(photos)
-    .where(eq(photos.sourceId, sourceId));
+  const existingPhotos = await db.select().from(photos).where(eq(photos.sourceId, sourceId));
 
   const existingExternalIds = new Set(existingPhotos.map((p) => p.externalId));
   const remoteIds = new Set(remotePhotos.map((p) => p.id));
@@ -108,7 +101,7 @@ export async function syncOneDriveSource(sourceId: string) {
         .select({ externalId: excludedPhotos.externalId })
         .from(excludedPhotos)
         .where(eq(excludedPhotos.sourceId, sourceId))
-    ).map((r) => r.externalId),
+    ).map((r) => r.externalId)
   );
 
   // Download new photos (or record metadata-only if OneDrive already has GPS)
@@ -287,13 +280,10 @@ export async function syncImmichSource(sourceId: string) {
   const remoteImages = link.assets.filter((a) => a.type === 'IMAGE');
   const remoteIds = new Set(remoteImages.map((a) => a.id));
 
-  const existingPhotos = await db
-    .select()
-    .from(photos)
-    .where(eq(photos.sourceId, sourceId));
+  const existingPhotos = await db.select().from(photos).where(eq(photos.sourceId, sourceId));
 
   const existingExternalIds = new Set(
-    existingPhotos.map((p) => p.externalId).filter((x): x is string => !!x),
+    existingPhotos.map((p) => p.externalId).filter((x): x is string => !!x)
   );
 
   // Photos the user removed from Prism — skip re-adding them (they stay in
@@ -304,7 +294,7 @@ export async function syncImmichSource(sourceId: string) {
         .select({ externalId: excludedPhotos.externalId })
         .from(excludedPhotos)
         .where(eq(excludedPhotos.sourceId, sourceId))
-    ).map((r) => r.externalId),
+    ).map((r) => r.externalId)
   );
 
   // Insert new assets as external metadata-only records (proxy serves bytes

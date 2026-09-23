@@ -19,7 +19,11 @@ export function useConfirmDialog() {
   const resolveRef = useRef<((value: boolean) => void) | null>(null);
 
   const confirm = useCallback(
-    (title: string, description?: string, options?: { confirmLabel?: string; variant?: 'default' | 'destructive' }) => {
+    (
+      title: string,
+      description?: string,
+      options?: { confirmLabel?: string; variant?: 'default' | 'destructive' }
+    ) => {
       return new Promise<boolean>((resolve) => {
         resolveRef.current = resolve;
         setState({

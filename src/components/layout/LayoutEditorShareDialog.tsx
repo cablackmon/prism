@@ -80,8 +80,8 @@ export function LayoutEditorShareDialog({
     screenSizes: [],
     orientation: 'landscape',
     widgets: currentWidgets
-      .filter(w => w.visible !== false)
-      .map(widget => {
+      .filter((w) => w.visible !== false)
+      .map((widget) => {
         const reg = WIDGET_REGISTRY[widget.i];
         const exported: ExportWidget = {
           i: widget.i,
@@ -108,7 +108,10 @@ export function LayoutEditorShareDialog({
       description: shareForm.description,
       author: shareForm.author,
       orientation: shareForm.orientation,
-      tags: shareForm.tags.split(',').map(t => t.trim()).filter(Boolean),
+      tags: shareForm.tags
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean),
     };
 
     const result = validateCommunityLayout(submissionData, { communitySubmission: true });
@@ -126,16 +129,26 @@ export function LayoutEditorShareDialog({
       'layout-json': JSON.stringify(submissionData, null, 2),
       'author-name': shareForm.author,
     });
-    window.open(`https://github.com/sandydargoport/prism/issues/new?${params.toString()}`, '_blank');
+    window.open(
+      `https://github.com/sandydargoport/prism/issues/new?${params.toString()}`,
+      '_blank'
+    );
     onClose();
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50" onClick={onClose}>
-      <div className="bg-popover border border-border rounded-lg shadow-xl p-4 max-w-2xl w-full mx-4 space-y-3" onClick={e => e.stopPropagation()}>
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50"
+      onClick={onClose}
+    >
+      <div
+        className="mx-4 w-full max-w-2xl space-y-3 rounded-lg border border-border bg-popover p-4 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="text-sm font-medium">Share to Community</div>
         <p className="text-xs text-muted-foreground">
-          Submit your layout to the KYST community gallery. This opens a GitHub Issue with your layout data.
+          Submit your layout to the KYST community gallery. This opens a GitHub Issue with your
+          layout data.
         </p>
         <div className="grid grid-cols-2 gap-3">
           <div>
@@ -143,8 +156,8 @@ export function LayoutEditorShareDialog({
             <input
               type="text"
               value={shareForm.name}
-              onChange={e => setShareForm(f => ({ ...f, name: e.target.value }))}
-              className="w-full px-2 py-1 text-sm bg-muted border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
+              onChange={(e) => setShareForm((f) => ({ ...f, name: e.target.value }))}
+              className="w-full rounded-md border border-border bg-muted px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
               maxLength={100}
             />
           </div>
@@ -153,8 +166,8 @@ export function LayoutEditorShareDialog({
             <input
               type="text"
               value={shareForm.author}
-              onChange={e => setShareForm(f => ({ ...f, author: e.target.value }))}
-              className="w-full px-2 py-1 text-sm bg-muted border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
+              onChange={(e) => setShareForm((f) => ({ ...f, author: e.target.value }))}
+              className="w-full rounded-md border border-border bg-muted px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
               maxLength={50}
             />
           </div>
@@ -164,22 +177,22 @@ export function LayoutEditorShareDialog({
           <input
             type="text"
             value={shareForm.description}
-            onChange={e => setShareForm(f => ({ ...f, description: e.target.value }))}
-            className="w-full px-2 py-1 text-sm bg-muted border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
+            onChange={(e) => setShareForm((f) => ({ ...f, description: e.target.value }))}
+            className="w-full rounded-md border border-border bg-muted px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
           />
         </div>
         <div className="flex items-center gap-4">
           <div>
-            <label className="text-xs text-muted-foreground block mb-1">Orientation *</label>
+            <label className="mb-1 block text-xs text-muted-foreground">Orientation *</label>
             <div className="flex gap-1">
-              {(['landscape', 'portrait'] as const).map(orient => (
+              {(['landscape', 'portrait'] as const).map((orient) => (
                 <button
                   key={orient}
-                  onClick={() => setShareForm(f => ({ ...f, orientation: orient }))}
-                  className={`px-2 py-0.5 text-xs rounded-full border transition-colors ${
+                  onClick={() => setShareForm((f) => ({ ...f, orientation: orient }))}
+                  className={`rounded-full border px-2 py-0.5 text-xs transition-colors ${
                     shareForm.orientation === orient
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'bg-muted border-border hover:bg-accent'
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-border bg-muted hover:bg-accent'
                   }`}
                 >
                   {orient}
@@ -193,28 +206,30 @@ export function LayoutEditorShareDialog({
           <input
             type="text"
             value={shareForm.tags}
-            onChange={e => setShareForm(f => ({ ...f, tags: e.target.value }))}
+            onChange={(e) => setShareForm((f) => ({ ...f, tags: e.target.value }))}
             placeholder="e.g. family, minimal, kitchen"
-            className="w-full px-2 py-1 text-sm bg-muted border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
+            className="w-full rounded-md border border-border bg-muted px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
           />
         </div>
         {shareErrors.length > 0 && (
-          <div className="bg-destructive/10 border border-destructive/30 rounded-md p-2">
+          <div className="rounded-md border border-destructive/30 bg-destructive/10 p-2">
             {shareErrors.map((err, i) => (
-              <p key={i} className="text-xs text-destructive">{err}</p>
+              <p key={i} className="text-xs text-destructive">
+                {err}
+              </p>
             ))}
           </div>
         )}
-        <div className="flex gap-2 justify-end">
+        <div className="flex justify-end gap-2">
           <button
             onClick={onClose}
-            className="px-3 py-1.5 text-sm rounded-md bg-muted hover:bg-accent transition-colors"
+            className="rounded-md bg-muted px-3 py-1.5 text-sm transition-colors hover:bg-accent"
           >
             Cancel
           </button>
           <button
             onClick={handleShareSubmit}
-            className="px-3 py-1.5 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+            className="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground transition-colors hover:bg-primary/90"
           >
             Open GitHub Issue
           </button>

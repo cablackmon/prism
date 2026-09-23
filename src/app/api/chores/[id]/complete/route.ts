@@ -55,10 +55,7 @@ interface RouteParams {
  *   "notes": "Took out all three bins"
  * }
  */
-export async function POST(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function POST(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -85,18 +82,12 @@ export async function POST(
       .where(eq(chores.id, choreId));
 
     if (!chore) {
-      return NextResponse.json(
-        { error: 'Chore not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Chore not found' }, { status: 404 });
     }
 
     // Check if chore is enabled
     if (!chore.enabled) {
-      return NextResponse.json(
-        { error: 'Cannot complete a disabled chore' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Cannot complete a disabled chore' }, { status: 400 });
     }
 
     // Validate completion data
@@ -121,10 +112,7 @@ export async function POST(
       .where(eq(users.id, completedBy));
 
     if (!completingUser) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     // AUTHORIZATION CHECK - Children can only complete their own assigned chores
@@ -151,21 +139,20 @@ export async function POST(
         completedBy: choreCompletions.completedBy,
       })
       .from(choreCompletions)
-      .where(
-        and(
-          eq(choreCompletions.choreId, choreId),
-          isNull(choreCompletions.approvedBy)
-        )
-      );
+      .where(and(eq(choreCompletions.choreId, choreId), isNull(choreCompletions.approvedBy)));
 
     if (existingPendingCompletion) {
       // If a child tries to complete a chore that's already pending, reject it
       if (isChild) {
-        return NextResponse.json({
-          error: 'This chore is already pending parental approval',
-          message: 'This chore has already been completed and is waiting for a parent to approve it.',
-          alreadyPending: true,
-        }, { status: 409 }); // 409 Conflict
+        return NextResponse.json(
+          {
+            error: 'This chore is already pending parental approval',
+            message:
+              'This chore has already been completed and is waiting for a parent to approve it.',
+            alreadyPending: true,
+          },
+          { status: 409 }
+        ); // 409 Conflict
       }
       // If a parent completes, they're approving - but that should go through /approve endpoint
       // This path means a parent is clicking "complete" on a pending chore in the dashboard
@@ -233,27 +220,27 @@ export async function POST(
       summary: `Completed chore: ${chore.title}`,
     });
 
-    return NextResponse.json({
-      id: completion.id,
-      choreId: completion.choreId,
-      completedBy: completion.completedBy,
-      completedAt: completion.completedAt.toISOString(),
-      photoUrl: completion.photoUrl,
-      notes: completion.notes,
-      pointsAwarded: completion.pointsAwarded,
-      approved: !needsApproval,
-      approvedBy: completion.approvedBy,
-      approvedAt: completion.approvedAt?.toISOString() || null,
-      requiresApproval: needsApproval,
-      isChildCompletion: isChild,
-      message,
-    }, { status: 201 });
+    return NextResponse.json(
+      {
+        id: completion.id,
+        choreId: completion.choreId,
+        completedBy: completion.completedBy,
+        completedAt: completion.completedAt.toISOString(),
+        photoUrl: completion.photoUrl,
+        notes: completion.notes,
+        pointsAwarded: completion.pointsAwarded,
+        approved: !needsApproval,
+        approvedBy: completion.approvedBy,
+        approvedAt: completion.approvedAt?.toISOString() || null,
+        requiresApproval: needsApproval,
+        isChildCompletion: isChild,
+        message,
+      },
+      { status: 201 }
+    );
   } catch (error) {
     logError('Error completing chore:', error);
-    return NextResponse.json(
-      { error: 'Failed to complete chore' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to complete chore' }, { status: 500 });
   }
 }
 
@@ -261,10 +248,7 @@ export async function POST(
  * DELETE /api/chores/[id]/complete
  * Undo the most recent completion for a chore (parent-only).
  */
-export async function DELETE(
-  _request: NextRequest,
-  { params }: RouteParams
-) {
+export async function DELETE(_request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 

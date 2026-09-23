@@ -29,7 +29,6 @@ function requestIsSecure(req: NextRequest): boolean {
   return req.url.startsWith('https://');
 }
 
-
 /**
  * POST /api/auth/logout
  * Logs out the current user by clearing session cookies.
@@ -94,9 +93,6 @@ export async function POST(request: NextRequest) {
 
     // Even if there's an error, try to clear cookies
     // The user should be logged out regardless
-    return NextResponse.json(
-      { message: 'Logged out' },
-      { status: 200 }
-    );
+    return NextResponse.json({ message: 'Logged out' }, { status: 200 });
   }
 }

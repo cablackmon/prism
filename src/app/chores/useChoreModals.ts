@@ -62,7 +62,10 @@ export function useChoreModals({
       setShowAddModal(false);
     } catch (err) {
       console.error('Error creating chore:', err);
-      toast({ title: err instanceof Error ? err.message : 'Failed to create chore', variant: 'destructive' });
+      toast({
+        title: err instanceof Error ? err.message : 'Failed to create chore',
+        variant: 'destructive',
+      });
     }
   };
 

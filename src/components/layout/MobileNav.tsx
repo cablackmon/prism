@@ -38,7 +38,6 @@ import { useTheme } from '@/components/providers/ThemeProvider';
 import { useHiddenPages } from '@/lib/hooks/useHiddenPages';
 import type { NavItem } from '@/lib/constants/navItems';
 
-
 export interface MobileNavProps {
   user?: {
     id: string;
@@ -77,7 +76,7 @@ export function MobileNav({ user, onLogin, onLogout, uiHidden }: MobileNavProps)
   const visibleSecondary = secondaryItems.filter((item) => !isPageHidden(item.href));
 
   // Check if current path is in secondary items
-  const isSecondaryActive = visibleSecondary.some(item => pathname === item.href);
+  const isSecondaryActive = visibleSecondary.some((item) => pathname === item.href);
 
   // Cycle through themes: light → dark → system → light
   const cycleTheme = () => {
@@ -93,15 +92,12 @@ export function MobileNav({ user, onLogin, onLogout, uiHidden }: MobileNavProps)
     <>
       {/* More menu overlay */}
       {showMore && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40"
-          onClick={() => setShowMore(false)}
-        />
+        <div className="fixed inset-0 z-40 bg-black/50" onClick={() => setShowMore(false)} />
       )}
 
       {/* More menu panel */}
       {showMore && (
-        <div className="fixed bottom-16 left-0 right-0 bg-card border-t border-border z-50 animate-in slide-in-from-bottom-4">
+        <div className="fixed bottom-16 left-0 right-0 z-50 border-t border-border bg-card animate-in slide-in-from-bottom-4">
           <div className="grid grid-cols-3 gap-1 p-2">
             {visibleSecondary.map((item) => {
               const Icon = item.icon;
@@ -112,7 +108,7 @@ export function MobileNav({ user, onLogin, onLogout, uiHidden }: MobileNavProps)
                   href={item.href}
                   onClick={() => setShowMore(false)}
                   className={cn(
-                    'flex flex-col items-center gap-1 py-3 px-2 rounded-lg transition-colors',
+                    'flex flex-col items-center gap-1 rounded-lg px-2 py-3 transition-colors',
                     isActive
                       ? 'bg-primary/10 text-primary'
                       : 'text-muted-foreground hover:bg-accent'
@@ -127,7 +123,7 @@ export function MobileNav({ user, onLogin, onLogout, uiHidden }: MobileNavProps)
             <Link
               href="/help"
               onClick={() => setShowMore(false)}
-              className="flex flex-col items-center gap-1 py-3 px-2 rounded-lg transition-colors text-muted-foreground hover:bg-accent"
+              className="flex flex-col items-center gap-1 rounded-lg px-2 py-3 text-muted-foreground transition-colors hover:bg-accent"
             >
               <HelpCircle className="h-5 w-5" />
               <span className="text-xs">Help</span>
@@ -135,7 +131,7 @@ export function MobileNav({ user, onLogin, onLogout, uiHidden }: MobileNavProps)
             {/* Theme toggle */}
             <button
               onClick={cycleTheme}
-              className="flex flex-col items-center gap-1 py-3 px-2 rounded-lg transition-colors text-muted-foreground hover:bg-accent"
+              className="flex flex-col items-center gap-1 rounded-lg px-2 py-3 text-muted-foreground transition-colors hover:bg-accent"
             >
               <ThemeIcon className="h-5 w-5" />
               <span className="text-xs">{themeLabel}</span>
@@ -150,16 +146,18 @@ export function MobileNav({ user, onLogin, onLogout, uiHidden }: MobileNavProps)
                   onLogin?.();
                 }
               }}
-              className="flex flex-col items-center gap-1 py-3 px-2 rounded-lg transition-colors text-muted-foreground hover:bg-accent"
+              className="flex flex-col items-center gap-1 rounded-lg px-2 py-3 text-muted-foreground transition-colors hover:bg-accent"
             >
               {user ? (
                 <>
                   <div
-                    className="relative h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
+                    className="relative flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-white"
                     style={{ backgroundColor: user.color || '#6B7280' }}
                   >
                     {user.avatarUrl?.startsWith('emoji:') ? (
-                      <span className="text-sm"><Emoji e={user.avatarUrl.slice(6)} /></span>
+                      <span className="text-sm">
+                        <Emoji e={user.avatarUrl.slice(6)} />
+                      </span>
                     ) : user.avatarUrl ? (
                       <Image
                         src={user.avatarUrl}
@@ -184,21 +182,23 @@ export function MobileNav({ user, onLogin, onLogout, uiHidden }: MobileNavProps)
           </div>
           <button
             onClick={() => setShowMore(false)}
-            className="w-full py-3 text-center text-sm text-muted-foreground border-t border-border hover:bg-accent"
+            className="w-full border-t border-border py-3 text-center text-sm text-muted-foreground hover:bg-accent"
           >
-            <X className="h-4 w-4 inline mr-1" />
+            <X className="mr-1 inline h-4 w-4" />
             Close
           </button>
         </div>
       )}
 
       {/* Bottom navigation bar - visibility controlled by AppShell */}
-      <nav className={cn(
-        'fixed bottom-0 left-0 right-0 bg-card border-t border-border z-40 safe-area-bottom',
-        'transition-all duration-500 ease-in-out',
-        uiHidden ? 'translate-y-full opacity-0 delay-200' : 'translate-y-0 opacity-100 delay-0'
-      )}>
-        <div className="flex items-center justify-around h-16">
+      <nav
+        className={cn(
+          'safe-area-bottom fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-card',
+          'transition-all duration-500 ease-in-out',
+          uiHidden ? 'translate-y-full opacity-0 delay-200' : 'translate-y-0 opacity-100 delay-0'
+        )}
+      >
+        <div className="flex h-16 items-center justify-around">
           {visiblePrimary.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
@@ -207,10 +207,8 @@ export function MobileNav({ user, onLogin, onLogout, uiHidden }: MobileNavProps)
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'flex flex-col items-center gap-0.5 py-2 px-3 min-w-[64px] transition-colors',
-                  isActive
-                    ? 'text-primary'
-                    : 'text-muted-foreground'
+                  'flex min-w-[64px] flex-col items-center gap-0.5 px-3 py-2 transition-colors',
+                  isActive ? 'text-primary' : 'text-muted-foreground'
                 )}
               >
                 <Icon className={cn('h-6 w-6', isActive && 'stroke-[2.5]')} />
@@ -223,13 +221,13 @@ export function MobileNav({ user, onLogin, onLogout, uiHidden }: MobileNavProps)
           <button
             onClick={() => setShowMore(!showMore)}
             className={cn(
-              'flex flex-col items-center gap-0.5 py-2 px-3 min-w-[64px] transition-colors',
-              (showMore || isSecondaryActive)
-                ? 'text-primary'
-                : 'text-muted-foreground'
+              'flex min-w-[64px] flex-col items-center gap-0.5 px-3 py-2 transition-colors',
+              showMore || isSecondaryActive ? 'text-primary' : 'text-muted-foreground'
             )}
           >
-            <MoreHorizontal className={cn('h-6 w-6', (showMore || isSecondaryActive) && 'stroke-[2.5]')} />
+            <MoreHorizontal
+              className={cn('h-6 w-6', (showMore || isSecondaryActive) && 'stroke-[2.5]')}
+            />
             <span className="text-[10px] font-medium">More</span>
           </button>
         </div>

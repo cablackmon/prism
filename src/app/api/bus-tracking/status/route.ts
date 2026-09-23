@@ -40,35 +40,39 @@ export async function GET() {
   }
 
   // Trigger background email sync (debounced, non-blocking)
-  triggerSyncIfNeeded().catch(err =>
+  triggerSyncIfNeeded().catch((err) =>
     console.error('Background bus sync failed:', err instanceof Error ? err.message : err)
   );
 
   try {
-    const data = await getCached('bus:status', async () => {
-      const routes = await db.select().from(busRoutes).where(eq(busRoutes.enabled, true));
-      const connected = await isGmailConnected();
+    const data = await getCached(
+      'bus:status',
+      async () => {
+        const routes = await db.select().from(busRoutes).where(eq(busRoutes.enabled, true));
+        const connected = await isGmailConnected();
 
-      const routesWithStatus = await Promise.all(
-        routes.map(async (route) => {
-          const prediction = await predictArrival(route.id);
-          return {
-            id: route.id,
-            label: route.label,
-            studentName: route.studentName,
-            direction: route.direction,
-            scheduledTime: route.scheduledTime,
-            activeDays: route.activeDays,
-            checkpoints: route.checkpoints,
-            stopName: route.stopName,
-            schoolName: route.schoolName,
-            prediction,
-          };
-        })
-      );
+        const routesWithStatus = await Promise.all(
+          routes.map(async (route) => {
+            const prediction = await predictArrival(route.id);
+            return {
+              id: route.id,
+              label: route.label,
+              studentName: route.studentName,
+              direction: route.direction,
+              scheduledTime: route.scheduledTime,
+              activeDays: route.activeDays,
+              checkpoints: route.checkpoints,
+              stopName: route.stopName,
+              schoolName: route.schoolName,
+              prediction,
+            };
+          })
+        );
 
-      return { routes: routesWithStatus, connected };
-    }, 5); // 5s cache — matches fastest polling interval during active tracking
+        return { routes: routesWithStatus, connected };
+      },
+      5
+    ); // 5s cache — matches fastest polling interval during active tracking
 
     return NextResponse.json(data);
   } catch (error) {

@@ -18,7 +18,9 @@ describe('cn', () => {
   it('includes truthy conditional classes', () => {
     const isActive = true;
     const isDisabled = false;
-    expect(cn('btn', isActive && 'btn-active', isDisabled && 'btn-disabled')).toBe('btn btn-active');
+    expect(cn('btn', isActive && 'btn-active', isDisabled && 'btn-disabled')).toBe(
+      'btn btn-active'
+    );
   });
 
   it('handles ternary expressions', () => {
@@ -46,15 +48,17 @@ describe('cn', () => {
 
   // --- Object syntax ---
   it('handles object syntax for conditional classes', () => {
-    expect(cn({ 'font-bold': true, 'text-xl': false, 'italic': true })).toBe('font-bold italic');
+    expect(cn({ 'font-bold': true, 'text-xl': false, italic: true })).toBe('font-bold italic');
   });
 
   it('combines strings with object syntax', () => {
     const status: string = 'success';
-    expect(cn('badge', {
-      'text-green-500': status === 'success',
-      'text-red-500': status === 'error',
-    })).toBe('badge text-green-500');
+    expect(
+      cn('badge', {
+        'text-green-500': status === 'success',
+        'text-red-500': status === 'error',
+      })
+    ).toBe('badge text-green-500');
   });
 
   // --- Array syntax ---
@@ -83,7 +87,7 @@ describe('cn', () => {
     const result = cn(
       'inline-flex items-center rounded-md px-3 py-1 text-sm',
       variant === 'default' && 'bg-primary text-primary-foreground',
-      variant === 'destructive' && 'bg-destructive text-destructive-foreground',
+      variant === 'destructive' && 'bg-destructive text-destructive-foreground'
     );
     expect(result).toContain('bg-destructive');
     expect(result).not.toContain('bg-primary');

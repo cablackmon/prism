@@ -31,7 +31,9 @@ interface MealiePage<T> {
   total?: number;
   next?: string | null;
 }
-interface MealieNamed { name?: string | null }
+interface MealieNamed {
+  name?: string | null;
+}
 interface MealieIngredient {
   quantity?: number | null;
   unit?: MealieNamed | null;
@@ -41,7 +43,10 @@ interface MealieIngredient {
   title?: string | null;
   originalText?: string | null;
 }
-interface MealieStep { title?: string | null; text?: string | null }
+interface MealieStep {
+  title?: string | null;
+  text?: string | null;
+}
 export interface MealieRecipeDetail {
   id: string;
   slug: string;
@@ -72,12 +77,16 @@ export interface MealieMealPlanEntry {
 /** Verify the server is reachable and the token authenticates. */
 export async function testMealieConnection(
   serverUrl: string,
-  token: string,
+  token: string
 ): Promise<{ ok: true }> {
   validatePublicUrl(serverUrl);
-  const res = await safeFetch(`${baseUrl(serverUrl)}/api/users/self`, { headers: authHeaders(token) });
+  const res = await safeFetch(`${baseUrl(serverUrl)}/api/users/self`, {
+    headers: authHeaders(token),
+  });
   if (res.status === 401 || res.status === 403) {
-    throw new Error('Mealie rejected the API token — check the token in Mealie → Profile → API Tokens.');
+    throw new Error(
+      'Mealie rejected the API token — check the token in Mealie → Profile → API Tokens.'
+    );
   }
   if (!res.ok) {
     throw new Error(`Could not reach Mealie: ${res.status} ${res.statusText}`);
@@ -93,15 +102,23 @@ function parseDurationMinutes(s: string | null | undefined): number | null {
   let mins = 0;
   let found = false;
   const h = s.match(/(\d+)\s*(?:h|hr|hour)/i);
-  if (h) { mins += Number(h[1]) * 60; found = true; }
+  if (h) {
+    mins += Number(h[1]) * 60;
+    found = true;
+  }
   const m = s.match(/(\d+)\s*(?:m|min|minute)/i);
-  if (m) { mins += Number(m[1]); found = true; }
+  if (m) {
+    mins += Number(m[1]);
+    found = true;
+  }
   if (found) return mins;
   const n = s.match(/(\d+)/);
   return n ? Number(n[1]) : null;
 }
 
-function normalizeIngredients(list: MealieIngredient[]): Array<{ text?: string; heading?: string }> {
+function normalizeIngredients(
+  list: MealieIngredient[]
+): Array<{ text?: string; heading?: string }> {
   const out: Array<{ text?: string; heading?: string }> = [];
   for (const ing of list) {
     const heading = (ing.title || '').trim();
@@ -129,9 +146,10 @@ export function normalizeMealieRecipe(detail: MealieRecipeDetail, base: string):
   const perform = parseDurationMinutes(detail.performTime);
   // Mealie splits prep/perform; when only totalTime is set, surface it as cook.
   const cook = perform ?? (prep === null ? parseDurationMinutes(detail.totalTime) : null);
-  const servings = typeof detail.recipeServings === 'number' && detail.recipeServings > 0
-    ? Math.round(detail.recipeServings)
-    : null;
+  const servings =
+    typeof detail.recipeServings === 'number' && detail.recipeServings > 0
+      ? Math.round(detail.recipeServings)
+      : null;
   return {
     externalId: detail.id,
     externalUpdatedAt: detail.updatedAt ? new Date(detail.updatedAt) : null,
@@ -144,7 +162,9 @@ export function normalizeMealieRecipe(detail: MealieRecipeDetail, base: string):
     cookTime: cook,
     servings,
     tags: (detail.tags ?? []).map((t) => (t.name || '').trim()).filter(Boolean),
-    remoteImageUrl: detail.image ? `${base}/api/media/recipes/${detail.id}/images/original.webp` : null,
+    remoteImageUrl: detail.image
+      ? `${base}/api/media/recipes/${detail.id}/images/original.webp`
+      : null,
   };
 }
 
@@ -168,18 +188,23 @@ async function listRecipeSlugs(base: string, token: string): Promise<string[]> {
   return slugs.slice(0, MAX_RECIPES);
 }
 
-async function fetchRecipeDetail(base: string, token: string, slug: string): Promise<MealieRecipeDetail> {
+async function fetchRecipeDetail(
+  base: string,
+  token: string,
+  slug: string
+): Promise<MealieRecipeDetail> {
   const res = await safeFetch(`${base}/api/recipes/${encodeURIComponent(slug)}`, {
     headers: authHeaders(token),
   });
-  if (!res.ok) throw new Error(`Failed to fetch Mealie recipe ${slug}: ${res.status} ${res.statusText}`);
+  if (!res.ok)
+    throw new Error(`Failed to fetch Mealie recipe ${slug}: ${res.status} ${res.statusText}`);
   return (await res.json()) as MealieRecipeDetail;
 }
 
 /** Fetch + normalize every recipe from a Mealie server (bounded). */
 export async function fetchMealieRecipes(
   serverUrl: string,
-  token: string,
+  token: string
 ): Promise<{ recipes: NormalizedRecipe[]; total: number }> {
   validatePublicUrl(serverUrl);
   const base = baseUrl(serverUrl);
@@ -200,7 +225,7 @@ export async function fetchMealieRecipes(
 export async function fetchMealieRecipeBySlug(
   serverUrl: string,
   token: string,
-  slug: string,
+  slug: string
 ): Promise<NormalizedRecipe | null> {
   validatePublicUrl(serverUrl);
   const base = baseUrl(serverUrl);
@@ -208,7 +233,10 @@ export async function fetchMealieRecipeBySlug(
     const detail = await fetchRecipeDetail(base, token, slug);
     if (detail && detail.name) return normalizeMealieRecipe(detail, base);
   } catch (err) {
-    console.error(`[mealie] failed to fetch recipe ${slug}:`, err instanceof Error ? err.message : err);
+    console.error(
+      `[mealie] failed to fetch recipe ${slug}:`,
+      err instanceof Error ? err.message : err
+    );
   }
   return null;
 }
@@ -216,7 +244,7 @@ export async function fetchMealieRecipeBySlug(
 /** Fetch all meal-plan entries from Mealie (bounded). */
 export async function fetchMealieMealPlan(
   serverUrl: string,
-  token: string,
+  token: string
 ): Promise<MealieMealPlanEntry[]> {
   validatePublicUrl(serverUrl);
   const base = baseUrl(serverUrl);
@@ -225,10 +253,14 @@ export async function fetchMealieMealPlan(
   let guard = 0;
   while (out.length < MAX_MEAL_PLAN && guard < 200) {
     guard += 1;
-    const res = await safeFetch(`${base}/api/households/mealplans?page=${page}&perPage=${PAGE_SIZE}`, {
-      headers: authHeaders(token),
-    });
-    if (!res.ok) throw new Error(`Failed to list Mealie meal plan: ${res.status} ${res.statusText}`);
+    const res = await safeFetch(
+      `${base}/api/households/mealplans?page=${page}&perPage=${PAGE_SIZE}`,
+      {
+        headers: authHeaders(token),
+      }
+    );
+    if (!res.ok)
+      throw new Error(`Failed to list Mealie meal plan: ${res.status} ${res.statusText}`);
     const data = (await res.json()) as MealiePage<MealieMealPlanEntry>;
     const items = data.items ?? [];
     for (const e of items) if (e && typeof e.id === 'number' && e.date) out.push(e);

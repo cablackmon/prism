@@ -50,7 +50,9 @@ export function InputSection() {
         }
         if (listsRes.ok) {
           const data = await listsRes.json();
-          setLists((data as { id: string; name: string }[]).map(l => ({ id: l.id, name: l.name })));
+          setLists(
+            (data as { id: string; name: string }[]).map((l) => ({ id: l.id, name: l.name }))
+          );
         }
       } finally {
         setLoading(false);
@@ -76,7 +78,7 @@ export function InputSection() {
     }
   }, []);
 
-  if (loading) return <div className="h-32 animate-pulse bg-muted rounded" />;
+  if (loading) return <div className="h-32 animate-pulse rounded bg-muted" />;
 
   return (
     <div className="space-y-6">
@@ -95,8 +97,8 @@ export function InputSection() {
             <div>
               <CardTitle className="text-lg">Virtual Keyboard</CardTitle>
               <CardDescription>
-                Shows an on-screen keyboard when tapping text fields on a touchscreen.
-                Disable if using a physical keyboard.
+                Shows an on-screen keyboard when tapping text fields on a touchscreen. Disable if
+                using a physical keyboard.
               </CardDescription>
             </div>
           </div>
@@ -107,7 +109,7 @@ export function InputSection() {
             <Switch
               id="kb-enabled"
               checked={keyboardEnabled}
-              onCheckedChange={v => {
+              onCheckedChange={(v) => {
                 setKeyboardEnabled(v);
                 save('input.virtualKeyboardEnabled', v);
               }}
@@ -124,8 +126,8 @@ export function InputSection() {
             <div>
               <CardTitle className="text-lg">Barcode Scanner</CardTitle>
               <CardDescription>
-                Plug in a USB or Bluetooth barcode scanner to add items to your shopping list
-                by scanning barcodes.
+                Plug in a USB or Bluetooth barcode scanner to add items to your shopping list by
+                scanning barcodes.
               </CardDescription>
             </div>
           </div>
@@ -136,7 +138,7 @@ export function InputSection() {
             <Switch
               id="scanner-enabled"
               checked={scannerEnabled}
-              onCheckedChange={v => {
+              onCheckedChange={(v) => {
                 setScannerEnabled(v);
                 save('scanner.enabled', v);
               }}
@@ -147,7 +149,7 @@ export function InputSection() {
             <Label>Default shopping list</Label>
             <Select
               value={defaultListId || '__auto__'}
-              onValueChange={v => {
+              onValueChange={(v) => {
                 const val = v === '__auto__' ? '' : v;
                 setDefaultListId(val);
                 save('scanner.defaultListId', val || null);
@@ -159,13 +161,16 @@ export function InputSection() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="__auto__">Auto (Groceries list)</SelectItem>
-                {lists.map(l => (
-                  <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>
+                {lists.map((l) => (
+                  <SelectItem key={l.id} value={l.id}>
+                    {l.name}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
             <p className="text-[11px] text-muted-foreground">
-              Scanned items go here. Falls back to the first list named &quot;Groceries&quot; if not set.
+              Scanned items go here. Falls back to the first list named &quot;Groceries&quot; if not
+              set.
             </p>
           </div>
 
@@ -175,7 +180,7 @@ export function InputSection() {
               id="sound-enabled"
               checked={soundEnabled}
               disabled={!scannerEnabled}
-              onCheckedChange={v => {
+              onCheckedChange={(v) => {
                 setSoundEnabled(v);
                 save('scanner.soundEnabled', v);
               }}
@@ -186,7 +191,7 @@ export function InputSection() {
             <Label>Sound style</Label>
             <Select
               value={soundStyle}
-              onValueChange={v => {
+              onValueChange={(v) => {
                 setSoundStyle(v as 'beep' | 'scan');
                 save('scanner.soundStyle', v);
               }}

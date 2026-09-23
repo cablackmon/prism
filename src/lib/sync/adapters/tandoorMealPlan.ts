@@ -36,7 +36,10 @@ interface Payload extends NormalizedMeal {
 }
 
 async function loadTimeSettings(): Promise<{ weekStartsOn: 0 | 1; timezone: string }> {
-  const rows = await db.select().from(settings).where(inArray(settings.key, ['weekStartsOn', 'timezone']));
+  const rows = await db
+    .select()
+    .from(settings)
+    .where(inArray(settings.key, ['weekStartsOn', 'timezone']));
   const byKey = new Map(rows.map((r) => [r.key, r.value]));
   return {
     weekStartsOn: byKey.get('weekStartsOn') === '1' ? 1 : 0,
@@ -62,7 +65,7 @@ function normalizeEntry(
   entry: TandoorMealPlanEntry,
   weekStartsOn: 0 | 1,
   timezone: string,
-  importedRecipeIds: Set<string>,
+  importedRecipeIds: Set<string>
 ): Payload {
   const { date, time: fromDateTime } = zonedParts(entry.from_date, timezone);
   const weekOf = format(startOfWeek(date, { weekStartsOn }), 'yyyy-MM-dd');
@@ -72,7 +75,8 @@ function normalizeEntry(
   const mealTypeTime = entry.meal_type?.time?.match(/^(\d{2}:\d{2})/)?.[1] ?? null;
   const recipeExternalId = entry.recipe?.id != null ? String(entry.recipe.id) : null;
   const name =
-    (entry.recipe_name || entry.recipe?.name || entry.title || 'Planned meal').trim() || 'Planned meal';
+    (entry.recipe_name || entry.recipe?.name || entry.title || 'Planned meal').trim() ||
+    'Planned meal';
   return {
     entryId: String(entry.id),
     recipeExternalId,
@@ -110,11 +114,16 @@ export const tandoorMealPlanAdapter: EntitySyncAdapter<Payload> = {
         .where(and(eq(recipes.sourceId, sourceId), isNotNull(recipes.externalId))),
     ]);
     const importedRecipeIds = new Set(
-      importedRows.map((r) => r.externalId).filter((v): v is string => v !== null),
+      importedRows.map((r) => r.externalId).filter((v): v is string => v !== null)
     );
 
     return entries.map((entry): RemoteItem<Payload> => {
-      const p = normalizeEntry(entry, timeSettings.weekStartsOn, timeSettings.timezone, importedRecipeIds);
+      const p = normalizeEntry(
+        entry,
+        timeSettings.weekStartsOn,
+        timeSettings.timezone,
+        importedRecipeIds
+      );
       return {
         externalId: p.entryId,
         updatedAt: null,

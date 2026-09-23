@@ -27,14 +27,17 @@ interface UseShoppingListsResult {
   error: string | null;
   refresh: () => Promise<void>;
   toggleItem: (itemId: string, checked: boolean) => Promise<void>;
-  addItem: (listId: string, data: {
-    name: string;
-    quantity?: number;
-    unit?: string;
-    category?: string;
-    notes?: string;
-    addedBy?: string;
-  }) => Promise<ShoppingItem>;
+  addItem: (
+    listId: string,
+    data: {
+      name: string;
+      quantity?: number;
+      unit?: string;
+      category?: string;
+      notes?: string;
+      addedBy?: string;
+    }
+  ) => Promise<ShoppingItem>;
   deleteItem: (itemId: string) => Promise<void>;
 }
 
@@ -42,10 +45,7 @@ interface UseShoppingListsResult {
  * Hook for fetching shopping lists and their items from the API
  */
 export function useShoppingLists(options: UseShoppingListsOptions = {}): UseShoppingListsResult {
-  const {
-    refreshInterval = 5 * 60 * 1000,
-    enabled = true,
-  } = options;
+  const { refreshInterval = 5 * 60 * 1000, enabled = true } = options;
 
   const CACHE_KEY = '/api/shopping-lists?includeItems=true';
   const cached = navCacheGet<ShoppingList[]>(CACHE_KEY);
@@ -72,59 +72,70 @@ export function useShoppingLists(options: UseShoppingListsOptions = {}): UseShop
 
       const data = await response.json();
 
-      const listsWithItems = data.lists.map((list: {
-        id: string;
-        name: string;
-        description: string | null;
-        listType: 'grocery' | 'hardware' | 'general' | 'other' | null;
-        sortOrder: number;
-        visibleCategories: string[] | null;
-        assignedTo: string | null;
-        createdBy: {
+      const listsWithItems = data.lists.map(
+        (list: {
           id: string;
           name: string;
-          color: string;
-        } | null;
-        createdAt: string;
-        items: Array<{
-          id: string;
-          listId: string;
-          name: string;
-          quantity: number | null;
-          unit: string | null;
-          category: 'produce' | 'dairy' | 'meat' | 'bakery' | 'frozen' | 'pantry' | 'household' | 'other' | null;
-          checked: boolean;
-          notes: string | null;
-          addedBy: {
+          description: string | null;
+          listType: 'grocery' | 'hardware' | 'general' | 'other' | null;
+          sortOrder: number;
+          visibleCategories: string[] | null;
+          assignedTo: string | null;
+          createdBy: {
             id: string;
             name: string;
             color: string;
           } | null;
           createdAt: string;
-        }>;
-      }) => ({
-        id: list.id,
-        name: list.name,
-        description: list.description || undefined,
-        listType: list.listType || 'grocery',
-        sortOrder: list.sortOrder,
-        visibleCategories: list.visibleCategories ?? undefined,
-        items: (list.items || []).map((item) => ({
-          id: item.id,
-          listId: item.listId,
-          name: item.name,
-          quantity: item.quantity || undefined,
-          unit: item.unit || undefined,
-          category: item.category || undefined,
-          checked: item.checked,
-          notes: item.notes || undefined,
-          addedBy: item.addedBy || undefined,
-          createdAt: new Date(item.createdAt),
-        })),
-        assignedTo: list.assignedTo || undefined,
-        createdBy: list.createdBy || undefined,
-        createdAt: new Date(list.createdAt),
-      }));
+          items: Array<{
+            id: string;
+            listId: string;
+            name: string;
+            quantity: number | null;
+            unit: string | null;
+            category:
+              | 'produce'
+              | 'dairy'
+              | 'meat'
+              | 'bakery'
+              | 'frozen'
+              | 'pantry'
+              | 'household'
+              | 'other'
+              | null;
+            checked: boolean;
+            notes: string | null;
+            addedBy: {
+              id: string;
+              name: string;
+              color: string;
+            } | null;
+            createdAt: string;
+          }>;
+        }) => ({
+          id: list.id,
+          name: list.name,
+          description: list.description || undefined,
+          listType: list.listType || 'grocery',
+          sortOrder: list.sortOrder,
+          visibleCategories: list.visibleCategories ?? undefined,
+          items: (list.items || []).map((item) => ({
+            id: item.id,
+            listId: item.listId,
+            name: item.name,
+            quantity: item.quantity || undefined,
+            unit: item.unit || undefined,
+            category: item.category || undefined,
+            checked: item.checked,
+            notes: item.notes || undefined,
+            addedBy: item.addedBy || undefined,
+            createdAt: new Date(item.createdAt),
+          })),
+          assignedTo: list.assignedTo || undefined,
+          createdBy: list.createdBy || undefined,
+          createdAt: new Date(list.createdAt),
+        })
+      );
 
       navCacheSet(CACHE_KEY, listsWithItems);
       setLists(listsWithItems);
@@ -139,58 +150,56 @@ export function useShoppingLists(options: UseShoppingListsOptions = {}): UseShop
   /**
    * Toggle shopping item checked status
    */
-  const toggleItem = useCallback(
-    async (itemId: string, checked: boolean) => {
-      // Optimistically update UI immediately
+  const toggleItem = useCallback(async (itemId: string, checked: boolean) => {
+    // Optimistically update UI immediately
+    setLists((prev) =>
+      prev.map((list) => ({
+        ...list,
+        items: list.items.map((item) => (item.id === itemId ? { ...item, checked } : item)),
+      }))
+    );
+
+    try {
+      const response = await fetch(`/api/shopping-items/${itemId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ checked }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to update item');
+      }
+    } catch (err) {
+      console.error('Error updating item:', err);
+      // Revert optimistic update on failure
       setLists((prev) =>
         prev.map((list) => ({
           ...list,
           items: list.items.map((item) =>
-            item.id === itemId ? { ...item, checked } : item
+            item.id === itemId ? { ...item, checked: !checked } : item
           ),
         }))
       );
-
-      try {
-        const response = await fetch(`/api/shopping-items/${itemId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ checked }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || 'Failed to update item');
-        }
-      } catch (err) {
-        console.error('Error updating item:', err);
-        // Revert optimistic update on failure
-        setLists((prev) =>
-          prev.map((list) => ({
-            ...list,
-            items: list.items.map((item) =>
-              item.id === itemId ? { ...item, checked: !checked } : item
-            ),
-          }))
-        );
-        throw err;
-      }
-    },
-    []
-  );
+      throw err;
+    }
+  }, []);
 
   /**
    * Add a new item to a shopping list
    */
   const addItem = useCallback(
-    async (listId: string, data: {
-      name: string;
-      quantity?: number;
-      unit?: string;
-      category?: string;
-      notes?: string;
-      addedBy?: string;
-    }) => {
+    async (
+      listId: string,
+      data: {
+        name: string;
+        quantity?: number;
+        unit?: string;
+        category?: string;
+        notes?: string;
+        addedBy?: string;
+      }
+    ) => {
       try {
         const response = await fetch('/api/shopping-items', {
           method: 'POST',
@@ -200,9 +209,7 @@ export function useShoppingLists(options: UseShoppingListsOptions = {}): UseShop
 
         if (!response.ok) {
           const data = await response.json().catch(() => ({}));
-          const detail = data.details?.[0]?.message
-            ?? data.error
-            ?? `HTTP ${response.status}`;
+          const detail = data.details?.[0]?.message ?? data.error ?? `HTTP ${response.status}`;
           throw new Error(`Failed to add item: ${detail}`);
         }
 

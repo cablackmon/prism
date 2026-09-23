@@ -46,7 +46,16 @@ export interface CreatedShoppingItem {
   name: string;
   quantity: number | null;
   unit: string | null;
-  category: 'produce' | 'dairy' | 'meat' | 'bakery' | 'frozen' | 'pantry' | 'household' | 'other' | null;
+  category:
+    | 'produce'
+    | 'dairy'
+    | 'meat'
+    | 'bakery'
+    | 'frozen'
+    | 'pantry'
+    | 'household'
+    | 'other'
+    | null;
   notes: string | null;
   checked: boolean;
 }
@@ -86,14 +95,22 @@ export interface AddShoppingItemModalProps {
  */
 function getCategoryEmoji(category: string): string {
   switch (category) {
-    case 'produce': return '🥬';
-    case 'dairy': return '🥛';
-    case 'meat': return '🥩';
-    case 'bakery': return '🥖';
-    case 'frozen': return '🧊';
-    case 'pantry': return '🥫';
-    case 'household': return '🧴';
-    default: return '🛒';
+    case 'produce':
+      return '🥬';
+    case 'dairy':
+      return '🥛';
+    case 'meat':
+      return '🥩';
+    case 'bakery':
+      return '🥖';
+    case 'frozen':
+      return '🧊';
+    case 'pantry':
+      return '🥫';
+    case 'household':
+      return '🧴';
+    default:
+      return '🛒';
   }
 }
 
@@ -114,7 +131,9 @@ export function AddShoppingItemModal({
   const [name, setName] = useState('');
   const [quantity, setQuantity] = useState('');
   const [unit, setUnit] = useState('');
-  const [category, setCategory] = useState<'produce' | 'dairy' | 'meat' | 'bakery' | 'frozen' | 'pantry' | 'household' | 'other'>('other');
+  const [category, setCategory] = useState<
+    'produce' | 'dairy' | 'meat' | 'bakery' | 'frozen' | 'pantry' | 'household' | 'other'
+  >('other');
   const [notes, setNotes] = useState('');
 
   // Loading/error state
@@ -300,8 +319,19 @@ export function AddShoppingItemModal({
           {/* Category */}
           <div className="space-y-2">
             <Label>Category</Label>
-            <div className="flex gap-2 flex-wrap">
-              {(['produce', 'dairy', 'meat', 'bakery', 'frozen', 'pantry', 'household', 'other'] as const).map((cat) => (
+            <div className="flex flex-wrap gap-2">
+              {(
+                [
+                  'produce',
+                  'dairy',
+                  'meat',
+                  'bakery',
+                  'frozen',
+                  'pantry',
+                  'household',
+                  'other',
+                ] as const
+              ).map((cat) => (
                 <Button
                   key={cat}
                   type="button"
@@ -329,9 +359,7 @@ export function AddShoppingItemModal({
 
           {/* Error message */}
           {error && (
-            <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-lg">
-              {error}
-            </div>
+            <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
           )}
 
           {/* Footer */}
@@ -347,11 +375,13 @@ export function AddShoppingItemModal({
             <Button type="submit" disabled={!name.trim() || !listId || isSubmitting}>
               {isSubmitting ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   {isEditMode ? 'Saving...' : 'Adding...'}
                 </>
+              ) : isEditMode ? (
+                'Save Changes'
               ) : (
-                isEditMode ? 'Save Changes' : 'Add Item'
+                'Add Item'
               )}
             </Button>
           </DialogFooter>

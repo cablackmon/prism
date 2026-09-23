@@ -25,16 +25,18 @@ export function loadScreensaverLayout(): WidgetConfig[] {
     if (!stored) return DEFAULT_SCREENSAVER_LAYOUT;
     let parsed = JSON.parse(stored) as WidgetConfig[];
     // Migrate 12-col screensaver layouts to 48-col
-    const maxRight = Math.max(...parsed.map(w => w.x + w.w), 0);
+    const maxRight = Math.max(...parsed.map((w) => w.x + w.w), 0);
     if (maxRight > 0 && maxRight <= 12) {
-      parsed = parsed.map(w => ({ ...w, x: w.x * 4, y: w.y * 4, w: w.w * 4, h: w.h * 4 }));
+      parsed = parsed.map((w) => ({ ...w, x: w.x * 4, y: w.y * 4, w: w.w * 4, h: w.h * 4 }));
       localStorage.setItem(SCREENSAVER_LAYOUT_KEY, JSON.stringify(parsed));
     }
-    return DEFAULT_SCREENSAVER_LAYOUT.map(def => {
-      const saved = parsed.find(p => p.i === def.i);
+    return DEFAULT_SCREENSAVER_LAYOUT.map((def) => {
+      const saved = parsed.find((p) => p.i === def.i);
       return saved ? { ...def, ...saved } : def;
     });
-  } catch { return DEFAULT_SCREENSAVER_LAYOUT; }
+  } catch {
+    return DEFAULT_SCREENSAVER_LAYOUT;
+  }
 }
 
 export function saveScreensaverLayout(layout: WidgetConfig[]) {
@@ -45,18 +47,20 @@ export function getScreensaverPresets(): Array<{ name: string; widgets: WidgetCo
   try {
     const stored = localStorage.getItem(SCREENSAVER_PRESETS_KEY);
     return stored ? JSON.parse(stored) : [];
-  } catch { return []; }
+  } catch {
+    return [];
+  }
 }
 
 export function saveScreensaverPreset(name: string, widgets: WidgetConfig[]) {
   const presets = getScreensaverPresets();
-  const existing = presets.findIndex(p => p.name === name);
+  const existing = presets.findIndex((p) => p.name === name);
   if (existing >= 0) presets[existing] = { name, widgets };
   else presets.push({ name, widgets });
   localStorage.setItem(SCREENSAVER_PRESETS_KEY, JSON.stringify(presets));
 }
 
 export function deleteScreensaverPreset(name: string) {
-  const presets = getScreensaverPresets().filter(p => p.name !== name);
+  const presets = getScreensaverPresets().filter((p) => p.name !== name);
   localStorage.setItem(SCREENSAVER_PRESETS_KEY, JSON.stringify(presets));
 }

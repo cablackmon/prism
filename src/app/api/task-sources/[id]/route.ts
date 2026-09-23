@@ -11,10 +11,7 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-export async function GET(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function GET(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -38,26 +35,17 @@ export async function GET(
       .where(eq(taskSources.id, id));
 
     if (!source) {
-      return NextResponse.json(
-        { error: 'Task source not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Task source not found' }, { status: 404 });
     }
 
     return NextResponse.json(source);
   } catch (error) {
     logError('Error fetching task source:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch task source' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch task source' }, { status: 500 });
   }
 }
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -68,16 +56,10 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
 
-    const [existing] = await db
-      .select()
-      .from(taskSources)
-      .where(eq(taskSources.id, id));
+    const [existing] = await db.select().from(taskSources).where(eq(taskSources.id, id));
 
     if (!existing) {
-      return NextResponse.json(
-        { error: 'Task source not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Task source not found' }, { status: 404 });
     }
 
     const updateData: Record<string, unknown> = {
@@ -123,10 +105,7 @@ export async function PATCH(
       .returning();
 
     if (!updated) {
-      return NextResponse.json(
-        { error: 'Task source not found after update' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Task source not found after update' }, { status: 404 });
     }
 
     await invalidateEntity('task-sources');
@@ -154,17 +133,11 @@ export async function PATCH(
     });
   } catch (error) {
     logError('Error updating task source:', error);
-    return NextResponse.json(
-      { error: 'Failed to update task source' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to update task source' }, { status: 500 });
   }
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -174,16 +147,10 @@ export async function DELETE(
   try {
     const { id } = await params;
 
-    const [existing] = await db
-      .select()
-      .from(taskSources)
-      .where(eq(taskSources.id, id));
+    const [existing] = await db.select().from(taskSources).where(eq(taskSources.id, id));
 
     if (!existing) {
-      return NextResponse.json(
-        { error: 'Task source not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Task source not found' }, { status: 404 });
     }
 
     await db.delete(taskSources).where(eq(taskSources.id, id));
@@ -208,9 +175,6 @@ export async function DELETE(
     });
   } catch (error) {
     logError('Error deleting task source:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete task source' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to delete task source' }, { status: 500 });
   }
 }

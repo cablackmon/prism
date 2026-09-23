@@ -20,7 +20,7 @@ interface PhotoSourceSummary {
 }
 
 const PhotosIcon = () => (
-  <div className="h-6 w-6 flex items-center justify-center rounded bg-gradient-to-br from-blue-500 to-purple-500">
+  <div className="flex h-6 w-6 items-center justify-center rounded bg-gradient-to-br from-blue-500 to-purple-500">
     <ImageIcon className="h-4 w-4 text-white" aria-hidden="true" />
   </div>
 );
@@ -103,13 +103,10 @@ export function PhotoSourcesCard({ forceSubSectionOpen }: Props) {
           {hasSources ? (
             <ul className="space-y-1.5">
               {sources!.map((s) => (
-                <li
-                  key={s.id}
-                  className="flex items-center gap-2 text-sm py-1"
-                >
+                <li key={s.id} className="flex items-center gap-2 py-1 text-sm">
                   {iconForType(s.type)}
-                  <span className="truncate flex-1">{s.name}</span>
-                  <span className="text-xs text-muted-foreground flex-shrink-0">
+                  <span className="flex-1 truncate">{s.name}</span>
+                  <span className="flex-shrink-0 text-xs text-muted-foreground">
                     {s.photoCount} photos
                   </span>
                 </li>
@@ -122,10 +119,7 @@ export function PhotoSourcesCard({ forceSubSectionOpen }: Props) {
           )}
           <p className="text-xs text-muted-foreground">
             Folder picker, reorder, and source-type connect forms live in{' '}
-            <Link
-              href="/settings?section=photos"
-              className="text-primary hover:underline"
-            >
+            <Link href="/settings?section=photos" className="text-primary hover:underline">
               Photos settings
             </Link>
             .

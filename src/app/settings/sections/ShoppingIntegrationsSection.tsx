@@ -42,9 +42,7 @@ export function ShoppingIntegrationsSection({
       {!embedded && (
         <div>
           <h2 className="text-2xl font-bold">Shopping Sync</h2>
-          <p className="text-muted-foreground">
-            Manage shopping list sync with external apps
-          </p>
+          <p className="text-muted-foreground">Manage shopping list sync with external apps</p>
         </div>
       )}
 
@@ -84,9 +82,7 @@ export function ShoppingIntegrationsSection({
         emptyText="No shopping lists yet. Create one from the Shopping page."
         entityIcon={<ShoppingCart className="h-5 w-5 text-muted-foreground" />}
         sources={integration.sources}
-        getSourceForEntity={(list) =>
-          integration.sources.find((s) => s.shoppingListId === list.id)
-        }
+        getSourceForEntity={(list) => integration.sources.find((s) => s.shoppingListId === list.id)}
         onConnect={handleConnectEntity}
       />
 
@@ -97,7 +93,9 @@ export function ShoppingIntegrationsSection({
         description={
           <>
             Choose which service to sync with{' '}
-            <strong>{shoppingLists.find(l => l.id === integration.connectingEntityId)?.name}</strong>
+            <strong>
+              {shoppingLists.find((l) => l.id === integration.connectingEntityId)?.name}
+            </strong>
           </>
         }
         onSelectMsTodo={() => {

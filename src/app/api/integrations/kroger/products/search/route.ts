@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
   if (limited) return limited;
 
   try {
-    const body = await request.json() as { items?: SearchItem[] };
+    const body = (await request.json()) as { items?: SearchItem[] };
     const items = Array.isArray(body.items) ? body.items : [];
     if (items.length === 0) {
       return NextResponse.json({ results: [] });
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     if (!tokens) {
       return NextResponse.json(
         { error: 'Not connected to Kroger', code: 'KROGER_NOT_CONNECTED' },
-        { status: 401 },
+        { status: 401 }
       );
     }
 
@@ -60,10 +60,10 @@ export async function POST(request: NextRequest) {
           // If the user previously picked a SKU for this item and it still
           // shows up in the search results, surface it as the preselection.
           // Otherwise pre-select the first candidate.
-          const preselectedProductId = item.cachedProductId
-            && candidates.some((c) => c.productId === item.cachedProductId)
-            ? item.cachedProductId
-            : candidates[0]?.productId;
+          const preselectedProductId =
+            item.cachedProductId && candidates.some((c) => c.productId === item.cachedProductId)
+              ? item.cachedProductId
+              : candidates[0]?.productId;
           return {
             id: item.id,
             query: item.query,
@@ -72,9 +72,14 @@ export async function POST(request: NextRequest) {
           };
         } catch (err) {
           logError(`Kroger search failed for "${item.query}":`, err);
-          return { id: item.id, query: item.query, candidates: [], preselectedProductId: undefined };
+          return {
+            id: item.id,
+            query: item.query,
+            candidates: [],
+            preselectedProductId: undefined,
+          };
         }
-      }),
+      })
     );
 
     return NextResponse.json({ results });

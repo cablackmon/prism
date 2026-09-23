@@ -11,10 +11,7 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -30,15 +27,10 @@ export async function DELETE(
       .where(eq(shoppingListSources.id, id));
 
     if (!source) {
-      return NextResponse.json(
-        { error: 'Shopping list source not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Shopping list source not found' }, { status: 404 });
     }
 
-    await db
-      .delete(shoppingListSources)
-      .where(eq(shoppingListSources.id, id));
+    await db.delete(shoppingListSources).where(eq(shoppingListSources.id, id));
 
     await invalidateEntity('shopping-list-sources');
     await invalidateEntity('shopping-lists');
@@ -54,17 +46,11 @@ export async function DELETE(
     return NextResponse.json({ success: true });
   } catch (error) {
     logError('Error deleting shopping list source:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete shopping list source' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to delete shopping list source' }, { status: 500 });
   }
 }
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -82,10 +68,7 @@ export async function PATCH(
       .where(eq(shoppingListSources.id, id));
 
     if (!source) {
-      return NextResponse.json(
-        { error: 'Shopping list source not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Shopping list source not found' }, { status: 404 });
     }
 
     const updates: Record<string, unknown> = {
@@ -134,9 +117,6 @@ export async function PATCH(
     });
   } catch (error) {
     logError('Error updating shopping list source:', error);
-    return NextResponse.json(
-      { error: 'Failed to update shopping list source' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to update shopping list source' }, { status: 500 });
   }
 }

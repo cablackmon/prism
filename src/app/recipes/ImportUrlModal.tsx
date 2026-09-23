@@ -47,10 +47,9 @@ export function ImportUrlModal({ onClose, onImport }: ImportUrlModalProps) {
 
         <div className="space-y-4 py-4">
           <p className="text-sm text-muted-foreground">
-            Paste a recipe URL and we&apos;ll extract the recipe details.
-            Works with Food.com, Bon App&eacute;tit, NYT Cooking, and most sites
-            with schema.org markup. Some sites (AllRecipes, Serious Eats) may
-            block automated access.
+            Paste a recipe URL and we&apos;ll extract the recipe details. Works with Food.com, Bon
+            App&eacute;tit, NYT Cooking, and most sites with schema.org markup. Some sites
+            (AllRecipes, Serious Eats) may block automated access.
           </p>
 
           <div className="space-y-2">

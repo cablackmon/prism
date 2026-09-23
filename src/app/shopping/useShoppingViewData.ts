@@ -36,12 +36,15 @@ export function useShoppingViewData() {
     if (!showChecked) {
       items = items.filter((item) => !item.checked);
     }
-    return items.reduce((acc, item) => {
-      const category = item.category || 'other';
-      if (!acc[category]) acc[category] = [];
-      acc[category].push(item);
-      return acc;
-    }, {} as Record<string, ShoppingItem[]>);
+    return items.reduce(
+      (acc, item) => {
+        const category = item.category || 'other';
+        if (!acc[category]) acc[category] = [];
+        acc[category].push(item);
+        return acc;
+      },
+      {} as Record<string, ShoppingItem[]>
+    );
   }, [activeList, showChecked]);
 
   const toggleItem = async (itemId: string) => {
@@ -67,16 +70,31 @@ export function useShoppingViewData() {
   const progress = totalItems > 0 ? (checkedItems / totalItems) * 100 : 0;
 
   return {
-    lists, loading, error, refreshLists, familyMembers,
-    requireAuth, apiAddItem,
-    activeListId, setActiveListId,
-    showChecked, setShowChecked,
-    showAddItemModal, setShowAddItemModal,
-    editingItem, setEditingItem,
-    showListModal, setShowListModal,
-    editingList, setEditingList,
-    activeList, filteredItems,
-    toggleItem, deleteItem,
-    totalItems, checkedItems, progress,
+    lists,
+    loading,
+    error,
+    refreshLists,
+    familyMembers,
+    requireAuth,
+    apiAddItem,
+    activeListId,
+    setActiveListId,
+    showChecked,
+    setShowChecked,
+    showAddItemModal,
+    setShowAddItemModal,
+    editingItem,
+    setEditingItem,
+    showListModal,
+    setShowListModal,
+    editingList,
+    setEditingList,
+    activeList,
+    filteredItems,
+    toggleItem,
+    deleteItem,
+    totalItems,
+    checkedItems,
+    progress,
   };
 }

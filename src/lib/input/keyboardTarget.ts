@@ -16,7 +16,8 @@ export function isVirtualKeyboardTarget(el: Element | null | undefined): boolean
   if (e.closest('[data-virtual-keyboard]')) return true;
   if (typeof e.hasAttribute === 'function' && e.hasAttribute('data-skbtn')) return true;
   const cls = typeof e.className === 'string' ? e.className : '';
-  if (cls.includes('hg-button') || cls.includes('simple-keyboard') || cls.includes('hg-theme')) return true;
+  if (cls.includes('hg-button') || cls.includes('simple-keyboard') || cls.includes('hg-theme'))
+    return true;
   if (e.closest('.simple-keyboard')) return true;
   return false;
 }

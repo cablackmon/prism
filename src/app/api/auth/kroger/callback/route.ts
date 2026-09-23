@@ -40,7 +40,9 @@ export async function GET(request: Request) {
     return NextResponse.redirect(settingsUrl(request, 'section=shopping&error=kroger_auth_denied'));
   }
   if (!code || !state) {
-    return NextResponse.redirect(settingsUrl(request, 'section=shopping&error=kroger_missing_code'));
+    return NextResponse.redirect(
+      settingsUrl(request, 'section=shopping&error=kroger_missing_code')
+    );
   }
 
   // Verify state matches the user that started the flow + recover the
@@ -51,19 +53,25 @@ export async function GET(request: Request) {
   if (redis) {
     const stored = await redis.get(`kroger-oauth-state:${state}`);
     if (!stored) {
-      return NextResponse.redirect(settingsUrl(request, 'section=shopping&error=kroger_state_mismatch'));
+      return NextResponse.redirect(
+        settingsUrl(request, 'section=shopping&error=kroger_state_mismatch')
+      );
     }
     try {
       const parsed = JSON.parse(stored) as { userId: string; redirectUri: string };
       if (parsed.userId !== auth.userId) {
-        return NextResponse.redirect(settingsUrl(request, 'section=shopping&error=kroger_state_mismatch'));
+        return NextResponse.redirect(
+          settingsUrl(request, 'section=shopping&error=kroger_state_mismatch')
+        );
       }
       redirectUri = parsed.redirectUri;
     } catch {
       // Legacy state values were a plain userId string — fall back to that
       // and use the request-derived redirectUri.
       if (stored !== auth.userId) {
-        return NextResponse.redirect(settingsUrl(request, 'section=shopping&error=kroger_state_mismatch'));
+        return NextResponse.redirect(
+          settingsUrl(request, 'section=shopping&error=kroger_state_mismatch')
+        );
       }
     }
     await redis.del(`kroger-oauth-state:${state}`);
@@ -76,6 +84,8 @@ export async function GET(request: Request) {
     return NextResponse.redirect(settingsUrl(request, 'section=shopping&kroger=connected'));
   } catch (err) {
     logError('Kroger OAuth callback error:', err);
-    return NextResponse.redirect(settingsUrl(request, 'section=shopping&error=kroger_token_exchange_failed'));
+    return NextResponse.redirect(
+      settingsUrl(request, 'section=shopping&error=kroger_token_exchange_failed')
+    );
   }
 }

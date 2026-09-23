@@ -10,18 +10,18 @@ import { logError } from '@/lib/utils/logError';
  * Parent-only.
  */
 export async function GET() {
-  return withAuth(async () => {
-    try {
-      const tokens = await listApiTokens();
-      return NextResponse.json({ tokens });
-    } catch (error) {
-      logError('Error listing API tokens:', error);
-      return NextResponse.json(
-        { error: 'Failed to list API tokens' },
-        { status: 500 }
-      );
-    }
-  }, { permission: 'canModifySettings' });
+  return withAuth(
+    async () => {
+      try {
+        const tokens = await listApiTokens();
+        return NextResponse.json({ tokens });
+      } catch (error) {
+        logError('Error listing API tokens:', error);
+        return NextResponse.json({ error: 'Failed to list API tokens' }, { status: 500 });
+      }
+    },
+    { permission: 'canModifySettings' }
+  );
 }
 
 /**
@@ -30,39 +30,42 @@ export async function GET() {
  * Parent-only.
  */
 export async function POST(request: NextRequest) {
-  return withAuth(async (auth) => {
-    try {
-      const body = await request.json();
-      const validation = validateRequest(createApiTokenSchema, body);
-      if (!validation.success) {
-        return NextResponse.json(
-          { error: 'Invalid input', details: validation.error.flatten() },
-          { status: 400 }
+  return withAuth(
+    async (auth) => {
+      try {
+        const body = await request.json();
+        const validation = validateRequest(createApiTokenSchema, body);
+        if (!validation.success) {
+          return NextResponse.json(
+            { error: 'Invalid input', details: validation.error.flatten() },
+            { status: 400 }
+          );
+        }
+
+        const { rawToken, token } = await createApiToken(
+          validation.data.name,
+          auth.userId,
+          validation.data.scopes
         );
+
+        return NextResponse.json(
+          {
+            token: rawToken,
+            id: token.id,
+            name: token.name,
+            scopes: token.scopes ?? ['*'],
+            createdAt: token.createdAt.toISOString(),
+          },
+          { status: 201 }
+        );
+      } catch (error) {
+        logError('Error creating API token:', error);
+        return NextResponse.json({ error: 'Failed to create API token' }, { status: 500 });
       }
-
-      const { rawToken, token } = await createApiToken(
-        validation.data.name,
-        auth.userId,
-        validation.data.scopes
-      );
-
-      return NextResponse.json({
-        token: rawToken,
-        id: token.id,
-        name: token.name,
-        scopes: token.scopes ?? ['*'],
-        createdAt: token.createdAt.toISOString(),
-      }, { status: 201 });
-    } catch (error) {
-      logError('Error creating API token:', error);
-      return NextResponse.json(
-        { error: 'Failed to create API token' },
-        { status: 500 }
-      );
+    },
+    {
+      permission: 'canModifySettings',
+      rateLimit: { feature: 'api-tokens', limit: 10, windowSeconds: 60 },
     }
-  }, {
-    permission: 'canModifySettings',
-    rateLimit: { feature: 'api-tokens', limit: 10, windowSeconds: 60 },
-  });
+  );
 }

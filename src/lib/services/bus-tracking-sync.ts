@@ -82,11 +82,14 @@ async function ensureFreshToken(creds: {
       : encrypt(creds.refreshToken),
   };
 
-  await db.update(apiCredentials).set({
-    encryptedCredentials: JSON.stringify(credentials),
-    expiresAt: newExpiresAt,
-    updatedAt: new Date(),
-  }).where(eq(apiCredentials.id, creds.credentialId));
+  await db
+    .update(apiCredentials)
+    .set({
+      encryptedCredentials: JSON.stringify(credentials),
+      expiresAt: newExpiresAt,
+      updatedAt: new Date(),
+    })
+    .where(eq(apiCredentials.id, creds.credentialId));
 
   return tokens.access_token;
 }
@@ -95,7 +98,13 @@ async function ensureFreshToken(creds: {
  * Sync bus emails from Gmail. Main entry point for the sync service.
  */
 export async function syncBusEmails(): Promise<SyncResult> {
-  const result: SyncResult = { processed: 0, newEvents: 0, skipped: 0, errors: [], skippedReasons: [] };
+  const result: SyncResult = {
+    processed: 0,
+    newEvents: 0,
+    skipped: 0,
+    errors: [],
+    skippedReasons: [],
+  };
 
   // Get Gmail credentials
   const creds = await getGmailCredentials();
@@ -113,7 +122,9 @@ export async function syncBusEmails(): Promise<SyncResult> {
       await db.delete(apiCredentials).where(eq(apiCredentials.service, 'gmail-bus'));
       result.errors.push('Gmail token expired or revoked. Please reconnect.');
     } else {
-      result.errors.push(`Token refresh failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      result.errors.push(
+        `Token refresh failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
     return result;
   }
@@ -135,7 +146,9 @@ export async function syncBusEmails(): Promise<SyncResult> {
       maxResults: 50,
     });
   } catch (error) {
-    result.errors.push(`Failed to fetch emails: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    result.errors.push(
+      `Failed to fetch emails: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
     return result;
   }
 
@@ -143,7 +156,7 @@ export async function syncBusEmails(): Promise<SyncResult> {
 
   // Load all enabled routes
   const routes = await db.select().from(busRoutes).where(eq(busRoutes.enabled, true));
-  const routeData: BusRoute[] = routes.map(r => ({
+  const routeData: BusRoute[] = routes.map((r) => ({
     id: r.id,
     studentName: r.studentName,
     tripId: r.tripId,
@@ -185,35 +198,54 @@ export async function syncBusEmails(): Promise<SyncResult> {
       const match = matchEmailToRoute(parsed, routeData);
       if (!match) {
         result.skipped++;
-        result.skippedReasons.push(`No route match: "${subject}" (student=${parsed.studentName}, hint=${parsed.directionHint})`);
-        console.warn(`Bus sync: no route match for "${subject}" (student=${parsed.studentName}, hint=${parsed.directionHint})`);
+        result.skippedReasons.push(
+          `No route match: "${subject}" (student=${parsed.studentName}, hint=${parsed.directionHint})`
+        );
+        console.warn(
+          `Bus sync: no route match for "${subject}" (student=${parsed.studentName}, hint=${parsed.directionHint})`
+        );
         continue;
       }
 
       // Auto-add new checkpoints/stops/schools to the route config
       if (match.isNewCheckpoint) {
-        const route = routeData.find(r => r.id === match.routeId);
+        const route = routeData.find((r) => r.id === match.routeId);
         if (route) {
           if (parsed.type === 'distance_based') {
             const newCp = { name: match.checkpointName, sortOrder: route.checkpoints.length };
             route.checkpoints.push(newCp);
             match.checkpointIndex = newCp.sortOrder;
-            await db.update(busRoutes).set({
-              checkpoints: route.checkpoints,
-            }).where(eq(busRoutes.id, route.id));
-            console.log(`Bus sync: auto-added checkpoint "${match.checkpointName}" to route ${route.id}`);
+            await db
+              .update(busRoutes)
+              .set({
+                checkpoints: route.checkpoints,
+              })
+              .where(eq(busRoutes.id, route.id));
+            console.log(
+              `Bus sync: auto-added checkpoint "${match.checkpointName}" to route ${route.id}`
+            );
           } else if (parsed.type === 'arrived_at_stop' && !route.stopName) {
             route.stopName = match.checkpointName;
-            await db.update(busRoutes).set({
-              stopName: match.checkpointName,
-            }).where(eq(busRoutes.id, route.id));
-            console.log(`Bus sync: auto-set stop name "${match.checkpointName}" for route ${route.id}`);
+            await db
+              .update(busRoutes)
+              .set({
+                stopName: match.checkpointName,
+              })
+              .where(eq(busRoutes.id, route.id));
+            console.log(
+              `Bus sync: auto-set stop name "${match.checkpointName}" for route ${route.id}`
+            );
           } else if (parsed.type === 'arrived_at_school' && !route.schoolName) {
             route.schoolName = match.checkpointName;
-            await db.update(busRoutes).set({
-              schoolName: match.checkpointName,
-            }).where(eq(busRoutes.id, route.id));
-            console.log(`Bus sync: auto-set school name "${match.checkpointName}" for route ${route.id}`);
+            await db
+              .update(busRoutes)
+              .set({
+                schoolName: match.checkpointName,
+              })
+              .where(eq(busRoutes.id, route.id));
+            console.log(
+              `Bus sync: auto-set school name "${match.checkpointName}" for route ${route.id}`
+            );
           }
         }
       }
@@ -294,9 +326,6 @@ function formatDateStr(date: Date): string {
  * Returns null if not configured (will search all mail).
  */
 export async function getBusGmailLabel(): Promise<string | null> {
-  const [row] = await db
-    .select()
-    .from(settings)
-    .where(eq(settings.key, 'busGmailLabel'));
+  const [row] = await db.select().from(settings).where(eq(settings.key, 'busGmailLabel'));
   return (row?.value as string) || null;
 }

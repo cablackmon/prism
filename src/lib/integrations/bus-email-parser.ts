@@ -61,14 +61,17 @@ const ARRIVED_AT_SCHOOL_SUBJECT = /First View:\s*Arrived at School/i;
 //   School:   "EMMA's bus arrived at school stop Riverside Middle School at 02:55 PM 2026-02-27 (15-A - PM, 15-A-PM)."
 
 // Distance-based: name's vehicle entered your N ft notification zone near address (label, Time Range: range, Trip: id).
-const DISTANCE_BASED_BODY = /(.+?)'s vehicle entered your (\d+)\s*ft notification zone near (.+?)\s*\(([^,]+),\s*Time Range:\s*([^,]+),\s*Trip:\s*([^)]+)\)/i;
+const DISTANCE_BASED_BODY =
+  /(.+?)'s vehicle entered your (\d+)\s*ft notification zone near (.+?)\s*\(([^,]+),\s*Time Range:\s*([^,]+),\s*Trip:\s*([^)]+)\)/i;
 
 // Arrived at stop: name's bus arrived at stop STOP at time date (trips).
 // Date can be M/D/YYYY or YYYY-MM-DD
-const ARRIVED_AT_STOP_BODY = /(.+?)'s bus arrived at stop (.+?) at (\d{1,2}:\d{2}\s*[AP]M)\s+(\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2}\/\d{4})\s*\(([^)]+)\)/i;
+const ARRIVED_AT_STOP_BODY =
+  /(.+?)'s bus arrived at stop (.+?) at (\d{1,2}:\d{2}\s*[AP]M)\s+(\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2}\/\d{4})\s*\(([^)]+)\)/i;
 
 // Arrived at school: name's bus arrived at school stop SCHOOL at time date (trips).
-const ARRIVED_AT_SCHOOL_BODY = /(.+?)'s bus arrived at school stop (.+?) at (\d{1,2}:\d{2}\s*[AP]M)\s+(\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2}\/\d{4})\s*\(([^)]+)\)/i;
+const ARRIVED_AT_SCHOOL_BODY =
+  /(.+?)'s bus arrived at school stop (.+?) at (\d{1,2}:\d{2}\s*[AP]M)\s+(\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2}\/\d{4})\s*\(([^)]+)\)/i;
 
 /**
  * Parse a FirstView email into a structured event.
@@ -78,7 +81,7 @@ const ARRIVED_AT_SCHOOL_BODY = /(.+?)'s bus arrived at school stop (.+?) at (\d{
 export function parseBusEmail(
   subject: string,
   body: string,
-  emailDate: Date,
+  emailDate: Date
 ): ParsedBusEmail | null {
   // Clean up body text (remove extra whitespace, newlines)
   let cleanBody = body.replace(/\r\n/g, '\n').replace(/\n+/g, ' ').trim();
@@ -146,7 +149,8 @@ export function parseBusEmail(
 
 function parseDistanceBased(body: string, emailDate: Date): ParsedBusEmail | null {
   const match = body.match(DISTANCE_BASED_BODY);
-  if (!match || !match[1] || !match[2] || !match[3] || !match[4] || !match[5] || !match[6]) return null;
+  if (!match || !match[1] || !match[2] || !match[3] || !match[4] || !match[5] || !match[6])
+    return null;
 
   const timeRange = match[5].trim();
   // Extract direction from time range (e.g. "7:30-8:00 AM" → AM, "3:00-4:00 PM" → PM)
@@ -304,7 +308,8 @@ function extractTripId(trips: string): string | null {
  */
 function fuzzyLocationMatch(a: string, b: string): boolean {
   const normalize = (s: string) =>
-    s.toLowerCase()
+    s
+      .toLowerCase()
       .replace(/\b(rd|road|ave|avenue|st|street|blvd|boulevard|dr|drive|ln|lane|ct|court)\b/g, '')
       .replace(/[^a-z0-9]/g, '');
   return normalize(a) === normalize(b);
@@ -315,10 +320,7 @@ function fuzzyLocationMatch(a: string, b: string): boolean {
  * For distance-based: match by tripId and studentName (first name, case-insensitive).
  * For arrival emails: match by studentName and try tripId from the trips list.
  */
-export function matchEmailToRoute(
-  parsed: ParsedBusEmail,
-  routes: BusRoute[]
-): RouteMatch | null {
+export function matchEmailToRoute(parsed: ParsedBusEmail, routes: BusRoute[]): RouteMatch | null {
   for (const route of routes) {
     // Student name match (case-insensitive, first name only)
     const parsedFirst = parsed.studentName.split(/\s+/)[0]?.toLowerCase() || '';
@@ -339,7 +341,7 @@ export function matchEmailToRoute(
     if (parsed.type === 'distance_based') {
       // Match against ordered checkpoints by name
       const cpIdx = route.checkpoints.findIndex(
-        cp => cp.name.toLowerCase() === parsed.checkpointName.toLowerCase()
+        (cp) => cp.name.toLowerCase() === parsed.checkpointName.toLowerCase()
       );
       if (cpIdx >= 0) {
         checkpointIndex = cpIdx;

@@ -43,35 +43,104 @@ function isIngredientHeading(line: string): boolean {
 }
 
 function normalizeHeading(line: string): string {
-  return line.trim().replace(/[:.]+\s*$/, '').replace(/^for the\s+/i, '').trim();
+  return line
+    .trim()
+    .replace(/[:.]+\s*$/, '')
+    .replace(/^for the\s+/i, '')
+    .trim();
 }
 
 // Common measurement words used to detect ingredient lines. Lowercased,
 // matched as whole tokens.
 const MEASUREMENT_WORDS = new Set([
-  'cup', 'cups', 'c',
-  'tbsp', 'tbsps', 'tablespoon', 'tablespoons', 't', 'tb',
-  'tsp', 'tsps', 'teaspoon', 'teaspoons',
-  'oz', 'ounce', 'ounces',
-  'lb', 'lbs', 'pound', 'pounds',
-  'g', 'gram', 'grams',
-  'kg', 'kilogram', 'kilograms',
-  'ml', 'milliliter', 'milliliters',
-  'l', 'liter', 'liters',
-  'pinch', 'pinches', 'dash', 'dashes',
-  'clove', 'cloves',
-  'can', 'cans', 'jar', 'jars', 'package', 'packages', 'pkg',
-  'slice', 'slices', 'piece', 'pieces',
-  'stick', 'sticks',
-  'qt', 'quart', 'quarts', 'pt', 'pint', 'pints', 'gal', 'gallon', 'gallons',
+  'cup',
+  'cups',
+  'c',
+  'tbsp',
+  'tbsps',
+  'tablespoon',
+  'tablespoons',
+  't',
+  'tb',
+  'tsp',
+  'tsps',
+  'teaspoon',
+  'teaspoons',
+  'oz',
+  'ounce',
+  'ounces',
+  'lb',
+  'lbs',
+  'pound',
+  'pounds',
+  'g',
+  'gram',
+  'grams',
+  'kg',
+  'kilogram',
+  'kilograms',
+  'ml',
+  'milliliter',
+  'milliliters',
+  'l',
+  'liter',
+  'liters',
+  'pinch',
+  'pinches',
+  'dash',
+  'dashes',
+  'clove',
+  'cloves',
+  'can',
+  'cans',
+  'jar',
+  'jars',
+  'package',
+  'packages',
+  'pkg',
+  'slice',
+  'slices',
+  'piece',
+  'pieces',
+  'stick',
+  'sticks',
+  'qt',
+  'quart',
+  'quarts',
+  'pt',
+  'pint',
+  'pints',
+  'gal',
+  'gallon',
+  'gallons',
 ]);
 
 // Words that stay lowercase in title-case, EXCEPT at the start or end of the
 // title. Standard AP/Chicago style minus the conjunctions you wouldn't
 // commonly find in a recipe name.
 const TITLE_CASE_STOP_WORDS = new Set([
-  'a', 'an', 'and', 'as', 'at', 'but', 'by', 'for', 'from', 'in', 'into',
-  'nor', 'of', 'on', 'or', 'over', 'per', 'the', 'to', 'up', 'via', 'vs',
+  'a',
+  'an',
+  'and',
+  'as',
+  'at',
+  'but',
+  'by',
+  'for',
+  'from',
+  'in',
+  'into',
+  'nor',
+  'of',
+  'on',
+  'or',
+  'over',
+  'per',
+  'the',
+  'to',
+  'up',
+  'via',
+  'vs',
   'with',
 ]);
 
@@ -98,7 +167,8 @@ function titleCase(text: string): string {
 
 const SECTION_HEADERS = {
   ingredients: /^(ingredients?|what you('|')?ll need)\s*:?\s*$/i,
-  instructions: /^(instructions?|directions?|method|steps?|preparation|how to make|to make)\s*:?\s*$/i,
+  instructions:
+    /^(instructions?|directions?|method|steps?|preparation|how to make|to make)\s*:?\s*$/i,
   notes: /^(notes?|tips?)\s*:?\s*$/i,
 };
 
@@ -160,16 +230,32 @@ function isIngredientLine(line: string): boolean {
   }
 
   // Lines starting "a/an/some <measurement>" — e.g. "a pinch of salt".
-  const firstWord = trimmed.split(/\s+/)[0]!.toLowerCase().replace(/[.,:]$/, '');
+  const firstWord = trimmed
+    .split(/\s+/)[0]!
+    .toLowerCase()
+    .replace(/[.,:]$/, '');
   if (MEASUREMENT_WORDS.has(firstWord)) return true;
 
   // "Two cups of flour" — written-out number at start. Cheap check.
   const WRITTEN_NUMBERS = new Set([
-    'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine',
-    'ten', 'half', 'quarter',
+    'one',
+    'two',
+    'three',
+    'four',
+    'five',
+    'six',
+    'seven',
+    'eight',
+    'nine',
+    'ten',
+    'half',
+    'quarter',
   ]);
   if (WRITTEN_NUMBERS.has(firstWord)) {
-    const secondWord = trimmed.split(/\s+/)[1]?.toLowerCase().replace(/[.,:]$/, '');
+    const secondWord = trimmed
+      .split(/\s+/)[1]
+      ?.toLowerCase()
+      .replace(/[.,:]$/, '');
     if (secondWord && MEASUREMENT_WORDS.has(secondWord)) return true;
   }
 
@@ -238,7 +324,8 @@ export function parseRecipeText(raw: string): ParsedRecipeText {
       SECTION_HEADERS.ingredients.test(line) ||
       SECTION_HEADERS.instructions.test(line) ||
       SECTION_HEADERS.notes.test(line)
-    ) continue;
+    )
+      continue;
     // A line that's clearly an ingredient shouldn't be the title.
     if (isIngredientLine(line)) continue;
     title = titleCase(line.replace(/^[#*\s]+/, '').trim());
@@ -252,7 +339,8 @@ export function parseRecipeText(raw: string): ParsedRecipeText {
   lines.forEach((line, idx) => {
     if (!line || idx === titleLineIdx || metadataLineIdx.has(idx)) return;
     if (SECTION_HEADERS.ingredients.test(line)) headerIdx.push({ idx, section: 'ingredients' });
-    else if (SECTION_HEADERS.instructions.test(line)) headerIdx.push({ idx, section: 'instructions' });
+    else if (SECTION_HEADERS.instructions.test(line))
+      headerIdx.push({ idx, section: 'instructions' });
     else if (SECTION_HEADERS.notes.test(line)) headerIdx.push({ idx, section: 'notes' });
   });
 
@@ -298,9 +386,8 @@ export function parseRecipeText(raw: string): ParsedRecipeText {
 
   // Collapse any orphan numbered prefixes in instructions ("1. Preheat" stays
   // as a numbered list, but if every line has a "Step N:" prefix we strip it).
-  const allStepPrefixed = instructionLines.length > 1 && instructionLines.every(
-    (l) => /^step\s*\d+\s*[:.\-]?/i.test(l),
-  );
+  const allStepPrefixed =
+    instructionLines.length > 1 && instructionLines.every((l) => /^step\s*\d+\s*[:.\-]?/i.test(l));
   const cleanedInstructions = allStepPrefixed
     ? instructionLines.map((l) => l.replace(/^step\s*\d+\s*[:.\-]?\s*/i, ''))
     : instructionLines;

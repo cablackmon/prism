@@ -68,10 +68,7 @@ function calculateNextDue(schedule: string, customIntervalDays: number | null): 
  *   notes?: string
  * }
  */
-export async function POST(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function POST(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -91,10 +88,7 @@ export async function POST(
       .where(eq(maintenanceReminders.id, reminderId));
 
     if (!reminder) {
-      return NextResponse.json(
-        { error: 'Maintenance reminder not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Maintenance reminder not found' }, { status: 404 });
     }
 
     // Validate completion data
@@ -123,10 +117,7 @@ export async function POST(
       .returning();
 
     if (!completion) {
-      return NextResponse.json(
-        { error: 'Failed to create completion record' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to create completion record' }, { status: 500 });
     }
 
     // Calculate next due date
@@ -142,22 +133,22 @@ export async function POST(
       })
       .where(eq(maintenanceReminders.id, reminderId));
 
-    return NextResponse.json({
-      id: completion.id,
-      reminderId: completion.reminderId,
-      completedAt: completion.completedAt.toISOString(),
-      completedBy: completion.completedBy,
-      cost: completion.cost,
-      vendor: completion.vendor,
-      notes: completion.notes,
-      nextDue,
-      message: `Maintenance completed! Next due: ${nextDue}`,
-    }, { status: 201 });
+    return NextResponse.json(
+      {
+        id: completion.id,
+        reminderId: completion.reminderId,
+        completedAt: completion.completedAt.toISOString(),
+        completedBy: completion.completedBy,
+        cost: completion.cost,
+        vendor: completion.vendor,
+        notes: completion.notes,
+        nextDue,
+        message: `Maintenance completed! Next due: ${nextDue}`,
+      },
+      { status: 201 }
+    );
   } catch (error) {
     logError('Error completing maintenance:', error);
-    return NextResponse.json(
-      { error: 'Failed to complete maintenance' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to complete maintenance' }, { status: 500 });
   }
 }

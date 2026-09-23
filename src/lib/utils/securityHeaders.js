@@ -28,7 +28,7 @@ function buildSecurityHeaders() {
   } else if (allowedAncestors) {
     const origins = allowedAncestors
       .split(',')
-      .map(o => o.trim())
+      .map((o) => o.trim())
       .filter(Boolean);
     frameAncestors = `frame-ancestors 'self' ${origins.join(' ')}`;
   } else {

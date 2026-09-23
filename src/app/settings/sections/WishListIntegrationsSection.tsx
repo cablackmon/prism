@@ -77,9 +77,7 @@ export function WishListIntegrationsSection({
         emptyText="No family members found. Add members from the Family section."
         entityIcon={<Gift className="h-5 w-5 text-muted-foreground" />}
         sources={integration.sources}
-        getSourceForEntity={(member) =>
-          integration.sources.find((s) => s.memberId === member.id)
-        }
+        getSourceForEntity={(member) => integration.sources.find((s) => s.memberId === member.id)}
         onConnect={handleConnectEntity}
       />
 
@@ -90,7 +88,10 @@ export function WishListIntegrationsSection({
         description={
           <>
             Choose which service to sync with{' '}
-            <strong>{members.find(m => m.id === integration.connectingEntityId)?.name}&apos;s</strong> wish list
+            <strong>
+              {members.find((m) => m.id === integration.connectingEntityId)?.name}&apos;s
+            </strong>{' '}
+            wish list
           </>
         }
         onSelectMsTodo={() => {

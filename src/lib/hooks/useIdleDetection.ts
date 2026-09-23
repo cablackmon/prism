@@ -55,7 +55,8 @@ export function useIdleDetection(initialTimeout?: number) {
       setTimeoutValue(e.detail);
     };
     window.addEventListener('prism:screensaver-timeout-change', handler as EventListener);
-    return () => window.removeEventListener('prism:screensaver-timeout-change', handler as EventListener);
+    return () =>
+      window.removeEventListener('prism:screensaver-timeout-change', handler as EventListener);
   }, []);
 
   // Re-enabling after "Never" is a deliberate settings interaction. Start a
@@ -74,20 +75,24 @@ export function useIdleDetection(initialTimeout?: number) {
       setAwayModeTimeout(e.detail);
     };
     window.addEventListener('prism:away-mode-timeout-change', handler as EventListener);
-    return () => window.removeEventListener('prism:away-mode-timeout-change', handler as EventListener);
+    return () =>
+      window.removeEventListener('prism:away-mode-timeout-change', handler as EventListener);
   }, []);
 
   // Reset idle timer on user activity (restarts countdown)
-  const resetTimer = useCallback((recordActivity = true) => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    if (recordActivity) updateLastActivity();
-    else if (localStorage.getItem(LAST_ACTIVITY_KEY) === null) updateLastActivity();
-    if (timeout > 0) {
-      const elapsed = recordActivity ? 0 : Math.max(0, Date.now() - getLastActivity());
-      const remaining = Math.max(0, timeout * 1000 - elapsed);
-      timerRef.current = setTimeout(() => setIsIdle(true), remaining);
-    }
-  }, [timeout]);
+  const resetTimer = useCallback(
+    (recordActivity = true) => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      if (recordActivity) updateLastActivity();
+      else if (localStorage.getItem(LAST_ACTIVITY_KEY) === null) updateLastActivity();
+      if (timeout > 0) {
+        const elapsed = recordActivity ? 0 : Math.max(0, Date.now() - getLastActivity());
+        const remaining = Math.max(0, timeout * 1000 - elapsed);
+        timerRef.current = setTimeout(() => setIsIdle(true), remaining);
+      }
+    },
+    [timeout]
+  );
 
   // Dismiss idle state on deliberate interaction (click, keydown, touch)
   const dismissIdle = useCallback(() => {
@@ -121,7 +126,8 @@ export function useIdleDetection(initialTimeout?: number) {
     // runtime fullscreen transitions cannot leave stale listener behavior.
     // Scroll remains activity in every display mode.
     const onPassiveMovement = (event: Event) => {
-      if (event.type === 'mousemove' && window.matchMedia('(display-mode: fullscreen)').matches) return;
+      if (event.type === 'mousemove' && window.matchMedia('(display-mode: fullscreen)').matches)
+        return;
       resetTimer();
     };
     moveEvents.forEach((e) => window.addEventListener(e, onPassiveMovement));
@@ -134,7 +140,11 @@ export function useIdleDetection(initialTimeout?: number) {
     // on the React tree would miss.
     const maybeDismiss = (e: Event) => {
       const target = e.target as Element | null;
-      if (target && typeof target.closest === 'function' && target.closest('[data-screensaver-keep]')) {
+      if (
+        target &&
+        typeof target.closest === 'function' &&
+        target.closest('[data-screensaver-keep]')
+      ) {
         return;
       }
       dismissIdle();
@@ -164,7 +174,8 @@ export function useIdleDetection(initialTimeout?: number) {
         event.source !== window.parent ||
         event.origin !== KYST_WRAPPER_ORIGIN ||
         event.data?.type !== 'kyst-user-activity'
-      ) return;
+      )
+        return;
       // Wrapper controls are already completed gestures, not the pointerdown
       // that initiated forceIdle inside this document. Clear the force guard,
       // dismiss immediately, and grant the interaction a complete deadline.

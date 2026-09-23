@@ -11,7 +11,9 @@ function readCachedHiddenPages(): string[] {
   try {
     const cached = localStorage.getItem(CACHE_KEY);
     return cached ? JSON.parse(cached) : [];
-  } catch { return []; }
+  } catch {
+    return [];
+  }
 }
 
 export function useHiddenPages() {
@@ -29,7 +31,9 @@ export function useHiddenPages() {
           localStorage.setItem(CACHE_KEY, JSON.stringify(val));
         }
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     setLoaded(true);
   }, []);
 
@@ -46,22 +50,21 @@ export function useHiddenPages() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key: 'hiddenPages', value: pages }),
       });
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   const hiddenSet = useMemo(() => new Set(hiddenPages), [hiddenPages]);
 
   const filterNavItems = useCallback(
     (items: NavItem[]): NavItem[] =>
-      items.filter(
-        (item) => ALWAYS_VISIBLE_HREFS.has(item.href) || !hiddenSet.has(item.href)
-      ),
+      items.filter((item) => ALWAYS_VISIBLE_HREFS.has(item.href) || !hiddenSet.has(item.href)),
     [hiddenSet]
   );
 
   const isPageHidden = useCallback(
-    (href: string): boolean =>
-      !ALWAYS_VISIBLE_HREFS.has(href) && hiddenSet.has(href),
+    (href: string): boolean => !ALWAYS_VISIBLE_HREFS.has(href) && hiddenSet.has(href),
     [hiddenSet]
   );
 

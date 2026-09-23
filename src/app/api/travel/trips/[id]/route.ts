@@ -14,7 +14,11 @@ const patchTripSchema = z.object({
   tripStyle: z.enum(['route', 'loop', 'hub']).optional(),
   status: z.enum(['want_to_go', 'been_there']).optional(),
   isBucketList: z.boolean().optional(),
-  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).nullable().optional(),
+  color: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/)
+    .nullable()
+    .optional(),
   emoji: z.string().max(10).nullable().optional(),
   visitedDate: z.string().nullable().optional(),
   visitedEndDate: z.string().nullable().optional(),
@@ -24,10 +28,12 @@ const patchTripSchema = z.object({
   sortOrder: z.number().int().optional(),
 });
 
-function formatTrip(row: typeof travelTrips.$inferSelect & {
-  createdByName: string | null;
-  createdByColor: string | null;
-}) {
+function formatTrip(
+  row: typeof travelTrips.$inferSelect & {
+    createdByName: string | null;
+    createdByColor: string | null;
+  }
+) {
   return {
     id: row.id,
     name: row.name,
@@ -43,30 +49,36 @@ function formatTrip(row: typeof travelTrips.$inferSelect & {
     memberIds: (row.memberIds as string[]) || [],
     tags: (row.tags as string[]) || [],
     sortOrder: row.sortOrder,
-    createdBy: row.createdBy ? { id: row.createdBy, name: row.createdByName, color: row.createdByColor } : null,
+    createdBy: row.createdBy
+      ? { id: row.createdBy, name: row.createdByName, color: row.createdByColor }
+      : null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
 }
 
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
   try {
     const { id } = await params;
     const [row] = await db
-      .select({ ...getTableColumns(travelTrips), createdByName: users.name, createdByColor: users.color })
+      .select({
+        ...getTableColumns(travelTrips),
+        createdByName: users.name,
+        createdByColor: users.color,
+      })
       .from(travelTrips)
       .leftJoin(users, eq(travelTrips.createdBy, users.id))
       .where(eq(travelTrips.id, id));
 
     if (!row) return NextResponse.json({ error: 'Trip not found' }, { status: 404 });
 
-    const stops = await db.select().from(travelPins).where(eq(travelPins.tripId, id))
+    const stops = await db
+      .select()
+      .from(travelPins)
+      .where(eq(travelPins.tripId, id))
       .orderBy(travelPins.sortOrder);
 
     return NextResponse.json({ ...formatTrip(row), stops });
@@ -76,10 +88,7 @@ export async function GET(
   }
 }
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -88,13 +97,19 @@ export async function PATCH(
     const body = await request.json();
     const parsed = patchTripSchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json({ error: 'Validation failed', details: parsed.error.issues }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Validation failed', details: parsed.error.issues },
+        { status: 400 }
+      );
     }
 
     const d = parsed.data;
-    const year = d.year !== undefined ? d.year
-      : d.visitedDate ? new Date(d.visitedDate).getFullYear()
-      : undefined;
+    const year =
+      d.year !== undefined
+        ? d.year
+        : d.visitedDate
+          ? new Date(d.visitedDate).getFullYear()
+          : undefined;
 
     const updates: Record<string, unknown> = { updatedAt: new Date() };
     if (d.name !== undefined) updates.name = d.name;
@@ -111,7 +126,11 @@ export async function PATCH(
     if (d.tags !== undefined) updates.tags = d.tags;
     if (d.sortOrder !== undefined) updates.sortOrder = d.sortOrder;
 
-    const [updated] = await db.update(travelTrips).set(updates).where(eq(travelTrips.id, id)).returning();
+    const [updated] = await db
+      .update(travelTrips)
+      .set(updates)
+      .where(eq(travelTrips.id, id))
+      .returning();
     if (!updated) return NextResponse.json({ error: 'Trip not found' }, { status: 404 });
 
     await invalidateEntity('travel');

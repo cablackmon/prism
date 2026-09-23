@@ -24,12 +24,12 @@ beforeEach(() => {
 describe('deriveCardDAVUrl', () => {
   it('swaps the iCloud CalDAV host for the CardDAV host', () => {
     expect(deriveCardDAVUrl('https://caldav.icloud.com/123/calendars')).toBe(
-      'https://contacts.icloud.com/123/calendars',
+      'https://contacts.icloud.com/123/calendars'
     );
   });
   it('passes non-iCloud hosts through unchanged', () => {
     expect(deriveCardDAVUrl('https://cloud.example.com/remote.php/dav')).toBe(
-      'https://cloud.example.com/remote.php/dav',
+      'https://cloud.example.com/remote.php/dav'
     );
   });
 });
@@ -53,7 +53,7 @@ describe('fetchCardDAVBirthdays SSRF guard', () => {
     // deriveCardDAVUrl only rewrites the iCloud host; this asserts the guard
     // runs on the post-derivation URL, not the raw input.
     await expect(
-      fetchCardDAVBirthdays('http://10.0.0.5/caldav.icloud.com', 'u', 'p'),
+      fetchCardDAVBirthdays('http://10.0.0.5/caldav.icloud.com', 'u', 'p')
     ).rejects.toBeInstanceOf(UnsafeUrlError);
     expect(mockCreateDAVClient).not.toHaveBeenCalled();
   });
@@ -66,7 +66,7 @@ describe('fetchCardDAVBirthdays SSRF guard', () => {
     await fetchCardDAVBirthdays('https://caldav.icloud.com/123/principal', 'u', 'p');
     expect(mockCreateDAVClient).toHaveBeenCalledTimes(1);
     expect(mockCreateDAVClient.mock.calls[0][0].serverUrl).toBe(
-      'https://contacts.icloud.com/123/principal',
+      'https://contacts.icloud.com/123/principal'
     );
   });
 });

@@ -19,14 +19,14 @@ interface WeekendPlaceGridProps {
   onAdd?: () => void;
 }
 
-const TAG_ORDER = TAG_PRESETS.map(t => t.value as string);
+const TAG_ORDER = TAG_PRESETS.map((t) => t.value as string);
 
 function groupByTag(places: WeekendPlace[]) {
-  const tagMap = new Map<string, WeekendPlace[]>(TAG_ORDER.map(t => [t, []]));
+  const tagMap = new Map<string, WeekendPlace[]>(TAG_ORDER.map((t) => [t, []]));
   const untagged: WeekendPlace[] = [];
 
   for (const place of places) {
-    const firstKnownTag = place.tags.find(t => TAG_ORDER.includes(t));
+    const firstKnownTag = place.tags.find((t) => TAG_ORDER.includes(t));
     if (firstKnownTag) {
       tagMap.get(firstKnownTag)!.push(place);
     } else {
@@ -37,22 +37,34 @@ function groupByTag(places: WeekendPlace[]) {
   const groups: { key: string; label: string; emoji: string; places: WeekendPlace[] }[] = [];
   for (const preset of TAG_PRESETS) {
     const items = tagMap.get(preset.value)!;
-    if (items.length > 0) groups.push({ key: preset.value, label: preset.label, emoji: preset.emoji, places: items });
+    if (items.length > 0)
+      groups.push({ key: preset.value, label: preset.label, emoji: preset.emoji, places: items });
   }
-  if (untagged.length > 0) groups.push({ key: '__untagged', label: 'Other', emoji: '📍', places: untagged });
+  if (untagged.length > 0)
+    groups.push({ key: '__untagged', label: 'Other', emoji: '📍', places: untagged });
   return groups;
 }
 
-export function WeekendPlaceGrid({ places, selectedId, onSelect, hasUnfilteredPlaces, onAdd }: WeekendPlaceGridProps) {
+export function WeekendPlaceGrid({
+  places,
+  selectedId,
+  onSelect,
+  hasUnfilteredPlaces,
+  onAdd,
+}: WeekendPlaceGridProps) {
   if (places.length === 0) {
     return (
-      <div className="flex items-center justify-center h-full">
+      <div className="flex h-full items-center justify-center">
         <EmptyState
           icon={<Compass />}
           title={hasUnfilteredPlaces ? 'No places match your filters' : 'No places yet'}
-          action={!hasUnfilteredPlaces && onAdd ? (
-            <Button variant="outline" size="sm" onClick={onAdd}>Add your first place</Button>
-          ) : undefined}
+          action={
+            !hasUnfilteredPlaces && onAdd ? (
+              <Button variant="outline" size="sm" onClick={onAdd}>
+                Add your first place
+              </Button>
+            ) : undefined
+          }
         />
       </div>
     );
@@ -62,9 +74,14 @@ export function WeekendPlaceGrid({ places, selectedId, onSelect, hasUnfilteredPl
 
   if (groups.length === 1) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 content-start p-1">
+      <div className="grid grid-cols-1 content-start gap-3 p-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {places.map((place) => (
-          <WeekendPlaceCard key={place.id} place={place} selected={place.id === selectedId} onClick={() => onSelect(place)} />
+          <WeekendPlaceCard
+            key={place.id}
+            place={place}
+            selected={place.id === selectedId}
+            onClick={() => onSelect(place)}
+          />
         ))}
       </div>
     );
@@ -72,16 +89,25 @@ export function WeekendPlaceGrid({ places, selectedId, onSelect, hasUnfilteredPl
 
   return (
     <div className="space-y-5 p-1">
-      {groups.map(group => (
+      {groups.map((group) => (
         <div key={group.key}>
-          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
-            <span><Emoji e={group.emoji} /></span>
+          <h3 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <span>
+              <Emoji e={group.emoji} />
+            </span>
             <span>{group.label}</span>
-            <span className="text-muted-foreground/50 font-normal normal-case tracking-normal">({group.places.length})</span>
+            <span className="font-normal normal-case tracking-normal text-muted-foreground/50">
+              ({group.places.length})
+            </span>
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {group.places.map((place) => (
-              <WeekendPlaceCard key={place.id} place={place} selected={place.id === selectedId} onClick={() => onSelect(place)} />
+              <WeekendPlaceCard
+                key={place.id}
+                place={place}
+                selected={place.id === selectedId}
+                onClick={() => onSelect(place)}
+              />
             ))}
           </div>
         </div>

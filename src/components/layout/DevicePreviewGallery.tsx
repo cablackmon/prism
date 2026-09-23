@@ -45,7 +45,7 @@ export function DevicePreviewGallery({
 
   return (
     <div className="grid grid-cols-2 gap-x-3 gap-y-2">
-      {DEVICE_PREVIEWS.map(d => {
+      {DEVICE_PREVIEWS.map((d) => {
         const deviceWide = d.w >= d.h;
         const frameW = deviceWide ? frameMax : Math.round((frameMax * d.w) / d.h);
         const frameH = deviceWide ? Math.round((frameMax * d.h) / d.w) : frameMax;
@@ -70,10 +70,10 @@ export function DevicePreviewGallery({
         return (
           <div key={d.name} className="flex flex-col items-center gap-1">
             <div
-              className="relative bg-muted/40 rounded-sm overflow-hidden ring-1 ring-border"
+              className="relative overflow-hidden rounded-sm bg-muted/40 ring-1 ring-border"
               style={{ width: frameW, height: frameH }}
             >
-              {widgets.map(w => {
+              {widgets.map((w) => {
                 const color = WIDGET_COLORS[w.i] || '#6B7280';
                 const hi = highlightWidget === w.i;
                 return (
@@ -93,12 +93,12 @@ export function DevicePreviewGallery({
                 );
               })}
               {!match && (
-                <span className="absolute inset-x-0 bottom-0 text-center text-[7px] leading-tight text-muted-foreground bg-background/70">
+                <span className="absolute inset-x-0 bottom-0 bg-background/70 text-center text-[7px] leading-tight text-muted-foreground">
                   letterboxed
                 </span>
               )}
             </div>
-            <span className="text-[9px] leading-none text-muted-foreground text-center">
+            <span className="text-center text-[9px] leading-none text-muted-foreground">
               {d.name}
               {d.note && <span className="opacity-60"> · {d.note}</span>}
             </span>

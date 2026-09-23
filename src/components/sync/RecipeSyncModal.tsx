@@ -308,7 +308,9 @@ export function RecipeSyncModal({ entity, onClose, onSynced }: RecipeSyncModalPr
                     <div className="text-sm font-medium">{providerLabel(s.provider)}</div>
                     <div className="truncate text-xs text-muted-foreground">
                       {s.serverUrl}
-                      {s.lastSynced && <> · last synced {new Date(s.lastSynced).toLocaleString()}</>}
+                      {s.lastSynced && (
+                        <> · last synced {new Date(s.lastSynced).toLocaleString()}</>
+                      )}
                     </div>
                   </div>
                   <Button size="sm" onClick={() => handleSyncNow(s)} disabled={syncingId === s.id}>
@@ -326,7 +328,7 @@ export function RecipeSyncModal({ entity, onClose, onSynced }: RecipeSyncModalPr
                 </Button>
               )}
 
-              {error && <p className="text-sm text-destructive whitespace-pre-wrap">{error}</p>}
+              {error && <p className="whitespace-pre-wrap text-sm text-destructive">{error}</p>}
             </>
           )}
         </div>

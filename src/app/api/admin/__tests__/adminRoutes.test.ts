@@ -202,10 +202,7 @@ describe('GET/POST/DELETE /api/admin/backups/[filename] — gate + traversal del
   it('GET forwards a traversal filename to the guard and 404s when rejected', async () => {
     // The guard (getBackupPath) returns null for `..`/`/` — see backupTraversal.test.ts.
     mockGetBackupPath.mockResolvedValue(null);
-    const res = await fileGET(
-      new NextRequest('http://localhost/x'),
-      fileCtx('../../etc/passwd')
-    );
+    const res = await fileGET(new NextRequest('http://localhost/x'), fileCtx('../../etc/passwd'));
     expect(mockGetBackupPath).toHaveBeenCalledWith('../../etc/passwd');
     expect(res.status).toBe(404);
   });
@@ -219,10 +216,7 @@ describe('GET/POST/DELETE /api/admin/backups/[filename] — gate + traversal del
 
   it('POST (restore) forwards a traversal filename to the guard, which rejects it', async () => {
     mockRestoreBackup.mockResolvedValue({ success: false, error: 'Invalid filename' });
-    const res = await filePOST(
-      new NextRequest('http://localhost/x'),
-      fileCtx('../../etc/passwd')
-    );
+    const res = await filePOST(new NextRequest('http://localhost/x'), fileCtx('../../etc/passwd'));
     expect(mockRestoreBackup).toHaveBeenCalledWith('../../etc/passwd');
     expect(res.status).toBe(500);
     const body = await res.json();
@@ -245,10 +239,7 @@ describe('GET/POST/DELETE /api/admin/backups/[filename] — gate + traversal del
 
   it('DELETE forwards a traversal filename to the guard, which rejects it', async () => {
     mockDeleteBackup.mockResolvedValue({ success: false, error: 'Invalid filename' });
-    const res = await fileDELETE(
-      new NextRequest('http://localhost/x'),
-      fileCtx('..%2f..%2fetc')
-    );
+    const res = await fileDELETE(new NextRequest('http://localhost/x'), fileCtx('..%2f..%2fetc'));
     expect(mockDeleteBackup).toHaveBeenCalledWith('..%2f..%2fetc');
     expect(res.status).toBe(500);
   });

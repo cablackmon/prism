@@ -17,11 +17,7 @@ const MISSING_GRACE_MS = 6 * 60 * 1000;
 import { decrypt, encrypt } from '@/lib/utils/crypto';
 import { logActivity } from '@/lib/services/auditLog';
 import { logError } from '@/lib/utils/logError';
-import type {
-  TaskProviderTokens,
-  ExternalTask,
-  SyncResult,
-} from '@/lib/integrations/tasks/types';
+import type { TaskProviderTokens, ExternalTask, SyncResult } from '@/lib/integrations/tasks/types';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -42,10 +38,7 @@ interface RouteParams {
  *    - If deleted remotely: delete locally (or mark as unlinked)
  * 4. Update lastSyncAt timestamp
  */
-export async function POST(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function POST(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -56,32 +49,20 @@ export async function POST(
 
   try {
     // 1. Get the source configuration
-    const [source] = await db
-      .select()
-      .from(taskSources)
-      .where(eq(taskSources.id, sourceId));
+    const [source] = await db.select().from(taskSources).where(eq(taskSources.id, sourceId));
 
     if (!source) {
-      return NextResponse.json(
-        { error: 'Task source not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Task source not found' }, { status: 404 });
     }
 
     if (!source.syncEnabled) {
-      return NextResponse.json(
-        { error: 'Sync is disabled for this source' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Sync is disabled for this source' }, { status: 400 });
     }
 
     // 2. Get the provider
     const provider = getTaskProvider(source.provider);
     if (!provider) {
-      return NextResponse.json(
-        { error: `Unknown provider: ${source.provider}` },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: `Unknown provider: ${source.provider}` }, { status: 400 });
     }
 
     // 3. Prepare tokens (decrypt from storage)
@@ -109,7 +90,9 @@ export async function POST(
             .update(taskSources)
             .set({
               accessToken: encrypt(newTokens.accessToken),
-              refreshToken: newTokens.refreshToken ? encrypt(newTokens.refreshToken) : source.refreshToken,
+              refreshToken: newTokens.refreshToken
+                ? encrypt(newTokens.refreshToken)
+                : source.refreshToken,
               tokenExpiresAt: newTokens.expiresAt,
               updatedAt: new Date(),
             })
@@ -246,11 +229,11 @@ async function performSync(
           .select({ externalTaskId: dismissedTasks.externalTaskId })
           .from(dismissedTasks)
           .where(eq(dismissedTasks.taskSourceId, sourceId))
-      ).map((row) => row.externalTaskId),
+      ).map((row) => row.externalTaskId)
     );
 
     // Create maps for quick lookup
-    const remoteById = new Map(remoteTasks.map(t => [t.id, t]));
+    const remoteById = new Map(remoteTasks.map((t) => [t.id, t]));
 
     // Anything the remote is listing again is not missing. Clearing this first
     // is what makes one bad response self-healing rather than leaving a pile of
@@ -264,14 +247,12 @@ async function performSync(
           and(
             eq(tasks.taskSourceId, sourceId),
             inArray(tasks.externalId, [...remoteById.keys()]),
-            isNotNull(tasks.pendingDeletion),
-          ),
+            isNotNull(tasks.pendingDeletion)
+          )
         );
     }
     const localByExternalId = new Map(
-      localTasks
-        .filter(t => t.externalId)
-        .map(t => [t.externalId!, t])
+      localTasks.filter((t) => t.externalId).map((t) => [t.externalId!, t])
     );
 
     // Process remote tasks
@@ -358,10 +339,7 @@ async function performSync(
           }
         } else {
           // Same timestamp - just update lastSynced
-          await db
-            .update(tasks)
-            .set({ lastSynced: new Date() })
-            .where(eq(tasks.id, localTask.id));
+          await db.update(tasks).set({ lastSynced: new Date() }).where(eq(tasks.id, localTask.id));
         }
       }
     }
@@ -432,7 +410,7 @@ async function performSync(
       // to protect. Said out loud rather than withheld silently.
       result.errors.push(
         `${review.withheld} tasks are missing from the provider — too many at once to be a normal ` +
-        `change, so none were touched. Check the connection, then sync again.`,
+          `change, so none were touched. Check the connection, then sync again.`
       );
     } else if (review.flag) {
       for (const localTask of flaggable) {
@@ -458,8 +436,8 @@ async function performSync(
         .where(
           and(
             eq(dismissedTasks.taskSourceId, sourceId),
-            inArray(dismissedTasks.externalTaskId, stale),
-          ),
+            inArray(dismissedTasks.externalTaskId, stale)
+          )
         );
     }
 

@@ -41,24 +41,24 @@ export function CollapsibleSubSection({
         type="button"
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          'w-full flex items-center gap-3 px-4 py-3 text-left',
-          'hover:bg-accent/30 transition-colors',
-          isOpen && 'bg-accent/20',
+          'flex w-full items-center gap-3 px-4 py-3 text-left',
+          'transition-colors hover:bg-accent/30',
+          isOpen && 'bg-accent/20'
         )}
         aria-expanded={isOpen}
         aria-controls={`${id}-body`}
       >
         {icon && <span className="flex-shrink-0 text-muted-foreground">{icon}</span>}
-        <div className="flex-1 min-w-0">
+        <div className="min-w-0 flex-1">
           <div className="text-sm font-medium">{label}</div>
           {summary && (
-            <div className="text-xs text-muted-foreground mt-0.5 truncate">{summary}</div>
+            <div className="mt-0.5 truncate text-xs text-muted-foreground">{summary}</div>
           )}
         </div>
         <ChevronDown
           className={cn(
-            'h-4 w-4 text-muted-foreground transition-transform flex-shrink-0',
-            isOpen && 'rotate-180',
+            'h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform',
+            isOpen && 'rotate-180'
           )}
         />
       </button>

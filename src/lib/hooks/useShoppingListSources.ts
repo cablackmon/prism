@@ -67,70 +67,82 @@ export function useShoppingListSources(userId?: string) {
     fetchSources();
   }, [fetchSources]);
 
-  const createSource = useCallback(async (input: CreateShoppingListSourceInput): Promise<ShoppingListSource> => {
-    const response = await fetch('/api/shopping-list-sources', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(input),
-    });
+  const createSource = useCallback(
+    async (input: CreateShoppingListSourceInput): Promise<ShoppingListSource> => {
+      const response = await fetch('/api/shopping-list-sources', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+      });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to create shopping list source');
-    }
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create shopping list source');
+      }
 
-    const newSource = await response.json();
-    await fetchSources();
-    return newSource;
-  }, [fetchSources]);
+      const newSource = await response.json();
+      await fetchSources();
+      return newSource;
+    },
+    [fetchSources]
+  );
 
-  const deleteSource = useCallback(async (id: string): Promise<void> => {
-    const response = await fetch(`/api/shopping-list-sources/${id}`, {
-      method: 'DELETE',
-    });
+  const deleteSource = useCallback(
+    async (id: string): Promise<void> => {
+      const response = await fetch(`/api/shopping-list-sources/${id}`, {
+        method: 'DELETE',
+      });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to delete shopping list source');
-    }
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete shopping list source');
+      }
 
-    await fetchSources();
-  }, [fetchSources]);
+      await fetchSources();
+    },
+    [fetchSources]
+  );
 
-  const updateSource = useCallback(async (
-    id: string,
-    updates: Partial<Pick<ShoppingListSource, 'syncEnabled' | 'externalListName'>>
-  ): Promise<ShoppingListSource> => {
-    const response = await fetch(`/api/shopping-list-sources/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updates),
-    });
+  const updateSource = useCallback(
+    async (
+      id: string,
+      updates: Partial<Pick<ShoppingListSource, 'syncEnabled' | 'externalListName'>>
+    ): Promise<ShoppingListSource> => {
+      const response = await fetch(`/api/shopping-list-sources/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to update shopping list source');
-    }
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update shopping list source');
+      }
 
-    const updated = await response.json();
-    await fetchSources();
-    return updated;
-  }, [fetchSources]);
+      const updated = await response.json();
+      await fetchSources();
+      return updated;
+    },
+    [fetchSources]
+  );
 
-  const syncSource = useCallback(async (id: string): Promise<SyncResult> => {
-    const response = await fetch(`/api/shopping-list-sources/${id}/sync`, {
-      method: 'POST',
-    });
+  const syncSource = useCallback(
+    async (id: string): Promise<SyncResult> => {
+      const response = await fetch(`/api/shopping-list-sources/${id}/sync`, {
+        method: 'POST',
+      });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Sync failed');
-    }
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Sync failed');
+      }
 
-    const result = await response.json();
-    await fetchSources();
-    return result;
-  }, [fetchSources]);
+      const result = await response.json();
+      await fetchSources();
+      return result;
+    },
+    [fetchSources]
+  );
 
   const syncAll = useCallback(async (): Promise<{ synced: number; total: number }> => {
     const response = await fetch('/api/shopping-list-sources/sync-all', {

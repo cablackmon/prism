@@ -27,72 +27,67 @@ interface RouteParams {
  * GET /api/birthdays/[id]
  * Retrieves a single birthday by its ID.
  */
-export async function GET(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function GET(request: NextRequest, { params }: RouteParams) {
   return withAuth(async () => {
-  try {
-    const { id } = await params;
+    try {
+      const { id } = await params;
 
-    const [birthdayWithUser] = await db
-      .select({
-        id: birthdays.id,
-        name: birthdays.name,
-        birthDate: birthdays.birthDate,
-        giftIdeas: birthdays.giftIdeas,
-        sendCardDaysBefore: birthdays.sendCardDaysBefore,
-        createdAt: birthdays.createdAt,
-        userId: users.id,
-        userName: users.name,
-        userColor: users.color,
-      })
-      .from(birthdays)
-      .leftJoin(users, eq(birthdays.userId, users.id))
-      .where(eq(birthdays.id, id));
+      const [birthdayWithUser] = await db
+        .select({
+          id: birthdays.id,
+          name: birthdays.name,
+          birthDate: birthdays.birthDate,
+          giftIdeas: birthdays.giftIdeas,
+          sendCardDaysBefore: birthdays.sendCardDaysBefore,
+          createdAt: birthdays.createdAt,
+          userId: users.id,
+          userName: users.name,
+          userColor: users.color,
+        })
+        .from(birthdays)
+        .leftJoin(users, eq(birthdays.userId, users.id))
+        .where(eq(birthdays.id, id));
 
-    if (!birthdayWithUser) {
-      return NextResponse.json(
-        { error: 'Birthday not found' },
-        { status: 404 }
+      if (!birthdayWithUser) {
+        return NextResponse.json({ error: 'Birthday not found' }, { status: 404 });
+      }
+
+      // Calculate age and days until
+      const birthDate = new Date(birthdayWithUser.birthDate);
+      const today = new Date();
+      const currentYear = today.getFullYear();
+      const age = currentYear - birthDate.getFullYear();
+
+      const nextBirthday = new Date(currentYear, birthDate.getMonth(), birthDate.getDate());
+      if (nextBirthday < today) {
+        nextBirthday.setFullYear(currentYear + 1);
+      }
+      const daysUntil = Math.ceil(
+        (nextBirthday.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
       );
+
+      return NextResponse.json({
+        id: birthdayWithUser.id,
+        name: birthdayWithUser.name,
+        birthDate: birthdayWithUser.birthDate,
+        age,
+        daysUntil,
+        nextBirthday: nextBirthday.toISOString().split('T')[0],
+        giftIdeas: birthdayWithUser.giftIdeas,
+        sendCardDaysBefore: birthdayWithUser.sendCardDaysBefore,
+        createdAt: birthdayWithUser.createdAt.toISOString(),
+        user: birthdayWithUser.userId
+          ? {
+              id: birthdayWithUser.userId,
+              name: birthdayWithUser.userName,
+              color: birthdayWithUser.userColor,
+            }
+          : null,
+      });
+    } catch (error) {
+      logError('Error fetching birthday:', error);
+      return NextResponse.json({ error: 'Failed to fetch birthday' }, { status: 500 });
     }
-
-    // Calculate age and days until
-    const birthDate = new Date(birthdayWithUser.birthDate);
-    const today = new Date();
-    const currentYear = today.getFullYear();
-    const age = currentYear - birthDate.getFullYear();
-
-    const nextBirthday = new Date(currentYear, birthDate.getMonth(), birthDate.getDate());
-    if (nextBirthday < today) {
-      nextBirthday.setFullYear(currentYear + 1);
-    }
-    const daysUntil = Math.ceil((nextBirthday.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-
-    return NextResponse.json({
-      id: birthdayWithUser.id,
-      name: birthdayWithUser.name,
-      birthDate: birthdayWithUser.birthDate,
-      age,
-      daysUntil,
-      nextBirthday: nextBirthday.toISOString().split('T')[0],
-      giftIdeas: birthdayWithUser.giftIdeas,
-      sendCardDaysBefore: birthdayWithUser.sendCardDaysBefore,
-      createdAt: birthdayWithUser.createdAt.toISOString(),
-      user: birthdayWithUser.userId ? {
-        id: birthdayWithUser.userId,
-        name: birthdayWithUser.userName,
-        color: birthdayWithUser.userColor,
-      } : null,
-    });
-  } catch (error) {
-    logError('Error fetching birthday:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch birthday' },
-      { status: 500 }
-    );
-  }
   });
 }
 
@@ -109,110 +104,100 @@ export async function GET(
  *   sendCardDaysBefore?: number
  * }
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
   return withAuth(async () => {
-  try {
-    const { id } = await params;
-    const body = await request.json();
+    try {
+      const { id } = await params;
+      const body = await request.json();
 
-    // Check if birthday exists
-    const [existingBirthday] = await db
-      .select({ id: birthdays.id })
-      .from(birthdays)
-      .where(eq(birthdays.id, id));
+      // Check if birthday exists
+      const [existingBirthday] = await db
+        .select({ id: birthdays.id })
+        .from(birthdays)
+        .where(eq(birthdays.id, id));
 
-    if (!existingBirthday) {
-      return NextResponse.json(
-        { error: 'Birthday not found' },
-        { status: 404 }
+      if (!existingBirthday) {
+        return NextResponse.json({ error: 'Birthday not found' }, { status: 404 });
+      }
+
+      // Validate request body
+      const validation = validateRequest(createBirthdaySchema.partial(), body);
+      if (!validation.success) {
+        return NextResponse.json(
+          { error: 'Validation failed', details: validation.error.issues },
+          { status: 400 }
+        );
+      }
+
+      // Build update object
+      const updateData: Record<string, unknown> = {};
+      if ('name' in validation.data) updateData.name = validation.data.name;
+      if ('birthDate' in validation.data) updateData.birthDate = validation.data.birthDate;
+      if ('userId' in validation.data) updateData.userId = validation.data.userId || null;
+      if ('giftIdeas' in validation.data) updateData.giftIdeas = validation.data.giftIdeas || null;
+      if ('sendCardDaysBefore' in validation.data)
+        updateData.sendCardDaysBefore = validation.data.sendCardDaysBefore;
+
+      // Execute update
+      await db.update(birthdays).set(updateData).where(eq(birthdays.id, id));
+
+      // Fetch and return updated birthday
+      const [updatedBirthdayWithUser] = await db
+        .select({
+          id: birthdays.id,
+          name: birthdays.name,
+          birthDate: birthdays.birthDate,
+          giftIdeas: birthdays.giftIdeas,
+          sendCardDaysBefore: birthdays.sendCardDaysBefore,
+          createdAt: birthdays.createdAt,
+          userId: users.id,
+          userName: users.name,
+          userColor: users.color,
+        })
+        .from(birthdays)
+        .leftJoin(users, eq(birthdays.userId, users.id))
+        .where(eq(birthdays.id, id));
+
+      if (!updatedBirthdayWithUser) {
+        return NextResponse.json({ error: 'Birthday not found after update' }, { status: 404 });
+      }
+
+      // Calculate age and days until
+      const birthDate = new Date(updatedBirthdayWithUser.birthDate);
+      const today = new Date();
+      const currentYear = today.getFullYear();
+      const age = currentYear - birthDate.getFullYear();
+
+      const nextBirthday = new Date(currentYear, birthDate.getMonth(), birthDate.getDate());
+      if (nextBirthday < today) {
+        nextBirthday.setFullYear(currentYear + 1);
+      }
+      const daysUntil = Math.ceil(
+        (nextBirthday.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
       );
+
+      return NextResponse.json({
+        id: updatedBirthdayWithUser.id,
+        name: updatedBirthdayWithUser.name,
+        birthDate: updatedBirthdayWithUser.birthDate,
+        age,
+        daysUntil,
+        nextBirthday: nextBirthday.toISOString().split('T')[0],
+        giftIdeas: updatedBirthdayWithUser.giftIdeas,
+        sendCardDaysBefore: updatedBirthdayWithUser.sendCardDaysBefore,
+        createdAt: updatedBirthdayWithUser.createdAt.toISOString(),
+        user: updatedBirthdayWithUser.userId
+          ? {
+              id: updatedBirthdayWithUser.userId,
+              name: updatedBirthdayWithUser.userName,
+              color: updatedBirthdayWithUser.userColor,
+            }
+          : null,
+      });
+    } catch (error) {
+      logError('Error updating birthday:', error);
+      return NextResponse.json({ error: 'Failed to update birthday' }, { status: 500 });
     }
-
-    // Validate request body
-    const validation = validateRequest(createBirthdaySchema.partial(), body);
-    if (!validation.success) {
-      return NextResponse.json(
-        { error: 'Validation failed', details: validation.error.issues },
-        { status: 400 }
-      );
-    }
-
-    // Build update object
-    const updateData: Record<string, unknown> = {};
-    if ('name' in validation.data) updateData.name = validation.data.name;
-    if ('birthDate' in validation.data) updateData.birthDate = validation.data.birthDate;
-    if ('userId' in validation.data) updateData.userId = validation.data.userId || null;
-    if ('giftIdeas' in validation.data) updateData.giftIdeas = validation.data.giftIdeas || null;
-    if ('sendCardDaysBefore' in validation.data) updateData.sendCardDaysBefore = validation.data.sendCardDaysBefore;
-
-    // Execute update
-    await db
-      .update(birthdays)
-      .set(updateData)
-      .where(eq(birthdays.id, id));
-
-    // Fetch and return updated birthday
-    const [updatedBirthdayWithUser] = await db
-      .select({
-        id: birthdays.id,
-        name: birthdays.name,
-        birthDate: birthdays.birthDate,
-        giftIdeas: birthdays.giftIdeas,
-        sendCardDaysBefore: birthdays.sendCardDaysBefore,
-        createdAt: birthdays.createdAt,
-        userId: users.id,
-        userName: users.name,
-        userColor: users.color,
-      })
-      .from(birthdays)
-      .leftJoin(users, eq(birthdays.userId, users.id))
-      .where(eq(birthdays.id, id));
-
-    if (!updatedBirthdayWithUser) {
-      return NextResponse.json(
-        { error: 'Birthday not found after update' },
-        { status: 404 }
-      );
-    }
-
-    // Calculate age and days until
-    const birthDate = new Date(updatedBirthdayWithUser.birthDate);
-    const today = new Date();
-    const currentYear = today.getFullYear();
-    const age = currentYear - birthDate.getFullYear();
-
-    const nextBirthday = new Date(currentYear, birthDate.getMonth(), birthDate.getDate());
-    if (nextBirthday < today) {
-      nextBirthday.setFullYear(currentYear + 1);
-    }
-    const daysUntil = Math.ceil((nextBirthday.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-
-    return NextResponse.json({
-      id: updatedBirthdayWithUser.id,
-      name: updatedBirthdayWithUser.name,
-      birthDate: updatedBirthdayWithUser.birthDate,
-      age,
-      daysUntil,
-      nextBirthday: nextBirthday.toISOString().split('T')[0],
-      giftIdeas: updatedBirthdayWithUser.giftIdeas,
-      sendCardDaysBefore: updatedBirthdayWithUser.sendCardDaysBefore,
-      createdAt: updatedBirthdayWithUser.createdAt.toISOString(),
-      user: updatedBirthdayWithUser.userId ? {
-        id: updatedBirthdayWithUser.userId,
-        name: updatedBirthdayWithUser.userName,
-        color: updatedBirthdayWithUser.userColor,
-      } : null,
-    });
-  } catch (error) {
-    logError('Error updating birthday:', error);
-    return NextResponse.json(
-      { error: 'Failed to update birthday' },
-      { status: 500 }
-    );
-  }
   });
 }
 
@@ -220,10 +205,7 @@ export async function PATCH(
  * DELETE /api/birthdays/[id]
  * Deletes a specific birthday.
  */
-export async function DELETE(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
   return withAuth(async () => {
     try {
       const { id } = await params;
@@ -240,10 +222,7 @@ export async function DELETE(
         .where(eq(birthdays.id, id));
 
       if (!existingBirthday) {
-        return NextResponse.json(
-          { error: 'Birthday not found' },
-          { status: 404 }
-        );
+        return NextResponse.json({ error: 'Birthday not found' }, { status: 404 });
       }
 
       // Tombstone first, then delete. Detection re-reads every calendar on
@@ -255,9 +234,7 @@ export async function DELETE(
         eventType: existingBirthday.eventType,
       });
 
-      await db
-        .delete(birthdays)
-        .where(eq(birthdays.id, id));
+      await db.delete(birthdays).where(eq(birthdays.id, id));
 
       return NextResponse.json({
         message: 'Birthday deleted successfully',
@@ -268,10 +245,7 @@ export async function DELETE(
       });
     } catch (error) {
       logError('Error deleting birthday:', error);
-      return NextResponse.json(
-        { error: 'Failed to delete birthday' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to delete birthday' }, { status: 500 });
     }
   });
 }

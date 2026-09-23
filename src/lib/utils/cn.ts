@@ -45,7 +45,6 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
-
 /**
  * Combines class names with intelligent Tailwind CSS merging.
  *
@@ -80,7 +79,6 @@ export function cn(...inputs: ClassValue[]): string {
   // twMerge: Resolves Tailwind conflicts (later values override earlier)
   return twMerge(clsx(inputs));
 }
-
 
 /**
  * UNDERSTANDING THE LIBRARIES

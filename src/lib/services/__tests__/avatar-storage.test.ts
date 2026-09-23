@@ -54,17 +54,13 @@ describe('saveAvatar', () => {
     expect(mockSharpInstance.rotate).toHaveBeenCalled();
     expect(mockSharpInstance.resize).toHaveBeenCalledWith(256, 256, { fit: 'cover' });
     expect(mockSharpInstance.jpeg).toHaveBeenCalledWith({ quality: 85 });
-    expect(mockSharpInstance.toFile).toHaveBeenCalledWith(
-      path.join(AVATARS_DIR, `${UID}.jpg`)
-    );
+    expect(mockSharpInstance.toFile).toHaveBeenCalledWith(path.join(AVATARS_DIR, `${UID}.jpg`));
   });
 
   it('writes to correct path based on userId', async () => {
     await saveAvatar(Buffer.from('data'), UID2);
 
-    expect(mockSharpInstance.toFile).toHaveBeenCalledWith(
-      path.join(AVATARS_DIR, `${UID2}.jpg`)
-    );
+    expect(mockSharpInstance.toFile).toHaveBeenCalledWith(path.join(AVATARS_DIR, `${UID2}.jpg`));
   });
 
   it('rejects a traversal id without touching sharp or the filesystem', async () => {
@@ -82,9 +78,7 @@ describe('deleteAvatar', () => {
   it('unlinks the avatar file', async () => {
     await deleteAvatar(UID);
 
-    expect(mockUnlink).toHaveBeenCalledWith(
-      path.join(AVATARS_DIR, `${UID}.jpg`)
-    );
+    expect(mockUnlink).toHaveBeenCalledWith(path.join(AVATARS_DIR, `${UID}.jpg`));
   });
 
   it('does not throw when file does not exist', async () => {

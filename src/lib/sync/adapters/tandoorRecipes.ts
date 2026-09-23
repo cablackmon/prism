@@ -27,11 +27,11 @@ type Payload = NormalizedTandoorRecipe;
  */
 export async function ensureRecipeImported(
   sourceId: string,
-  externalId: string,
+  externalId: string
 ): Promise<{ recipeId: string; imported: boolean } | null> {
   const source = await loadTandoorSource(sourceId);
   return ensureImported(sourceId, externalId, source.token, (id) =>
-    fetchTandoorRecipeById(source.serverUrl, source.token, Number(id)),
+    fetchTandoorRecipeById(source.serverUrl, source.token, Number(id))
   );
 }
 
@@ -47,7 +47,7 @@ export const tandoorRecipeAdapter: EntitySyncAdapter<Payload> = {
         updatedAt: r.externalUpdatedAt,
         label: r.name,
         payload: r,
-      }),
+      })
     );
   },
 
@@ -62,7 +62,12 @@ export const tandoorRecipeAdapter: EntitySyncAdapter<Payload> = {
   async applyUpdate(sourceId, change) {
     if (!change.payload || !change.localId) return;
     const source = await loadTandoorSource(sourceId);
-    await writeRecipeRow(sourceId, change.payload as NormalizedRecipe, source.token, change.localId);
+    await writeRecipeRow(
+      sourceId,
+      change.payload as NormalizedRecipe,
+      source.token,
+      change.localId
+    );
   },
 
   async applyDelete(_sourceId, change) {

@@ -159,8 +159,8 @@ describe('deletePhoto', () => {
 
     expect(mockUnlink).toHaveBeenCalledTimes(2);
     const paths = mockUnlink.mock.calls.map((call: unknown[]) => String(call[0]));
-    expect(paths.some(p => p.includes('originals'))).toBe(true);
-    expect(paths.some(p => p.includes('thumbs'))).toBe(true);
+    expect(paths.some((p) => p.includes('originals'))).toBe(true);
+    expect(paths.some((p) => p.includes('thumbs'))).toBe(true);
   });
 
   it('does not attempt thumbnail deletion when not provided', async () => {

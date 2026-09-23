@@ -47,14 +47,17 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
     if (!src) {
       return NextResponse.json({ error: 'Recipe source not found.' }, { status: 404 });
     }
-    const diff = await previewSync(getMealPlanAdapter(src.provider), { id: src.id, lastSynced: src.lastSynced });
+    const diff = await previewSync(getMealPlanAdapter(src.provider), {
+      id: src.id,
+      lastSynced: src.lastSynced,
+    });
 
     const diffId = randomUUID();
     const redis = await getRedisClient();
     if (!redis) {
       return NextResponse.json(
         { error: 'Sync requires Redis, which is currently unavailable.' },
-        { status: 503 },
+        { status: 503 }
       );
     }
     await redis.setEx(`sync-diff:${diffId}`, DIFF_TTL_SECONDS, JSON.stringify(diff.changes));
@@ -105,6 +108,9 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
     if (error instanceof Error && /token|reach|Tandoor|meal plan/i.test(error.message)) {
       return NextResponse.json({ error: msg }, { status: 502 });
     }
-    return NextResponse.json({ error: 'Failed to compute the meal-plan sync preview.' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to compute the meal-plan sync preview.' },
+      { status: 500 }
+    );
   }
 }

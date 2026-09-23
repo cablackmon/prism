@@ -12,7 +12,7 @@ export function useSquareCells(
   cols: number,
   containerPadding: number,
   gap: number,
-  fillHeight = false,
+  fillHeight = false
 ) {
   const [cellSize, setCellSize] = useState(SSR_FALLBACK);
   const [width, setWidth] = useState(0);
@@ -45,34 +45,37 @@ export function useSquareCells(
   }, [cols, containerPadding, gap, fillHeight]);
 
   // Callback ref — re-measures and re-attaches ResizeObserver when element changes
-  const containerRef = useCallback((node: HTMLDivElement | null) => {
-    nodeRef.current = node;
-    if (roRef.current) {
-      roRef.current.disconnect();
-      roRef.current = null;
-    }
-    if (node && !fillHeight) {
-      compute();
-      // Re-measure after layout settles: the ResizeObserver fires on the
-      // container's SIZE, but its top offset (header/nav chrome above it) only
-      // becomes accurate once the surrounding chrome has laid out — a position
-      // change the observer never sees. rAF catches the first settled frame;
-      // the delayed passes catch late layout (fonts, async header content, a
-      // taller touch-device header) that would otherwise leave `top` stale and
-      // the grid mis-sized (bottom-row clip on a real kiosk).
-      requestAnimationFrame(compute);
-      // Multiple settle passes: the header height can change after first paint
-      // (web fonts, async toolbar toggles/badges, a taller touch-device header),
-      // which would otherwise leave `top` stale and clip the bottom row.
-      setTimeout(compute, 200);
-      setTimeout(compute, 600);
-      setTimeout(compute, 1200);
-      setTimeout(compute, 2500);
-      const ro = new ResizeObserver(compute);
-      ro.observe(node);
-      roRef.current = ro;
-    }
-  }, [compute, fillHeight]);
+  const containerRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      nodeRef.current = node;
+      if (roRef.current) {
+        roRef.current.disconnect();
+        roRef.current = null;
+      }
+      if (node && !fillHeight) {
+        compute();
+        // Re-measure after layout settles: the ResizeObserver fires on the
+        // container's SIZE, but its top offset (header/nav chrome above it) only
+        // becomes accurate once the surrounding chrome has laid out — a position
+        // change the observer never sees. rAF catches the first settled frame;
+        // the delayed passes catch late layout (fonts, async header content, a
+        // taller touch-device header) that would otherwise leave `top` stale and
+        // the grid mis-sized (bottom-row clip on a real kiosk).
+        requestAnimationFrame(compute);
+        // Multiple settle passes: the header height can change after first paint
+        // (web fonts, async toolbar toggles/badges, a taller touch-device header),
+        // which would otherwise leave `top` stale and clip the bottom row.
+        setTimeout(compute, 200);
+        setTimeout(compute, 600);
+        setTimeout(compute, 1200);
+        setTimeout(compute, 2500);
+        const ro = new ResizeObserver(compute);
+        ro.observe(node);
+        roRef.current = ro;
+      }
+    },
+    [compute, fillHeight]
+  );
 
   // Re-measure on window resize (covers both fillHeight and fit modes — the
   // latter needs it because the container's top can shift without its size

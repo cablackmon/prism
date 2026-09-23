@@ -37,26 +37,23 @@ export const WishesWidget = React.memo(function WishesWidget({
       className={className}
     >
       {displayItems.length === 0 ? (
-        <WidgetEmpty
-          icon={<Gift className="h-8 w-8" />}
-          message="No wishes yet"
-        />
+        <WidgetEmpty icon={<Gift className="h-8 w-8" />} message="No wishes yet" />
       ) : (
-        <div className="overflow-auto h-full -mr-2 pr-2">
+        <div className="-mr-2 h-full overflow-auto pr-2">
           <div className="space-y-2">
             {displayItems.map((item) => (
               <div
                 key={item.id}
-                className="flex items-center gap-2 p-2 rounded-lg hover:bg-accent/50 transition-colors"
+                className="flex items-center gap-2 rounded-lg p-2 transition-colors hover:bg-accent/50"
               >
-                <Gift className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                <span className="text-sm font-medium truncate flex-1">{item.name}</span>
+                <Gift className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                <span className="flex-1 truncate text-sm font-medium">{item.name}</span>
                 {item.url && (
                   <a
                     href={item.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-muted-foreground hover:text-foreground shrink-0"
+                    className="shrink-0 text-muted-foreground hover:text-foreground"
                   >
                     <ExternalLink className="h-3 w-3" />
                   </a>

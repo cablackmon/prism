@@ -65,7 +65,10 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
     if (group.type === 'user' || group.type === 'family') {
       return NextResponse.json(
-        { error: 'System calendar groups (member and Family) are managed automatically and cannot be deleted' },
+        {
+          error:
+            'System calendar groups (member and Family) are managed automatically and cannot be deleted',
+        },
         { status: 400 }
       );
     }

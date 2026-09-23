@@ -33,13 +33,16 @@ export const ALL_DEFAULT_CATEGORIES: ShoppingCategoryPreset[] = [
   ...GENERAL_CATEGORIES,
 ];
 
-export const GROCERY_PRESET_IDS = GROCERY_CATEGORIES.map(c => c.id);
-export const GENERAL_PRESET_IDS = GENERAL_CATEGORIES.map(c => c.id);
+export const GROCERY_PRESET_IDS = GROCERY_CATEGORIES.map((c) => c.id);
+export const GENERAL_PRESET_IDS = GENERAL_CATEGORIES.map((c) => c.id);
 
 export function getPresetsForListType(listType: string): string[] {
   switch (listType) {
-    case 'grocery': return GROCERY_PRESET_IDS;
-    case 'general': return GENERAL_PRESET_IDS;
-    default: return [...GROCERY_PRESET_IDS, ...GENERAL_PRESET_IDS];
+    case 'grocery':
+      return GROCERY_PRESET_IDS;
+    case 'general':
+      return GENERAL_PRESET_IDS;
+    default:
+      return [...GROCERY_PRESET_IDS, ...GENERAL_PRESET_IDS];
   }
 }

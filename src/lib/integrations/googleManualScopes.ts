@@ -20,8 +20,7 @@
 import { GOOGLE_SCOPE } from '@/lib/integrations/googleScopes';
 
 /** Matches a scope URL as a whole entry, not as a prefix of a longer one. */
-const has = (scope: string) => (granted: string) =>
-  granted.split(/\s+/).includes(scope);
+const has = (scope: string) => (granted: string) => granted.split(/\s+/).includes(scope);
 
 export type GoogleCapability = 'calendar' | 'calendarReadonly' | 'tasks' | 'gmail';
 
@@ -86,7 +85,7 @@ export const GOOGLE_CAPABILITIES: Record<GoogleCapability, CapabilitySpec> = {
 export function detectCapabilities(scope: string | undefined): GoogleCapability[] {
   const s = scope ?? '';
   return (Object.keys(GOOGLE_CAPABILITIES) as GoogleCapability[]).filter((c) =>
-    GOOGLE_CAPABILITIES[c].matches(s),
+    GOOGLE_CAPABILITIES[c].matches(s)
   );
 }
 

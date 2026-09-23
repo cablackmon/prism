@@ -35,32 +35,38 @@ export function FamilySection() {
   const [editingMember, setEditingMember] = useState<FamilyMember | null>(null);
   const [showAddMember, setShowAddMember] = useState(false);
 
-  const memberIds = useMemo(() => familyMembers.map(m => m.id), [familyMembers]);
+  const memberIds = useMemo(() => familyMembers.map((m) => m.id), [familyMembers]);
 
-  const saveReorder = useCallback(async (newOrder: string[]) => {
-    const order = newOrder.map((id, i) => ({ id, sortOrder: i }));
-    try {
-      const res = await fetch('/api/family/reorder', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ order }),
-      });
-      if (res.ok) await refreshFamily();
-    } catch (err) {
-      console.error('Failed to reorder:', err);
-    }
-  }, [refreshFamily]);
+  const saveReorder = useCallback(
+    async (newOrder: string[]) => {
+      const order = newOrder.map((id, i) => ({ id, sortOrder: i }));
+      try {
+        const res = await fetch('/api/family/reorder', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ order }),
+        });
+        if (res.ok) await refreshFamily();
+      } catch (err) {
+        console.error('Failed to reorder:', err);
+      }
+    },
+    [refreshFamily]
+  );
 
   const { draggedId, getDragProps } = useDragReorder({ order: memberIds, onReorder: saveReorder });
 
-  const moveMember = useCallback(async (index: number, direction: -1 | 1) => {
-    const newIndex = index + direction;
-    if (newIndex < 0 || newIndex >= familyMembers.length) return;
-    const newOrder = [...memberIds];
-    const [moved] = newOrder.splice(index, 1);
-    newOrder.splice(newIndex, 0, moved!);
-    saveReorder(newOrder);
-  }, [familyMembers.length, memberIds, saveReorder]);
+  const moveMember = useCallback(
+    async (index: number, direction: -1 | 1) => {
+      const newIndex = index + direction;
+      if (newIndex < 0 || newIndex >= familyMembers.length) return;
+      const newOrder = [...memberIds];
+      const [moved] = newOrder.splice(index, 1);
+      newOrder.splice(newIndex, 0, moved!);
+      saveReorder(newOrder);
+    },
+    [familyMembers.length, memberIds, saveReorder]
+  );
 
   const deleteMember = async (id: string) => {
     const member = familyMembers.find((m) => m.id === id);
@@ -166,12 +172,10 @@ export function FamilySection() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Family Members</h2>
-          <p className="text-muted-foreground">
-            Manage who can access the dashboard
-          </p>
+          <p className="text-muted-foreground">Manage who can access the dashboard</p>
         </div>
         <Button onClick={() => setShowAddMember(true)}>
-          <Plus className="h-4 w-4 mr-1" />
+          <Plus className="mr-1 h-4 w-4" />
           Add Member
         </Button>
       </div>
@@ -180,80 +184,82 @@ export function FamilySection() {
         {familyMembers.map((member, index) => {
           const isDragging = draggedId === member.id;
           return (
-          <Card key={member.id} {...getDragProps(member.id)} className={cn(
-            'cursor-grab active:cursor-grabbing touch-none transition-all',
-            isDragging && 'opacity-50 scale-95 ring-4 ring-primary/50'
-          )}>
-            <CardContent className="flex items-center justify-between p-4">
-              <div className="flex items-center gap-3">
-                <div className="flex flex-col items-center gap-0.5">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-5 w-5"
-                    disabled={index === 0}
-                    onClick={() => moveMember(index, -1)}
-                    aria-label="Move up"
-                  >
-                    <ChevronUp className="h-3 w-3" />
-                  </Button>
-                  <GripVertical className="h-3 w-3 text-muted-foreground/50" />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-5 w-5"
-                    disabled={index === familyMembers.length - 1}
-                    onClick={() => moveMember(index, 1)}
-                    aria-label="Move down"
-                  >
-                    <ChevronDown className="h-3 w-3" />
-                  </Button>
-                </div>
-                <UserAvatar
-                  name={member.name}
-                  color={member.color}
-                  imageUrl={member.avatarUrl}
-                  size="lg"
-                  className="h-12 w-12"
-                />
-                <div>
-                  <div className="font-medium">{member.name}</div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Badge
-                      variant={member.role === 'parent' ? 'default' : 'secondary'}
+            <Card
+              key={member.id}
+              {...getDragProps(member.id)}
+              className={cn(
+                'cursor-grab touch-none transition-all active:cursor-grabbing',
+                isDragging && 'scale-95 opacity-50 ring-4 ring-primary/50'
+              )}
+            >
+              <CardContent className="flex items-center justify-between p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex flex-col items-center gap-0.5">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-5 w-5"
+                      disabled={index === 0}
+                      onClick={() => moveMember(index, -1)}
+                      aria-label="Move up"
                     >
-                      {member.role}
-                    </Badge>
-                    {member.hasPin ? (
-                      <span className="text-green-600">PIN set</span>
-                    ) : (
-                      <span className="text-orange-600">No PIN</span>
-                    )}
+                      <ChevronUp className="h-3 w-3" />
+                    </Button>
+                    <GripVertical className="h-3 w-3 text-muted-foreground/50" />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-5 w-5"
+                      disabled={index === familyMembers.length - 1}
+                      onClick={() => moveMember(index, 1)}
+                      aria-label="Move down"
+                    >
+                      <ChevronDown className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  <UserAvatar
+                    name={member.name}
+                    color={member.color}
+                    imageUrl={member.avatarUrl}
+                    size="lg"
+                    className="h-12 w-12"
+                  />
+                  <div>
+                    <div className="font-medium">{member.name}</div>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Badge variant={member.role === 'parent' ? 'default' : 'secondary'}>
+                        {member.role}
+                      </Badge>
+                      {member.hasPin ? (
+                        <span className="text-green-600">PIN set</span>
+                      ) : (
+                        <span className="text-orange-600">No PIN</span>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setEditingMember(member)}
-                  aria-label="Edit member"
-                >
-                  <Edit2 className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => deleteMember(member.id)}
-                  className="text-destructive"
-                  aria-label="Delete member"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setEditingMember(member)}
+                    aria-label="Edit member"
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => deleteMember(member.id)}
+                    className="text-destructive"
+                    aria-label="Delete member"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           );
         })}
       </div>

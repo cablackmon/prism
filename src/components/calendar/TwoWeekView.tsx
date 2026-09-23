@@ -1,14 +1,6 @@
 'use client';
 
-import {
-  format,
-  startOfWeek,
-  addDays,
-  isSameDay,
-  isBefore,
-  startOfDay,
-  getWeek,
-} from 'date-fns';
+import { format, startOfWeek, addDays, isSameDay, isBefore, startOfDay, getWeek } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { DAYS_SHORT_ARRAY } from '@/lib/constants/days';
 import { useWidgetBgOverride } from '@/components/widgets/WidgetContainer';
@@ -29,11 +21,7 @@ export interface TwoWeekViewProps {
   onEventClick: (event: CalendarEvent) => void;
 }
 
-export function TwoWeekView({
-  currentDate,
-  events,
-  onEventClick,
-}: TwoWeekViewProps) {
+export function TwoWeekView({ currentDate, events, onEventClick }: TwoWeekViewProps) {
   const { timeFormat, displayTimezone } = useTimeFormat();
   const displayNow = toDisplayDate(new Date(), displayTimezone);
   const bgOverride = useWidgetBgOverride();
@@ -56,13 +44,9 @@ export function TwoWeekView({
   // Scope the wide event list to the two visible weeks once.
   const scopedEvents = eventsOverlappingRange(events, weekStart, addDays(weekStart, 14));
   const renderDayCell = (date: Date, compact: boolean = false) => {
-    const dayEvents = scopedEvents.filter((event) => eventOccursOnDisplayDay(
-      event.startTime,
-      event.endTime,
-      event.allDay,
-      date,
-      displayTimezone,
-    ));
+    const dayEvents = scopedEvents.filter((event) =>
+      eventOccursOnDisplayDay(event.startTime, event.endTime, event.allDay, date, displayTimezone)
+    );
     const sorted = [...dayEvents].sort((a, b) => {
       if (a.allDay && !b.allDay) return -1;
       if (!a.allDay && b.allDay) return 1;
@@ -74,52 +58,53 @@ export function TwoWeekView({
     return (
       <div
         className={cn(
-          'border border-border rounded-md h-full',
+          'h-full rounded-md border border-border',
           !transparentMode && 'bg-card/85 backdrop-blur-sm',
           'flex flex-col overflow-hidden',
           !transparentMode && isPast && 'bg-muted/50 text-muted-foreground',
-          today && 'border-primary border-2'
+          today && 'border-2 border-primary'
         )}
       >
         {/* Date header */}
-        <div
-          className={cn(
-            'shrink-0 px-1',
-            compact ? 'py-0.5' : 'py-1',
-            today && 'bg-primary/10'
-          )}
-        >
-          <div className={cn(
-            'font-medium flex items-center gap-1',
-            compact ? 'text-sm' : 'text-sm',
-            today && 'text-primary'
-          )}>
+        <div className={cn('shrink-0 px-1', compact ? 'py-0.5' : 'py-1', today && 'bg-primary/10')}>
+          <div
+            className={cn(
+              'flex items-center gap-1 font-medium',
+              compact ? 'text-sm' : 'text-sm',
+              today && 'text-primary'
+            )}
+          >
             <span className="font-bold">{format(date, 'd')}</span>
             <span className="text-xs text-muted-foreground">{format(date, 'MMM')}</span>
           </div>
         </div>
 
         {/* Events - scrollable, no limit */}
-        <div className={cn('flex-1 overflow-y-auto space-y-0.5', compact ? 'px-0.5 pb-0.5' : 'px-1 pb-1')}>
+        <div
+          className={cn(
+            'flex-1 space-y-0.5 overflow-y-auto',
+            compact ? 'px-0.5 pb-0.5' : 'px-1 pb-1'
+          )}
+        >
           {sorted.map((event) => (
             <button
               key={event.id}
-              onClick={(e) => { e.stopPropagation(); onEventClick(event); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onEventClick(event);
+              }}
               className={cn(
-                'w-full text-left rounded truncate hover:opacity-80 hover:ring-1 hover:ring-seasonal-accent/50 transition-all',
-                compact ? 'text-[10px] px-0.5 py-px' : 'text-xs px-1 py-0.5'
+                'w-full truncate rounded text-left transition-all hover:opacity-80 hover:ring-1 hover:ring-seasonal-accent/50',
+                compact ? 'px-0.5 py-px text-[10px]' : 'px-1 py-0.5 text-xs'
               )}
-              style={event.allDay
-                ? { backgroundColor: event.color + '20', borderLeft: `2px solid ${event.color}` }
-                : { color: event.color }
+              style={
+                event.allDay
+                  ? { backgroundColor: event.color + '20', borderLeft: `2px solid ${event.color}` }
+                  : { color: event.color }
               }
             >
-              {event.allDay || !eventStartsOnDisplayDay(
-                event.startTime,
-                false,
-                date,
-                displayTimezone,
-              )
+              {event.allDay ||
+              !eventStartsOnDisplayDay(event.startTime, false, date, displayTimezone)
                 ? event.title
                 : `• ${formatDisplayTime(event.startTime, timeFormat, {}, displayTimezone)} ${event.title}`}
             </button>
@@ -132,39 +117,35 @@ export function TwoWeekView({
   // Portrait: 2 columns (Week 1, Week 2) x 7 rows (days of week)
   if (isPortrait) {
     return (
-      <div className="h-full flex flex-col gap-1 overflow-auto">
+      <div className="flex h-full flex-col gap-1 overflow-auto">
         {/* Header row with week numbers */}
         <div className="flex shrink-0 gap-1">
           <div className="w-10 shrink-0" /> {/* Day label spacer */}
-          <div className="flex-1 text-center text-sm font-bold text-muted-foreground py-1 bg-card/50 rounded-md">
+          <div className="flex-1 rounded-md bg-card/50 py-1 text-center text-sm font-bold text-muted-foreground">
             Week {week1Num}
           </div>
-          <div className="flex-1 text-center text-sm font-bold text-muted-foreground py-1 bg-card/50 rounded-md">
+          <div className="flex-1 rounded-md bg-card/50 py-1 text-center text-sm font-bold text-muted-foreground">
             Week {week2Num}
           </div>
         </div>
 
         {/* Day rows - each row takes equal space, scales to fit */}
         <div
-          className="flex-1 shrink-0 grid gap-1"
+          className="grid flex-1 shrink-0 gap-1"
           style={{ gridTemplateRows: 'repeat(7, minmax(50px, 1fr))' }}
         >
           {dayNames.map((dayName, dayIndex) => (
-            <div key={dayIndex} className="flex gap-1 min-h-0 h-full">
+            <div key={dayIndex} className="flex h-full min-h-0 gap-1">
               {/* Day label */}
-              <div className="w-10 shrink-0 flex items-center justify-center">
-                <span className="text-xs font-bold text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded">
+              <div className="flex w-10 shrink-0 items-center justify-center">
+                <span className="rounded bg-muted/50 px-1.5 py-0.5 text-xs font-bold text-muted-foreground">
                   {dayName}
                 </span>
               </div>
               {/* Week 1 day */}
-              <div className="flex-1 min-w-0 min-h-0">
-                {renderDayCell(week1[dayIndex]!, true)}
-              </div>
+              <div className="min-h-0 min-w-0 flex-1">{renderDayCell(week1[dayIndex]!, true)}</div>
               {/* Week 2 day */}
-              <div className="flex-1 min-w-0 min-h-0">
-                {renderDayCell(week2[dayIndex]!, true)}
-              </div>
+              <div className="min-h-0 min-w-0 flex-1">{renderDayCell(week2[dayIndex]!, true)}</div>
             </div>
           ))}
         </div>
@@ -174,22 +155,23 @@ export function TwoWeekView({
 
   // Landscape: 7 columns x 2 rows
   return (
-    <div className="h-full flex flex-col overflow-auto">
+    <div className="flex h-full flex-col overflow-auto">
       {/* Day headers */}
-      <div className="grid grid-cols-7 gap-1 mb-1 shrink-0">
+      <div className="mb-1 grid shrink-0 grid-cols-7 gap-1">
         {dayNames.map((name) => (
-          <div key={name} className="text-center text-sm font-medium text-muted-foreground py-2">
+          <div key={name} className="py-2 text-center text-sm font-medium text-muted-foreground">
             {name}
           </div>
         ))}
       </div>
 
       {/* Calendar grid - equal sized cells */}
-      <div className="flex-1 shrink-0 grid grid-cols-7 gap-1" style={{ gridTemplateRows: 'repeat(2, minmax(100px, 1fr))' }}>
+      <div
+        className="grid flex-1 shrink-0 grid-cols-7 gap-1"
+        style={{ gridTemplateRows: 'repeat(2, minmax(100px, 1fr))' }}
+      >
         {days.map((date, index) => (
-          <div key={index}>
-            {renderDayCell(date)}
-          </div>
+          <div key={index}>{renderDayCell(date)}</div>
         ))}
       </div>
     </div>

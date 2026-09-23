@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
     await invalidateEntity('wish-items');
     await invalidateEntity('wish-item-sources');
 
-    const successCount = results.filter(r => r.success).length;
+    const successCount = results.filter((r) => r.success).length;
 
     logActivity({
       userId: auth.userId,

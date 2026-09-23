@@ -42,7 +42,9 @@ interface UseLayoutsResult {
   error: string | null;
   activeLayout: Layout | null;
   refresh: () => Promise<void>;
-  saveLayout: (layout: Partial<Layout> & { name: string; widgets: WidgetConfig[] }) => Promise<Layout>;
+  saveLayout: (
+    layout: Partial<Layout> & { name: string; widgets: WidgetConfig[] }
+  ) => Promise<Layout>;
   deleteLayout: (id: string) => Promise<void>;
   setDefault: (id: string) => Promise<void>;
 }
@@ -61,30 +63,45 @@ export function useLayouts(): UseLayoutsResult {
       // Normalize widget format: DB may store {type, position:{x,y,w,h}}
       // but we need {i, x, y, w, h}
       const normalized = (data.layouts || []).map((l: Layout) => {
-        let widgets = (l.widgets || []).map((w: WidgetConfig & { type?: string; position?: { x: number; y: number; w: number; h: number } }) => {
-          if (w.i !== undefined && w.x !== undefined) return w;
-          return {
-            i: w.type || w.i,
-            x: w.position?.x ?? w.x ?? 0,
-            y: w.position?.y ?? w.y ?? 0,
-            w: w.position?.w ?? w.w ?? 1,
-            h: w.position?.h ?? w.h ?? 1,
-            visible: w.visible,
-            settings: w.settings,
-          } as WidgetConfig;
-        });
+        let widgets = (l.widgets || []).map(
+          (
+            w: WidgetConfig & {
+              type?: string;
+              position?: { x: number; y: number; w: number; h: number };
+            }
+          ) => {
+            if (w.i !== undefined && w.x !== undefined) return w;
+            return {
+              i: w.type || w.i,
+              x: w.position?.x ?? w.x ?? 0,
+              y: w.position?.y ?? w.y ?? 0,
+              w: w.position?.w ?? w.w ?? 1,
+              h: w.position?.h ?? w.h ?? 1,
+              visible: w.visible,
+              settings: w.settings,
+            } as WidgetConfig;
+          }
+        );
         // Migrate settings.backgroundColor/backgroundOpacity to top-level fields
-        widgets = widgets.map(w => {
+        widgets = widgets.map((w) => {
           if (w.settings?.backgroundColor && !w.backgroundColor) {
-            const { backgroundColor, backgroundOpacity, ...rest } = w.settings as Record<string, unknown> & { backgroundColor?: string; backgroundOpacity?: number };
-            return { ...w, backgroundColor, backgroundOpacity: backgroundOpacity ?? w.backgroundOpacity, settings: Object.keys(rest).length > 0 ? rest : undefined };
+            const { backgroundColor, backgroundOpacity, ...rest } = w.settings as Record<
+              string,
+              unknown
+            > & { backgroundColor?: string; backgroundOpacity?: number };
+            return {
+              ...w,
+              backgroundColor,
+              backgroundOpacity: backgroundOpacity ?? w.backgroundOpacity,
+              settings: Object.keys(rest).length > 0 ? rest : undefined,
+            };
           }
           return w;
         });
         // Migrate old 4-col layouts to 12-col: if max(x+w) <= 4, scale by 3
-        const maxRight = Math.max(...widgets.map(w => w.x + w.w), 0);
+        const maxRight = Math.max(...widgets.map((w) => w.x + w.w), 0);
         if (maxRight > 0 && maxRight <= 4) {
-          widgets = widgets.map(w => ({
+          widgets = widgets.map((w) => ({
             ...w,
             x: w.x * 3,
             y: w.y * 3,
@@ -93,9 +110,9 @@ export function useLayouts(): UseLayoutsResult {
           }));
         }
         // Migrate 12-col layouts to 48-col: if max(x+w) > 4 and <= 12, scale by 4
-        const maxRight48 = Math.max(...widgets.map(w => w.x + w.w), 0);
+        const maxRight48 = Math.max(...widgets.map((w) => w.x + w.w), 0);
         if (maxRight48 > 4 && maxRight48 <= 12) {
-          widgets = widgets.map(w => ({
+          widgets = widgets.map((w) => ({
             ...w,
             x: w.x * 4,
             y: w.y * 4,
@@ -115,7 +132,9 @@ export function useLayouts(): UseLayoutsResult {
   }, []);
 
   const saveLayout = useCallback(
-    async (layout: Partial<Layout> & { name: string; widgets: WidgetConfig[] }): Promise<Layout> => {
+    async (
+      layout: Partial<Layout> & { name: string; widgets: WidgetConfig[] }
+    ): Promise<Layout> => {
       const isUpdate = layout.id;
       const url = isUpdate ? `/api/layouts/${layout.id}` : '/api/layouts';
       const method = isUpdate ? 'PATCH' : 'POST';
@@ -156,7 +175,7 @@ export function useLayouts(): UseLayoutsResult {
     fetchLayouts();
   }, [fetchLayouts]);
 
-  const activeLayout = layouts.find(l => l.isDefault) || layouts[0] || null;
+  const activeLayout = layouts.find((l) => l.isDefault) || layouts[0] || null;
 
   return {
     layouts,

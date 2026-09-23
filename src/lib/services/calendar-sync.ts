@@ -45,8 +45,8 @@ import { async as icalAsync, type VEvent, type CalendarResponse } from 'node-ica
  * Future: 730 days forward so school-year, sports-season, and far-out scheduled
  * events show up. (Was ±90d/365d, which the wider display window outran.)
  */
-const DEFAULT_TIME_MIN_MS = 365 * 24 * 60 * 60 * 1000;      // 1 year
-const DEFAULT_TIME_MAX_MS = 730 * 24 * 60 * 60 * 1000;      // 2 years
+const DEFAULT_TIME_MIN_MS = 365 * 24 * 60 * 60 * 1000; // 1 year
+const DEFAULT_TIME_MAX_MS = 730 * 24 * 60 * 60 * 1000; // 2 years
 
 /**
  * Check if token needs refresh (within 5 minutes of expiry)
@@ -148,7 +148,10 @@ export async function syncGoogleCalendarSource(
   } = {}
 ): Promise<SyncCounts> {
   const errors: string[] = [];
-  let added = 0, updated = 0, removed = 0, unchanged = 0;
+  let added = 0,
+    updated = 0,
+    removed = 0,
+    unchanged = 0;
 
   // Fetch the calendar source
   const source = await db.query.calendarSources.findFirst({
@@ -171,7 +174,9 @@ export async function syncGoogleCalendarSource(
   try {
     accessToken = decrypt(source.accessToken);
   } catch (error) {
-    return emptyCounts([`Failed to decrypt access token (may need re-authentication): ${error instanceof Error ? error.message : String(error)}`]);
+    return emptyCounts([
+      `Failed to decrypt access token (may need re-authentication): ${error instanceof Error ? error.message : String(error)}`,
+    ]);
   }
 
   if (tokenNeedsRefresh(source.tokenExpiresAt)) {
@@ -188,7 +193,9 @@ export async function syncGoogleCalendarSource(
         .update(calendarSources)
         .set({
           accessToken: encrypt(newTokens.access_token),
-          refreshToken: newTokens.refresh_token ? encrypt(newTokens.refresh_token) : source.refreshToken,
+          refreshToken: newTokens.refresh_token
+            ? encrypt(newTokens.refresh_token)
+            : source.refreshToken,
           tokenExpiresAt: new Date(Date.now() + newTokens.expires_in * 1000),
           updatedAt: new Date(),
         })
@@ -232,7 +239,8 @@ export async function syncGoogleCalendarSource(
 
     // Track consecutive failures instead of immediately disabling
     const prevErrors = (source.syncErrors as Record<string, unknown>) || {};
-    const prevFailures = (typeof prevErrors.consecutiveFailures === 'number' ? prevErrors.consecutiveFailures : 0);
+    const prevFailures =
+      typeof prevErrors.consecutiveFailures === 'number' ? prevErrors.consecutiveFailures : 0;
     const consecutiveFailures = prevFailures + 1;
     // Auto-disable is gated on *consecutive 404s* specifically: a calendar the
     // user deleted in Google keeps returning 404, whereas transient network /
@@ -240,13 +248,12 @@ export async function syncGoogleCalendarSource(
     // non-404 failure (and a successful sync clears syncErrors entirely). The
     // old code counted all failures, so two transient errors + one real 404
     // disabled the calendar on its *first* 404 — contradicting this comment.
-    const prev404 = (typeof prevErrors.consecutive404 === 'number' ? prevErrors.consecutive404 : 0);
+    const prev404 = typeof prevErrors.consecutive404 === 'number' ? prevErrors.consecutive404 : 0;
     const consecutive404 = is404 ? prev404 + 1 : 0;
     const DISABLE_THRESHOLD = 3; // Only auto-disable after 3 consecutive 404s
 
-    const shouldAutoDisable = is404
-      && consecutive404 >= DISABLE_THRESHOLD
-      && !prevErrors.userOverride; // Never auto-disable if user manually re-enabled
+    const shouldAutoDisable =
+      is404 && consecutive404 >= DISABLE_THRESHOLD && !prevErrors.userOverride; // Never auto-disable if user manually re-enabled
 
     await db
       .update(calendarSources)
@@ -254,16 +261,22 @@ export async function syncGoogleCalendarSource(
         ...(shouldAutoDisable ? { enabled: false, showInEventModal: false } : {}),
         syncErrors: {
           lastError: is404
-            ? (shouldAutoDisable
-                ? 'Removed in Google Calendar — auto-disabled here.'
-                : `Calendar not found in Google (404). Failure ${consecutive404}/${DISABLE_THRESHOLD}.`)
+            ? shouldAutoDisable
+              ? 'Removed in Google Calendar — auto-disabled here.'
+              : `Calendar not found in Google (404). Failure ${consecutive404}/${DISABLE_THRESHOLD}.`
             : errorStr,
           consecutiveFailures,
           consecutive404,
           is404,
           // On confirmed deletion, flag it so the UI can say "removed in Google"
           // rather than leaving a mysteriously-disabled calendar.
-          ...(shouldAutoDisable ? { autoDisabled: true, autoDisabledAt: new Date().toISOString(), removedAtSource: true } : {}),
+          ...(shouldAutoDisable
+            ? {
+                autoDisabled: true,
+                autoDisabledAt: new Date().toISOString(),
+                removedAtSource: true,
+              }
+            : {}),
           ...(prevErrors.userOverride ? { userOverride: true } : {}),
           timestamp: new Date().toISOString(),
         },
@@ -348,18 +361,26 @@ export async function syncGoogleCalendarSource(
 
   // Clear the pending-deletion flag on any event that reappeared in the source.
   if (googleEventIds.size > 0) {
-    await db.update(events).set({ pendingDeletion: null }).where(and(
-      eq(events.calendarSourceId, sourceId),
-      inArray(events.externalEventId, [...googleEventIds]),
-      isNotNull(events.pendingDeletion),
-    ));
+    await db
+      .update(events)
+      .set({ pendingDeletion: null })
+      .where(
+        and(
+          eq(events.calendarSourceId, sourceId),
+          inArray(events.externalEventId, [...googleEventIds]),
+          isNotNull(events.pendingDeletion)
+        )
+      );
   }
 
   for (const prismEvent of prismEventsToCheck) {
     // Only flag if it has an external_event_id (was synced) but is no longer in Google
     if (prismEvent.externalEventId && !googleEventIds.has(prismEvent.externalEventId)) {
       if (!prismEvent.pendingDeletion) {
-        await db.update(events).set({ pendingDeletion: new Date() }).where(eq(events.id, prismEvent.id));
+        await db
+          .update(events)
+          .set({ pendingDeletion: new Date() })
+          .where(eq(events.id, prismEvent.id));
         removed++;
       }
     }
@@ -389,14 +410,14 @@ export async function syncAllGoogleCalendars(
   } = {}
 ): Promise<{ total: number; added: number; updated: number; removed: number; errors: string[] }> {
   const allErrors: string[] = [];
-  let total = 0, added = 0, updated = 0, removed = 0;
+  let total = 0,
+    added = 0,
+    updated = 0,
+    removed = 0;
 
   // Get all enabled Google Calendar sources
   const sources = await db.query.calendarSources.findMany({
-    where: and(
-      eq(calendarSources.provider, 'google'),
-      eq(calendarSources.enabled, true)
-    ),
+    where: and(eq(calendarSources.provider, 'google'), eq(calendarSources.enabled, true)),
   });
 
   // Update showInEventModal based on actual Google accessRole.
@@ -446,10 +467,12 @@ export async function syncAllGoogleCalendars(
     if (role === undefined) {
       // Calendar no longer in any connected Google account
       const prevErrors = (source.syncErrors as Record<string, unknown>) || {};
-      const prevFailures = (typeof prevErrors.consecutiveNotFound === 'number' ? prevErrors.consecutiveNotFound : 0);
+      const prevFailures =
+        typeof prevErrors.consecutiveNotFound === 'number' ? prevErrors.consecutiveNotFound : 0;
       const consecutiveNotFound = prevFailures + 1;
       const DISABLE_THRESHOLD = 3;
-      const shouldAutoDisable = consecutiveNotFound >= DISABLE_THRESHOLD && !prevErrors.userOverride;
+      const shouldAutoDisable =
+        consecutiveNotFound >= DISABLE_THRESHOLD && !prevErrors.userOverride;
 
       await db
         .update(calendarSources)
@@ -458,7 +481,9 @@ export async function syncAllGoogleCalendars(
           syncErrors: {
             lastError: `Calendar not found in Google. Check ${consecutiveNotFound}/${DISABLE_THRESHOLD}.`,
             consecutiveNotFound,
-            ...(shouldAutoDisable ? { autoDisabled: true, autoDisabledAt: new Date().toISOString() } : {}),
+            ...(shouldAutoDisable
+              ? { autoDisabled: true, autoDisabledAt: new Date().toISOString() }
+              : {}),
             ...(prevErrors.userOverride ? { userOverride: true } : {}),
             timestamp: new Date().toISOString(),
           },
@@ -547,7 +572,10 @@ export async function syncIcalCalendarSource(
   } = {}
 ): Promise<SyncCounts> {
   const errors: string[] = [];
-  let added = 0, updated = 0, removed = 0, unchanged = 0;
+  let added = 0,
+    updated = 0,
+    removed = 0,
+    unchanged = 0;
 
   const source = await db.query.calendarSources.findFirst({
     where: eq(calendarSources.id, sourceId),
@@ -595,9 +623,11 @@ export async function syncIcalCalendarSource(
   } catch (error) {
     const errorStr = error instanceof Error ? error.message : String(error);
     const prevErrors = (source.syncErrors as Record<string, unknown>) || {};
-    const prevFailures = typeof prevErrors.consecutiveFailures === 'number' ? prevErrors.consecutiveFailures : 0;
+    const prevFailures =
+      typeof prevErrors.consecutiveFailures === 'number' ? prevErrors.consecutiveFailures : 0;
     const consecutiveFailures = prevFailures + 1;
-    const shouldAutoDisable = consecutiveFailures >= ICAL_DISABLE_THRESHOLD && !prevErrors.userOverride;
+    const shouldAutoDisable =
+      consecutiveFailures >= ICAL_DISABLE_THRESHOLD && !prevErrors.userOverride;
 
     await db
       .update(calendarSources)
@@ -606,7 +636,9 @@ export async function syncIcalCalendarSource(
         syncErrors: {
           lastError: `Failed to fetch iCal feed: ${errorStr}`,
           consecutiveFailures,
-          ...(shouldAutoDisable ? { autoDisabled: true, autoDisabledAt: new Date().toISOString() } : {}),
+          ...(shouldAutoDisable
+            ? { autoDisabled: true, autoDisabledAt: new Date().toISOString() }
+            : {}),
           ...(prevErrors.userOverride ? { userOverride: true } : {}),
           timestamp: new Date().toISOString(),
         },
@@ -727,11 +759,25 @@ export async function syncIcalCalendarSource(
 
         const prevI = existingByExtId.get(inst.externalId);
         if (!prevI) added++;
-        else if (eventChanged(prevI, { title, description, location, startTime: inst.start, endTime: inst.end, allDay, recurring: isRecurring, recurrenceRule })) updated++;
+        else if (
+          eventChanged(prevI, {
+            title,
+            description,
+            location,
+            startTime: inst.start,
+            endTime: inst.end,
+            allDay,
+            recurring: isRecurring,
+            recurrenceRule,
+          })
+        )
+          updated++;
         else unchanged++;
       }
     } catch (error) {
-      errors.push(`Failed to sync VEVENT ${uid}: ${error instanceof Error ? error.message : String(error)}`);
+      errors.push(
+        `Failed to sync VEVENT ${uid}: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -745,11 +791,16 @@ export async function syncIcalCalendarSource(
     ),
   });
   if (externalIds.size > 0) {
-    await db.update(events).set({ pendingDeletion: null }).where(and(
-      eq(events.calendarSourceId, sourceId),
-      inArray(events.externalEventId, [...externalIds]),
-      isNotNull(events.pendingDeletion),
-    ));
+    await db
+      .update(events)
+      .set({ pendingDeletion: null })
+      .where(
+        and(
+          eq(events.calendarSourceId, sourceId),
+          inArray(events.externalEventId, [...externalIds]),
+          isNotNull(events.pendingDeletion)
+        )
+      );
   }
   for (const ev of prismEvents) {
     if (ev.externalEventId && !externalIds.has(ev.externalEventId)) {
@@ -797,13 +848,13 @@ export async function syncAllIcalCalendars(
   } = {}
 ): Promise<{ total: number; added: number; updated: number; removed: number; errors: string[] }> {
   const allErrors: string[] = [];
-  let total = 0, added = 0, updated = 0, removed = 0;
+  let total = 0,
+    added = 0,
+    updated = 0,
+    removed = 0;
 
   const sources = await db.query.calendarSources.findMany({
-    where: and(
-      eq(calendarSources.provider, 'ical'),
-      eq(calendarSources.enabled, true)
-    ),
+    where: and(eq(calendarSources.provider, 'ical'), eq(calendarSources.enabled, true)),
   });
 
   for (const source of sources) {
@@ -830,12 +881,9 @@ export async function syncAllIcalCalendars(
 export async function getEventsForDateRange(
   startDate: Date,
   endDate: Date
-): Promise<typeof events.$inferSelect[]> {
+): Promise<(typeof events.$inferSelect)[]> {
   return db.query.events.findMany({
-    where: and(
-      gte(events.startTime, startDate),
-      lte(events.startTime, endDate)
-    ),
+    where: and(gte(events.startTime, startDate), lte(events.startTime, endDate)),
     orderBy: (events, { asc }) => [asc(events.startTime)],
     with: {
       calendarSource: true,
@@ -875,7 +923,10 @@ export async function syncCalDAVCalendarSource(
   options: { timeMin?: Date; timeMax?: Date } = {}
 ): Promise<SyncCounts> {
   const errors: string[] = [];
-  let added = 0, updated = 0, removed = 0, unchanged = 0;
+  let added = 0,
+    updated = 0,
+    removed = 0,
+    unchanged = 0;
 
   const source = await db.query.calendarSources.findFirst({
     where: eq(calendarSources.id, sourceId),
@@ -918,17 +969,14 @@ export async function syncCalDAVCalendarSource(
       password,
       source.sourceCalendarId,
       timeMin,
-      timeMax,
+      timeMax
     );
 
     const dismissed = await loadDismissedExternalIds(sourceId);
     for (const event of caldavEvents) {
       if (dismissed.has(event.uid)) continue;
       const existing = await db.query.events.findFirst({
-        where: and(
-          eq(events.calendarSourceId, sourceId),
-          eq(events.externalEventId, event.uid),
-        ),
+        where: and(eq(events.calendarSourceId, sourceId), eq(events.externalEventId, event.uid)),
       });
 
       const eventData = {
@@ -953,7 +1001,8 @@ export async function syncCalDAVCalendarSource(
       };
 
       if (existing) {
-        if (eventChanged(existing, eventData)) updated++; else unchanged++;
+        if (eventChanged(existing, eventData)) updated++;
+        else unchanged++;
         await db.update(events).set(eventData).where(eq(events.id, existing.id));
       } else {
         added++;
@@ -968,21 +1017,29 @@ export async function syncCalDAVCalendarSource(
       where: and(
         eq(events.calendarSourceId, sourceId),
         gte(events.startTime, timeMin),
-        lte(events.startTime, timeMax),
+        lte(events.startTime, timeMax)
       ),
     });
 
     if (upstreamUids.size > 0) {
-      await db.update(events).set({ pendingDeletion: null }).where(and(
-        eq(events.calendarSourceId, sourceId),
-        inArray(events.externalEventId, [...upstreamUids]),
-        isNotNull(events.pendingDeletion),
-      ));
+      await db
+        .update(events)
+        .set({ pendingDeletion: null })
+        .where(
+          and(
+            eq(events.calendarSourceId, sourceId),
+            inArray(events.externalEventId, [...upstreamUids]),
+            isNotNull(events.pendingDeletion)
+          )
+        );
     }
     for (const local of localEvents) {
       if (local.externalEventId && !upstreamUids.has(local.externalEventId)) {
         if (!local.pendingDeletion) {
-          await db.update(events).set({ pendingDeletion: new Date() }).where(eq(events.id, local.id));
+          await db
+            .update(events)
+            .set({ pendingDeletion: new Date() })
+            .where(eq(events.id, local.id));
           removed++;
         }
       }
@@ -1010,9 +1067,7 @@ export async function syncCalDAVCalendarSource(
 /**
  * Sync tasks (VTODO) from a CalDAV calendar source into Prism tasks.
  */
-export async function syncCalDAVTasks(
-  sourceId: string,
-): Promise<SyncCounts> {
+export async function syncCalDAVTasks(sourceId: string): Promise<SyncCounts> {
   const errors: string[] = [];
   let synced = 0;
 
@@ -1049,7 +1104,7 @@ export async function syncCalDAVTasks(
       config.serverUrl,
       config.username,
       password,
-      source.sourceCalendarId,
+      source.sourceCalendarId
     );
 
     // Apple iCloud injects metadata VTODOs into reminder lists whose data
@@ -1061,9 +1116,7 @@ export async function syncCalDAVTasks(
       'The creator of this list has upgraded these reminders.',
     ]);
 
-    const realTasks = caldavTasks.filter(
-      t => !APPLE_PLACEHOLDER_TITLES.has(t.title.trim())
-    );
+    const realTasks = caldavTasks.filter((t) => !APPLE_PLACEHOLDER_TITLES.has(t.title.trim()));
 
     // Lazy task-list creation: if a CalDAV source returns only Apple's
     // placeholder VTODOs (the common case for modern iCloud Reminders, whose
@@ -1089,19 +1142,23 @@ export async function syncCalDAVTasks(
         .returning();
       if (newList) {
         taskListId = newList.id;
-        await db.update(calendarSources)
+        await db
+          .update(calendarSources)
           .set({ providerConfig: { ...config, taskListId: newList.id } })
           .where(eq(calendarSources.id, source.id));
       }
     }
 
     if (taskListId) {
-      await db.update(tasks)
+      await db
+        .update(tasks)
         .set({ listId: taskListId })
-        .where(and(
-          sql`${tasks.externalId} LIKE ${`caldav:${source.id}:%`}`,
-          sql`${tasks.listId} IS NULL`,
-        ));
+        .where(
+          and(
+            sql`${tasks.externalId} LIKE ${`caldav:${source.id}:%`}`,
+            sql`${tasks.listId} IS NULL`
+          )
+        );
     }
 
     const seenExternalIds = new Set<string>();
@@ -1150,11 +1207,11 @@ export async function syncCalDAVTasks(
       where: sql`${tasks.externalId} LIKE ${`caldav:${source.id}:%`}`,
       columns: { id: true, externalId: true, lastSynced: true, pendingDeletion: true },
     });
-    const missing = allLocal.filter(t => t.externalId && !seenExternalIds.has(t.externalId));
+    const missing = allLocal.filter((t) => t.externalId && !seenExternalIds.has(t.externalId));
 
     const nowTs = Date.now();
     const flaggable = missing.filter(
-      t => t.lastSynced && nowTs - t.lastSynced.getTime() > CALDAV_MISSING_GRACE_MS,
+      (t) => t.lastSynced && nowTs - t.lastSynced.getTime() > CALDAV_MISSING_GRACE_MS
     );
     const review = decideDeletionReview({
       syncedCount: allLocal.length,
@@ -1166,12 +1223,15 @@ export async function syncCalDAVTasks(
       // does nothing is its own mystery.
       console.error(
         `[Sync] ${review.withheld} CalDAV tasks missing at once — too many to be a normal ` +
-        'change, so none were touched. Check the connection, then sync again.',
+          'change, so none were touched. Check the connection, then sync again.'
       );
     } else if (review.flag) {
-      const toFlag = flaggable.filter(t => !t.pendingDeletion).map(t => t.id);
+      const toFlag = flaggable.filter((t) => !t.pendingDeletion).map((t) => t.id);
       if (toFlag.length > 0) {
-        await db.update(tasks).set({ pendingDeletion: new Date() }).where(inArray(tasks.id, toFlag));
+        await db
+          .update(tasks)
+          .set({ pendingDeletion: new Date() })
+          .where(inArray(tasks.id, toFlag));
       }
     }
 
@@ -1182,7 +1242,8 @@ export async function syncCalDAVTasks(
     // event-capable sources the event path owns syncErrors, so only bump the
     // timestamp there to avoid clobbering a real event-sync error.
     const taskOnly = config.supportsEvents === false;
-    await db.update(calendarSources)
+    await db
+      .update(calendarSources)
       .set({ lastSynced: new Date(), ...(taskOnly ? { syncErrors: {} } : {}) })
       .where(eq(calendarSources.id, source.id));
   } catch (error) {
@@ -1191,7 +1252,8 @@ export async function syncCalDAVTasks(
     // Surface task-sync failures on the source itself for task-only sources
     // (event-capable sources have syncErrors managed by the event path).
     if (config.supportsEvents === false) {
-      await db.update(calendarSources)
+      await db
+        .update(calendarSources)
         .set({ syncErrors: { lastError: msg, lastErrorAt: new Date().toISOString() } })
         .where(eq(calendarSources.id, source.id));
     }
@@ -1207,13 +1269,13 @@ export async function syncAllCalDAVCalendars(
   options: { timeMin?: Date; timeMax?: Date } = {}
 ): Promise<{ total: number; added: number; updated: number; removed: number; errors: string[] }> {
   const allErrors: string[] = [];
-  let total = 0, added = 0, updated = 0, removed = 0;
+  let total = 0,
+    added = 0,
+    updated = 0,
+    removed = 0;
 
   const sources = await db.query.calendarSources.findMany({
-    where: and(
-      eq(calendarSources.provider, 'caldav'),
-      eq(calendarSources.enabled, true),
-    ),
+    where: and(eq(calendarSources.provider, 'caldav'), eq(calendarSources.enabled, true)),
   });
 
   for (const source of sources) {
@@ -1245,12 +1307,15 @@ export async function syncAllCalDAVCalendars(
  * out after we already wrote locally).
  */
 
-async function loadCalDAVAuth(sourceId: string): Promise<{
-  serverUrl: string;
-  username: string;
-  password: string;
-  sourceCalendarId: string;
-} | { error: string }> {
+async function loadCalDAVAuth(sourceId: string): Promise<
+  | {
+      serverUrl: string;
+      username: string;
+      password: string;
+      sourceCalendarId: string;
+    }
+  | { error: string }
+> {
   const source = await db.query.calendarSources.findFirst({
     where: eq(calendarSources.id, sourceId),
   });
@@ -1278,13 +1343,27 @@ async function loadCalDAVAuth(sourceId: string): Promise<{
 
 export async function pushCalDAVEventCreate(
   sourceId: string,
-  ev: { uid: string; title: string; description?: string | null; location?: string | null; startTime: Date; endTime: Date; allDay?: boolean },
+  ev: {
+    uid: string;
+    title: string;
+    description?: string | null;
+    location?: string | null;
+    startTime: Date;
+    endTime: Date;
+    allDay?: boolean;
+  }
 ): Promise<{ ok: true; href: string } | { ok: false; error: string }> {
   const auth = await loadCalDAVAuth(sourceId);
   if ('error' in auth) return { ok: false, error: auth.error };
   try {
     const { createCalDAVEvent } = await import('@/lib/integrations/caldav');
-    const { href } = await createCalDAVEvent(auth.serverUrl, auth.username, auth.password, auth.sourceCalendarId, ev);
+    const { href } = await createCalDAVEvent(
+      auth.serverUrl,
+      auth.username,
+      auth.password,
+      auth.sourceCalendarId,
+      ev
+    );
     return { ok: true, href };
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : String(err) };
@@ -1295,13 +1374,28 @@ export async function pushCalDAVEventUpdate(
   sourceId: string,
   calendarObjectHref: string,
   etag: string | undefined,
-  ev: { uid: string; title: string; description?: string | null; location?: string | null; startTime: Date; endTime: Date; allDay?: boolean },
+  ev: {
+    uid: string;
+    title: string;
+    description?: string | null;
+    location?: string | null;
+    startTime: Date;
+    endTime: Date;
+    allDay?: boolean;
+  }
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const auth = await loadCalDAVAuth(sourceId);
   if ('error' in auth) return { ok: false, error: auth.error };
   try {
     const { updateCalDAVEvent } = await import('@/lib/integrations/caldav');
-    await updateCalDAVEvent(auth.serverUrl, auth.username, auth.password, calendarObjectHref, etag, ev);
+    await updateCalDAVEvent(
+      auth.serverUrl,
+      auth.username,
+      auth.password,
+      calendarObjectHref,
+      etag,
+      ev
+    );
     return { ok: true };
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : String(err) };
@@ -1311,7 +1405,7 @@ export async function pushCalDAVEventUpdate(
 export async function pushCalDAVEventDelete(
   sourceId: string,
   calendarObjectHref: string,
-  etag?: string,
+  etag?: string
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const auth = await loadCalDAVAuth(sourceId);
   if ('error' in auth) return { ok: false, error: auth.error };

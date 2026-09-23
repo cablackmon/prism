@@ -53,7 +53,7 @@ type UpdateSignal = 'timestamp' | 'fingerprint' | 'refresh';
  */
 function updateSignal<TPayload>(
   remote: RemoteItem<TPayload>,
-  local: LocalItem,
+  local: LocalItem
 ): UpdateSignal | null {
   if (remote.updatedAt !== null) {
     return remote.updatedAt.getTime() > local.updatedAt.getTime() ? 'timestamp' : null;
@@ -67,7 +67,7 @@ function updateSignal<TPayload>(
 export function computeSyncDiff<TPayload>(
   remote: RemoteItem<TPayload>[],
   local: LocalItem[],
-  opts: ComputeDiffOptions,
+  opts: ComputeDiffOptions
 ): SyncDiff<TPayload> {
   const remoteIds = new Set(remote.map((r) => r.externalId));
   const localSynced = local.filter((l) => l.externalId !== null);
@@ -118,7 +118,9 @@ export function computeSyncDiff<TPayload>(
   const deleteCandidates: SyncChange<TPayload>[] = [];
   for (const l of localSynced) {
     if (remoteIds.has(l.externalId as string)) continue;
-    const editedSinceSync = opts.lastSynced ? l.updatedAt.getTime() > opts.lastSynced.getTime() : false;
+    const editedSinceSync = opts.lastSynced
+      ? l.updatedAt.getTime() > opts.lastSynced.getTime()
+      : false;
     if (editedSinceSync) continue; // local edit newer than the delete → keep it
     deleteCandidates.push({
       kind: 'delete',

@@ -25,8 +25,8 @@ export function RenameDashboardDialog({
       onClick={onClose}
     >
       <div
-        className="bg-popover border border-border rounded-lg shadow-xl p-4 max-w-sm w-full mx-4 space-y-3"
-        onClick={e => e.stopPropagation()}
+        className="mx-4 w-full max-w-sm space-y-3 rounded-lg border border-border bg-popover p-4 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
       >
         <div className="text-sm font-medium">Rename Dashboard</div>
         <div>
@@ -34,24 +34,26 @@ export function RenameDashboardDialog({
           <input
             type="text"
             value={value}
-            onChange={e => onChange(e.target.value)}
-            className="w-full px-2 py-1.5 text-sm bg-muted border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+            onChange={(e) => onChange(e.target.value)}
+            className="w-full rounded-md border border-border bg-muted px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             maxLength={100}
             autoFocus
-            onKeyDown={e => { if (e.key === 'Enter') onConfirm(); }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') onConfirm();
+            }}
           />
         </div>
-        <div className="flex gap-2 justify-end">
+        <div className="flex justify-end gap-2">
           <button
             onClick={onClose}
-            className="px-3 py-1.5 text-sm rounded-md bg-muted hover:bg-accent transition-colors"
+            className="rounded-md bg-muted px-3 py-1.5 text-sm transition-colors hover:bg-accent"
           >
             Cancel
           </button>
           <button
             onClick={onConfirm}
             disabled={!value.trim() || value.trim() === currentName}
-            className="px-3 py-1.5 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
+            className="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
           >
             Rename
           </button>

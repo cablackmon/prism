@@ -59,9 +59,15 @@ export function PhotoLightbox({
 
   const quality = getResolutionQuality(photo.width, photo.height);
   const dims = photo.width && photo.height ? `${photo.width}×${photo.height}` : 'Unknown';
-  const orient = photo.orientation ?? (photo.width && photo.height
-    ? (photo.width > photo.height ? 'landscape' : photo.width < photo.height ? 'portrait' : 'square')
-    : null);
+  const orient =
+    photo.orientation ??
+    (photo.width && photo.height
+      ? photo.width > photo.height
+        ? 'landscape'
+        : photo.width < photo.height
+          ? 'portrait'
+          : 'square'
+      : null);
 
   const activeTags = parseUsageTags(photo.usage);
 
@@ -77,14 +83,14 @@ export function PhotoLightbox({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black">
       {/* Close */}
       <button
         onClick={onClose}
-        className="absolute top-4 right-4 z-10 p-2 rounded-full bg-black/40 hover:bg-black/60 text-white"
+        className="absolute right-4 top-4 z-10 rounded-full bg-black/40 p-2 text-white hover:bg-black/60"
         aria-label="Close"
       >
-        <X className="w-6 h-6" />
+        <X className="h-6 w-6" />
       </button>
 
       {/* Navigation arrows */}
@@ -92,17 +98,17 @@ export function PhotoLightbox({
         <>
           <button
             onClick={goPrev}
-            className="absolute left-4 z-10 p-2 rounded-full bg-black/40 hover:bg-black/60 text-white"
+            className="absolute left-4 z-10 rounded-full bg-black/40 p-2 text-white hover:bg-black/60"
             aria-label="Previous photo"
           >
-            <ChevronLeft className="w-8 h-8" />
+            <ChevronLeft className="h-8 w-8" />
           </button>
           <button
             onClick={goNext}
-            className="absolute right-4 z-10 p-2 rounded-full bg-black/40 hover:bg-black/60 text-white"
+            className="absolute right-4 z-10 rounded-full bg-black/40 p-2 text-white hover:bg-black/60"
             aria-label="Next photo"
           >
-            <ChevronRight className="w-8 h-8" />
+            <ChevronRight className="h-8 w-8" />
           </button>
         </>
       )}
@@ -112,15 +118,15 @@ export function PhotoLightbox({
       <img
         src={`/api/photos/${photo.id}/file`}
         alt={photo.originalFilename}
-        className="max-w-full max-h-[calc(100vh-100px)] object-contain"
+        className="max-h-[calc(100vh-100px)] max-w-full object-contain"
       />
 
       {/* Bottom bar - responsive layout */}
-      <div className="absolute bottom-4 left-4 right-4 flex flex-col items-center gap-3 z-20">
+      <div className="absolute bottom-4 left-4 right-4 z-20 flex flex-col items-center gap-3">
         {/* Usage tags row - large touch-friendly buttons */}
         {onUpdateUsage && (
-          <div className="flex flex-col items-center gap-3 bg-black/70 backdrop-blur-sm rounded-2xl px-6 py-4">
-            <span className="text-white/60 text-sm font-medium">Tag for:</span>
+          <div className="flex flex-col items-center gap-3 rounded-2xl bg-black/70 px-6 py-4 backdrop-blur-sm">
+            <span className="text-sm font-medium text-white/60">Tag for:</span>
             <div className="flex items-center gap-3">
               {usageTags.map((opt) => {
                 const active = activeTags.includes(opt.value);
@@ -137,10 +143,10 @@ export function PhotoLightbox({
                       e.preventDefault();
                       toggleTag(opt.value);
                     }}
-                    className={`px-6 py-4 text-base font-semibold rounded-xl transition-all min-w-[120px] border-2 ${
+                    className={`min-w-[120px] rounded-xl border-2 px-6 py-4 text-base font-semibold transition-all ${
                       active
-                        ? 'bg-primary text-primary-foreground border-primary shadow-lg'
-                        : 'bg-white/10 text-white/70 border-white/20 hover:bg-white/20 hover:text-white hover:border-white/40'
+                        ? 'border-primary bg-primary text-primary-foreground shadow-lg'
+                        : 'border-white/20 bg-white/10 text-white/70 hover:border-white/40 hover:bg-white/20 hover:text-white'
                     }`}
                   >
                     {opt.label}
@@ -155,7 +161,7 @@ export function PhotoLightbox({
         )}
 
         {/* Info row */}
-        <div className="flex items-center gap-4 bg-black/60 backdrop-blur-sm rounded-xl px-4 py-2.5">
+        <div className="flex items-center gap-4 rounded-xl bg-black/60 px-4 py-2.5 backdrop-blur-sm">
           <button
             onClick={async () => {
               if (await confirm('Delete this photo?', 'This action cannot be undone.')) {
@@ -163,31 +169,31 @@ export function PhotoLightbox({
                 onClose();
               }
             }}
-            className="p-2 rounded-full hover:bg-white/10 text-white"
+            className="rounded-full p-2 text-white hover:bg-white/10"
             aria-label="Delete photo"
           >
-            <Trash2 className="w-5 h-5" />
+            <Trash2 className="h-5 w-5" />
           </button>
 
-          <div className="w-px h-6 bg-white/20" />
+          <div className="h-6 w-px bg-white/20" />
 
           {/* Resolution info */}
           <div className="flex items-center gap-1.5">
-            <span className={`w-2.5 h-2.5 rounded-full ${qualityColors[quality]}`} />
-            <span className="text-white/80 text-sm">{dims}</span>
+            <span className={`h-2.5 w-2.5 rounded-full ${qualityColors[quality]}`} />
+            <span className="text-sm text-white/80">{dims}</span>
           </div>
 
           {/* Orientation */}
           {orient && (
             <>
-              <div className="w-px h-6 bg-white/20" />
-              <span className="text-white/60 text-sm capitalize">{orient}</span>
+              <div className="h-6 w-px bg-white/20" />
+              <span className="text-sm capitalize text-white/60">{orient}</span>
             </>
           )}
 
-          <div className="w-px h-6 bg-white/20" />
+          <div className="h-6 w-px bg-white/20" />
 
-          <span className="text-white/50 text-sm">
+          <span className="text-sm text-white/50">
             {currentIndex + 1} / {photos.length}
           </span>
         </div>

@@ -82,32 +82,36 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ members, total: members.length });
       }
 
-      const data = await getCached('family:public', async () => {
-        const results = await db
-          .select({
-            name: users.name,
-            role: users.role,
-            color: users.color,
-            avatarUrl: users.avatarUrl,
-            pin: users.pin,
-            pinLength: users.pinLength,
-          })
-          .from(users)
-          .orderBy(users.sortOrder, users.createdAt);
+      const data = await getCached(
+        'family:public',
+        async () => {
+          const results = await db
+            .select({
+              name: users.name,
+              role: users.role,
+              color: users.color,
+              avatarUrl: users.avatarUrl,
+              pin: users.pin,
+              pinLength: users.pinLength,
+            })
+            .from(users)
+            .orderBy(users.sortOrder, users.createdAt);
 
-        const members: PublicFamilyMemberResponse[] = results.map((user, index) => ({
-          id: '' as const,
-          loginIndex: index,
-          name: user.name,
-          role: user.role as 'parent' | 'child' | 'guest',
-          color: user.color,
-          avatarUrl: user.avatarUrl,
-          hasPin: !!user.pin,
-          pinLength: user.pinLength,
-        }));
+          const members: PublicFamilyMemberResponse[] = results.map((user, index) => ({
+            id: '' as const,
+            loginIndex: index,
+            name: user.name,
+            role: user.role as 'parent' | 'child' | 'guest',
+            color: user.color,
+            avatarUrl: user.avatarUrl,
+            hasPin: !!user.pin,
+            pinLength: user.pinLength,
+          }));
 
-        return { members, total: members.length };
-      }, 600);
+          return { members, total: members.length };
+        },
+        600
+      );
 
       return NextResponse.json(data);
     }
@@ -119,49 +123,50 @@ export async function GET(request: NextRequest) {
     const role = searchParams.get('role');
     const cacheKey = role ? `family:role:${role}` : 'family:all';
 
-    const data = await getCached(cacheKey, async () => {
-      const results = await db
-        .select({
-          id: users.id,
-          name: users.name,
-          role: users.role,
-          color: users.color,
-          email: users.email,
-          avatarUrl: users.avatarUrl,
-          pin: users.pin,
-          pinLength: users.pinLength,
-          createdAt: users.createdAt,
-        })
-        .from(users)
-        .orderBy(users.sortOrder, users.createdAt);
+    const data = await getCached(
+      cacheKey,
+      async () => {
+        const results = await db
+          .select({
+            id: users.id,
+            name: users.name,
+            role: users.role,
+            color: users.color,
+            email: users.email,
+            avatarUrl: users.avatarUrl,
+            pin: users.pin,
+            pinLength: users.pinLength,
+            createdAt: users.createdAt,
+          })
+          .from(users)
+          .orderBy(users.sortOrder, users.createdAt);
 
-      let filteredResults = results;
-      if (role && ['parent', 'child', 'guest'].includes(role)) {
-        filteredResults = results.filter((u) => u.role === role);
-      }
+        let filteredResults = results;
+        if (role && ['parent', 'child', 'guest'].includes(role)) {
+          filteredResults = results.filter((u) => u.role === role);
+        }
 
-      const members: FamilyMemberResponse[] = filteredResults.map((user) => ({
-        id: user.id,
-        name: user.name,
-        role: user.role as 'parent' | 'child' | 'guest',
-        color: user.color,
-        email: user.email,
-        avatarUrl: user.avatarUrl,
-        hasPin: !!user.pin,
-        pinLength: user.pinLength,
-        createdAt: user.createdAt.toISOString(),
-      }));
+        const members: FamilyMemberResponse[] = filteredResults.map((user) => ({
+          id: user.id,
+          name: user.name,
+          role: user.role as 'parent' | 'child' | 'guest',
+          color: user.color,
+          email: user.email,
+          avatarUrl: user.avatarUrl,
+          hasPin: !!user.pin,
+          pinLength: user.pinLength,
+          createdAt: user.createdAt.toISOString(),
+        }));
 
-      return { members, total: members.length };
-    }, 600);
+        return { members, total: members.length };
+      },
+      600
+    );
 
     return NextResponse.json(data);
   } catch (error) {
     logError('Error fetching family members:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch family members' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch family members' }, { status: 500 });
   }
 }
 
@@ -185,18 +190,12 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     if (!body.name || typeof body.name !== 'string') {
-      return NextResponse.json(
-        { error: 'Name is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Name is required' }, { status: 400 });
     }
 
     const trimmedName = body.name.trim();
     if (!trimmedName) {
-      return NextResponse.json(
-        { error: 'Name is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Name is required' }, { status: 400 });
     }
 
     // Names must be unique (case-insensitive, trimmed) — two members with the
@@ -254,10 +253,7 @@ export async function POST(request: NextRequest) {
     if (body.email && typeof body.email === 'string') {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(body.email)) {
-        return NextResponse.json(
-          { error: 'Invalid email format' },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
       }
     }
 
@@ -276,10 +272,7 @@ export async function POST(request: NextRequest) {
       .returning();
 
     if (!newMember) {
-      return NextResponse.json(
-        { error: 'Failed to create family member' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to create family member' }, { status: 500 });
     }
 
     const response: FamilyMemberResponse = {
@@ -309,9 +302,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(response, { status: 201 });
   } catch (error) {
     logError('Error creating family member:', error);
-    return NextResponse.json(
-      { error: 'Failed to create family member' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to create family member' }, { status: 500 });
   }
 }

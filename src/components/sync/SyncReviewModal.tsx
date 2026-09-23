@@ -63,7 +63,7 @@ export function SyncReviewModal({
   onClose,
 }: SyncReviewModalProps) {
   const [selected, setSelected] = useState<Set<string>>(
-    () => new Set(changes.filter((c) => c.defaultChecked).map(keyOf)),
+    () => new Set(changes.filter((c) => c.defaultChecked).map(keyOf))
   );
 
   const toggle = (c: SyncReviewChange) => {
@@ -82,7 +82,7 @@ export function SyncReviewModal({
       update: changes.filter((c) => c.kind === 'update'),
       delete: changes.filter((c) => c.kind === 'delete'),
     }),
-    [changes],
+    [changes]
   );
 
   const nothing = changes.length === 0;
@@ -105,8 +105,8 @@ export function SyncReviewModal({
             </p>
           ) : (
             <p className="text-sm text-muted-foreground">
-              {counts.add} new · {counts.update} changed · {counts.delete} removed. Adds and
-              updates are pre-selected; removals are opt-in.
+              {counts.add} new · {counts.update} changed · {counts.delete} removed. Adds and updates
+              are pre-selected; removals are opt-in.
             </p>
           )}
 
@@ -120,7 +120,7 @@ export function SyncReviewModal({
 
           {massDeleteGuardTripped && (
             <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
-              <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
               <span>
                 {withheldDeletes} {entityLabel} look deleted in the source — held back as a safety
                 check so a source glitch can&apos;t wipe your data. Re-run the sync if that was
@@ -148,7 +148,7 @@ export function SyncReviewModal({
                         {grouped[kind].map((c) => (
                           <label
                             key={keyOf(c)}
-                            className="flex items-start gap-2 rounded px-1 py-1 hover:bg-muted/50 cursor-pointer"
+                            className="flex cursor-pointer items-start gap-2 rounded px-1 py-1 hover:bg-muted/50"
                           >
                             <Checkbox
                               checked={selected.has(keyOf(c))}
@@ -157,12 +157,14 @@ export function SyncReviewModal({
                             />
                             <span className="text-sm">
                               <span className="font-medium">{c.label}</span>
-                              <span className="block text-xs text-muted-foreground">{c.reason}</span>
+                              <span className="block text-xs text-muted-foreground">
+                                {c.reason}
+                              </span>
                             </span>
                           </label>
                         ))}
                       </div>
-                    ),
+                    )
                 )}
               </div>
             </ScrollArea>
@@ -174,7 +176,10 @@ export function SyncReviewModal({
             {nothing ? 'Close' : 'Cancel'}
           </Button>
           {!nothing && (
-            <Button onClick={() => onApply(selectedList)} disabled={applying || selected.size === 0}>
+            <Button
+              onClick={() => onApply(selectedList)}
+              disabled={applying || selected.size === 0}
+            >
               {applying ? 'Applying…' : `Apply ${selected.size} selected`}
             </Button>
           )}

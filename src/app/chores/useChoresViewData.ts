@@ -70,18 +70,22 @@ export function useChoresViewData() {
 
   useEffect(() => {
     if (apiChores.length > 0) {
-      setChores(apiChores.map(c => ({
-        ...c,
-        createdAt: c.createdAt instanceof Date ? c.createdAt : new Date(c.createdAt),
-        pendingApproval: c.pendingApproval,
-      })));
+      setChores(
+        apiChores.map((c) => ({
+          ...c,
+          createdAt: c.createdAt instanceof Date ? c.createdAt : new Date(c.createdAt),
+          pendingApproval: c.pendingApproval,
+        }))
+      );
     }
   }, [apiChores]);
 
   const filteredChores = useMemo(() => {
     let result = [...chores];
     if (filterPerson && filterPerson.length > 0) {
-      result = result.filter((chore) => chore.assignedTo?.id && filterPerson.includes(chore.assignedTo.id));
+      result = result.filter(
+        (chore) => chore.assignedTo?.id && filterPerson.includes(chore.assignedTo.id)
+      );
     }
     if (filterCategory) {
       result = result.filter((chore) => chore.category === filterCategory);
@@ -106,7 +110,16 @@ export function useChoresViewData() {
         case 'category':
           return a.category.localeCompare(b.category);
         case 'frequency': {
-          const frequencyOrder: Record<string, number> = { daily: 0, weekly: 1, biweekly: 2, monthly: 3, quarterly: 4, 'semi-annually': 5, annually: 6, custom: 7 };
+          const frequencyOrder: Record<string, number> = {
+            daily: 0,
+            weekly: 1,
+            biweekly: 2,
+            monthly: 3,
+            quarterly: 4,
+            'semi-annually': 5,
+            annually: 6,
+            custom: 7,
+          };
           return (frequencyOrder[a.frequency] ?? 99) - (frequencyOrder[b.frequency] ?? 99);
         }
         default:
@@ -124,14 +137,20 @@ export function useChoresViewData() {
     const isParent = user.role === 'parent';
     const isAssignedToUser = !chore.assignedTo || chore.assignedTo.id === user.id;
     if (!isParent && !isAssignedToUser) {
-      toast({ title: `This chore is assigned to ${chore.assignedTo?.name}. Only they can mark it complete.`, variant: 'warning' });
+      toast({
+        title: `This chore is assigned to ${chore.assignedTo?.name}. Only they can mark it complete.`,
+        variant: 'warning',
+      });
       return false;
     }
     try {
       // Parent approving a pending completion
       if (isParent && chore.pendingApproval) {
         await apiApproveChore(choreId, chore.pendingApproval.completionId);
-        toast({ title: `Approved! ${chore.pendingApproval.completedBy.name} earned ${chore.pointValue} points for "${chore.title}".`, variant: 'success' });
+        toast({
+          title: `Approved! ${chore.pendingApproval.completedBy.name} earned ${chore.pointValue} points for "${chore.title}".`,
+          variant: 'success',
+        });
         refreshChores();
         return true;
       }
@@ -161,13 +180,19 @@ export function useChoresViewData() {
       });
       if (!response.ok) {
         const data = await response.json();
-        if (data.alreadyPending) { toast({ title: data.message, variant: 'warning' }); return false; }
+        if (data.alreadyPending) {
+          toast({ title: data.message, variant: 'warning' });
+          return false;
+        }
         throw new Error(data.error || 'Failed to complete chore');
       }
       const result = await response.json();
       if (result.requiresApproval) {
-        const completerName = familyMembers.find(m => m.id === completedById)?.name || 'They';
-        toast({ title: `Great job! "${chore.title}" is now pending parental approval for ${completerName}.`, variant: 'success' });
+        const completerName = familyMembers.find((m) => m.id === completedById)?.name || 'They';
+        toast({
+          title: `Great job! "${chore.title}" is now pending parental approval for ${completerName}.`,
+          variant: 'success',
+        });
       } else {
         toast({ title: `Chore completed! ${chore.pointValue} points awarded.` });
       }
@@ -175,26 +200,35 @@ export function useChoresViewData() {
       return true;
     } catch (err) {
       console.error('Error completing chore:', err);
-      toast({ title: err instanceof Error ? err.message : 'Failed to complete chore', variant: 'destructive' });
+      toast({
+        title: err instanceof Error ? err.message : 'Failed to complete chore',
+        variant: 'destructive',
+      });
       return false;
     }
   };
 
-  const confirmDisableChore = useCallback((chore: Chore) => {
-    const assignee = chore.assignedTo?.name || 'Unassigned';
-    return confirm(
-      `Disable “${chore.title}”?`,
-      `Assigned to: ${assignee}. This chore will stop appearing as active and cannot be completed until it is enabled again.`,
-      { confirmLabel: 'Disable chore', variant: 'destructive' }
-    );
-  }, [confirm]);
+  const confirmDisableChore = useCallback(
+    (chore: Chore) => {
+      const assignee = chore.assignedTo?.name || 'Unassigned';
+      return confirm(
+        `Disable “${chore.title}”?`,
+        `Assigned to: ${assignee}. This chore will stop appearing as active and cannot be completed until it is enabled again.`,
+        { confirmLabel: 'Disable chore', variant: 'destructive' }
+      );
+    },
+    [confirm]
+  );
 
   const toggleEnabled = async (choreId: string) => {
     const chore = chores.find((c) => c.id === choreId);
     if (!chore) return;
     const user = await requireAuth("Who's updating this chore?");
     if (!user) return;
-    if (user.role !== 'parent') { toast({ title: 'Only parents can enable or disable chores', variant: 'warning' }); return; }
+    if (user.role !== 'parent') {
+      toast({ title: 'Only parents can enable or disable chores', variant: 'warning' });
+      return;
+    }
     if (chore.enabled) {
       const shouldDisable = await confirmDisableChore(chore);
       if (!shouldDisable) return;
@@ -206,7 +240,7 @@ export function useChoresViewData() {
         body: JSON.stringify({ enabled: !chore.enabled }),
       });
       if (!response.ok) throw new Error('Failed to toggle chore');
-      setChores((prev) => prev.map((c) => c.id === choreId ? { ...c, enabled: !c.enabled } : c));
+      setChores((prev) => prev.map((c) => (c.id === choreId ? { ...c, enabled: !c.enabled } : c)));
     } catch (err) {
       console.error('Error toggling chore:', err);
     }
@@ -217,13 +251,19 @@ export function useChoresViewData() {
     if (!chore) return;
     const user = await requireAuth("Who's deleting this chore?");
     if (!user) return;
-    if (user.role !== 'parent') { toast({ title: 'Only parents can delete chores', variant: 'warning' }); return; }
+    if (user.role !== 'parent') {
+      toast({ title: 'Only parents can delete chores', variant: 'warning' });
+      return;
+    }
     const assignee = chore.assignedTo?.name || 'Unassigned';
-    if (!await confirm(
-      `Delete “${chore.title}”?`,
-      `Assigned to: ${assignee}. This cannot be undone. Deleting this chore permanently erases its completion history and removes those points from derived point totals and goals.`,
-      { confirmLabel: 'Delete chore', variant: 'destructive' }
-    )) return;
+    if (
+      !(await confirm(
+        `Delete “${chore.title}”?`,
+        `Assigned to: ${assignee}. This cannot be undone. Deleting this chore permanently erases its completion history and removes those points from derived point totals and goals.`,
+        { confirmLabel: 'Delete chore', variant: 'destructive' }
+      ))
+    )
+      return;
     try {
       const response = await fetch(`/api/chores/${choreId}`, { method: 'DELETE' });
       if (!response.ok) throw new Error('Failed to delete chore');
@@ -236,7 +276,10 @@ export function useChoresViewData() {
   const editChore = async (chore: Chore) => {
     const user = await requireAuth("Who's editing this chore?");
     if (!user) return;
-    if (user.role !== 'parent') { toast({ title: 'Only parents can edit chores', variant: 'warning' }); return; }
+    if (user.role !== 'parent') {
+      toast({ title: 'Only parents can edit chores', variant: 'warning' });
+      return;
+    }
     setEditingChore(chore);
   };
 
@@ -267,7 +310,10 @@ export function useChoresViewData() {
       return true;
     } catch (err) {
       console.error('Error creating chore:', err);
-      toast({ title: err instanceof Error ? err.message : 'Failed to create chore', variant: 'destructive' });
+      toast({
+        title: err instanceof Error ? err.message : 'Failed to create chore',
+        variant: 'destructive',
+      });
       return false;
     }
   };
@@ -301,20 +347,39 @@ export function useChoresViewData() {
   }, [refreshChores, showCompletions, fetchCompletions]);
 
   return {
-    loading, error, refreshChores: handleRefreshChores, familyMembers,
-    filterPerson, setFilterPerson,
-    filterCategory, setFilterCategory,
-    showDisabled, setShowDisabled,
-    hideCompleted, setHideCompleted,
-    showCompletions, setShowCompletions,
-    completions, completionsLoading,
-    sortBy, setSortBy,
-    showAddModal, setShowAddModal,
-    editingChore, setEditingChore,
+    loading,
+    error,
+    refreshChores: handleRefreshChores,
+    familyMembers,
+    filterPerson,
+    setFilterPerson,
+    filterCategory,
+    setFilterCategory,
+    showDisabled,
+    setShowDisabled,
+    hideCompleted,
+    setHideCompleted,
+    showCompletions,
+    setShowCompletions,
+    completions,
+    completionsLoading,
+    sortBy,
+    setSortBy,
+    showAddModal,
+    setShowAddModal,
+    editingChore,
+    setEditingChore,
     filteredChores,
-    completeChore, confirmDisableChore, toggleEnabled, deleteChore, editChore, undoCompletion,
+    completeChore,
+    confirmDisableChore,
+    toggleEnabled,
+    deleteChore,
+    editChore,
+    undoCompletion,
     inlineAddChore,
-    enabledCount, dueCount,
-    confirm, confirmDialogProps,
+    enabledCount,
+    dueCount,
+    confirm,
+    confirmDialogProps,
   };
 }

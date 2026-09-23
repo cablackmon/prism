@@ -60,7 +60,7 @@ export function SlideshowCore({
   };
 
   return (
-    <div className={cn('relative w-full h-full overflow-hidden rounded-lg', className)}>
+    <div className={cn('relative h-full w-full overflow-hidden rounded-lg', className)}>
       {currentPhoto && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -68,7 +68,7 @@ export function SlideshowCore({
           src={`/api/photos/${currentPhoto.id}/file`}
           alt={currentPhoto.originalFilename}
           className={cn(
-            'absolute inset-0 w-full h-full object-contain transition-all duration-700',
+            'absolute inset-0 h-full w-full object-contain transition-all duration-700',
             transitionClasses[transition]
           )}
         />

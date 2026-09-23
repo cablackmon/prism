@@ -8,10 +8,7 @@ import { clearSourceCache } from '@/lib/services/photo-cache';
 import { invalidateEntity } from '@/lib/cache/cacheKeys';
 import { logError } from '@/lib/utils/logError';
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -64,10 +61,7 @@ export async function DELETE(
 
     // Delete locally-stored files (skip external/proxied photos — they have
     // no file on disk under data/photos/originals).
-    const sourcePhotos = await db
-      .select()
-      .from(photos)
-      .where(eq(photos.sourceId, id));
+    const sourcePhotos = await db.select().from(photos).where(eq(photos.sourceId, id));
 
     for (const photo of sourcePhotos) {
       if (photo.isExternal) continue;

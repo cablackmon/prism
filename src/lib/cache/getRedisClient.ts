@@ -68,7 +68,10 @@ export async function getRedisClient(): Promise<RedisClientType | null> {
 
     return redisClient;
   } catch (error) {
-    console.warn('Failed to connect to Redis:', error instanceof Error ? error.message : 'Unknown error');
+    console.warn(
+      'Failed to connect to Redis:',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
     isConnecting = false;
     connectionFailedAt = Date.now();
     return null;

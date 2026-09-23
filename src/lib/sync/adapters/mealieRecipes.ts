@@ -26,11 +26,11 @@ type Payload = NormalizedRecipe;
 export async function ensureMealieRecipeImported(
   sourceId: string,
   externalId: string,
-  slug: string,
+  slug: string
 ): Promise<{ recipeId: string; imported: boolean } | null> {
   const source = await loadSourceConnection(sourceId);
   return ensureImported(sourceId, externalId, source.token, () =>
-    fetchMealieRecipeBySlug(source.serverUrl, source.token, slug),
+    fetchMealieRecipeBySlug(source.serverUrl, source.token, slug)
   );
 }
 
@@ -46,7 +46,7 @@ export const mealieRecipeAdapter: EntitySyncAdapter<Payload> = {
         updatedAt: r.externalUpdatedAt,
         label: r.name,
         payload: r,
-      }),
+      })
     );
   },
 

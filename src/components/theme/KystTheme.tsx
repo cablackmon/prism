@@ -22,15 +22,21 @@ export function BoardStarfield() {
     document.addEventListener('visibilitychange', update);
     return () => document.removeEventListener('visibilitychange', update);
   }, []);
-  return <div className="kyst-starfield" aria-hidden="true" data-paused={hidden}>
-    <div className="kyst-stars kyst-stars-far" />
-    <div className="kyst-stars kyst-stars-near" />
-  </div>;
+  return (
+    <div className="kyst-starfield" aria-hidden="true" data-paused={hidden}>
+      <div className="kyst-stars kyst-stars-far" />
+      <div className="kyst-stars kyst-stars-near" />
+    </div>
+  );
 }
 
 export function BoardWordmark() {
-  return <Link href="/" className="kyst-wordmark" aria-label="KYST family board home">
-    <Image src="/kyst-emblem.svg" alt="" width={44} height={44} priority />
-    <span>KYST<span className="kyst-wordmark-dot">.</span></span>
-  </Link>;
+  return (
+    <Link href="/" className="kyst-wordmark" aria-label="KYST family board home">
+      <Image src="/kyst-emblem.svg" alt="" width={44} height={44} priority />
+      <span>
+        KYST<span className="kyst-wordmark-dot">.</span>
+      </span>
+    </Link>
+  );
 }

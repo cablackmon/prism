@@ -63,9 +63,6 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     logError('Error in database operation:', error);
-    return NextResponse.json(
-      { error: 'Failed to perform database operation' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to perform database operation' }, { status: 500 });
   }
 }

@@ -66,7 +66,7 @@ function eventOnDay(event: CalendarEvent, day: Date, displayTimezone: string): b
     event.endTime,
     event.allDay,
     day,
-    displayTimezone,
+    displayTimezone
   );
 }
 
@@ -129,10 +129,10 @@ export function useDayBucketsForRange({
     loading: tasksLoading,
     error: tasksError,
     refresh: refreshTasks,
-  // showCompleted: true — completed tasks render muted/strikethrough via
-  // OverlayItemsCell's muted={task.completed} → WeekItemCard styling, matching
-  // how cooked meals stay visible. Hiding them outright was a usability gap
-  // (a task you completed today disappears entirely from the calendar).
+    // showCompleted: true — completed tasks render muted/strikethrough via
+    // OverlayItemsCell's muted={task.completed} → WeekItemCard styling, matching
+    // how cooked meals stay visible. Hiding them outright was a usability gap
+    // (a task you completed today disappears entirely from the calendar).
   } = useTasks({ showCompleted: true, enabled: overlays.tasks });
 
   const { data: weather } = useWeather();
@@ -152,13 +152,13 @@ export function useDayBucketsForRange({
     const filterEndMs = end.getTime() + 2 * DAY_MS;
     const rangeEvents = overlays.events
       ? events.filter(
-          (e) => e.startTime.getTime() <= filterEndMs && e.endTime.getTime() >= filterStartMs,
+          (e) => e.startTime.getTime() <= filterEndMs && e.endTime.getTime() >= filterStartMs
         )
       : EMPTY_EVENTS;
 
-    const safeMeals = overlays.meals ? meals ?? EMPTY_MEALS : EMPTY_MEALS;
-    const safeChores = overlays.chores ? chores ?? EMPTY_CHORES : EMPTY_CHORES;
-    const safeTasks = overlays.tasks ? tasks ?? EMPTY_TASKS : EMPTY_TASKS;
+    const safeMeals = overlays.meals ? (meals ?? EMPTY_MEALS) : EMPTY_MEALS;
+    const safeChores = overlays.chores ? (chores ?? EMPTY_CHORES) : EMPTY_CHORES;
+    const safeTasks = overlays.tasks ? (tasks ?? EMPTY_TASKS) : EMPTY_TASKS;
 
     let cursor = start;
     let safety = 0;
@@ -213,7 +213,20 @@ export function useDayBucketsForRange({
     return map;
     // fromKey/toKey trigger recompute on actual date changes, not Date identity.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fromKey, toKey, events, meals, chores, tasks, weather, overlays.events, overlays.meals, overlays.chores, overlays.tasks, displayTimezone]);
+  }, [
+    fromKey,
+    toKey,
+    events,
+    meals,
+    chores,
+    tasks,
+    weather,
+    overlays.events,
+    overlays.meals,
+    overlays.chores,
+    overlays.tasks,
+    displayTimezone,
+  ]);
 
   const loading =
     (overlays.events && fetchEvents && eventsLoading) ||

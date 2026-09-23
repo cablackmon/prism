@@ -23,7 +23,7 @@ export class EncryptionKeyError extends Error {
 
 /** Guidance appended to every key error, since the fix is always the same. */
 const HOW_TO_GENERATE =
-  'Generate one with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"';
+  "Generate one with: node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\"";
 
 /**
  * Validate the configured key without encrypting anything.
@@ -71,10 +71,7 @@ export function encrypt(plaintext: string): string {
   const iv = randomBytes(IV_LENGTH);
   const cipher = createCipheriv(ALGORITHM, key, iv);
 
-  const encrypted = Buffer.concat([
-    cipher.update(plaintext, 'utf8'),
-    cipher.final(),
-  ]);
+  const encrypted = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
   const authTag = cipher.getAuthTag();
 
   // Pack as: iv (12) + authTag (16) + ciphertext

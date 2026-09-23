@@ -7,7 +7,7 @@ export const NIGHT_SKY_WINDOW_DAYS = 14;
 
 export function isExpectedNightSkyResponse(
   response: Pick<Response, 'ok' | 'redirected' | 'url'>,
-  expectedUrl: string,
+  expectedUrl: string
 ): boolean {
   return response.ok && !response.redirected && response.url === expectedUrl;
 }
@@ -17,7 +17,10 @@ export function isExpectedNightSkyFrameUrl(frameUrl: string, expectedUrl: string
 }
 
 export function isNightSkyNight(date: Date): boolean {
-  const forced = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('nightSkyMode') : null;
+  const forced =
+    typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search).get('nightSkyMode')
+      : null;
   if (forced === 'night') return true;
   if (forced === 'day') return false;
   const hour = date.getHours();
@@ -47,7 +50,8 @@ export function nightSkyEvents(events: CalendarEvent[], now: Date) {
 export function tomorrowEvents(events: CalendarEvent[], now: Date) {
   const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
   const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2);
-  return events.filter((event) => event.startTime >= start && event.startTime < end)
+  return events
+    .filter((event) => event.startTime >= start && event.startTime < end)
     .sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
 }
 

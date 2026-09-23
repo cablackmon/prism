@@ -21,9 +21,25 @@ import {
   startOfDay,
 } from 'date-fns';
 
-const dayFunctions = [nextSunday, nextMonday, nextTuesday, nextWednesday, nextThursday, nextFriday, nextSaturday];
+const dayFunctions = [
+  nextSunday,
+  nextMonday,
+  nextTuesday,
+  nextWednesday,
+  nextThursday,
+  nextFriday,
+  nextSaturday,
+];
 
-export type ChoreFrequency = 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'quarterly' | 'semi-annually' | 'annually' | 'custom';
+export type ChoreFrequency =
+  | 'daily'
+  | 'weekly'
+  | 'biweekly'
+  | 'monthly'
+  | 'quarterly'
+  | 'semi-annually'
+  | 'annually'
+  | 'custom';
 
 /**
  * Calculate the next due date based on frequency and optional startDay override.

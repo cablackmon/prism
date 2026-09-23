@@ -34,7 +34,7 @@ export function TimeFormatProvider({ children }: { children: React.ReactNode }) 
   const [deviceTimezone, setDeviceTimezone] = React.useState('UTC');
   const [householdTimezone, setHouseholdTimezone] = React.useState('UTC');
   const [displayTimezoneMode, setDisplayTimezoneModeState] = React.useState<DisplayTimezoneMode>(
-    DEFAULT_DISPLAY_TIMEZONE_MODE,
+    DEFAULT_DISPLAY_TIMEZONE_MODE
   );
 
   React.useEffect(() => {
@@ -48,7 +48,7 @@ export function TimeFormatProvider({ children }: { children: React.ReactNode }) 
   React.useEffect(() => {
     let active = true;
     fetch('/api/settings')
-      .then((response) => response.ok ? response.json() : null)
+      .then((response) => (response.ok ? response.json() : null))
       .then((data) => {
         const saved = data?.settings?.[SETTING_KEY];
         if (active && isTimeFormat(saved)) setTimeFormatState(saved);
@@ -60,7 +60,9 @@ export function TimeFormatProvider({ children }: { children: React.ReactNode }) 
       })
       .catch(() => {});
 
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, []);
 
   React.useEffect(() => {
@@ -72,31 +74,32 @@ export function TimeFormatProvider({ children }: { children: React.ReactNode }) 
     return () => window.removeEventListener(TIMEZONE_CHANGED_EVENT, handleTimezoneChanged);
   }, []);
 
-  const setTimeFormat = React.useCallback(async (next: TimeFormat) => {
-    const previous = timeFormat;
-    setTimeFormatState(next);
+  const setTimeFormat = React.useCallback(
+    async (next: TimeFormat) => {
+      const previous = timeFormat;
+      setTimeFormatState(next);
 
-    try {
-      const response = await fetch('/api/settings', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key: SETTING_KEY, value: next }),
-      });
-      if (!response.ok) throw new Error('Failed to save time format');
-    } catch (error) {
-      setTimeFormatState(previous);
-      throw error;
-    }
-  }, [timeFormat]);
+      try {
+        const response = await fetch('/api/settings', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key: SETTING_KEY, value: next }),
+        });
+        if (!response.ok) throw new Error('Failed to save time format');
+      } catch (error) {
+        setTimeFormatState(previous);
+        throw error;
+      }
+    },
+    [timeFormat]
+  );
 
   const setDisplayTimezoneMode = React.useCallback((next: DisplayTimezoneMode) => {
     setDisplayTimezoneModeState(next);
     localStorage.setItem(DISPLAY_TIMEZONE_MODE_KEY, next);
   }, []);
 
-  const displayTimezone = displayTimezoneMode === 'device'
-    ? deviceTimezone
-    : householdTimezone;
+  const displayTimezone = displayTimezoneMode === 'device' ? deviceTimezone : householdTimezone;
 
   const value = React.useMemo(
     () => ({
@@ -116,14 +119,10 @@ export function TimeFormatProvider({ children }: { children: React.ReactNode }) 
       displayTimezone,
       displayTimezoneMode,
       setDisplayTimezoneMode,
-    ],
+    ]
   );
 
-  return (
-    <TimeFormatContext.Provider value={value}>
-      {children}
-    </TimeFormatContext.Provider>
-  );
+  return <TimeFormatContext.Provider value={value}>{children}</TimeFormatContext.Provider>;
 }
 
 export function useTimeFormat(): TimeFormatContextValue {

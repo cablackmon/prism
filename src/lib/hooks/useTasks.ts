@@ -67,7 +67,13 @@ export function useTasks(options: UseTasksOptions = {}) {
   if (userId) params.set('userId', userId);
   if (!showCompleted) params.set('completed', 'false');
 
-  const { data: tasks, setData: setTasks, loading, error, refresh } = useFetch<Task[]>({
+  const {
+    data: tasks,
+    setData: setTasks,
+    loading,
+    error,
+    refresh,
+  } = useFetch<Task[]>({
     url: `/api/tasks?${params.toString()}`,
     initialData: [],
     transform: transformTasks,
@@ -78,11 +84,7 @@ export function useTasks(options: UseTasksOptions = {}) {
 
   const toggleTask = useCallback(
     async (taskId: string, completed: boolean) => {
-      setTasks((prev) =>
-        prev.map((task) =>
-          task.id === taskId ? { ...task, completed } : task
-        )
-      );
+      setTasks((prev) => prev.map((task) => (task.id === taskId ? { ...task, completed } : task)));
 
       try {
         const response = await fetch(`/api/tasks/${taskId}`, {
@@ -97,9 +99,7 @@ export function useTasks(options: UseTasksOptions = {}) {
       } catch (err) {
         console.error('Error updating task:', err);
         setTasks((prev) =>
-          prev.map((task) =>
-            task.id === taskId ? { ...task, completed: !completed } : task
-          )
+          prev.map((task) => (task.id === taskId ? { ...task, completed: !completed } : task))
         );
         throw err;
       }

@@ -121,11 +121,21 @@ describe('syncOneDriveSource', () => {
 
   it('downloads new photos not in the database', async () => {
     mockListPhotos.mockResolvedValue([
-      { id: 'remote-1', name: 'photo1.jpg', file: { mimeType: 'image/jpeg' }, photo: { takenDateTime: '2026-01-15T10:00:00Z' } },
+      {
+        id: 'remote-1',
+        name: 'photo1.jpg',
+        file: { mimeType: 'image/jpeg' },
+        photo: { takenDateTime: '2026-01-15T10:00:00Z' },
+      },
     ]);
     mockSelectFrom.mockResolvedValue([]); // no existing photos
     mockDownloadPhoto.mockResolvedValue(Buffer.from('image-data'));
-    mockSavePhoto.mockResolvedValue({ width: 1920, height: 1080, sizeBytes: 5000, thumbnailPath: 'thumb_abc.jpg' });
+    mockSavePhoto.mockResolvedValue({
+      width: 1920,
+      height: 1080,
+      sizeBytes: 5000,
+      thumbnailPath: 'thumb_abc.jpg',
+    });
 
     await syncOneDriveSource('source-1');
 
@@ -151,7 +161,12 @@ describe('syncOneDriveSource', () => {
   it('deletes local photos removed from remote', async () => {
     mockListPhotos.mockResolvedValue([]); // empty remote
     mockSelectFrom.mockResolvedValue([
-      { id: 'db-1', externalId: 'remote-gone', filename: 'old.jpg', thumbnailPath: 'thumb_old.jpg' },
+      {
+        id: 'db-1',
+        externalId: 'remote-gone',
+        filename: 'old.jpg',
+        thumbnailPath: 'thumb_old.jpg',
+      },
     ]);
 
     await syncOneDriveSource('source-1');
@@ -188,7 +203,12 @@ describe('syncOneDriveSource', () => {
     mockDownloadPhoto
       .mockRejectedValueOnce(new Error('network error'))
       .mockResolvedValueOnce(Buffer.from('ok'));
-    mockSavePhoto.mockResolvedValue({ width: 800, height: 600, sizeBytes: 2000, thumbnailPath: null });
+    mockSavePhoto.mockResolvedValue({
+      width: 800,
+      height: 600,
+      sizeBytes: 2000,
+      thumbnailPath: null,
+    });
 
     await syncOneDriveSource('source-1');
 
@@ -251,13 +271,15 @@ describe('syncImmichSource', () => {
 
   it('throws when source type is not immich', async () => {
     mockFindFirst.mockResolvedValue({ ...validImmichSource, type: 'onedrive' });
-    await expect(syncImmichSource('immich-source-1')).rejects.toThrow('Invalid Immich photo source');
+    await expect(syncImmichSource('immich-source-1')).rejects.toThrow(
+      'Invalid Immich photo source'
+    );
   });
 
   it('throws when missing server URL or share key', async () => {
     mockFindFirst.mockResolvedValue({ ...validImmichSource, immichServerUrl: null });
     await expect(syncImmichSource('immich-source-1')).rejects.toThrow(
-      'missing server URL or share key',
+      'missing server URL or share key'
     );
   });
 

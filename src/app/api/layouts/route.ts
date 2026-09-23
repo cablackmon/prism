@@ -7,7 +7,11 @@ import { createLayoutSchema, validateRequest } from '@/lib/validations';
 import { logError } from '@/lib/utils/logError';
 
 function slugify(name: string): string {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80);
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 80);
 }
 
 async function uniqueSlug(baseName: string, excludeId?: string): Promise<string> {
@@ -17,7 +21,10 @@ async function uniqueSlug(baseName: string, excludeId?: string): Promise<string>
   let suffix = 2;
   // eslint-disable-next-line no-constant-condition
   while (true) {
-    const [existing] = await db.select({ id: layouts.id }).from(layouts).where(eq(layouts.slug, slug));
+    const [existing] = await db
+      .select({ id: layouts.id })
+      .from(layouts)
+      .where(eq(layouts.slug, slug));
     if (!existing || existing.id === excludeId) break;
     slug = `${base}-${suffix++}`;
   }
@@ -36,23 +43,20 @@ export async function GET(request: NextRequest) {
 
     let results;
     if (slugParam) {
-      results = await db
-        .select()
-        .from(layouts)
-        .where(eq(layouts.slug, slugParam));
+      results = await db.select().from(layouts).where(eq(layouts.slug, slugParam));
     } else {
-      results = await db
-        .select()
-        .from(layouts)
-        .orderBy(desc(layouts.createdAt));
+      results = await db.select().from(layouts).orderBy(desc(layouts.createdAt));
     }
 
     // Auto-migrate: generate slugs for any layouts that don't have one
-    const needsSlugs = results.filter(l => !l.slug);
+    const needsSlugs = results.filter((l) => !l.slug);
     if (needsSlugs.length > 0) {
       for (const layout of needsSlugs) {
         const slug = await uniqueSlug(layout.name, layout.id);
-        await db.update(layouts).set({ slug, updatedAt: new Date() }).where(eq(layouts.id, layout.id));
+        await db
+          .update(layouts)
+          .set({ slug, updatedAt: new Date() })
+          .where(eq(layouts.id, layout.id));
         (layout as Record<string, unknown>).slug = slug;
       }
     }
@@ -62,7 +66,10 @@ export async function GET(request: NextRequest) {
       const allLayouts = await db.select().from(layouts).where(isNull(layouts.slug));
       for (const layout of allLayouts) {
         const slug = await uniqueSlug(layout.name, layout.id);
-        await db.update(layouts).set({ slug, updatedAt: new Date() }).where(eq(layouts.id, layout.id));
+        await db
+          .update(layouts)
+          .set({ slug, updatedAt: new Date() })
+          .where(eq(layouts.id, layout.id));
         if (slug === slugParam) {
           (layout as Record<string, unknown>).slug = slug;
           results = [layout];
@@ -73,10 +80,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ layouts: results });
   } catch (error) {
     logError('Error fetching layouts:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch layouts' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch layouts' }, { status: 500 });
   }
 }
 
@@ -95,7 +99,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { name, slug: requestedSlug, isDefault, widgets, screensaverWidgets, orientation, createdBy } = validation.data;
+    const {
+      name,
+      slug: requestedSlug,
+      isDefault,
+      widgets,
+      screensaverWidgets,
+      orientation,
+      createdBy,
+    } = validation.data;
 
     const newLayout = await db.transaction(async (tx) => {
       if (isDefault) {
@@ -106,7 +118,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Generate unique slug
-      const slug = requestedSlug || await uniqueSlug(name);
+      const slug = requestedSlug || (await uniqueSlug(name));
 
       const [layout] = await tx
         .insert(layouts)
@@ -128,9 +140,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(newLayout, { status: 201 });
   } catch (error) {
     logError('Error creating layout:', error);
-    return NextResponse.json(
-      { error: 'Failed to create layout' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to create layout' }, { status: 500 });
   }
 }

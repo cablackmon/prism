@@ -1,11 +1,6 @@
 'use client';
 
-import {
-  format,
-  isSameDay,
-  addDays,
-  startOfDay,
-} from 'date-fns';
+import { format, isSameDay, addDays, startOfDay } from 'date-fns';
 import { Calendar, UtensilsCrossed } from 'lucide-react';
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
@@ -14,7 +9,15 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui';
 import type { CalendarEvent } from '@/types/calendar';
 import type { DayBucket } from '@/lib/hooks/useWeekViewData';
-import { useDayDroppable, getMealTime, getChoreTime, getTaskTime, parseTimeOfDay, formatTimeOfDay, type OverlayItemRef } from './cells';
+import {
+  useDayDroppable,
+  getMealTime,
+  getChoreTime,
+  getTaskTime,
+  parseTimeOfDay,
+  formatTimeOfDay,
+  type OverlayItemRef,
+} from './cells';
 import { useTimeFormat } from '@/components/providers';
 import {
   eventOccursOnDisplayDay,
@@ -89,17 +92,15 @@ export function AgendaView({
   // membership check below iterates a small slice instead of thousands.
   const scopedEvents = eventsOverlappingRange(events, startDate, addDays(startDate, days));
   const filteredEvents = scopedEvents
-    .filter(e => Array.from({ length: days }, (_, i) => addDays(startDate, i))
-      .some(date => eventOccursOnDisplayDay(
-        e.startTime,
-        e.endTime,
-        e.allDay,
-        date,
-        displayTimezone,
-      )))
+    .filter((e) =>
+      Array.from({ length: days }, (_, i) => addDays(startDate, i)).some((date) =>
+        eventOccursOnDisplayDay(e.startTime, e.endTime, e.allDay, date, displayTimezone)
+      )
+    )
     .sort((a, b) => {
-      const dc = startOfDay(toDisplayDate(a.startTime, displayTimezone)).getTime()
-        - startOfDay(toDisplayDate(b.startTime, displayTimezone)).getTime();
+      const dc =
+        startOfDay(toDisplayDate(a.startTime, displayTimezone)).getTime() -
+        startOfDay(toDisplayDate(b.startTime, displayTimezone)).getTime();
       if (dc !== 0) return dc;
       if (a.allDay && !b.allDay) return -1;
       if (!a.allDay && b.allDay) return 1;
@@ -109,15 +110,12 @@ export function AgendaView({
   const eventsByDay: Array<{ date: Date; events: CalendarEvent[]; bucket?: DayBucket }> = [];
   for (let i = 0; i < days; i++) {
     const date = addDays(startDate, i);
-    const dayEvents = filteredEvents.filter(e => eventOccursOnDisplayDay(
-      e.startTime,
-      e.endTime,
-      e.allDay,
-      date,
-      displayTimezone,
-    ));
+    const dayEvents = filteredEvents.filter((e) =>
+      eventOccursOnDisplayDay(e.startTime, e.endTime, e.allDay, date, displayTimezone)
+    );
     const bucket = bucketsByDate?.get(format(date, 'yyyy-MM-dd'));
-    const hasOverlay = bucket && (bucket.meals.length + bucket.chores.length + bucket.tasks.length > 0);
+    const hasOverlay =
+      bucket && bucket.meals.length + bucket.chores.length + bucket.tasks.length > 0;
     if (dayEvents.length > 0 || hasOverlay) {
       eventsByDay.push({ date, events: dayEvents, bucket });
     }
@@ -125,7 +123,7 @@ export function AgendaView({
 
   if (eventsByDay.length === 0) {
     return (
-      <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-2">
+      <div className="flex h-full flex-col items-center justify-center gap-2 text-muted-foreground">
         <Calendar className="h-8 w-8" />
         <span className="text-sm">{emptyMessage}</span>
       </div>
@@ -133,7 +131,7 @@ export function AgendaView({
   }
 
   return (
-    <div className="overflow-auto h-full -mr-2 pr-2">
+    <div className="-mr-2 h-full overflow-auto pr-2">
       <div className="space-y-4">
         {eventsByDay.map(({ date, events: dayEvts, bucket }) => (
           <AgendaDaySection
@@ -180,7 +178,17 @@ function AgendaDaySection({
 }) {
   const { timeFormat, displayTimezone } = useTimeFormat();
   const droppable = useDayDroppable({ date, enabled: cards && enableDnd });
-  const rows = buildAgendaRows({ date, events, groupNames, bucket, onEventClick, mealColor, onItemClick, timeFormat, displayTimezone });
+  const rows = buildAgendaRows({
+    date,
+    events,
+    groupNames,
+    bucket,
+    onEventClick,
+    mealColor,
+    onItemClick,
+    timeFormat,
+    displayTimezone,
+  });
   const displayRows = maxEvents > 0 ? rows.slice(0, maxEvents) : rows;
   const remainingCount = maxEvents > 0 ? rows.length - maxEvents : 0;
 
@@ -190,10 +198,13 @@ function AgendaDaySection({
       data-droppable-day={cards && enableDnd ? droppable.droppableId : undefined}
       className={cn(
         'rounded',
-        cards && enableDnd && droppable.isOver && 'ring-2 ring-seasonal-accent shadow-sm bg-card/40 p-1',
+        cards &&
+          enableDnd &&
+          droppable.isOver &&
+          'bg-card/40 p-1 shadow-sm ring-2 ring-seasonal-accent'
       )}
     >
-      <div className="flex items-center gap-2 mb-2">
+      <div className="mb-2 flex items-center gap-2">
         <span
           className={cn(
             'text-sm font-semibold',
@@ -203,20 +214,18 @@ function AgendaDaySection({
           {formatAgendaDayHeader(date, displayTimezone)}
         </span>
         {isSameDay(date, toDisplayDate(new Date(), displayTimezone)) && (
-          <Badge className="text-[10px] px-1.5 py-0 bg-seasonal-highlight text-foreground">
+          <Badge className="bg-seasonal-highlight px-1.5 py-0 text-[10px] text-foreground">
             Today
           </Badge>
         )}
       </div>
 
-      <div className="space-y-1.5 pl-2 border-l-2 border-border">
+      <div className="space-y-1.5 border-l-2 border-border pl-2">
         {displayRows.map((row) => (
           <AgendaRowItem key={row.key} row={row} cards={cards} />
         ))}
         {remainingCount > 0 && (
-          <div className="text-xs text-muted-foreground pl-2">
-            +{remainingCount} more events
-          </div>
+          <div className="pl-2 text-xs text-muted-foreground">+{remainingCount} more events</div>
         )}
       </div>
     </div>
@@ -252,15 +261,15 @@ function buildAgendaRows({
       event.startTime,
       event.allDay,
       date,
-      displayTimezone,
+      displayTimezone
     );
     const floating = allDay || !startsToday;
     rows.push({
       key: `event-${event.id}`,
       sortMinutes: floating
         ? -1
-        : toDisplayDate(event.startTime, displayTimezone).getHours() * 60
-          + toDisplayDate(event.startTime, displayTimezone).getMinutes(),
+        : toDisplayDate(event.startTime, displayTimezone).getHours() * 60 +
+          toDisplayDate(event.startTime, displayTimezone).getMinutes(),
       floating,
       stripeColor: event.color,
       memberName: event.groupId ? groupNames?.[event.groupId] : undefined,
@@ -284,7 +293,8 @@ function buildAgendaRows({
         sortMinutes: min ?? -1,
         floating: min === null,
         dragId: `meal:${meal.id}`,
-        stripeColor: mealColor ?? meal.cookedBy?.color ?? meal.createdBy?.color ?? MEAL_FALLBACK_COLOR,
+        stripeColor:
+          mealColor ?? meal.cookedBy?.color ?? meal.createdBy?.color ?? MEAL_FALLBACK_COLOR,
         timeLabel: min !== null ? formatTimeLabel(t, timeFormat) : meal.mealType,
         title: meal.name,
         subtitle: meal.cookedBy?.name ? `Cooked by ${meal.cookedBy.name}` : undefined,
@@ -370,35 +380,48 @@ function AgendaRowItem({ row, cards = false }: { row: AgendaRow; cards?: boolean
       {...(row.dragId ? draggable.listeners : {})}
       {...(row.dragId ? draggable.attributes : {})}
       className={cn(
-        'kyst-agenda-row relative w-full text-left flex items-start gap-2 p-1.5 rounded',
+        'kyst-agenda-row relative flex w-full items-start gap-2 rounded p-1.5 text-left',
         cards
-          ? 'bg-card/85 backdrop-blur-sm border border-border/40 shadow-sm hover:bg-card text-foreground'
-          : 'hover:opacity-90 text-white',
-        'transition-colors touch-action-manipulation',
+          ? 'border border-border/40 bg-card/85 text-foreground shadow-sm backdrop-blur-sm hover:bg-card'
+          : 'text-white hover:opacity-90',
+        'touch-action-manipulation transition-colors',
         row.dragId && 'cursor-grab active:cursor-grabbing',
-        draggable.isDragging && 'opacity-60 ring-2 ring-seasonal-accent shadow-xl',
-        row.muted && 'opacity-60',
+        draggable.isDragging && 'opacity-60 shadow-xl ring-2 ring-seasonal-accent',
+        row.muted && 'opacity-60'
       )}
     >
       {row.pendingApproval && (
         <span
           aria-hidden
-          className="absolute inset-0 pointer-events-none rounded"
-          style={{ background: 'repeating-linear-gradient(45deg, rgba(168,85,247,0.18) 0 6px, rgba(168,85,247,0) 6px 12px)' }}
+          className="pointer-events-none absolute inset-0 rounded"
+          style={{
+            background:
+              'repeating-linear-gradient(45deg, rgba(168,85,247,0.18) 0 6px, rgba(168,85,247,0) 6px 12px)',
+          }}
         />
       )}
-      <div className="flex-1 min-w-0">
+      <div className="min-w-0 flex-1">
         <div className={cn('text-xs', cards ? 'text-muted-foreground' : 'opacity-80')}>
           {row.timeLabel}
         </div>
-        <div className={cn('flex items-center gap-1 text-sm font-medium', cards ? 'text-foreground' : 'text-white', row.muted && 'line-through')}>
+        <div
+          className={cn(
+            'flex items-center gap-1 text-sm font-medium',
+            cards ? 'text-foreground' : 'text-white',
+            row.muted && 'line-through'
+          )}
+        >
           {row.dragId?.startsWith('meal:') && (
-            <UtensilsCrossed aria-hidden className="h-3 w-3 shrink-0" style={cards ? { color: stripeColor } : undefined} />
+            <UtensilsCrossed
+              aria-hidden
+              className="h-3 w-3 shrink-0"
+              style={cards ? { color: stripeColor } : undefined}
+            />
           )}
           <span className="truncate">{row.title}</span>
         </div>
         {row.subtitle && (
-          <div className={cn('text-xs truncate', cards ? 'text-muted-foreground' : 'opacity-80')}>
+          <div className={cn('truncate text-xs', cards ? 'text-muted-foreground' : 'opacity-80')}>
             {row.subtitle}
           </div>
         )}

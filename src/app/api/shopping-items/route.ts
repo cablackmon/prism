@@ -68,20 +68,15 @@ export async function GET(request: NextRequest) {
       conditions.push(eq(shoppingItems.checked, checked === 'true'));
     }
 
-    const results = conditions.length > 0
-      ? await query.where(and(...conditions))
-      : await query;
+    const results = conditions.length > 0 ? await query.where(and(...conditions)) : await query;
 
     // Format response
-    const formattedItems = results.map(item => formatShoppingItemRow(item));
+    const formattedItems = results.map((item) => formatShoppingItemRow(item));
 
     return NextResponse.json({ items: formattedItems });
   } catch (error) {
     logError('Error fetching shopping items:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch shopping items' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch shopping items' }, { status: 500 });
   }
 }
 
@@ -153,10 +148,7 @@ export async function POST(request: NextRequest) {
       .returning();
 
     if (!newItem) {
-      return NextResponse.json(
-        { error: 'Failed to create shopping item' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to create shopping item' }, { status: 500 });
     }
 
     await invalidateEntity('shopping-lists');
@@ -169,24 +161,24 @@ export async function POST(request: NextRequest) {
       summary: `Added item: ${newItem.name}`,
     });
 
-    return NextResponse.json({
-      id: newItem.id,
-      listId: newItem.listId,
-      name: newItem.name,
-      quantity: newItem.quantity,
-      unit: newItem.unit,
-      category: newItem.category,
-      checked: newItem.checked,
-      recurring: newItem.recurring,
-      recurrenceInterval: newItem.recurrenceInterval,
-      notes: newItem.notes,
-      createdAt: newItem.createdAt.toISOString(),
-    }, { status: 201 });
+    return NextResponse.json(
+      {
+        id: newItem.id,
+        listId: newItem.listId,
+        name: newItem.name,
+        quantity: newItem.quantity,
+        unit: newItem.unit,
+        category: newItem.category,
+        checked: newItem.checked,
+        recurring: newItem.recurring,
+        recurrenceInterval: newItem.recurrenceInterval,
+        notes: newItem.notes,
+        createdAt: newItem.createdAt.toISOString(),
+      },
+      { status: 201 }
+    );
   } catch (error) {
     logError('Error creating shopping item:', error);
-    return NextResponse.json(
-      { error: 'Failed to create shopping item' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to create shopping item' }, { status: 500 });
   }
 }

@@ -29,7 +29,8 @@ export async function GET(request: NextRequest) {
       conditions.push(lte(busGeofenceLog.tripDate, endDate));
     }
 
-    const events = await db.select()
+    const events = await db
+      .select()
       .from(busGeofenceLog)
       .where(and(...conditions))
       .orderBy(desc(busGeofenceLog.eventTime))

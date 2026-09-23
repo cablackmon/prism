@@ -21,9 +21,5 @@ export default async function SlugLayout({ children, params }: Props) {
     // DB unavailable — use default scale
   }
 
-  return (
-    <div style={fontScale !== 100 ? { zoom: fontScale / 100 } : undefined}>
-      {children}
-    </div>
-  );
+  return <div style={fontScale !== 100 ? { zoom: fontScale / 100 } : undefined}>{children}</div>;
 }

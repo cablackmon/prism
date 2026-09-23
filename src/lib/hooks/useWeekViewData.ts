@@ -60,7 +60,7 @@ function eventOnDay(event: CalendarEvent, day: Date, displayTimezone: string): b
     event.endTime,
     event.allDay,
     day,
-    displayTimezone,
+    displayTimezone
   );
 }
 
@@ -80,22 +80,35 @@ export function useWeekViewData({
   // Normalize to start-of-week for stable identity
   const normalizedStart = useMemo(
     () => startOfWeek(weekStart, { weekStartsOn }),
-    [weekStart, weekStartsOn],
+    [weekStart, weekStartsOn]
   );
 
-  const weekOfString = useMemo(
-    () => format(normalizedStart, 'yyyy-MM-dd'),
-    [normalizedStart],
-  );
+  const weekOfString = useMemo(() => format(normalizedStart, 'yyyy-MM-dd'), [normalizedStart]);
 
-  const { events, loading: eventsLoading, error: eventsError, refresh: refreshEvents } =
-    useCalendarEvents({ daysToShow: 14 });
-  const { meals, loading: mealsLoading, error: mealsError, refresh: refreshMeals } =
-    useMeals({ weekOf: weekOfString });
-  const { chores, loading: choresLoading, error: choresError, refresh: refreshChores } =
-    useChores({ enabled: true });
-  const { tasks, loading: tasksLoading, error: tasksError, refresh: refreshTasks } =
-    useTasks({ showCompleted: true });
+  const {
+    events,
+    loading: eventsLoading,
+    error: eventsError,
+    refresh: refreshEvents,
+  } = useCalendarEvents({ daysToShow: 14 });
+  const {
+    meals,
+    loading: mealsLoading,
+    error: mealsError,
+    refresh: refreshMeals,
+  } = useMeals({ weekOf: weekOfString });
+  const {
+    chores,
+    loading: choresLoading,
+    error: choresError,
+    refresh: refreshChores,
+  } = useChores({ enabled: true });
+  const {
+    tasks,
+    loading: tasksLoading,
+    error: tasksError,
+    refresh: refreshTasks,
+  } = useTasks({ showCompleted: true });
   const { data: weather } = useWeather();
 
   const days = useMemo<DayBucket[]>(() => {
@@ -104,12 +117,12 @@ export function useWeekViewData({
       const dayOfWeek = DAYS_OF_WEEK[date.getDay()] as DayOfWeek;
 
       const dayEvents = events.filter((e) => eventOnDay(e, date, displayTimezone));
-      const allDayEvents = dayEvents.filter((e) => e.allDay).sort((a, b) =>
-        a.startTime.getTime() - b.startTime.getTime(),
-      );
-      const timedEvents = dayEvents.filter((e) => !e.allDay).sort((a, b) =>
-        a.startTime.getTime() - b.startTime.getTime(),
-      );
+      const allDayEvents = dayEvents
+        .filter((e) => e.allDay)
+        .sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+      const timedEvents = dayEvents
+        .filter((e) => !e.allDay)
+        .sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
 
       const dayMeals = (meals ?? [])
         .filter((m) => m.dayOfWeek === dayOfWeek)

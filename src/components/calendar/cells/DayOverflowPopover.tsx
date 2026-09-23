@@ -43,24 +43,20 @@ export function DayOverflowPopover({
           className={cn(
             // Full-width + a taller min-height so it's an easy touch target on a
             // wall display (was min-h-20px / 10px text — fiddly to tap).
-            'flex w-full items-center text-left text-[11px] font-medium px-2 py-1 rounded',
-            'bg-muted/60 hover:bg-muted active:bg-muted text-muted-foreground transition-colors',
+            'flex w-full items-center rounded px-2 py-1 text-left text-[11px] font-medium',
+            'bg-muted/60 text-muted-foreground transition-colors hover:bg-muted active:bg-muted',
             'min-h-[28px]',
-            triggerClassName,
+            triggerClassName
           )}
         >
           + {hiddenEvents.length} more
         </button>
       </PopoverTrigger>
-      <PopoverContent
-        className="w-60"
-        align="start"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="text-xs font-semibold text-muted-foreground mb-2">
+      <PopoverContent className="w-60" align="start" onClick={(e) => e.stopPropagation()}>
+        <div className="mb-2 text-xs font-semibold text-muted-foreground">
           {format(date, 'EEEE, MMM d')}
         </div>
-        <ul className="space-y-1 list-none m-0 p-0">
+        <ul className="m-0 list-none space-y-1 p-0">
           {hiddenEvents.map((event) => (
             <li key={event.id}>
               <button
@@ -69,23 +65,23 @@ export function DayOverflowPopover({
                   setOpen(false);
                 }}
                 className={cn(
-                  'w-full text-left px-2 py-1 rounded bg-card hover:bg-accent transition-colors flex items-center gap-2 border border-border/40',
+                  'flex w-full items-center gap-2 rounded border border-border/40 bg-card px-2 py-1 text-left transition-colors hover:bg-accent',
                   isCalendarEventPast(
                     event.startTime,
                     event.endTime,
                     event.allDay,
                     new Date(),
-                    displayTimezone,
-                  ) && 'opacity-55 saturate-[0.65]',
+                    displayTimezone
+                  ) && 'opacity-55 saturate-[0.65]'
                 )}
                 style={{ borderLeft: `3px solid ${event.color}` }}
               >
                 {!event.allDay && (
-                  <span className="text-[10px] text-muted-foreground tabular-nums shrink-0">
+                  <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">
                     {formatDisplayTime(event.startTime, timeFormat, {}, displayTimezone)}
                   </span>
                 )}
-                <span className="text-xs font-medium truncate flex-1 text-foreground">
+                <span className="flex-1 truncate text-xs font-medium text-foreground">
                   {event.title}
                 </span>
               </button>

@@ -18,20 +18,15 @@ import { formatMessageRow } from '@/lib/utils/formatters';
 import { logActivity } from '@/lib/services/auditLog';
 import { logError } from '@/lib/utils/logError';
 
-
 interface RouteParams {
   params: Promise<{ id: string }>;
 }
-
 
 /**
  * GET /api/messages/[id]
  * Retrieves a single message by ID.
  */
-export async function GET(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function GET(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -56,22 +51,15 @@ export async function GET(
       .where(eq(familyMessages.id, id));
 
     if (!messageWithAuthor) {
-      return NextResponse.json(
-        { error: 'Message not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Message not found' }, { status: 404 });
     }
 
     return NextResponse.json(formatMessageRow(messageWithAuthor));
   } catch (error) {
     logError('Error fetching message:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch message' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch message' }, { status: 500 });
   }
 }
-
 
 /**
  * PATCH /api/messages/[id]
@@ -87,10 +75,7 @@ export async function GET(
  *
  * Only the message author or parents can edit messages.
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -105,10 +90,7 @@ export async function PATCH(
       .where(eq(familyMessages.id, id));
 
     if (!existingMessage) {
-      return NextResponse.json(
-        { error: 'Message not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Message not found' }, { status: 404 });
     }
 
     // Only the author or users with canDeleteAnyMessage (parents) can edit
@@ -145,10 +127,7 @@ export async function PATCH(
       } else if (body.expiresAt) {
         const date = new Date(body.expiresAt);
         if (isNaN(date.getTime())) {
-          return NextResponse.json(
-            { error: 'Invalid expiresAt format' },
-            { status: 400 }
-          );
+          return NextResponse.json({ error: 'Invalid expiresAt format' }, { status: 400 });
         }
         updateData.expiresAt = date;
       }
@@ -156,17 +135,11 @@ export async function PATCH(
 
     // Only update if there are changes
     if (Object.keys(updateData).length === 0) {
-      return NextResponse.json(
-        { error: 'No valid fields to update' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
     }
 
     // Execute update
-    await db
-      .update(familyMessages)
-      .set(updateData)
-      .where(eq(familyMessages.id, id));
+    await db.update(familyMessages).set(updateData).where(eq(familyMessages.id, id));
 
     // Fetch and return updated message
     const [updatedMessage] = await db
@@ -187,10 +160,7 @@ export async function PATCH(
       .where(eq(familyMessages.id, id));
 
     if (!updatedMessage) {
-      return NextResponse.json(
-        { error: 'Message not found after update' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Message not found after update' }, { status: 404 });
     }
 
     logActivity({
@@ -204,13 +174,9 @@ export async function PATCH(
     return NextResponse.json(formatMessageRow(updatedMessage));
   } catch (error) {
     logError('Error updating message:', error);
-    return NextResponse.json(
-      { error: 'Failed to update message' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to update message' }, { status: 500 });
   }
 }
-
 
 /**
  * DELETE /api/messages/[id]
@@ -227,10 +193,7 @@ export async function PATCH(
  * - 404: Message not found
  * - 500: Server error
  */
-export async function DELETE(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -248,10 +211,7 @@ export async function DELETE(
       .where(eq(familyMessages.id, id));
 
     if (!existingMessage) {
-      return NextResponse.json(
-        { error: 'Message not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Message not found' }, { status: 404 });
     }
 
     // AUTHORIZATION CHECK
@@ -262,9 +222,7 @@ export async function DELETE(
     }
 
     // Delete the message
-    await db
-      .delete(familyMessages)
-      .where(eq(familyMessages.id, id));
+    await db.delete(familyMessages).where(eq(familyMessages.id, id));
 
     logActivity({
       userId: auth.userId,
@@ -278,15 +236,13 @@ export async function DELETE(
       message: 'Message deleted successfully',
       deletedMessage: {
         id: existingMessage.id,
-        preview: existingMessage.message.substring(0, 50) +
+        preview:
+          existingMessage.message.substring(0, 50) +
           (existingMessage.message.length > 50 ? '...' : ''),
       },
     });
   } catch (error) {
     logError('Error deleting message:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete message' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to delete message' }, { status: 500 });
   }
 }

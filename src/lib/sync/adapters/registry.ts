@@ -36,7 +36,7 @@ export function getMealPlanAdapter(provider: string): EntitySyncAdapter<any> {
 export async function testProviderConnection(
   provider: string,
   serverUrl: string,
-  token: string,
+  token: string
 ): Promise<void> {
   if (provider === 'tandoor') {
     await testTandoorConnection(serverUrl, token);

@@ -160,10 +160,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const response = await originalFetch(input, init);
       if (!response.ok && response.status === 401) {
         const method = (init?.method ?? 'GET').toUpperCase();
-        const url = typeof input === 'string'
-          ? input
-          : input instanceof URL ? input.toString()
-          : (input as Request).url;
+        const url =
+          typeof input === 'string'
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : (input as Request).url;
         const isMutation = method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS';
         const isApi = url.includes('/api/');
         const now = Date.now();
@@ -179,7 +181,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       return response;
     };
 
-    return () => { window.fetch = originalFetch; };
+    return () => {
+      window.fetch = originalFetch;
+    };
   }, []);
 
   /**
@@ -222,27 +226,33 @@ export function AuthProvider({ children }: AuthProviderProps) {
   /**
    * Handle successful authentication
    */
-  const handleAuthenticated = useCallback((user: QuickPinMember) => {
-    setActiveUser(user);
-    if (authResolver) {
-      authResolver.resolve(user);
-      setAuthResolver(null);
-    }
-    setShowModal(false);
-  }, [authResolver]);
+  const handleAuthenticated = useCallback(
+    (user: QuickPinMember) => {
+      setActiveUser(user);
+      if (authResolver) {
+        authResolver.resolve(user);
+        setAuthResolver(null);
+      }
+      setShowModal(false);
+    },
+    [authResolver]
+  );
 
   /**
    * Handle modal close (cancelled)
    */
-  const handleModalClose = useCallback((open: boolean) => {
-    if (!open) {
-      if (authResolver) {
-        authResolver.resolve(null);
-        setAuthResolver(null);
+  const handleModalClose = useCallback(
+    (open: boolean) => {
+      if (!open) {
+        if (authResolver) {
+          authResolver.resolve(null);
+          setAuthResolver(null);
+        }
+        setShowModal(false);
       }
-      setShowModal(false);
-    }
-  }, [authResolver]);
+    },
+    [authResolver]
+  );
 
   /**
    * Clear active user (logout)

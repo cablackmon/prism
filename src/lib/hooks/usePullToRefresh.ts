@@ -20,7 +20,11 @@ export function usePullToRefresh() {
     const onTouchMove = (e: TouchEvent) => {
       if (startYRef.current === null) return;
       const delta = e.touches[0]!.clientY - startYRef.current;
-      if (delta <= 0) { startYRef.current = null; setPullDistance(0); return; }
+      if (delta <= 0) {
+        startYRef.current = null;
+        setPullDistance(0);
+        return;
+      }
       setPullDistance(Math.min(delta, MAX_PULL));
     };
 

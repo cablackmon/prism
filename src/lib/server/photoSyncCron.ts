@@ -20,7 +20,7 @@ import { syncAllPhotoSources } from '@/lib/services/photo-sync';
 import { invalidateEntity } from '@/lib/cache/cacheKeys';
 
 const INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
-const INITIAL_DELAY_MS = 90 * 1000;  // wait 90s after boot (stagger vs calendar cron)
+const INITIAL_DELAY_MS = 90 * 1000; // wait 90s after boot (stagger vs calendar cron)
 
 async function runOnce() {
   try {
@@ -30,7 +30,7 @@ async function runOnce() {
     if (errors.length > 0) {
       console.warn(
         `[photo-cron] synced ${synced} source(s) with ${errors.length} errors:`,
-        errors.slice(0, 3),
+        errors.slice(0, 3)
       );
     } else {
       console.log(`[photo-cron] synced ${synced} source(s)`);
@@ -53,6 +53,6 @@ export function startPhotoSyncCron(): void {
   }, INITIAL_DELAY_MS);
 
   console.log(
-    `[photo-cron] scheduled every ${INTERVAL_MS / 1000}s (first run in ${INITIAL_DELAY_MS / 1000}s)`,
+    `[photo-cron] scheduled every ${INTERVAL_MS / 1000}s (first run in ${INITIAL_DELAY_MS / 1000}s)`
   );
 }

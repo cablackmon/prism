@@ -22,9 +22,7 @@ export function DemoBanner() {
       className="sticky top-0 z-[10000] flex items-center justify-center gap-3 bg-amber-500 px-4 py-2 text-sm font-medium text-amber-950 dark:bg-amber-600 dark:text-amber-50"
     >
       <span aria-hidden="true">★</span>
-      <span>
-        KYST Demo &middot; Read-only &middot; Resets daily at midnight UTC
-      </span>
+      <span>KYST Demo &middot; Read-only &middot; Resets daily at midnight UTC</span>
       <a
         href="https://github.com/sandydargoport/prism"
         target="_blank"

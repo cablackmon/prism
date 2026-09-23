@@ -12,7 +12,7 @@ const layout = {
   default: [
     '` 1 2 3 4 5 6 7 8 9 0 - = {bksp}',
     '{tab} q w e r t y u i o p [ ] \\',
-    '{lock} a s d f g h j k l ; \' {enter}',
+    "{lock} a s d f g h j k l ; ' {enter}",
     '{shift} z x c v b n m , . / {shift}',
     '{space} {mic} {dismiss}',
   ],
@@ -74,7 +74,9 @@ export function VirtualKeyboard() {
   const stopListeningRef = useRef(stopListening);
   stopListeningRef.current = stopListening;
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Manage enter/exit animation
   useEffect(() => {
@@ -83,10 +85,13 @@ export function VirtualKeyboard() {
       setVisible(true);
     } else if (visible) {
       setIsExiting(true);
-      const t = setTimeout(() => { setVisible(false); setIsExiting(false); }, 200);
+      const t = setTimeout(() => {
+        setVisible(false);
+        setIsExiting(false);
+      }, 200);
       return () => clearTimeout(t);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keyboardVisible]);
 
   // Capture isContentEditable state and reset shift when keyboard becomes visible.
@@ -119,8 +124,17 @@ export function VirtualKeyboard() {
         const activeInput = activeInputRef2.current.current;
         const activeContentEditable = activeContentEditableRef2.current.current;
         if (button === '{enter}' && !isContentEditableRef.current && activeInput) {
-          activeInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', bubbles: true, cancelable: true }));
-          activeInput.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter', code: 'Enter', bubbles: true }));
+          activeInput.dispatchEvent(
+            new KeyboardEvent('keydown', {
+              key: 'Enter',
+              code: 'Enter',
+              bubbles: true,
+              cancelable: true,
+            })
+          );
+          activeInput.dispatchEvent(
+            new KeyboardEvent('keyup', { key: 'Enter', code: 'Enter', bubbles: true })
+          );
           if (activeInput instanceof HTMLInputElement) {
             setKeyboardVisibleRef.current(false);
           }
@@ -131,7 +145,11 @@ export function VirtualKeyboard() {
           activeInput?.blur();
         }
         if (button === '{mic}') {
-          if (isListeningRef.current) { stopListeningRef.current(); } else { startListeningRef.current(); }
+          if (isListeningRef.current) {
+            stopListeningRef.current();
+          } else {
+            startListeningRef.current();
+          }
         }
         if (isContentEditableRef.current && activeContentEditable) {
           const el = activeContentEditable;
@@ -172,7 +190,7 @@ export function VirtualKeyboard() {
       kb.destroy();
       keyboardRef.current = null;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mounted]);
 
   // Sync keyboard value when active input changes
@@ -195,12 +213,14 @@ export function VirtualKeyboard() {
       data-virtual-keyboard
       className={cn(
         'fixed bottom-0 left-0 right-0 z-[9000]',
-        'bg-background border-t border-border shadow-2xl',
+        'border-t border-border bg-background shadow-2xl',
         isListening && 'is-listening',
-        visible && (isExiting ? 'animate-keyboard-out' : 'animate-keyboard-in'),
+        visible && (isExiting ? 'animate-keyboard-out' : 'animate-keyboard-in')
       )}
       style={{
-        height: '38vh', minHeight: 320, maxHeight: 480,
+        height: '38vh',
+        minHeight: 320,
+        maxHeight: 480,
         display: visible ? undefined : 'none',
         // A Radix *modal* dialog (e.g. the Add-Message compose box) sets
         // pointer-events:none on everything outside its content. This keyboard
@@ -219,14 +239,21 @@ export function VirtualKeyboard() {
       // mouse alike. simple-keyboard still receives the event (preventDefault
       // cancels only the focus/compat-event default, not propagation), so the key
       // press still registers. (#125)
-      onPointerDownCapture={e => { e.preventDefault(); }}
-      onMouseDownCapture={e => { e.preventDefault(); }}
+      onPointerDownCapture={(e) => {
+        e.preventDefault();
+      }}
+      onMouseDownCapture={(e) => {
+        e.preventDefault();
+      }}
     >
       <div
         ref={containerRef}
-        className={cn('h-full', isPassword && '[&_.key-mic]:opacity-0 [&_.key-mic]:pointer-events-none')}
+        className={cn(
+          'h-full',
+          isPassword && '[&_.key-mic]:pointer-events-none [&_.key-mic]:opacity-0'
+        )}
       />
     </div>,
-    document.body,
+    document.body
   );
 }

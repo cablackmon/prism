@@ -25,7 +25,8 @@ export interface UserPreferences {
 
 export type CreateUserInput = Omit<User, 'id' | 'createdAt' | 'updatedAt'>;
 
-export type UpdateUserInput = Partial<Omit<User, 'id' | 'createdAt' | 'updatedAt'>> & Pick<User, 'id'>;
+export type UpdateUserInput = Partial<Omit<User, 'id' | 'createdAt' | 'updatedAt'>> &
+  Pick<User, 'id'>;
 
 export const PERMISSIONS: Record<UserRole, RolePermissions> = {
   parent: {
@@ -137,10 +138,7 @@ export interface RolePermissions {
   canToggleAwayMode: boolean;
 }
 
-export function hasPermission(
-  user: User,
-  permission: keyof RolePermissions
-): boolean {
+export function hasPermission(user: User, permission: keyof RolePermissions): boolean {
   return PERMISSIONS[user.role][permission];
 }
 

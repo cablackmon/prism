@@ -35,55 +35,71 @@ const PHOTO_FIELD: React.CSSProperties = {
   backgroundSize: '12px 12px',
 };
 
-export function CommunityGallery({ mode, onApplyLayout, currentOrientation }: CommunityGalleryProps) {
+export function CommunityGallery({
+  mode,
+  onApplyLayout,
+  currentOrientation,
+}: CommunityGalleryProps) {
   const [search, setSearch] = useState('');
   const [pendingSearch, setPendingSearch] = useState('');
-  const [orientation, setOrientation] = useState<'landscape' | 'portrait' | ''>(currentOrientation ?? '');
+  const [orientation, setOrientation] = useState<'landscape' | 'portrait' | ''>(
+    currentOrientation ?? ''
+  );
   const [loading, setLoading] = useState<string | null>(null);
   const [layouts, setLayouts] = useState<CommunityIndexEntry[]>([]);
   const [loadingIndex, setLoadingIndex] = useState(true);
 
-  const filters: CommunityFilterOptions = useMemo(() => ({
-    mode,
-    ...(orientation ? { orientation } : {}),
-    ...(search ? { search } : {}),
-  }), [mode, orientation, search]);
+  const filters: CommunityFilterOptions = useMemo(
+    () => ({
+      mode,
+      ...(orientation ? { orientation } : {}),
+      ...(search ? { search } : {}),
+    }),
+    [mode, orientation, search]
+  );
 
   useEffect(() => {
     let cancelled = false;
     setLoadingIndex(true);
-    filterCommunityLayouts(filters).then(result => {
+    filterCommunityLayouts(filters).then((result) => {
       if (!cancelled) {
         setLayouts(result);
         setLoadingIndex(false);
       }
     });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [filters]);
 
-  const handleUseLayout = useCallback(async (entry: CommunityIndexEntry) => {
-    setLoading(entry.id);
-    try {
-      const data = await getCommunityLayout(entry.file);
-      if (data) {
-        const widgets: WidgetConfig[] = data.widgets.map(w => ({
-          i: w.i,
-          x: w.x,
-          y: w.y,
-          w: w.w,
-          h: w.h,
-          visible: true,
-        }));
-        onApplyLayout(widgets, entry.name);
+  const handleUseLayout = useCallback(
+    async (entry: CommunityIndexEntry) => {
+      setLoading(entry.id);
+      try {
+        const data = await getCommunityLayout(entry.file);
+        if (data) {
+          const widgets: WidgetConfig[] = data.widgets.map((w) => ({
+            i: w.i,
+            x: w.x,
+            y: w.y,
+            w: w.w,
+            h: w.h,
+            visible: true,
+          }));
+          onApplyLayout(widgets, entry.name);
+        }
+      } finally {
+        setLoading(null);
       }
-    } finally {
-      setLoading(null);
-    }
-  }, [onApplyLayout]);
+    },
+    [onApplyLayout]
+  );
 
   const hasFilters = Boolean(search || orientation);
   const clearFilters = useCallback(() => {
-    setPendingSearch(''); setSearch(''); setOrientation('');
+    setPendingSearch('');
+    setSearch('');
+    setOrientation('');
   }, []);
 
   return (
@@ -97,49 +113,63 @@ export function CommunityGallery({ mode, onApplyLayout, currentOrientation }: Co
           </p>
         </div>
         {!loadingIndex && (
-          <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+          <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
             {layouts.length} {layouts.length === 1 ? 'layout' : 'layouts'}
           </span>
         )}
       </div>
 
       {/* Filter bar */}
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex flex-wrap items-center gap-2">
         <div className="relative">
           <input
             type="text"
             value={pendingSearch}
-            onChange={e => {
+            onChange={(e) => {
               setPendingSearch(e.target.value);
               if (!e.target.value) setSearch('');
             }}
-            onKeyDown={e => {
+            onKeyDown={(e) => {
               if (e.key === 'Enter') setSearch(pendingSearch);
             }}
             placeholder="Search layouts… (Enter)"
-            className="px-2.5 py-1.5 pr-7 text-sm bg-muted/60 border border-border rounded-lg w-52 focus:outline-none focus:ring-1 focus:ring-primary focus:bg-muted"
+            className="w-52 rounded-lg border border-border bg-muted/60 px-2.5 py-1.5 pr-7 text-sm focus:bg-muted focus:outline-none focus:ring-1 focus:ring-primary"
           />
           {pendingSearch && (
             <button
-              onClick={() => { setPendingSearch(''); setSearch(''); }}
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              onClick={() => {
+                setPendingSearch('');
+                setSearch('');
+              }}
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
               aria-label="Clear search"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 6 6 18" /><path d="m6 6 12 12" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M18 6 6 18" />
+                <path d="m6 6 12 12" />
               </svg>
             </button>
           )}
         </div>
-        <div className="flex gap-1 flex-wrap">
-          {ORIENTATION_OPTIONS.map(opt => (
+        <div className="flex flex-wrap gap-1">
+          {ORIENTATION_OPTIONS.map((opt) => (
             <button
               key={opt.value}
-              onClick={() => setOrientation(prev => prev === opt.value ? '' : opt.value)}
-              className={`px-2.5 py-0.5 text-xs rounded-full border transition-colors ${
+              onClick={() => setOrientation((prev) => (prev === opt.value ? '' : opt.value))}
+              className={`rounded-full border px-2.5 py-0.5 text-xs transition-colors ${
                 orientation === opt.value
-                  ? 'bg-primary text-primary-foreground border-primary'
-                  : 'bg-muted/60 border-border text-muted-foreground hover:bg-accent hover:text-foreground'
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-border bg-muted/60 text-muted-foreground hover:bg-accent hover:text-foreground'
               }`}
             >
               {opt.label}
@@ -150,24 +180,24 @@ export function CommunityGallery({ mode, onApplyLayout, currentOrientation }: Co
 
       {/* Body */}
       {loadingIndex ? (
-        <div className="text-sm text-muted-foreground text-center py-8">
+        <div className="py-8 text-center text-sm text-muted-foreground">
           Loading community layouts…
         </div>
       ) : layouts.length === 0 ? (
-        <div className="text-sm text-muted-foreground text-center py-8 space-y-2">
+        <div className="space-y-2 py-8 text-center text-sm text-muted-foreground">
           <p>No community layouts found{search ? ` matching "${search}"` : ''}.</p>
           {hasFilters && (
             <button
               onClick={clearFilters}
-              className="px-3 py-1 text-xs rounded-md bg-muted hover:bg-accent border border-border transition-colors"
+              className="rounded-md border border-border bg-muted px-3 py-1 text-xs transition-colors hover:bg-accent"
             >
               Clear filters
             </button>
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          {layouts.map(entry => (
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+          {layouts.map((entry) => (
             <CommunityLayoutCard
               key={entry.id}
               entry={entry}
@@ -190,23 +220,31 @@ function CommunityLayoutCard({
   isLoading: boolean;
   onUse: () => void;
 }) {
-  const [widgets, setWidgets] = useState<Array<{ i: string; x: number; y: number; w: number; h: number }>>([]);
+  const [widgets, setWidgets] = useState<
+    Array<{ i: string; x: number; y: number; w: number; h: number }>
+  >([]);
 
   useEffect(() => {
     let cancelled = false;
-    getCommunityLayout(entry.file).then(data => {
+    getCommunityLayout(entry.file).then((data) => {
       if (!cancelled && data) {
-        setWidgets(data.widgets.map(w => ({ i: w.i, x: w.x, y: w.y, w: w.w, h: w.h })));
+        setWidgets(data.widgets.map((w) => ({ i: w.i, x: w.x, y: w.y, w: w.w, h: w.h })));
       }
     });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [entry.file]);
 
   // Orientation from the content bbox so portrait boards don't overflow the frame:
   // feed the preview a max px on its dominant axis and let it contain-fit.
   const isPortrait = useMemo(() => {
-    let maxX = 1, maxY = 1;
-    for (const w of widgets) { maxX = Math.max(maxX, w.x + w.w); maxY = Math.max(maxY, w.y + w.h); }
+    let maxX = 1,
+      maxY = 1;
+    for (const w of widgets) {
+      maxX = Math.max(maxX, w.x + w.w);
+      maxY = Math.max(maxY, w.y + w.h);
+    }
     return maxY > maxX;
   }, [widgets]);
   const previewPx = isPortrait ? 130 : 190;

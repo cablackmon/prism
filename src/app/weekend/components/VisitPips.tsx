@@ -12,9 +12,7 @@ interface VisitPipsProps {
 export function VisitPips({ count, color = '#10B981', className }: VisitPipsProps) {
   if (count === 0) {
     return (
-      <span className={cn('text-xs text-muted-foreground/50 italic', className)}>
-        not yet
-      </span>
+      <span className={cn('text-xs italic text-muted-foreground/50', className)}>not yet</span>
     );
   }
 
@@ -31,7 +29,9 @@ export function VisitPips({ count, color = '#10B981', className }: VisitPipsProp
   let remaining = count;
   while (remaining > 0 || groups.length === 0) {
     const groupFilled = Math.min(remaining, PIP_GROUP_SIZE);
-    const group: boolean[] = Array(PIP_GROUP_SIZE).fill(false).map((_, i) => i < groupFilled);
+    const group: boolean[] = Array(PIP_GROUP_SIZE)
+      .fill(false)
+      .map((_, i) => i < groupFilled);
     groups.push(group);
     remaining -= groupFilled;
     if (remaining <= 0) break;

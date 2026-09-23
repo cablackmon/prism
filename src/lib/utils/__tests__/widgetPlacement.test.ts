@@ -14,7 +14,7 @@ describe('findNextFreeSlot', () => {
   it('drops to the next row when the first row is full', () => {
     // Two widgets that together span the full 48-col grid at y=0..1
     const existing = [
-      { x: 0,  y: 0, w: 24, h: 2 },
+      { x: 0, y: 0, w: 24, h: 2 },
       { x: 24, y: 0, w: 24, h: 2 },
     ];
     expect(findNextFreeSlot(existing, 12, 2)).toEqual({ x: 0, y: 2 });
@@ -24,17 +24,15 @@ describe('findNextFreeSlot', () => {
     // Tall widget on the left; small widget on the right at the bottom.
     // A new small widget should fill the top-right gap, not stack below.
     const existing = [
-      { x: 0,  y: 0, w: 12, h: 6 },   // tall left widget
-      { x: 0,  y: 6, w: 4,  h: 2 },   // small bottom widget
+      { x: 0, y: 0, w: 12, h: 6 }, // tall left widget
+      { x: 0, y: 6, w: 4, h: 2 }, // small bottom widget
     ];
     // The top-right region (x=12..47, y=0..5) is wide open.
     expect(findNextFreeSlot(existing, 6, 3)).toEqual({ x: 12, y: 0 });
   });
 
   it('ignores hidden widgets', () => {
-    const existing = [
-      { x: 0, y: 0, w: 12, h: 6, visible: false },
-    ];
+    const existing = [{ x: 0, y: 0, w: 12, h: 6, visible: false }];
     expect(findNextFreeSlot(existing, 3, 3)).toEqual({ x: 0, y: 0 });
   });
 

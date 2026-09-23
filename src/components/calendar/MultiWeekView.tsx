@@ -1,21 +1,24 @@
 'use client';
 
 import * as React from 'react';
-import {
-  format,
-  startOfWeek,
-  addDays,
-  isSameDay,
-  isBefore,
-  startOfDay,
-} from 'date-fns';
+import { format, startOfWeek, addDays, isSameDay, isBefore, startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useWidgetBgOverride } from '@/components/widgets/WidgetContainer';
 import { hexToRgba } from '@/lib/utils/color';
 import { useWeekStartsOn } from '@/lib/hooks/useWeekStartsOn';
 import { seasonalPalettes } from '@/lib/themes/seasonalThemes';
 import type { CalendarEvent } from '@/types/calendar';
-import { CardHeightProbe, DayOverflowPopover, DroppableOverlayCell, InlineCalendarEvent, SpanningEventRows, WeekItemCard, useDayDroppable, weatherIcon, type OverlayItemRef } from './cells';
+import {
+  CardHeightProbe,
+  DayOverflowPopover,
+  DroppableOverlayCell,
+  InlineCalendarEvent,
+  SpanningEventRows,
+  WeekItemCard,
+  useDayDroppable,
+  weatherIcon,
+  type OverlayItemRef,
+} from './cells';
 
 /** HSL color for the seasonal accent of the cell's month. */
 function getMonthAccentColor(date: Date): string {
@@ -25,7 +28,13 @@ function getMonthAccentColor(date: Date): string {
 import { useCardCapacity } from '@/lib/hooks/useCardCapacity';
 import type { DayBucket } from '@/lib/hooks/useWeekViewData';
 import { useTimeFormat } from '@/components/providers';
-import { eventOccursOnDisplayDay, eventSpansMultipleDisplayDays, formatDisplayTime, isCalendarEventPast, toDisplayDate } from '@/lib/utils/timeFormat';
+import {
+  eventOccursOnDisplayDay,
+  eventSpansMultipleDisplayDays,
+  formatDisplayTime,
+  isCalendarEventPast,
+  toDisplayDate,
+} from '@/lib/utils/timeFormat';
 import { eventsOverlappingRange } from '@/lib/utils/calendarRange';
 
 export interface MultiWeekViewProps {
@@ -91,13 +100,12 @@ export function MultiWeekView({
   // per-day filters iterate the local slice instead of thousands of events.
   const scopedEvents = eventsOverlappingRange(events, weekStart, addDays(weekStart, weekCount * 7));
   const spanningEvents = scopedEvents
-    .filter((event) => eventSpansMultipleDisplayDays(
-      event.startTime,
-      event.endTime,
-      event.allDay,
-      displayTimezone,
-    ))
-    .sort((a, b) => a.startTime.getTime() - b.startTime.getTime() || a.title.localeCompare(b.title));
+    .filter((event) =>
+      eventSpansMultipleDisplayDays(event.startTime, event.endTime, event.allDay, displayTimezone)
+    )
+    .sort(
+      (a, b) => a.startTime.getTime() - b.startTime.getTime() || a.title.localeCompare(b.title)
+    );
 
   // In inline mode, rows size to content (events list scrolls). In cards mode
   // with multiple weeks, rows are equal-height (`1fr`) so dynamic capacity has
@@ -109,29 +117,34 @@ export function MultiWeekView({
 
   return (
     <div className={cn('flex flex-col overflow-auto p-0.5', singleWeek ? 'min-h-0' : 'h-full')}>
-      {cards && !singleWeek && <CardHeightProbe size={compact ? 'sm' : 'md'} onMeasure={setCardHeight} />}
+      {cards && !singleWeek && (
+        <CardHeightProbe size={compact ? 'sm' : 'md'} onMeasure={setCardHeight} />
+      )}
 
       {/* Week rows — each cell labels its own day, so no top day-name strip.
           Outer p-0.5 keeps the seasonal-accent ring on row 1 / col 1 / col 7
           from being clipped by the parent's overflow-auto. */}
       <div
-        className={cn('grid gap-1 min-h-0', !singleWeek && 'flex-1')}
+        className={cn('grid min-h-0 gap-1', !singleWeek && 'flex-1')}
         style={{ gridTemplateRows: `repeat(${weekCount}, ${rowSizing})` }}
       >
         {weeks.map((week, wIdx) => {
-          const rowSpanningEvents = spanningEvents.filter((event) => week.some((rowDate) =>
-            eventOccursOnDisplayDay(
-              event.startTime,
-              event.endTime,
-              event.allDay,
-              rowDate,
-              displayTimezone,
-            )));
+          const rowSpanningEvents = spanningEvents.filter((event) =>
+            week.some((rowDate) =>
+              eventOccursOnDisplayDay(
+                event.startTime,
+                event.endTime,
+                event.allDay,
+                rowDate,
+                displayTimezone
+              )
+            )
+          );
 
           return (
             <div
               key={wIdx}
-              className={cn('grid gap-1', cards && !singleWeek && 'min-h-0 h-full')}
+              className={cn('grid gap-1', cards && !singleWeek && 'h-full min-h-0')}
               style={{ gridTemplateColumns: `repeat(${colCount}, minmax(0, 1fr))` }}
             >
               {week.map((date, dIdx) => (
@@ -204,13 +217,9 @@ function DayCell({
   const spanningEventSet = new Set(spanningEvents);
   const dayEvents = events
     .filter((event) => !spanningEventSet.has(event))
-    .filter((event) => eventOccursOnDisplayDay(
-      event.startTime,
-      event.endTime,
-      event.allDay,
-      date,
-      displayTimezone,
-    ));
+    .filter((event) =>
+      eventOccursOnDisplayDay(event.startTime, event.endTime, event.allDay, date, displayTimezone)
+    );
   const sorted = [...dayEvents].sort((a, b) => {
     if (a.allDay && !b.allDay) return -1;
     if (!a.allDay && b.allDay) return 1;
@@ -224,7 +233,9 @@ function DayCell({
   // space they consume must be subtracted from BOTH capacity branches —
   // otherwise the no-overflow branch picks a count that fits events alone and
   // overflow:hidden silently clips the chores/tasks rows below.
-  const overlayItemCount = bucket ? bucket.meals.length + bucket.chores.length + bucket.tasks.length : 0;
+  const overlayItemCount = bucket
+    ? bucket.meals.length + bucket.chores.length + bucket.tasks.length
+    : 0;
   const overlayRowHeight = cardHeight ?? 56;
   const cellGap = 4; // matches `gap-1` between cards in the events container
   const overlayRowsHeight = overlayItemCount * (overlayRowHeight + cellGap);
@@ -280,7 +291,7 @@ function DayCell({
         // In 1W mode (showAll=true) the column sizes to its content. In
         // 2/3/4W modes the cell stretches to fill the equal-height row so
         // the capacity probe has a real target height.
-        cards && (showAll ? 'min-h-0' : 'min-h-0 h-full'),
+        cards && (showAll ? 'min-h-0' : 'h-full min-h-0'),
         // Cards mode: every cell gets a subtle border, today gets the month's
         // seasonal-accent ring (lavender in April, etc.).
         cards && !cellBgStyle && 'border border-border bg-card/85 backdrop-blur-sm',
@@ -289,7 +300,7 @@ function DayCell({
         cards && enableDnd && droppable.isOver && 'shadow-lg',
         // Inline mode keeps the legacy bordered look.
         !cards && bordered && !cellBgStyle && 'border border-border bg-card/85',
-        !cards && bordered && cellBgStyle && 'border border-border',
+        !cards && bordered && cellBgStyle && 'border border-border'
       )}
       style={{
         ...cellBgStyle,
@@ -301,20 +312,20 @@ function DayCell({
       {/* Date header — large bold day number, relative day label, weather upper-right. */}
       <div
         className={cn(
-          'shrink-0 flex items-start justify-between gap-1',
+          'flex shrink-0 items-start justify-between gap-1',
           compact ? 'px-1.5 py-1' : 'px-2 py-1.5',
-          isPast && 'text-muted-foreground',
+          isPast && 'text-muted-foreground'
         )}
       >
-        <div className="flex items-baseline gap-1.5 min-w-0">
+        <div className="flex min-w-0 items-baseline gap-1.5">
           <span className={cn('font-bold leading-none', compact ? 'text-base' : 'text-xl')}>
             {format(date, 'd')}
           </span>
           <span
             className={cn(
-              'font-medium leading-none truncate',
+              'truncate font-medium leading-none',
               compact ? 'text-[11px]' : 'text-xs',
-              !today && 'text-muted-foreground',
+              !today && 'text-muted-foreground'
             )}
             style={today ? { color: monthAccent } : undefined}
           >
@@ -322,12 +333,16 @@ function DayCell({
           </span>
         </div>
         {dayWeather && (
-          <div className={cn(
-            'flex shrink-0 items-center gap-1 text-muted-foreground tabular-nums',
-            compact ? 'text-[10px]' : 'text-[11px]',
-          )}>
+          <div
+            className={cn(
+              'flex shrink-0 items-center gap-1 tabular-nums text-muted-foreground',
+              compact ? 'text-[10px]' : 'text-[11px]'
+            )}
+          >
             {weatherIcon(dayWeather.condition)}
-            <span>{Math.round(dayWeather.high)}°/{Math.round(dayWeather.low)}°</span>
+            <span>
+              {Math.round(dayWeather.high)}°/{Math.round(dayWeather.low)}°
+            </span>
           </div>
         )}
       </div>
@@ -345,8 +360,8 @@ function DayCell({
       <div
         ref={cards ? cellRef : undefined}
         className={cn(
-          cards ? 'flex flex-col gap-1 flex-1 min-h-0 overflow-hidden' : 'space-y-0.5',
-          compact ? 'px-1 pb-1' : 'px-1.5 pb-1.5',
+          cards ? 'flex min-h-0 flex-1 flex-col gap-1 overflow-hidden' : 'space-y-0.5',
+          compact ? 'px-1 pb-1' : 'px-1.5 pb-1.5'
         )}
       >
         {cards
@@ -363,7 +378,11 @@ function DayCell({
                   layout="column"
                   stripeColor={event.color}
                   title={event.title}
-                  timeLabel={event.allDay ? 'All day' : formatDisplayTime(event.startTime, timeFormat, {}, displayTimezone)}
+                  timeLabel={
+                    event.allDay
+                      ? 'All day'
+                      : formatDisplayTime(event.startTime, timeFormat, {}, displayTimezone)
+                  }
                   subtitle={event.location || event.calendarName}
                   onClick={() => onEventClick(event)}
                   dragId={draggable ? `event:${event.id}` : undefined}
@@ -372,7 +391,7 @@ function DayCell({
                     event.endTime,
                     event.allDay,
                     new Date(),
-                    displayTimezone,
+                    displayTimezone
                   )}
                 />
               );
@@ -386,42 +405,40 @@ function DayCell({
               />
             ))}
         {cards && hiddenEvents.length > 0 && (
-          <DayOverflowPopover
-            date={date}
-            hiddenEvents={hiddenEvents}
-            onEventClick={onEventClick}
-          />
+          <DayOverflowPopover date={date} hiddenEvents={hiddenEvents} onEventClick={onEventClick} />
         )}
         {/* Skylight-style: events lead; the day's planning group (chores, tasks,
             then meals) floats to the bottom of the cell (mt-auto) inside a faint
             theme-aware band that delineates it from the events. */}
-        {cards && bucket && (bucket.meals.length + bucket.chores.length + bucket.tasks.length) > 0 && (
-          <div className="mt-auto flex flex-col gap-1 rounded-md bg-muted/60 p-1.5 ring-1 ring-border/50">
-            {(bucket.chores.length > 0 || bucket.tasks.length > 0) && (
-              <DroppableOverlayCell
-                date={date}
-                bucket={bucket}
-                size={cardSize}
-                layout="column"
-                enableDnd={enableDnd}
-                include={{ meals: false, chores: true, tasks: true }}
-                onItemClick={onItemClick}
-              />
-            )}
-            {bucket.meals.length > 0 && (
-              <DroppableOverlayCell
-                date={date}
-                bucket={bucket}
-                size={cardSize}
-                layout="column"
-                enableDnd={enableDnd}
-                include={{ meals: true, chores: false, tasks: false }}
-                mealColor={mealColor}
-                onItemClick={onItemClick}
-              />
-            )}
-          </div>
-        )}
+        {cards &&
+          bucket &&
+          bucket.meals.length + bucket.chores.length + bucket.tasks.length > 0 && (
+            <div className="mt-auto flex flex-col gap-1 rounded-md bg-muted/60 p-1.5 ring-1 ring-border/50">
+              {(bucket.chores.length > 0 || bucket.tasks.length > 0) && (
+                <DroppableOverlayCell
+                  date={date}
+                  bucket={bucket}
+                  size={cardSize}
+                  layout="column"
+                  enableDnd={enableDnd}
+                  include={{ meals: false, chores: true, tasks: true }}
+                  onItemClick={onItemClick}
+                />
+              )}
+              {bucket.meals.length > 0 && (
+                <DroppableOverlayCell
+                  date={date}
+                  bucket={bucket}
+                  size={cardSize}
+                  layout="column"
+                  enableDnd={enableDnd}
+                  include={{ meals: true, chores: false, tasks: false }}
+                  mealColor={mealColor}
+                  onItemClick={onItemClick}
+                />
+              )}
+            </div>
+          )}
       </div>
     </div>
   );

@@ -10,42 +10,27 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-export async function GET(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function GET(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
   try {
     const { id } = await params;
 
-    const [list] = await db
-      .select()
-      .from(taskLists)
-      .where(eq(taskLists.id, id));
+    const [list] = await db.select().from(taskLists).where(eq(taskLists.id, id));
 
     if (!list) {
-      return NextResponse.json(
-        { error: 'Task list not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Task list not found' }, { status: 404 });
     }
 
     return NextResponse.json(list);
   } catch (error) {
     logError('Error fetching task list:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch task list' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch task list' }, { status: 500 });
   }
 }
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -56,16 +41,10 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
 
-    const [existing] = await db
-      .select()
-      .from(taskLists)
-      .where(eq(taskLists.id, id));
+    const [existing] = await db.select().from(taskLists).where(eq(taskLists.id, id));
 
     if (!existing) {
-      return NextResponse.json(
-        { error: 'Task list not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Task list not found' }, { status: 404 });
     }
 
     const updateData: Record<string, unknown> = {
@@ -74,10 +53,7 @@ export async function PATCH(
 
     if ('name' in body) {
       if (typeof body.name !== 'string' || body.name.trim().length === 0) {
-        return NextResponse.json(
-          { error: 'Name must be a non-empty string' },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: 'Name must be a non-empty string' }, { status: 400 });
       }
       updateData.name = body.name.trim();
     }
@@ -101,17 +77,11 @@ export async function PATCH(
     return NextResponse.json(updated);
   } catch (error) {
     logError('Error updating task list:', error);
-    return NextResponse.json(
-      { error: 'Failed to update task list' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to update task list' }, { status: 500 });
   }
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -121,16 +91,10 @@ export async function DELETE(
   try {
     const { id } = await params;
 
-    const [existing] = await db
-      .select()
-      .from(taskLists)
-      .where(eq(taskLists.id, id));
+    const [existing] = await db.select().from(taskLists).where(eq(taskLists.id, id));
 
     if (!existing) {
-      return NextResponse.json(
-        { error: 'Task list not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Task list not found' }, { status: 404 });
     }
 
     await db.delete(taskLists).where(eq(taskLists.id, id));
@@ -143,9 +107,6 @@ export async function DELETE(
     });
   } catch (error) {
     logError('Error deleting task list:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete task list' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to delete task list' }, { status: 500 });
   }
 }

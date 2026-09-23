@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
       ? await baseQuery.where(eq(wishItems.memberId, memberId))
       : await baseQuery;
 
-    const formattedItems = results.map(item => {
+    const formattedItems = results.map((item) => {
       const isOwnerViewing = viewerId === item.memberId;
       return formatWishItemRow(item, isOwnerViewing);
     });
@@ -75,10 +75,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ items: formattedItems });
   } catch (error) {
     logError('Error fetching wish items:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch wish items' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch wish items' }, { status: 500 });
   }
 }
 
@@ -126,10 +123,7 @@ export async function POST(request: NextRequest) {
       .returning();
 
     if (!newItem) {
-      return NextResponse.json(
-        { error: 'Failed to create wish item' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to create wish item' }, { status: 500 });
     }
 
     await invalidateEntity('wish-items');
@@ -142,21 +136,21 @@ export async function POST(request: NextRequest) {
       summary: `Added wish item: ${name}`,
     });
 
-    return NextResponse.json({
-      id: newItem.id,
-      memberId: newItem.memberId,
-      name: newItem.name,
-      url: newItem.url,
-      notes: newItem.notes,
-      sortOrder: newItem.sortOrder,
-      claimed: newItem.claimed,
-      createdAt: newItem.createdAt.toISOString(),
-    }, { status: 201 });
+    return NextResponse.json(
+      {
+        id: newItem.id,
+        memberId: newItem.memberId,
+        name: newItem.name,
+        url: newItem.url,
+        notes: newItem.notes,
+        sortOrder: newItem.sortOrder,
+        claimed: newItem.claimed,
+        createdAt: newItem.createdAt.toISOString(),
+      },
+      { status: 201 }
+    );
   } catch (error) {
     logError('Error creating wish item:', error);
-    return NextResponse.json(
-      { error: 'Failed to create wish item' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to create wish item' }, { status: 500 });
   }
 }

@@ -71,7 +71,9 @@ describe('POST /api/calendar-groups — name uniqueness', () => {
 
   it('allows a genuinely new name', async () => {
     primeLookups(['Family'], ['Alex', 'Bella']);
-    const values = jest.fn().mockReturnValue({ returning: () => [{ id: 'g9', name: 'Grandparents' }] });
+    const values = jest
+      .fn()
+      .mockReturnValue({ returning: () => [{ id: 'g9', name: 'Grandparents' }] });
     mockInsert.mockReturnValue({ values });
     const res = await POST(postReq({ name: 'Grandparents' }));
     expect(res.status).toBe(201);
