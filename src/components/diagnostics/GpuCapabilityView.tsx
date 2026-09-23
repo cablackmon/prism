@@ -18,6 +18,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   BENCHMARK_DURATION_MS,
   BENCHMARK_RESOLUTIONS,
+  GATE_RESOLUTION_KEY,
   MESH_ALPHA,
   PASS_FPS,
   TARGET_VERTEX_COUNT,
@@ -35,6 +36,7 @@ import {
   collectWebgl2Info,
   collectWebgpuInfo,
   describeError,
+  isBenchmarkCancelled,
   measureDisplayRefreshHz,
   runBackend,
   type BackendReport,
@@ -117,14 +119,13 @@ export function GpuCapabilityView() {
   const [report, setReport] = useState<GpuReport | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
   const canvasHostRef = useRef<HTMLDivElement | null>(null);
-  const runningRef = useRef(false);
   const controllerRef = useRef<AbortController | null>(null);
+  // Tail of the run chain. Runs are serialised through this rather than
+  // rejected by a boolean guard, so a replacement always eventually starts.
+  const runChainRef = useRef<Promise<void>>(Promise.resolve());
 
   const run = useCallback(async (signal: AbortSignal) => {
-    // React 18 StrictMode mounts effects twice in development; a second
-    // concurrent run would contend for the GPU and halve both results.
-    if (runningRef.current) return;
-    runningRef.current = true;
+    if (signal.aborted) return;
     setPhase('probing');
     setFailure(null);
     setReport(null);
@@ -190,8 +191,8 @@ export function GpuCapabilityView() {
       // alone while WebGPU was held to four separate validity checks.
       const decision = decideRenderPath({
         webgpuAdapterPresent: webgpu.adapterPresent,
-        webgpu: backendEvidenceAt(webgpuRuns, '1440p'),
-        webgl2: backendEvidenceAt(webgl2Runs, '1440p'),
+        webgpu: backendEvidenceAt(webgpuRuns, GATE_RESOLUTION_KEY),
+        webgl2: backendEvidenceAt(webgl2Runs, GATE_RESOLUTION_KEY),
       });
 
       const finished: GpuReport = {
@@ -227,12 +228,12 @@ export function GpuCapabilityView() {
     } catch (error) {
       // A cancelled run is not a failed one, and must not overwrite the stored
       // report or leave "Failed." on a page nobody is looking at any more.
-      if (signal.aborted) return;
+      // `isBenchmarkCancelled` is checked alongside the signal so a cancellation
+      // that unwinds from `runBackend` is recognised as one on its own terms.
+      if (isBenchmarkCancelled(error) || signal.aborted) return;
       setFailure(describeError(error));
       setPhase('failed');
       setStatus('Failed.');
-    } finally {
-      runningRef.current = false;
     }
   }, []);
 
@@ -242,7 +243,21 @@ export function GpuCapabilityView() {
     controllerRef.current?.abort();
     const controller = new AbortController();
     controllerRef.current = controller;
-    void run(controller.signal);
+    // Chained, not guarded. React 18 StrictMode aborts the first run in the
+    // effect's cleanup and calls setup again immediately; a `runningRef` boolean
+    // is still true at that instant, so the replacement used to return without
+    // starting while the aborted run exited with the phase left on `probing` —
+    // which also leaves the button disabled, so `/diag/gpu` never benchmarked at
+    // all in development. Waiting for the prior run to finish unwinding means
+    // the guard cannot be observed stale, and the serialisation still gives the
+    // original reason for the guard: two concurrent runs would contend for the
+    // GPU and halve both results.
+    runChainRef.current = runChainRef.current
+      .catch(() => {
+        // A previous run's failure is its own to report; it must not stop the
+        // next one from starting.
+      })
+      .then(() => run(controller.signal));
   }, [run]);
 
   useEffect(() => {

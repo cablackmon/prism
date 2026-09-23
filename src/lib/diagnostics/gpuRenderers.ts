@@ -22,6 +22,7 @@ import {
   CAMERA_DISTANCE,
   CLEAR_COLOR,
   FIELD_OF_VIEW,
+  GATE_RESOLUTION_KEY,
   MESH_ALPHA,
   WARMUP_FRAMES,
   classifyReadback,
@@ -51,7 +52,7 @@ const PITCH_RADIANS_PER_SECOND = 0.35;
 // Shared renderer shape
 // ---------------------------------------------------------------------------
 
-type BenchRenderer = {
+export type BenchRenderer = {
   resize(width: number, height: number): void;
   drawFrame(elapsedSeconds: number): void;
   /**
@@ -115,6 +116,13 @@ export type BackendRun = {
    * failed to allocate, and that is precisely the case where the fps inflates.
    */
   pixelCheck: CanvasPixelCheck;
+  /**
+   * The clear-only control taken at this resolution, after the resize and
+   * before the timed frames. Per-run because a readback path can work on the
+   * 16x9 canvas and fail only after the 3840x2160 allocation — and it is this
+   * value that decides whether an unreadable canvas is creditable.
+   */
+  readbackControl: ReadbackControl;
   /** What was asked for against what the implementation actually allocated. */
   drawingBuffer: {
     requestedWidth: number;
@@ -818,24 +826,50 @@ async function sampleCanvas(canvas: HTMLCanvasElement): Promise<CanvasSample> {
 /**
  * Draws the clear-only control frame and reports what it proves about readback.
  *
- * Run once per backend, before the timed resolutions. A failure here is itself
- * the `broken` answer: if the control cannot even be drawn or read, the
- * readback mechanism is not trustworthy on this backend.
+ * Run once per *resolution*, immediately after the resize and before the timed
+ * frames, so the surface it validates is the same size as the one the benchmark
+ * frame will be read from. A control taken on the 16x9 canvas cannot speak for
+ * a readback path that only fails after a 3840x2160 allocation.
+ *
+ * `broken` is a positive claim — "the readback mechanism is the faulty part" —
+ * and it is the claim that makes an all-zero benchmark frame creditable, so it
+ * is only returned on evidence:
+ *
+ *   - A throw means the control was never observed at all. That is `untested`.
+ *     Returning `broken` here would have the control convict the readback on
+ *     the strength of its own failure, and a transient `createImageBitmap`
+ *     throw would then license the mesh path to be credited while drawing
+ *     nothing.
+ *   - A fence rejection means the clear was never confirmed to have executed,
+ *     so a black read afterwards may be the *submission* that failed rather
+ *     than the readback. Also `untested`. The positive direction still stands:
+ *     if real pixels came back, readback demonstrably works whatever the fence
+ *     did.
  */
 export async function probeReadbackControl(
   renderer: BenchRendererLike,
-  canvas: HTMLCanvasElement
+  canvas: HTMLCanvasElement,
+  // Seam for the branches a headless test environment cannot produce: jsdom has
+  // no `createImageBitmap`, so the real sampler can only ever throw there. The
+  // production call sites pass two arguments and take the default, and the
+  // throw branch — the one that regressed — is covered against the real
+  // sampler rather than this one.
+  sample: (target: HTMLCanvasElement) => Promise<CanvasSample> = sampleCanvas
 ): Promise<ReadbackControl> {
+  let clearConfirmed = true;
   try {
     renderer.drawControlFrame();
-    await renderer.waitForGpuIdle().catch(() => {
-      // A fence failure does not invalidate the control: the question is only
-      // whether pixels can be read, and the readback below answers it.
-    });
-    const sample = await sampleCanvas(canvas);
-    return classifyReadbackControl(sample.uniqueColors, sample.flatColor);
+    try {
+      await renderer.waitForGpuIdle();
+    } catch {
+      clearConfirmed = false;
+    }
+    const observed = await sample(canvas);
+    const verdict = classifyReadbackControl(observed.uniqueColors, observed.flatColor);
+    if (verdict === 'broken' && !clearConfirmed) return 'untested';
+    return verdict;
   } catch {
-    return 'broken';
+    return 'untested';
   }
 }
 
@@ -911,10 +945,17 @@ async function measureRun(
   renderer: BenchRenderer,
   canvas: HTMLCanvasElement,
   resolution: BenchmarkResolution,
-  signal?: AbortSignal,
-  readbackControl: ReadbackControl = 'untested'
+  signal?: AbortSignal
 ): Promise<BackendRun> {
   renderer.resize(resolution.width, resolution.height);
+
+  // Taken here, after the resize and before any timed frame, so it validates a
+  // surface the same size as the one the verification frame is read from. Run
+  // once per backend on the 16x9 canvas — as this was — its verdict would be
+  // reused across both resolutions, and a readback that works on a tiny surface
+  // but returns zeroes after the 4K allocation would be misclassified in the
+  // creditable direction.
+  const readbackControl = await probeReadbackControl(renderer, canvas);
 
   const channel = new MessageChannel();
   const intervals: number[] = [];
@@ -972,7 +1013,7 @@ async function measureRun(
       // detached canvases. Thrown rather than broken out of: a partial run must
       // not reach the gate, and `runBackend` records the abort as the reason
       // this backend has no numbers.
-      if (signal?.aborted) throw new Error('benchmark cancelled');
+      if (signal?.aborted) throw new BenchmarkCancelledError();
     }
 
     // Verification frame, drawn at the resolution just measured and read back
@@ -1002,6 +1043,7 @@ async function measureRun(
       gpuFenced,
       fenceError,
       pixelCheck,
+      readbackControl,
       drawingBuffer: {
         requestedWidth: resolution.width,
         requestedHeight: resolution.height,
@@ -1014,6 +1056,37 @@ async function measureRun(
     channel.port1.close();
     channel.port2.close();
   }
+}
+
+/**
+ * Thrown when an abort signal fires mid-run, and distinguishable on purpose.
+ *
+ * A cancelled run and a failed one look identical once both are reduced to a
+ * string, and the caller must treat them differently: a failure is reportable,
+ * a cancellation means the numbers are incomplete and nothing may be published
+ * from them.
+ */
+export class BenchmarkCancelledError extends Error {
+  constructor() {
+    super('benchmark cancelled');
+    this.name = 'BenchmarkCancelledError';
+  }
+}
+
+export function isBenchmarkCancelled(error: unknown): error is BenchmarkCancelledError {
+  return error instanceof BenchmarkCancelledError;
+}
+
+/**
+ * The control that belongs to the resolution the gate actually reads.
+ *
+ * The per-run controls are the ones that decide creditability; this is the
+ * backend-level summary shown on screen, and it names the gate resolution so a
+ * reader is never shown a 2160p control next to a decision made at 1440p.
+ */
+function gateReadbackControl(runs: readonly BackendRun[]): ReadbackControl {
+  const gate = runs.find((run) => run.resolution.key === GATE_RESOLUTION_KEY);
+  return (gate ?? runs[0])?.readbackControl ?? 'untested';
 }
 
 export type BackendFactory = {
@@ -1062,21 +1135,23 @@ export async function runBackend(
   const runs: BackendRun[] = [];
   let error: string | null = null;
   let benchmarkedAdapter: string | null = null;
-  let readbackControl: ReadbackControl = 'untested';
   try {
     benchmarkedAdapter = renderer.describeAdapter();
-    // Once per backend, before any timed frame. Establishes whether this
-    // backend can read its own canvas back at all, so an all-zero benchmark
-    // frame later is decidable as "rendered nothing" rather than assumed to be
-    // a readback failure and credited.
-    readbackControl = await probeReadbackControl(renderer, canvas);
     for (const resolution of resolutions) {
-      if (signal?.aborted) throw new Error('benchmark cancelled');
-      const run = await measureRun(renderer, canvas, resolution, signal, readbackControl);
+      if (signal?.aborted) throw new BenchmarkCancelledError();
+      const run = await measureRun(renderer, canvas, resolution, signal);
       runs.push(run);
       onRunComplete?.(run);
     }
   } catch (runError) {
+    // Cancellation is not a backend failure and must not be flattened into
+    // `report.error`. Swallowed here — as this did — the caller sees an ordinary
+    // report, never enters its cancellation-aware catch, goes on to run the
+    // remaining backend and publishes a "complete" decision built from a
+    // half-finished measurement. If the abort landed during the 2160p run, the
+    // retained 1440p run is enough to make that decision look creditable.
+    // `finally` below still disposes the renderer before this propagates.
+    if (isBenchmarkCancelled(runError)) throw runError;
     error = describeError(runError);
   } finally {
     try {
@@ -1093,6 +1168,6 @@ export async function runBackend(
     error,
     runs,
     benchmarkedAdapter,
-    readbackControl,
+    readbackControl: gateReadbackControl(runs),
   };
 }

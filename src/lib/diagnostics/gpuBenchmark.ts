@@ -54,6 +54,13 @@ export const BENCHMARK_RESOLUTIONS: readonly BenchmarkResolution[] = [
   { key: '2160p', label: '3840 x 2160', width: 3840, height: 2160 },
 ] as const;
 
+/**
+ * The resolution the plan's 45 fps bar is read at. Named once because three
+ * call sites need it and a literal that drifted in one of them would compare
+ * the bar against a run it does not describe.
+ */
+export const GATE_RESOLUTION_KEY: BenchmarkResolution['key'] = '1440p';
+
 // ---------------------------------------------------------------------------
 // Geometry
 // ---------------------------------------------------------------------------
@@ -402,17 +409,50 @@ export function classifyResolution(
 }
 
 /**
- * Maps a canvas readback to the decision rule's `renderedBlank` input.
+ * Whether a run's canvas content may be credited, and why.
  *
- * A one-line predicate with its own test on purpose: the call site in
+ * `verified` — pixels came back and held more than one colour, so the mesh
+ * reached the canvas. `blank` — pixels came back flat, so nothing was drawn.
+ * `unverified` — the canvas could not be read and nothing proved *why*.
+ * `readbackBroken` — the canvas could not be read and the clear-only control
+ * could not be read either, so the readback mechanism is the faulty part.
+ *
+ * Only `verified` and `readbackBroken` are creditable.
+ */
+export type ContentCredit = 'verified' | 'blank' | 'unverified' | 'readbackBroken';
+
+/**
+ * Maps a canvas readback plus its control to the decision rule's content input.
+ *
+ * A small function with its own test on purpose: the call site in
  * `GpuCapabilityView` is not unit tested, so writing the comparison inline let a
  * mutation to `status !== 'content'` typecheck and pass the whole suite. That
  * mutant vetoes every backend whose canvas simply cannot be read back — which
  * is exactly what headless SwiftShader does — and would have turned an
  * unreadable canvas into a fake "renders nothing" verdict.
+ *
+ * The `unavailable` branch is the one that has bitten twice, in both
+ * directions. Crediting it unconditionally — as this did — lets a backend whose
+ * *rendering* failed be selected: `inspectCanvasPixels` reports `unavailable`
+ * for a thrown `createImageBitmap`/`getImageData` just as readily as for a
+ * genuinely unreadable surface, and a backend that draws nothing posts the
+ * fastest number on the page. Refusing it unconditionally vetoes healthy
+ * hardware whose canvas merely cannot be sampled. So it is creditable only when
+ * the control — which binds no pipeline and draws no geometry, and so cannot
+ * fail for a rendering reason — *also* failed to read back.
  */
-export function isRenderedBlank(pixelCheck?: { status: PixelCheckStatus } | null): boolean {
-  return pixelCheck?.status === 'blank';
+export function classifyContentCredit(
+  pixelCheck: { status: PixelCheckStatus } | null | undefined,
+  control: ReadbackControl = 'untested'
+): ContentCredit {
+  if (pixelCheck?.status === 'content') return 'verified';
+  if (pixelCheck?.status === 'blank') return 'blank';
+  return control === 'broken' ? 'readbackBroken' : 'unverified';
+}
+
+/** The two credits that let a run's fps stand as evidence about the GPU. */
+export function isContentCreditable(credit: ContentCredit): boolean {
+  return credit === 'verified' || credit === 'readbackBroken';
 }
 
 /** Everything the decision rule needs to know about one backend at one resolution. */
@@ -424,8 +464,8 @@ export type BackendEvidence = {
    * count of submissions queued rather than work finished.
    */
   measurementFenced: boolean;
-  /** True only when the canvas was read back successfully and held a single flat colour. */
-  renderedBlank: boolean;
+  /** Whether this run's canvas proved it drew the mesh, and why if it did not. */
+  contentCredit: ContentCredit;
   /** `clamped` means the fps belongs to a smaller buffer than the one named. */
   resolutionStatus: ResolutionStatus;
   /**
@@ -440,6 +480,13 @@ export type EvidenceRun = MeasuredRun & {
   interruptedByVisibilityChange: boolean;
   gpuFenced: boolean;
   pixelCheck: { status: PixelCheckStatus };
+  /**
+   * The clear-only control taken at *this* run's resolution. Per-run rather
+   * than per-backend: a control that passed on the 16x9 canvas says nothing
+   * about a readback path that fails only after a 3840x2160 allocation, which
+   * is exactly the size where a misread canvas would matter most.
+   */
+  readbackControl: ReadbackControl;
   drawingBuffer: {
     requestedWidth: number;
     requestedHeight: number;
@@ -465,7 +512,7 @@ export function backendEvidenceAt(
     return {
       meanFps: null,
       measurementFenced: false,
-      renderedBlank: false,
+      contentCredit: 'unverified',
       resolutionStatus: 'unverified',
       sampleInvalidReason: null,
     };
@@ -473,7 +520,7 @@ export function backendEvidenceAt(
   return {
     meanFps: meanFpsAt(runs, key),
     measurementFenced: match.gpuFenced,
-    renderedBlank: isRenderedBlank(match.pixelCheck),
+    contentCredit: classifyContentCredit(match.pixelCheck, match.readbackControl),
     resolutionStatus: classifyResolution(
       { width: match.drawingBuffer.requestedWidth, height: match.drawingBuffer.requestedHeight },
       { width: match.drawingBuffer.actualWidth, height: match.drawingBuffer.actualHeight }
@@ -522,7 +569,7 @@ function evaluateBackend(
   label: string,
   evidence: BackendEvidence
 ): { clears: boolean; detail: string } {
-  const { meanFps, measurementFenced, renderedBlank, resolutionStatus, sampleInvalidReason } =
+  const { meanFps, measurementFenced, contentCredit, resolutionStatus, sampleInvalidReason } =
     evidence;
 
   if (sampleInvalidReason !== null) {
@@ -543,12 +590,22 @@ function evaluateBackend(
         `submissions queued, not work done, and is not creditable`,
     };
   }
-  if (renderedBlank) {
+  if (contentCredit === 'blank') {
     return {
       clears: false,
       detail:
         `the ${label} run reported ${fps} fps but its canvas read back blank, so it was ` +
         `timing an empty frame, not the mesh`,
+    };
+  }
+  if (contentCredit === 'unverified') {
+    return {
+      clears: false,
+      detail:
+        `the ${label} run reported ${fps} fps but its canvas could not be read back, and no ` +
+        `clear-only control proved the readback itself was at fault, so nothing rules out the ` +
+        `renderer having drawn nothing — the cheapest thing a GPU can do and the fastest ` +
+        `number on this page`,
     };
   }
   if (resolutionStatus === 'clamped') {

@@ -8,12 +8,13 @@ import {
   VERTEX_STRIDE_FLOATS,
   backendEvidenceAt,
   chooseTessellation,
+  classifyContentCredit,
   classifyReadback,
   classifyReadbackControl,
   classifyResolution,
   createSphereMesh,
   decideRenderPath,
-  isRenderedBlank,
+  isContentCreditable,
   meanFpsAt,
   modelViewMatrix,
   perspectiveZeroToOne,
@@ -26,7 +27,7 @@ import {
 const evidence = (overrides: Partial<BackendEvidence> = {}): BackendEvidence => ({
   meanFps: 60,
   measurementFenced: true,
-  renderedBlank: false,
+  contentCredit: 'verified',
   resolutionStatus: 'matched',
   sampleInvalidReason: null,
   ...overrides,
@@ -208,22 +209,39 @@ describe('meanFpsAt', () => {
   });
 });
 
-describe('isRenderedBlank', () => {
-  it('discredits a run only when the readback positively found a flat canvas', () => {
-    expect(isRenderedBlank({ status: 'blank' })).toBe(true);
+describe('classifyContentCredit', () => {
+  it('credits a run whose canvas positively held the mesh', () => {
+    expect(classifyContentCredit({ status: 'content' }, 'working')).toBe('verified');
+    expect(isContentCreditable('verified')).toBe(true);
   });
 
-  it('does not discredit a run whose canvas could not be read back', () => {
+  it('discredits a run whose readback positively found a flat canvas', () => {
+    expect(classifyContentCredit({ status: 'blank' }, 'working')).toBe('blank');
+    expect(isContentCreditable('blank')).toBe(false);
+  });
+
+  it('credits an unreadable canvas only when the control proved readback is at fault', () => {
     // Headless SwiftShader returns all-zero pixels for any WebGPU canvas, so
-    // treating 'unavailable' as blank would veto a healthy backend on the
-    // strength of a broken measuring tool.
-    expect(isRenderedBlank({ status: 'unavailable' })).toBe(false);
-    expect(isRenderedBlank(undefined)).toBe(false);
-    expect(isRenderedBlank(null)).toBe(false);
+    // refusing every 'unavailable' would veto a healthy backend on the strength
+    // of a broken measuring tool. The clear-only control is what separates the
+    // two, because it binds no pipeline and so cannot fail for a rendering
+    // reason.
+    expect(classifyContentCredit({ status: 'unavailable' }, 'broken')).toBe('readbackBroken');
+    expect(isContentCreditable('readbackBroken')).toBe(true);
   });
 
-  it('does not discredit a run that rendered content', () => {
-    expect(isRenderedBlank({ status: 'content' })).toBe(false);
+  it('refuses an unreadable canvas when nothing proved why it could not be read', () => {
+    // The direction that ships a broken renderer. `inspectCanvasPixels` reports
+    // 'unavailable' for a thrown createImageBitmap/getImageData exactly as it
+    // does for a genuinely unreadable surface, so crediting it unconditionally
+    // lets a backend whose *rendering* failed be selected — and drawing nothing
+    // posts the fastest number on the page.
+    expect(classifyContentCredit({ status: 'unavailable' }, 'working')).toBe('unverified');
+    expect(classifyContentCredit({ status: 'unavailable' }, 'untested')).toBe('unverified');
+    expect(classifyContentCredit({ status: 'unavailable' })).toBe('unverified');
+    expect(classifyContentCredit(undefined, 'working')).toBe('unverified');
+    expect(classifyContentCredit(null, 'untested')).toBe('unverified');
+    expect(isContentCreditable('unverified')).toBe(false);
   });
 });
 
@@ -284,23 +302,52 @@ describe('decideRenderPath', () => {
     // input passes: real adapter, fenced measurement, way over the bar.
     const result = decideRenderPath({
       webgpuAdapterPresent: true,
-      webgpu: evidence({ meanFps: 300, renderedBlank: true }),
+      webgpu: evidence({ meanFps: 300, contentCredit: 'blank' }),
       webgl2: evidence({ meanFps: PASS_FPS }),
     });
     expect(result.decision).toBe('webgl2');
     expect(result.reason).toContain('read back blank');
   });
 
-  it('still credits a WebGPU run when the canvas could not be read back at all', () => {
+  it('credits an unreadable WebGPU canvas when the control proved readback broken', () => {
     // "We could not look" is not "we looked and it was empty" — headless
     // SwiftShader returns all-zero pixels for any WebGPU canvas, and treating
     // that as blank would veto a healthy backend on measurement-tool grounds.
+    // The control is what licenses the credit.
     const result = decideRenderPath({
       webgpuAdapterPresent: true,
-      webgpu: evidence({ meanFps: 90 }),
+      webgpu: evidence({ meanFps: 90, contentCredit: 'readbackBroken' }),
       webgl2: evidence({ meanFps: 50 }),
     });
     expect(result.decision).toBe('webgpu');
+  });
+
+  it('refuses an unreadable WebGPU canvas that no control accounted for', () => {
+    // The P1 this rule exists for: a WebGPU pipeline that fails validation
+    // leaves a canvas that cannot be verified while onSubmittedWorkDone() still
+    // resolves having done no work, and the resulting 300 fps is the fastest
+    // number on the page. Everything else here passes — real adapter, fenced,
+    // unclamped — so only the content credit can reject it.
+    const result = decideRenderPath({
+      webgpuAdapterPresent: true,
+      webgpu: evidence({ meanFps: 300, contentCredit: 'unverified' }),
+      webgl2: evidence({ meanFps: PASS_FPS }),
+    });
+    expect(result.decision).toBe('webgl2');
+    expect(result.reason).toContain('could not be read back');
+  });
+
+  it('refuses an unreadable WebGL2 canvas too, and escalates rather than shipping it', () => {
+    // The fallback gets the identical rule. An asymmetric version of this — the
+    // reason WebGL2 was once selected on fps alone — would send Phase 2 to a
+    // path proven to draw nothing.
+    const result = decideRenderPath({
+      webgpuAdapterPresent: false,
+      webgpu: noRun(),
+      webgl2: evidence({ meanFps: 300, contentCredit: 'unverified' }),
+    });
+    expect(result.decision).toBe('escalate');
+    expect(result.reason).toContain('could not be read back');
   });
 
   it('falls back to WebGL2 when the WebGPU run is below the bar', () => {
@@ -375,7 +422,7 @@ describe('decideRenderPath', () => {
       const result = decideRenderPath({
         webgpuAdapterPresent: false,
         webgpu: noRun(),
-        webgl2: evidence({ meanFps: 300, renderedBlank: true }),
+        webgl2: evidence({ meanFps: 300, contentCredit: 'blank' }),
       });
       expect(result.decision).toBe('escalate');
       expect(result.reason).toContain('the WebGL2 run reported 300.0 fps but its canvas read back');
@@ -500,7 +547,9 @@ describe('classifyReadback', () => {
     // discredit the run either.
     expect(classifyReadback(0, null).status).toBe('unavailable');
     expect(classifyReadback(1, null).status).toBe('unavailable');
-    expect(isRenderedBlank(classifyReadback(0, null))).toBe(false);
+    // Not blank — but not creditable either, unless a control accounts for it.
+    expect(classifyContentCredit(classifyReadback(0, null), 'broken')).toBe('readbackBroken');
+    expect(classifyContentCredit(classifyReadback(0, null), 'working')).toBe('unverified');
   });
 });
 
@@ -565,6 +614,7 @@ describe('backendEvidenceAt', () => {
     interruptedByVisibilityChange: false,
     gpuFenced: true,
     pixelCheck: { status: 'content' },
+    readbackControl: 'working',
     drawingBuffer: {
       requestedWidth: 2560,
       requestedHeight: 1440,
@@ -578,10 +628,26 @@ describe('backendEvidenceAt', () => {
     expect(backendEvidenceAt([run()], '1440p')).toEqual({
       meanFps: 60,
       measurementFenced: true,
-      renderedBlank: false,
+      contentCredit: 'verified',
       resolutionStatus: 'matched',
       sampleInvalidReason: null,
     });
+  });
+
+  it('reads the control from the same run as the pixel check, not from a sibling', () => {
+    // The control is per-resolution precisely so that a 1440p verdict cannot be
+    // decided by a control taken on a different-sized surface. Both runs here
+    // are unreadable; only the 2160p one has a control excusing it.
+    const runs: EvidenceRun[] = [
+      run({ pixelCheck: { status: 'unavailable' }, readbackControl: 'working' }),
+      run({
+        resolution: { key: '2160p' },
+        pixelCheck: { status: 'unavailable' },
+        readbackControl: 'broken',
+      }),
+    ];
+    expect(backendEvidenceAt(runs, '1440p').contentCredit).toBe('unverified');
+    expect(backendEvidenceAt(runs, '2160p').contentCredit).toBe('readbackBroken');
   });
 
   it('marks a run interrupted by a hidden tab as an invalid sample', () => {
@@ -595,11 +661,20 @@ describe('backendEvidenceAt', () => {
   it('carries the fence, blank and clamp findings through to the gate', () => {
     expect(backendEvidenceAt([run({ gpuFenced: false })], '1440p').measurementFenced).toBe(false);
     expect(
-      backendEvidenceAt([run({ pixelCheck: { status: 'blank' } })], '1440p').renderedBlank
-    ).toBe(true);
+      backendEvidenceAt([run({ pixelCheck: { status: 'blank' } })], '1440p').contentCredit
+    ).toBe('blank');
     expect(
-      backendEvidenceAt([run({ pixelCheck: { status: 'unavailable' } })], '1440p').renderedBlank
-    ).toBe(false);
+      backendEvidenceAt(
+        [run({ pixelCheck: { status: 'unavailable' }, readbackControl: 'broken' })],
+        '1440p'
+      ).contentCredit
+    ).toBe('readbackBroken');
+    expect(
+      backendEvidenceAt(
+        [run({ pixelCheck: { status: 'unavailable' }, readbackControl: 'working' })],
+        '1440p'
+      ).contentCredit
+    ).toBe('unverified');
     expect(
       backendEvidenceAt(
         [
