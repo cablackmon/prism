@@ -118,8 +118,9 @@ export function GpuCapabilityView() {
   const [failure, setFailure] = useState<string | null>(null);
   const canvasHostRef = useRef<HTMLDivElement | null>(null);
   const runningRef = useRef(false);
+  const controllerRef = useRef<AbortController | null>(null);
 
-  const run = useCallback(async () => {
+  const run = useCallback(async (signal: AbortSignal) => {
     // React 18 StrictMode mounts effects twice in development; a second
     // concurrent run would contend for the GPU and halve both results.
     if (runningRef.current) return;
@@ -147,6 +148,7 @@ export function GpuCapabilityView() {
       };
 
       setPhase('running');
+      if (signal.aborted) return;
       const backends: BackendReport[] = [];
 
       for (const factory of [WEBGL2_BACKEND, WEBGPU_BACKEND]) {
@@ -172,7 +174,8 @@ export function GpuCapabilityView() {
                 `${completed.stats.meanFps.toFixed(1)} fps mean, ` +
                 `${completed.stats.minFps.toFixed(1)} fps min`
             );
-          }
+          },
+          signal
         );
         backends.push(backendReport);
       }
@@ -221,6 +224,9 @@ export function GpuCapabilityView() {
         // Private-mode or a full quota must not void a completed measurement.
       }
     } catch (error) {
+      // A cancelled run is not a failed one, and must not overwrite the stored
+      // report or leave "Failed." on a page nobody is looking at any more.
+      if (signal.aborted) return;
       setFailure(describeError(error));
       setPhase('failed');
       setStatus('Failed.');
@@ -229,9 +235,25 @@ export function GpuCapabilityView() {
     }
   }, []);
 
-  useEffect(() => {
-    void run();
+  // Both entry points — the automatic run on mount and the "Run again" button —
+  // go through here, so unmount can always cancel whichever run is live.
+  const startRun = useCallback(() => {
+    controllerRef.current?.abort();
+    const controller = new AbortController();
+    controllerRef.current = controller;
+    void run(controller.signal);
   }, [run]);
+
+  useEffect(() => {
+    // Without this, navigating away mid-benchmark leaves four measurement loops
+    // rendering into detached canvases. Coming back mounts a second component
+    // with its own `runningRef`, so the two contend for the GPU — which can
+    // push the new run under the 45 fps bar — and race to overwrite the stored
+    // report. The guard against a double StrictMode mount does not help here,
+    // because the second mount is a genuinely separate instance.
+    startRun();
+    return () => controllerRef.current?.abort();
+  }, [startRun]);
 
   const webgl2Report = report?.backends.find((entry) => entry.backend === 'webgl2');
   const webgpuReport = report?.backends.find((entry) => entry.backend === 'webgpu');
@@ -432,7 +454,7 @@ export function GpuCapabilityView() {
 
       <button
         type="button"
-        onClick={() => void run()}
+        onClick={startRun}
         disabled={phase === 'probing' || phase === 'running'}
         className="mt-8 rounded-md bg-sky-300 px-6 py-3 text-2xl font-semibold text-slate-950 disabled:opacity-50"
       >

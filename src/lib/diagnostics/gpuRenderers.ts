@@ -818,7 +818,8 @@ function yieldToEventLoop(port: MessagePort, target: MessagePort): Promise<void>
 async function measureRun(
   renderer: BenchRenderer,
   canvas: HTMLCanvasElement,
-  resolution: BenchmarkResolution
+  resolution: BenchmarkResolution,
+  signal?: AbortSignal
 ): Promise<BackendRun> {
   renderer.resize(resolution.width, resolution.height);
 
@@ -872,6 +873,13 @@ async function measureRun(
       }
 
       await yieldToEventLoop(channel.port1, channel.port2);
+
+      // Checked once per frame, between submissions, so an abandoned page stops
+      // at a frame boundary instead of running four measurement loops into
+      // detached canvases. Thrown rather than broken out of: a partial run must
+      // not reach the gate, and `runBackend` records the abort as the reason
+      // this backend has no numbers.
+      if (signal?.aborted) throw new Error('benchmark cancelled');
     }
 
     // Verification frame, drawn at the resolution just measured and read back
@@ -880,10 +888,16 @@ async function measureRun(
     // the implementation clamped or failed to allocate, and that is exactly the
     // case where the timed draws become cheap and the fps inflates.
     renderer.drawFrame(1);
-    await renderer.waitForGpuIdle().catch(() => {
-      // Already recorded as un-fenced; the readback below still reports
-      // whatever reached the canvas.
-    });
+    try {
+      await renderer.waitForGpuIdle();
+    } catch (error) {
+      // Recorded, not swallowed. A device lost after the last timed frame
+      // rejects here and nowhere else; leaving `gpuFenced` true would let a run
+      // whose verification submission never completed be credited on the
+      // strength of a readback that can only be showing the *previous* frame.
+      gpuFenced = false;
+      fenceError = describeError(error);
+    }
     const drawingBufferSize = renderer.drawingBufferSize();
     const pixelCheck = await inspectCanvasPixels(canvas);
 
@@ -929,7 +943,8 @@ export async function runBackend(
   mesh: Mesh,
   resolutions: readonly BenchmarkResolution[],
   mountCanvas: (canvas: HTMLCanvasElement) => void,
-  onRunComplete?: (run: BackendRun) => void
+  onRunComplete?: (run: BackendRun) => void,
+  signal?: AbortSignal
 ): Promise<BackendReport> {
   const canvas = document.createElement('canvas');
   canvas.width = 16;
@@ -956,7 +971,8 @@ export async function runBackend(
   try {
     benchmarkedAdapter = renderer.describeAdapter();
     for (const resolution of resolutions) {
-      const run = await measureRun(renderer, canvas, resolution);
+      if (signal?.aborted) throw new Error('benchmark cancelled');
+      const run = await measureRun(renderer, canvas, resolution, signal);
       runs.push(run);
       onRunComplete?.(run);
     }
