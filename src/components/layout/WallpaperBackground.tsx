@@ -15,12 +15,18 @@ const SCREENSAVER_INTERVAL_KEY = 'prism-screensaver-interval';
 function useOrientationOverride(): 'auto' | 'landscape' | 'portrait' {
   const [override, setOverride] = useState<'auto' | 'landscape' | 'portrait'>(() => {
     if (typeof window === 'undefined') return 'auto';
-    return (localStorage.getItem(ORIENTATION_OVERRIDE_KEY) as 'auto' | 'landscape' | 'portrait') || 'auto';
+    return (
+      (localStorage.getItem(ORIENTATION_OVERRIDE_KEY) as 'auto' | 'landscape' | 'portrait') ||
+      'auto'
+    );
   });
 
   useEffect(() => {
     const handler = () => {
-      setOverride((localStorage.getItem(ORIENTATION_OVERRIDE_KEY) as 'auto' | 'landscape' | 'portrait') || 'auto');
+      setOverride(
+        (localStorage.getItem(ORIENTATION_OVERRIDE_KEY) as 'auto' | 'landscape' | 'portrait') ||
+          'auto'
+      );
     };
     window.addEventListener('storage', handler);
     return () => window.removeEventListener('storage', handler);
@@ -106,16 +112,19 @@ export function usePinnedPhoto(context: 'wallpaper' | 'screensaver') {
     return localStorage.getItem(storageKey);
   });
 
-  const setPinnedId = useCallback((id: string | null) => {
-    setPinnedIdState(id);
-    if (id) {
-      localStorage.setItem(storageKey, id);
-    } else {
-      localStorage.removeItem(storageKey);
-    }
-    // Dispatch storage event so other components can react
-    window.dispatchEvent(new StorageEvent('storage', { key: storageKey, newValue: id }));
-  }, [storageKey]);
+  const setPinnedId = useCallback(
+    (id: string | null) => {
+      setPinnedIdState(id);
+      if (id) {
+        localStorage.setItem(storageKey, id);
+      } else {
+        localStorage.removeItem(storageKey);
+      }
+      // Dispatch storage event so other components can react
+      window.dispatchEvent(new StorageEvent('storage', { key: storageKey, newValue: id }));
+    },
+    [storageKey]
+  );
 
   // Listen for changes from other tabs/components
   useEffect(() => {
@@ -137,7 +146,8 @@ export function WallpaperBackground() {
   const { pinnedId } = usePinnedPhoto('wallpaper');
   const screenOrientation = useScreenOrientation();
   const orientationOverride = useOrientationOverride();
-  const effectiveOrientation = orientationOverride === 'auto' ? screenOrientation : orientationOverride;
+  const effectiveOrientation =
+    orientationOverride === 'auto' ? screenOrientation : orientationOverride;
   // Fetch all wallpaper photos, then PREFER the ones matching this screen's
   // orientation — but fall back to any photo when none match, so a display whose
   // orientation has no photos still shows a wallpaper instead of going blank.
@@ -190,7 +200,7 @@ export function WallpaperBackground() {
   if (!src) return null;
 
   return (
-    <div className="fixed inset-0 z-0 pointer-events-none">
+    <div className="pointer-events-none fixed inset-0 z-0">
       {/* Validator — if this photo's file 404s, mark it broken and skip it. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img

@@ -144,4 +144,11 @@ export function getColorPalette(id: PaletteId, isDark: boolean): ColorPaletteThe
 export const FIXED_COLORS = ['#000000', '#FFFFFF'];
 
 /** Display order for theme selector pills */
-export const PALETTE_ORDER: PaletteId[] = ['seasonal', 'ocean', 'sunset', 'forest', 'mono', 'candy'];
+export const PALETTE_ORDER: PaletteId[] = [
+  'seasonal',
+  'ocean',
+  'sunset',
+  'forest',
+  'mono',
+  'candy',
+];

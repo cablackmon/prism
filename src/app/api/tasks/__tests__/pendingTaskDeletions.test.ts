@@ -24,21 +24,46 @@ jest.mock('@/lib/db/client', () => ({
     select: () => ({
       from: () => ({
         leftJoin: () => ({
-          leftJoin: () => ({ where: () => ({ orderBy: (...a: unknown[]) => mockSelectWhere(...a) }) }),
+          leftJoin: () => ({
+            where: () => ({ orderBy: (...a: unknown[]) => mockSelectWhere(...a) }),
+          }),
         }),
         where: (...a: unknown[]) => mockSelectWhere(...a),
       }),
     }),
-    update: () => ({ set: (v: unknown) => { mockUpdateSet(v); return { where: () => Promise.resolve() }; } }),
-    delete: () => ({ where: (...a: unknown[]) => { mockDeleteWhere(...a); return Promise.resolve(); } }),
+    update: () => ({
+      set: (v: unknown) => {
+        mockUpdateSet(v);
+        return { where: () => Promise.resolve() };
+      },
+    }),
+    delete: () => ({
+      where: (...a: unknown[]) => {
+        mockDeleteWhere(...a);
+        return Promise.resolve();
+      },
+    }),
   },
 }));
 jest.mock('@/lib/db/schema', () => ({
-  tasks: { id: 'id', title: 'title', dueDate: 'due', completed: 'done', pendingDeletion: 'pd', taskSourceId: 'tsid', listId: 'lid' },
+  tasks: {
+    id: 'id',
+    title: 'title',
+    dueDate: 'due',
+    completed: 'done',
+    pendingDeletion: 'pd',
+    taskSourceId: 'tsid',
+    listId: 'lid',
+  },
   taskSources: { id: 'id', provider: 'p', externalListName: 'eln' },
   taskLists: { id: 'id', name: 'n' },
 }));
-jest.mock('drizzle-orm', () => ({ and: jest.fn(), eq: jest.fn(), inArray: jest.fn(), isNotNull: jest.fn() }));
+jest.mock('drizzle-orm', () => ({
+  and: jest.fn(),
+  eq: jest.fn(),
+  inArray: jest.fn(),
+  isNotNull: jest.fn(),
+}));
 jest.mock('@/lib/cache/cacheKeys', () => ({ invalidateEntity: jest.fn() }));
 jest.mock('@/lib/utils/logError', () => ({ logError: jest.fn() }));
 
@@ -71,7 +96,15 @@ describe('GET /api/tasks/pending-deletions', () => {
 
   it('reports what is waiting', async () => {
     mockSelectWhere.mockResolvedValue([
-      { id: 't1', title: 'Bins', dueDate: null, completed: false, provider: 'google_tasks', listName: 'Home', prismList: 'Chores' },
+      {
+        id: 't1',
+        title: 'Bins',
+        dueDate: null,
+        completed: false,
+        provider: 'google_tasks',
+        listName: 'Home',
+        prismList: 'Chores',
+      },
     ]);
     const body = await (await GET()).json();
     expect(body.count).toBe(1);
@@ -90,7 +123,7 @@ describe('POST — keep', () => {
   it('also clears the flag and the link', async () => {
     await POST(req({ taskIds: ['t1'], action: 'keep' }));
     expect(mockUpdateSet).toHaveBeenCalledWith(
-      expect.objectContaining({ pendingDeletion: null, taskSourceId: null, externalId: null }),
+      expect.objectContaining({ pendingDeletion: null, taskSourceId: null, externalId: null })
     );
   });
 

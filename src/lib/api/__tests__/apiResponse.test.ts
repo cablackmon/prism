@@ -25,25 +25,19 @@ describe('apiError', () => {
     ['SERVICE_UNAVAILABLE', 503],
   ];
 
-  test.each(cases)(
-    '%s maps to default HTTP status %i',
-    (code, expectedStatus) => {
-      apiError(code, 'test message');
-      expect(NextResponse.json).toHaveBeenCalledTimes(1);
-      const [, init] = NextResponse.json.mock.calls[0];
-      expect(init.status).toBe(expectedStatus);
-    }
-  );
+  test.each(cases)('%s maps to default HTTP status %i', (code, expectedStatus) => {
+    apiError(code, 'test message');
+    expect(NextResponse.json).toHaveBeenCalledTimes(1);
+    const [, init] = NextResponse.json.mock.calls[0];
+    expect(init.status).toBe(expectedStatus);
+  });
 
-  test.each(cases)(
-    '%s response body has shape { error: { code, message } }',
-    (code) => {
-      const msg = `message for ${code}`;
-      apiError(code, msg);
-      const [body] = NextResponse.json.mock.calls[0];
-      expect(body).toEqual({ error: { code, message: msg } });
-    }
-  );
+  test.each(cases)('%s response body has shape { error: { code, message } }', (code) => {
+    const msg = `message for ${code}`;
+    apiError(code, msg);
+    const [body] = NextResponse.json.mock.calls[0];
+    expect(body).toEqual({ error: { code, message: msg } });
+  });
 
   test('custom status override replaces the default', () => {
     apiError('NOT_FOUND', 'gone', 410);

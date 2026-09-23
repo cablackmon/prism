@@ -25,6 +25,6 @@ export function isGoogleCalendarWebLink(url: string): boolean {
 }
 
 export const GOOGLE_WEB_LINK_ERROR =
-  'That\'s a Google Calendar web link, not a subscription feed. In Google Calendar, go to ' +
+  "That's a Google Calendar web link, not a subscription feed. In Google Calendar, go to " +
   'Settings → your calendar → "Integrate calendar", then copy the "Secret address in iCal ' +
   'format" (it ends in .ics).';

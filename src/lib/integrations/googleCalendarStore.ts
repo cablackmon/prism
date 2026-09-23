@@ -12,7 +12,10 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { calendarSources } from '@/lib/db/schema';
 import { encrypt } from '@/lib/utils/crypto';
-import { fetchCalendarList, DISMISSED_GOOGLE_CALENDARS_KEY } from '@/lib/integrations/google-calendar';
+import {
+  fetchCalendarList,
+  DISMISSED_GOOGLE_CALENDARS_KEY,
+} from '@/lib/integrations/google-calendar';
 import { tombstoneIdSet } from '@/lib/services/settingsTombstone';
 
 export type GoogleTokenBundle = {

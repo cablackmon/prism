@@ -12,9 +12,8 @@ export type VoiceResponse<T = unknown> = {
 };
 
 export function voiceOk<T>(spoken: string, data?: T, status = 200): NextResponse {
-  const body: VoiceResponse<T> = data === undefined
-    ? { ok: true, spoken }
-    : { ok: true, spoken, data };
+  const body: VoiceResponse<T> =
+    data === undefined ? { ok: true, spoken } : { ok: true, spoken, data };
   return NextResponse.json(body, { status });
 }
 

@@ -14,7 +14,12 @@ const updateSchema = z.object({
   longitude: z.number().min(-180).max(180).nullable().optional(),
   placeName: z.string().max(255).nullable().optional(),
   address: z.string().max(500).nullable().optional(),
-  url: z.string().max(1000).regex(/^https?:\/\//i, 'URL must start with http:// or https://').nullable().optional(),
+  url: z
+    .string()
+    .max(1000)
+    .regex(/^https?:\/\//i, 'URL must start with http:// or https://')
+    .nullable()
+    .optional(),
   status: z.enum(['backlog', 'visited']).optional(),
   isFavorite: z.boolean().optional(),
   rating: z.number().int().min(1).max(5).nullable().optional(),
@@ -24,10 +29,12 @@ const updateSchema = z.object({
   visitCount: z.number().int().min(0).optional(),
 });
 
-function formatPlace(row: typeof weekendPlaces.$inferSelect & {
-  createdByName: string | null;
-  createdByColor: string | null;
-}) {
+function formatPlace(
+  row: typeof weekendPlaces.$inferSelect & {
+    createdByName: string | null;
+    createdByColor: string | null;
+  }
+) {
   return {
     id: row.id,
     name: row.name,
@@ -46,7 +53,9 @@ function formatPlace(row: typeof weekendPlaces.$inferSelect & {
     sourceId: row.sourceId,
     lastVisitedDate: row.lastVisitedDate,
     visitCount: row.visitCount,
-    createdBy: row.createdBy ? { id: row.createdBy, name: row.createdByName, color: row.createdByColor } : null,
+    createdBy: row.createdBy
+      ? { id: row.createdBy, name: row.createdByName, color: row.createdByColor }
+      : null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -58,7 +67,11 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const { id } = await params;
   try {
     const [row] = await db
-      .select({ ...getTableColumns(weekendPlaces), createdByName: users.name, createdByColor: users.color })
+      .select({
+        ...getTableColumns(weekendPlaces),
+        createdByName: users.name,
+        createdByColor: users.color,
+      })
       .from(weekendPlaces)
       .leftJoin(users, eq(weekendPlaces.createdBy, users.id))
       .where(eq(weekendPlaces.id, id))
@@ -80,8 +93,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const updates: Record<string, unknown> = { updatedAt: new Date() };
     if (body.name !== undefined) updates.name = body.name;
     if (body.description !== undefined) updates.description = body.description;
-    if (body.latitude !== undefined) updates.latitude = body.latitude != null ? String(body.latitude) : null;
-    if (body.longitude !== undefined) updates.longitude = body.longitude != null ? String(body.longitude) : null;
+    if (body.latitude !== undefined)
+      updates.latitude = body.latitude != null ? String(body.latitude) : null;
+    if (body.longitude !== undefined)
+      updates.longitude = body.longitude != null ? String(body.longitude) : null;
     if (body.placeName !== undefined) updates.placeName = body.placeName;
     if (body.address !== undefined) updates.address = body.address;
     if (body.url !== undefined) updates.url = body.url;
@@ -103,7 +118,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     await invalidateEntity('weekend');
 
     const [withUser] = await db
-      .select({ ...getTableColumns(weekendPlaces), createdByName: users.name, createdByColor: users.color })
+      .select({
+        ...getTableColumns(weekendPlaces),
+        createdByName: users.name,
+        createdByColor: users.color,
+      })
       .from(weekendPlaces)
       .leftJoin(users, eq(weekendPlaces.createdBy, users.id))
       .where(eq(weekendPlaces.id, id))

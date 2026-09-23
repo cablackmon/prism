@@ -15,10 +15,12 @@ import { logError } from '@/lib/utils/logError';
 import { z } from 'zod';
 
 // Shared formatter — keeps PATCH response shape identical to GET
-function formatPin(row: typeof travelPins.$inferSelect & {
-  createdByName: string | null;
-  createdByColor: string | null;
-}) {
+function formatPin(
+  row: typeof travelPins.$inferSelect & {
+    createdByName: string | null;
+    createdByColor: string | null;
+  }
+) {
   return {
     id: row.id,
     name: row.name,
@@ -41,7 +43,9 @@ function formatPin(row: typeof travelPins.$inferSelect & {
     isHub: row.isHub,
     pinType: row.pinType,
     photoRadiusKm: row.photoRadiusKm ? parseFloat(row.photoRadiusKm as unknown as string) : 50,
-    createdBy: row.createdBy ? { id: row.createdBy, name: row.createdByName, color: row.createdByColor } : null,
+    createdBy: row.createdBy
+      ? { id: row.createdBy, name: row.createdByName, color: row.createdByColor }
+      : null,
     sortOrder: row.sortOrder,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -57,7 +61,11 @@ const updatePinSchema = z.object({
   status: z.enum(['want_to_go', 'been_there']).optional(),
   isBucketList: z.boolean().optional(),
   tripLabel: z.string().max(255).nullable().optional(),
-  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).nullable().optional(),
+  color: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/)
+    .nullable()
+    .optional(),
   visitedDate: z.string().nullable().optional(),
   visitedEndDate: z.string().nullable().optional(),
   year: z.number().int().nullable().optional(),
@@ -71,10 +79,7 @@ const updatePinSchema = z.object({
   sortOrder: z.number().int().optional(),
 });
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -127,12 +132,20 @@ export async function PATCH(
 
     // Re-query with user join so the response shape matches GET (lat/lng as numbers, createdBy as object)
     const [withUser] = await db
-      .select({ ...getTableColumns(travelPins), createdByName: users.name, createdByColor: users.color })
+      .select({
+        ...getTableColumns(travelPins),
+        createdByName: users.name,
+        createdByColor: users.color,
+      })
       .from(travelPins)
       .leftJoin(users, eq(travelPins.createdBy, users.id))
       .where(eq(travelPins.id, id));
 
-    return NextResponse.json(withUser ? formatPin(withUser) : formatPin({ ...updated, createdByName: null, createdByColor: null }));
+    return NextResponse.json(
+      withUser
+        ? formatPin(withUser)
+        : formatPin({ ...updated, createdByName: null, createdByColor: null })
+    );
   } catch (error) {
     logError('Error updating travel pin:', error);
     return NextResponse.json({ error: 'Failed to update travel pin' }, { status: 500 });
@@ -149,10 +162,7 @@ export async function DELETE(
   const { id } = await params;
 
   try {
-    const [deleted] = await db
-      .delete(travelPins)
-      .where(eq(travelPins.id, id))
-      .returning();
+    const [deleted] = await db.delete(travelPins).where(eq(travelPins.id, id)).returning();
 
     if (!deleted) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 

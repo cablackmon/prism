@@ -85,16 +85,18 @@ export function TelemetryCard() {
       <CardHeader>
         <CardTitle>Anonymous update check</CardTitle>
         <CardDescription>
-          Once a week KYST checks whether a newer version is available and, in
-          the same request, adds one anonymous install to the maintainer&apos;s
-          count. No personal data, no IP address, no usage — just the four fields
-          shown below. On by default; switch it off anytime.
+          Once a week KYST checks whether a newer version is available and, in the same request,
+          adds one anonymous install to the maintainer&apos;s count. No personal data, no IP
+          address, no usage — just the four fields shown below. On by default; switch it off
+          anytime.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex flex-col">
-            <span className="text-sm font-medium">Share anonymous usage &amp; check for updates</span>
+            <span className="text-sm font-medium">
+              Share anonymous usage &amp; check for updates
+            </span>
             <span className="text-xs text-muted-foreground">
               {status.hardDisabled
                 ? 'Disabled by the server administrator (PRISM_DISABLE_TELEMETRY).'
@@ -116,14 +118,12 @@ export function TelemetryCard() {
           {status.updateAvailable && status.latestVersion ? (
             <span className="font-medium text-primary">
               Update available: v{status.latestVersion}{' '}
-              <span className="text-muted-foreground font-normal">
+              <span className="font-normal text-muted-foreground">
                 (you have v{status.version})
               </span>
             </span>
           ) : (
-            <span className="text-muted-foreground">
-              KYST is up to date (v{status.version})
-            </span>
+            <span className="text-muted-foreground">KYST is up to date (v{status.version})</span>
           )}
         </div>
 
@@ -139,14 +139,14 @@ export function TelemetryCard() {
           <button
             type="button"
             onClick={() => setShowPayload((v) => !v)}
-            className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
+            className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
           >
             {showPayload ? 'Hide' : 'Show'} exactly what&apos;s sent
           </button>
         </div>
 
         {showPayload && (
-          <pre className="text-xs bg-muted/50 rounded-md p-3 overflow-x-auto border border-border/50">
+          <pre className="overflow-x-auto rounded-md border border-border/50 bg-muted/50 p-3 text-xs">
             {JSON.stringify(status.payload, null, 2)}
           </pre>
         )}

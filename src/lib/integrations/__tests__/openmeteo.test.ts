@@ -77,19 +77,17 @@ function buildResponse(timezone = 'America/Chicago') {
       weather_code: [0, 1, 2],
       precipitation_probability_max: [0, 10, 20],
       sunrise: [`${today}T06:00`, `${day1}T06:00`, `${day2}T06:00`],
-      sunset:  [`${today}T19:00`, `${day1}T19:00`, `${day2}T19:00`],
+      sunset: [`${today}T19:00`, `${day1}T19:00`, `${day2}T19:00`],
     },
   };
 }
 
 describe('openmeteo.fetchWeatherData', () => {
   it('passes lat/lon from LocationParam to the request URL', async () => {
-    const fetchSpy = jest
-      .spyOn(global, 'fetch' as never)
-      .mockResolvedValue({
-        ok: true,
-        json: async () => buildResponse(),
-      } as never);
+    const fetchSpy = jest.spyOn(global, 'fetch' as never).mockResolvedValue({
+      ok: true,
+      json: async () => buildResponse(),
+    } as never);
 
     const { fetchWeatherData } = await import('../openmeteo');
     await fetchWeatherData({ lat: 40.7128, lon: -74.006 });
@@ -102,12 +100,10 @@ describe('openmeteo.fetchWeatherData', () => {
   });
 
   it('falls back to env coordinates when no LocationParam is provided', async () => {
-    const fetchSpy = jest
-      .spyOn(global, 'fetch' as never)
-      .mockResolvedValue({
-        ok: true,
-        json: async () => buildResponse(),
-      } as never);
+    const fetchSpy = jest.spyOn(global, 'fetch' as never).mockResolvedValue({
+      ok: true,
+      json: async () => buildResponse(),
+    } as never);
 
     const { fetchWeatherData } = await import('../openmeteo');
     await fetchWeatherData();
@@ -165,12 +161,10 @@ describe('openmeteo.fetchWeatherData', () => {
   });
 
   it('requests timezone=auto so daily entries use the location-local date', async () => {
-    const fetchSpy = jest
-      .spyOn(global, 'fetch' as never)
-      .mockResolvedValue({
-        ok: true,
-        json: async () => buildResponse(),
-      } as never);
+    const fetchSpy = jest.spyOn(global, 'fetch' as never).mockResolvedValue({
+      ok: true,
+      json: async () => buildResponse(),
+    } as never);
 
     const { fetchWeatherData } = await import('../openmeteo');
     await fetchWeatherData();
@@ -244,10 +238,12 @@ describe('openmeteo.fetchWeatherData', () => {
       timeZone: 'America/Chicago',
     }).format(new Date());
     const todayDate = new Date(`${todayLocal}T12:00:00`);
-    const yesterday = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Chicago' })
-      .format(new Date(todayDate.getTime() - 24 * 60 * 60 * 1000));
-    const tomorrow = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Chicago' })
-      .format(new Date(todayDate.getTime() + 24 * 60 * 60 * 1000));
+    const yesterday = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Chicago' }).format(
+      new Date(todayDate.getTime() - 24 * 60 * 60 * 1000)
+    );
+    const tomorrow = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Chicago' }).format(
+      new Date(todayDate.getTime() + 24 * 60 * 60 * 1000)
+    );
 
     const stale = {
       latitude: 0,
@@ -255,10 +251,20 @@ describe('openmeteo.fetchWeatherData', () => {
       timezone: 'America/Chicago',
       current: {
         time: `${todayLocal}T10:00`,
-        temperature_2m: 70, apparent_temperature: 70, relative_humidity_2m: 50,
-        wind_speed_10m: 5, weather_code: 0, precipitation: 0,
+        temperature_2m: 70,
+        apparent_temperature: 70,
+        relative_humidity_2m: 50,
+        wind_speed_10m: 5,
+        weather_code: 0,
+        precipitation: 0,
       },
-      hourly: { time: [], temperature_2m: [], precipitation_probability: [], precipitation: [], weather_code: [] },
+      hourly: {
+        time: [],
+        temperature_2m: [],
+        precipitation_probability: [],
+        precipitation: [],
+        weather_code: [],
+      },
       daily: {
         time: [yesterday, todayLocal, tomorrow],
         temperature_2m_max: [50, 75, 76],
@@ -266,7 +272,7 @@ describe('openmeteo.fetchWeatherData', () => {
         weather_code: [3, 0, 1],
         precipitation_probability_max: [80, 0, 10],
         sunrise: [`${yesterday}T06:00`, `${todayLocal}T06:00`, `${tomorrow}T06:00`],
-        sunset:  [`${yesterday}T19:00`, `${todayLocal}T19:00`, `${tomorrow}T19:00`],
+        sunset: [`${yesterday}T19:00`, `${todayLocal}T19:00`, `${tomorrow}T19:00`],
       },
     };
 
@@ -384,7 +390,14 @@ describe('openmeteo.fetchWeatherData', () => {
     // clock; leave timer fns real (the fetch path uses none).
     jest.useFakeTimers({
       now: new Date('2026-07-15T11:00:00Z').getTime(),
-      doNotFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'queueMicrotask', 'nextTick'],
+      doNotFake: [
+        'setTimeout',
+        'clearTimeout',
+        'setInterval',
+        'clearInterval',
+        'queueMicrotask',
+        'nextTick',
+      ],
     });
     try {
       const response = buildResponse('America/Chicago');

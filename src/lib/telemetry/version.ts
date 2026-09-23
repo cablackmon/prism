@@ -8,8 +8,14 @@
  * Tolerant of a leading "v" and of differing segment counts.
  */
 export function compareVersions(a: string, b: string): number {
-  const pa = a.replace(/^v/, '').split('.').map((n) => parseInt(n, 10) || 0);
-  const pb = b.replace(/^v/, '').split('.').map((n) => parseInt(n, 10) || 0);
+  const pa = a
+    .replace(/^v/, '')
+    .split('.')
+    .map((n) => parseInt(n, 10) || 0);
+  const pb = b
+    .replace(/^v/, '')
+    .split('.')
+    .map((n) => parseInt(n, 10) || 0);
   const len = Math.max(pa.length, pb.length);
   for (let i = 0; i < len; i++) {
     const x = pa[i] ?? 0;
@@ -30,7 +36,13 @@ export function compareVersions(a: string, b: string): number {
 export function isNotifiableUpdate(current: string, latest?: string): boolean {
   if (!latest) return false;
   if (compareVersions(latest, current) <= 0) return false;
-  const [cMaj = 0, cMin = 0] = current.replace(/^v/, '').split('.').map((n) => parseInt(n, 10) || 0);
-  const [lMaj = 0, lMin = 0] = latest.replace(/^v/, '').split('.').map((n) => parseInt(n, 10) || 0);
+  const [cMaj = 0, cMin = 0] = current
+    .replace(/^v/, '')
+    .split('.')
+    .map((n) => parseInt(n, 10) || 0);
+  const [lMaj = 0, lMin = 0] = latest
+    .replace(/^v/, '')
+    .split('.')
+    .map((n) => parseInt(n, 10) || 0);
   return lMaj > cMaj || (lMaj === cMaj && lMin > cMin);
 }

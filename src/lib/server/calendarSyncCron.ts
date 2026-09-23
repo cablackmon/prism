@@ -12,13 +12,17 @@
  * extended quiet periods, events silently went stale.
  */
 
-import { syncAllGoogleCalendars, syncAllIcalCalendars, syncAllCalDAVCalendars } from '@/lib/services/calendar-sync';
+import {
+  syncAllGoogleCalendars,
+  syncAllIcalCalendars,
+  syncAllCalDAVCalendars,
+} from '@/lib/services/calendar-sync';
 import { syncCardDAVBirthdays } from '@/lib/services/carddav-birthday-sync';
 import { detectBirthdaysFromEvents } from '@/lib/services/birthday-detect';
 import { invalidateEntity } from '@/lib/cache/cacheKeys';
 
 const INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
-const INITIAL_DELAY_MS = 60 * 1000;  // wait 1 min after boot
+const INITIAL_DELAY_MS = 60 * 1000; // wait 1 min after boot
 
 async function runOnce() {
   try {
@@ -37,8 +41,11 @@ async function runOnce() {
 
     const total = google.total + ical.total + caldav.total + carddav.synced;
     const errors = [
-      ...google.errors, ...ical.errors, ...caldav.errors,
-      ...carddav.errors, ...detected.errors,
+      ...google.errors,
+      ...ical.errors,
+      ...caldav.errors,
+      ...carddav.errors,
+      ...detected.errors,
     ];
 
     await invalidateEntity('events');
@@ -52,7 +59,7 @@ async function runOnce() {
     if (errors.length > 0) {
       console.warn(
         `[calendar-cron] synced ${total} events/tasks with ${errors.length} errors:`,
-        errors.slice(0, 3),
+        errors.slice(0, 3)
       );
     } else {
       console.log(`[calendar-cron] synced ${total} events/tasks`);
@@ -76,6 +83,6 @@ export function startCalendarSyncCron(): void {
   }, INITIAL_DELAY_MS);
 
   console.log(
-    `[calendar-cron] scheduled every ${INTERVAL_MS / 1000}s (first run in ${INITIAL_DELAY_MS / 1000}s)`,
+    `[calendar-cron] scheduled every ${INTERVAL_MS / 1000}s (first run in ${INITIAL_DELAY_MS / 1000}s)`
   );
 }

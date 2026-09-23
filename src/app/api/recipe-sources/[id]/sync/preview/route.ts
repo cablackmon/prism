@@ -40,7 +40,10 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
     if (!src) {
       return NextResponse.json({ error: 'Recipe source not found.' }, { status: 404 });
     }
-    const diff = await previewSync(getRecipeAdapter(src.provider), { id: src.id, lastSynced: src.lastSynced });
+    const diff = await previewSync(getRecipeAdapter(src.provider), {
+      id: src.id,
+      lastSynced: src.lastSynced,
+    });
 
     // Stash the full diff (with payloads) for /apply; hand the UI a light view.
     const diffId = randomUUID();
@@ -48,7 +51,7 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
     if (!redis) {
       return NextResponse.json(
         { error: 'Sync requires Redis, which is currently unavailable.' },
-        { status: 503 },
+        { status: 503 }
       );
     }
     await redis.setEx(`sync-diff:${diffId}`, DIFF_TTL_SECONDS, JSON.stringify(diff.changes));

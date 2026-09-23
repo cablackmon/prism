@@ -44,7 +44,8 @@ interface WeekItemCardProps {
 // Diagonal-stripes overlay used to mark "pending approval" items. The
 // 4px-on / 4px-off pattern reads as a non-solid surface without overpowering
 // the underlying card content.
-const PENDING_APPROVAL_OVERLAY = 'repeating-linear-gradient(45deg, rgba(168,85,247,0.18) 0 6px, rgba(168,85,247,0) 6px 12px)';
+const PENDING_APPROVAL_OVERLAY =
+  'repeating-linear-gradient(45deg, rgba(168,85,247,0.18) 0 6px, rgba(168,85,247,0) 6px 12px)';
 
 /**
  * Tailwind class fragments per size — kept as static strings (not template-built)
@@ -56,15 +57,18 @@ const PENDING_APPROVAL_OVERLAY = 'repeating-linear-gradient(45deg, rgba(168,85,2
  * 5px left stripe, and 1em title — we map those onto Tailwind tokens that
  * remain theme-aware.
  */
-const SIZE_STYLES: Record<WeekItemSize, {
-  padding: string;
-  titleText: string;
-  titleWeight: string;
-  metaText: string;
-  stripeWidth: string;
-  showSubtitle: boolean;
-  showTime: boolean;
-}> = {
+const SIZE_STYLES: Record<
+  WeekItemSize,
+  {
+    padding: string;
+    titleText: string;
+    titleWeight: string;
+    metaText: string;
+    stripeWidth: string;
+    showSubtitle: boolean;
+    showTime: boolean;
+  }
+> = {
   xs: {
     padding: 'py-0.5 pr-1',
     titleText: 'text-[10px] leading-tight',
@@ -167,23 +171,49 @@ export function WeekItemCard({
           'transition-colors duration-150',
           interactive && 'cursor-pointer hover:bg-card',
           dragId && 'cursor-grab active:cursor-grabbing',
-          draggable.isDragging && 'opacity-60 ring-2 ring-seasonal-accent shadow-xl',
+          draggable.isDragging && 'opacity-60 shadow-xl ring-2 ring-seasonal-accent',
           muted && 'opacity-60',
           subdued && 'opacity-55 saturate-[0.65]',
-          styles.padding,
+          styles.padding
         )}
       >
         {pendingApproval && (
-          <span aria-hidden className="absolute inset-0 pointer-events-none" style={{ background: PENDING_APPROVAL_OVERLAY }} />
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-0"
+            style={{ background: PENDING_APPROVAL_OVERLAY }}
+          />
         )}
-        <span aria-hidden className={cn('shrink-0 self-stretch rounded-full', styles.stripeWidth)} style={{ backgroundColor: stripeColor }} />
+        <span
+          aria-hidden
+          className={cn('shrink-0 self-stretch rounded-full', styles.stripeWidth)}
+          style={{ backgroundColor: stripeColor }}
+        />
         {styles.showTime && timeLabel && (
-          <span className={cn('shrink-0 font-medium tabular-nums text-muted-foreground', styles.metaText)}>
+          <span
+            className={cn(
+              'shrink-0 font-medium tabular-nums text-muted-foreground',
+              styles.metaText
+            )}
+          >
             {timeLabel}
           </span>
         )}
-        <span className={cn('flex min-w-0 flex-1 items-center gap-1 text-foreground', styles.titleText, styles.titleWeight, muted && 'line-through')}>
-          {showMealIcon && <UtensilsCrossed aria-hidden className="h-3 w-3 shrink-0" style={{ color: stripeColor }} />}
+        <span
+          className={cn(
+            'flex min-w-0 flex-1 items-center gap-1 text-foreground',
+            styles.titleText,
+            styles.titleWeight,
+            muted && 'line-through'
+          )}
+        >
+          {showMealIcon && (
+            <UtensilsCrossed
+              aria-hidden
+              className="h-3 w-3 shrink-0"
+              style={{ color: stripeColor }}
+            />
+          )}
           <span className="truncate">{title}</span>
         </span>
         {styles.showSubtitle && subtitle && (
@@ -216,15 +246,23 @@ export function WeekItemCard({
         'transition-colors duration-150',
         interactive && 'cursor-pointer hover:bg-card',
         dragId && 'cursor-grab active:cursor-grabbing',
-        draggable.isDragging && 'opacity-60 ring-2 ring-seasonal-accent shadow-xl',
+        draggable.isDragging && 'opacity-60 shadow-xl ring-2 ring-seasonal-accent',
         muted && 'opacity-60',
-        subdued && 'opacity-55 saturate-[0.65]',
+        subdued && 'opacity-55 saturate-[0.65]'
       )}
     >
       {pendingApproval && (
-        <span aria-hidden className="absolute inset-0 pointer-events-none" style={{ background: PENDING_APPROVAL_OVERLAY }} />
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{ background: PENDING_APPROVAL_OVERLAY }}
+        />
       )}
-      <span aria-hidden className={cn('shrink-0 rounded-l-md', styles.stripeWidth)} style={{ backgroundColor: stripeColor }} />
+      <span
+        aria-hidden
+        className={cn('shrink-0 rounded-l-md', styles.stripeWidth)}
+        style={{ backgroundColor: stripeColor }}
+      />
 
       <div className={cn('flex min-w-0 flex-1 flex-col', styles.padding)}>
         {styles.showTime && timeLabel && (
@@ -232,14 +270,25 @@ export function WeekItemCard({
             {timeLabel}
           </span>
         )}
-        <span className={cn('flex min-w-0 items-center gap-1 text-foreground', styles.titleText, styles.titleWeight, muted && 'line-through')}>
-          {showMealIcon && <UtensilsCrossed aria-hidden className="h-3 w-3 shrink-0" style={{ color: stripeColor }} />}
+        <span
+          className={cn(
+            'flex min-w-0 items-center gap-1 text-foreground',
+            styles.titleText,
+            styles.titleWeight,
+            muted && 'line-through'
+          )}
+        >
+          {showMealIcon && (
+            <UtensilsCrossed
+              aria-hidden
+              className="h-3 w-3 shrink-0"
+              style={{ color: stripeColor }}
+            />
+          )}
           <span className="truncate">{title}</span>
         </span>
         {styles.showSubtitle && subtitle && (
-          <span className={cn('truncate text-muted-foreground', styles.metaText)}>
-            {subtitle}
-          </span>
+          <span className={cn('truncate text-muted-foreground', styles.metaText)}>{subtitle}</span>
         )}
       </div>
     </Tag>

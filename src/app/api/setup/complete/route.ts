@@ -39,7 +39,8 @@ export async function POST() {
 
     const existing = await db.select().from(settings).where(eq(settings.key, 'setupComplete'));
     if (existing.length > 0) {
-      await db.update(settings)
+      await db
+        .update(settings)
         .set({ value: { completedAt: new Date().toISOString() } })
         .where(eq(settings.key, 'setupComplete'));
     } else {

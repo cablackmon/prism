@@ -59,12 +59,16 @@ export function PageWrapper({
 
   return (
     <AppShell
-      user={activeUser ? {
-        id: activeUser.id,
-        name: activeUser.name,
-        avatarUrl: activeUser.avatarUrl,
-        color: activeUser.color,
-      } : undefined}
+      user={
+        activeUser
+          ? {
+              id: activeUser.id,
+              name: activeUser.name,
+              avatarUrl: activeUser.avatarUrl,
+              color: activeUser.color,
+            }
+          : undefined
+      }
       onLogout={activeUser ? clearActiveUser : undefined}
       onLogin={() => requireAuth('Login', 'Select your profile')}
       hideNav={hideNav}

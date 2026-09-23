@@ -61,52 +61,58 @@ export function useBackups() {
     }
   }, [fetchBackups]);
 
-  const restoreBackup = useCallback(async (filename: string): Promise<{ success: boolean; error?: string }> => {
-    try {
-      setRestoring(filename);
-      setError(null);
-      const res = await fetch(`/api/admin/backups/${encodeURIComponent(filename)}`, {
-        method: 'POST',
-      });
-      const data = await res.json();
+  const restoreBackup = useCallback(
+    async (filename: string): Promise<{ success: boolean; error?: string }> => {
+      try {
+        setRestoring(filename);
+        setError(null);
+        const res = await fetch(`/api/admin/backups/${encodeURIComponent(filename)}`, {
+          method: 'POST',
+        });
+        const data = await res.json();
 
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to restore backup');
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to restore backup');
+        }
+
+        return { success: true };
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : 'Failed to restore backup';
+        setError(errorMsg);
+        return { success: false, error: errorMsg };
+      } finally {
+        setRestoring(null);
       }
+    },
+    []
+  );
 
-      return { success: true };
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Failed to restore backup';
-      setError(errorMsg);
-      return { success: false, error: errorMsg };
-    } finally {
-      setRestoring(null);
-    }
-  }, []);
+  const deleteBackup = useCallback(
+    async (filename: string): Promise<{ success: boolean; error?: string }> => {
+      try {
+        setDeleting(filename);
+        setError(null);
+        const res = await fetch(`/api/admin/backups/${encodeURIComponent(filename)}`, {
+          method: 'DELETE',
+        });
+        const data = await res.json();
 
-  const deleteBackup = useCallback(async (filename: string): Promise<{ success: boolean; error?: string }> => {
-    try {
-      setDeleting(filename);
-      setError(null);
-      const res = await fetch(`/api/admin/backups/${encodeURIComponent(filename)}`, {
-        method: 'DELETE',
-      });
-      const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to delete backup');
+        }
 
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to delete backup');
+        await fetchBackups();
+        return { success: true };
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : 'Failed to delete backup';
+        setError(errorMsg);
+        return { success: false, error: errorMsg };
+      } finally {
+        setDeleting(null);
       }
-
-      await fetchBackups();
-      return { success: true };
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Failed to delete backup';
-      setError(errorMsg);
-      return { success: false, error: errorMsg };
-    } finally {
-      setDeleting(null);
-    }
-  }, [fetchBackups]);
+    },
+    [fetchBackups]
+  );
 
   const downloadBackup = useCallback((filename: string) => {
     // Trigger download via hidden link

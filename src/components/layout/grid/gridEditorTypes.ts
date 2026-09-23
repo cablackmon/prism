@@ -77,6 +77,13 @@ export interface LayoutGridEditorProps {
   className?: string;
   screenGuideOrientation?: 'landscape' | 'portrait';
   enabledSizes?: string[];
-  onScrollInfo?: (info: { scrollY: number; visibleRows: number; scrollX: number; visibleCols: number; totalRows: number; totalCols: number }) => void;
+  onScrollInfo?: (info: {
+    scrollY: number;
+    visibleRows: number;
+    scrollX: number;
+    visibleCols: number;
+    totalRows: number;
+    totalCols: number;
+  }) => void;
   scrollToRef?: React.MutableRefObject<((row: number, col?: number) => void) | null>;
 }

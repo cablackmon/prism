@@ -43,14 +43,27 @@ function mealStripeColor(meal: {
 function dayLabel(date: Date, displayTimezone: string): string {
   const displayNow = toDisplayDate(new Date(), displayTimezone);
   if (isSameDay(date, displayNow)) return 'Today';
-  if (isSameDay(date, new Date(displayNow.getFullYear(), displayNow.getMonth(), displayNow.getDate() + 1))) return 'Tomorrow';
+  if (
+    isSameDay(
+      date,
+      new Date(displayNow.getFullYear(), displayNow.getMonth(), displayNow.getDate() + 1)
+    )
+  )
+    return 'Tomorrow';
   return format(date, 'EEEE');
 }
 
-function timeLabel(start: Date, end: Date, allDay: boolean, timeFormat: TimeFormat, displayTimezone: string): string | undefined {
+function timeLabel(
+  start: Date,
+  end: Date,
+  allDay: boolean,
+  timeFormat: TimeFormat,
+  displayTimezone: string
+): string | undefined {
   if (allDay) return 'All day';
   const startStr = formatDisplayTime(start, timeFormat, {}, displayTimezone);
-  if (!isSameDay(toDisplayDate(start, displayTimezone), toDisplayDate(end, displayTimezone))) return startStr;
+  if (!isSameDay(toDisplayDate(start, displayTimezone), toDisplayDate(end, displayTimezone)))
+    return startStr;
   return startStr;
 }
 
@@ -177,13 +190,13 @@ export function DayColumn({
         profile.minHeight,
         profile.gap,
         today && 'ring-2 ring-seasonal-accent/60',
-        droppable.isOver && !disableDrop && 'ring-2 ring-seasonal-accent shadow-lg bg-card/80',
-        className,
+        droppable.isOver && !disableDrop && 'bg-card/80 shadow-lg ring-2 ring-seasonal-accent',
+        className
       )}
     >
       {/* HEADER */}
       <div className="flex items-baseline justify-between gap-1 pb-1">
-        <div className="flex items-baseline gap-1.5 min-w-0">
+        <div className="flex min-w-0 items-baseline gap-1.5">
           <span className={cn('leading-none text-foreground', profile.headerDateText)}>
             {format(bucket.date, 'd')}
           </span>
@@ -191,9 +204,7 @@ export function DayColumn({
             className={cn(
               'truncate leading-none',
               profile.headerLabelText,
-              today
-                ? 'font-semibold text-seasonal-accent'
-                : 'text-muted-foreground',
+              today ? 'font-semibold text-seasonal-accent' : 'text-muted-foreground'
             )}
           >
             {dayLabel(bucket.date, displayTimezone)}
@@ -232,7 +243,13 @@ export function DayColumn({
             layout={itemLayout}
             stripeColor={event.color}
             title={event.title}
-            timeLabel={timeLabel(event.startTime, event.endTime, false, timeFormat, displayTimezone)}
+            timeLabel={timeLabel(
+              event.startTime,
+              event.endTime,
+              false,
+              timeFormat,
+              displayTimezone
+            )}
             subtitle={event.location || event.calendarName}
           />
         ))}

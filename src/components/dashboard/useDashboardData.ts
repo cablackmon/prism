@@ -1,5 +1,17 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { useCalendarEvents, useWeather, useMessages, useTasks, useChores, useShoppingLists, useMeals, useBirthdays, useLayouts, useGoals, usePoints } from '@/lib/hooks';
+import {
+  useCalendarEvents,
+  useWeather,
+  useMessages,
+  useTasks,
+  useChores,
+  useShoppingLists,
+  useMeals,
+  useBirthdays,
+  useLayouts,
+  useGoals,
+  usePoints,
+} from '@/lib/hooks';
 
 const AUTO_SYNC_STALE_MINUTES = 5;
 const AUTO_SYNC_INTERVAL_MS = 5 * 60 * 1000;
@@ -139,9 +151,12 @@ export function useDashboardData(visibleWidgets?: Set<string>) {
     if (now - lastAutoSyncRef.current < AUTO_SYNC_INTERVAL_MS) return;
 
     try {
-      const res = await fetch(`/api/task-sources/sync-all?staleMinutes=${AUTO_SYNC_STALE_MINUTES}`, {
-        method: 'POST',
-      });
+      const res = await fetch(
+        `/api/task-sources/sync-all?staleMinutes=${AUTO_SYNC_STALE_MINUTES}`,
+        {
+          method: 'POST',
+        }
+      );
       if (res.ok) {
         const data = await res.json();
         if (data.synced > 0) {
@@ -181,13 +196,44 @@ export function useDashboardData(visibleWidgets?: Set<string>) {
   return {
     calendar: { events: calendarEvents, loading: calendarLoading, error: calendarError },
     weather: { data: weatherData, loading: weatherLoading, error: weatherError },
-    messages: { messages, loading: messagesLoading, error: messagesError, refresh: refreshMessages, deleteMessage },
+    messages: {
+      messages,
+      loading: messagesLoading,
+      error: messagesError,
+      refresh: refreshMessages,
+      deleteMessage,
+    },
     tasks: { tasks, loading: tasksLoading, error: tasksError, refresh: refreshTasks, toggleTask },
-    chores: { chores, loading: choresLoading, error: choresError, refresh: refreshChores, completeChore, approveChore },
-    shopping: { lists: shoppingLists, loading: shoppingLoading, error: shoppingError, refresh: refreshShopping, toggleItem: toggleShoppingItem },
+    chores: {
+      chores,
+      loading: choresLoading,
+      error: choresError,
+      refresh: refreshChores,
+      completeChore,
+      approveChore,
+    },
+    shopping: {
+      lists: shoppingLists,
+      loading: shoppingLoading,
+      error: shoppingError,
+      refresh: refreshShopping,
+      toggleItem: toggleShoppingItem,
+    },
     meals: { meals, loading: mealsLoading, error: mealsError, refresh: refreshMeals, markCooked },
-    birthdays: { birthdays: birthdaysList, loading: birthdaysLoading, error: birthdaysError, syncFromGoogle: syncBirthdays },
-    points: { points: pointsList, goals: goalsList, progress: goalsProgress, goalChildren, loading: pointsLoading || goalsLoading, error: pointsError || goalsError },
+    birthdays: {
+      birthdays: birthdaysList,
+      loading: birthdaysLoading,
+      error: birthdaysError,
+      syncFromGoogle: syncBirthdays,
+    },
+    points: {
+      points: pointsList,
+      goals: goalsList,
+      progress: goalsProgress,
+      goalChildren,
+      loading: pointsLoading || goalsLoading,
+      error: pointsError || goalsError,
+    },
     layouts: { allLayouts, savedLayout, saveLayout, deleteLayout, loading: layoutsLoading },
   };
 }

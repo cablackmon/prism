@@ -20,7 +20,7 @@ import { useState, useEffect } from 'react';
 export function usePersistedState<T>(
   key: string,
   initial: T,
-  isValid: (v: unknown) => v is T,
+  isValid: (v: unknown) => v is T
 ): [T, (v: T) => void] {
   const [value, setValue] = useState<T>(() => {
     if (typeof window === 'undefined') return initial;
@@ -50,7 +50,8 @@ export function usePersistedState<T>(
 
 /** Validator for a fixed set of string options. */
 export function oneOf<T extends string>(...allowed: readonly T[]) {
-  return (v: unknown): v is T => typeof v === 'string' && (allowed as readonly string[]).includes(v);
+  return (v: unknown): v is T =>
+    typeof v === 'string' && (allowed as readonly string[]).includes(v);
 }
 
 export const isBoolean = (v: unknown): v is boolean => typeof v === 'boolean';
@@ -95,7 +96,7 @@ export function displayWentIdle(now = Date.now()): boolean {
 export function useSessionScopedState<T>(
   key: string,
   initial: T,
-  isValid: (v: unknown) => v is T,
+  isValid: (v: unknown) => v is T
 ): [T, (v: T) => void] {
   const [value, setValue] = usePersistedState<T>(key, initial, isValid);
   const [ready, setReady] = useState(false);

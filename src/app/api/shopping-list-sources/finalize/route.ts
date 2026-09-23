@@ -28,26 +28,17 @@ export async function POST(request: NextRequest) {
     const { shoppingListId, externalListId, externalListName } = body;
 
     if (!externalListId) {
-      return NextResponse.json(
-        { error: 'externalListId is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'externalListId is required' }, { status: 400 });
     }
 
     if (!shoppingListId) {
-      return NextResponse.json(
-        { error: 'shoppingListId is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'shoppingListId is required' }, { status: 400 });
     }
 
     // Get temp tokens from Redis
     const redis = await getRedisClient();
     if (!redis) {
-      return NextResponse.json(
-        { error: 'Redis unavailable' },
-        { status: 503 }
-      );
+      return NextResponse.json({ error: 'Redis unavailable' }, { status: 503 });
     }
 
     const tempKey = `ms-todo-temp:${auth.userId}:shopping:${shoppingListId}`;
@@ -74,10 +65,7 @@ export async function POST(request: NextRequest) {
       .where(eq(shoppingLists.id, shoppingListId));
 
     if (!list) {
-      return NextResponse.json(
-        { error: 'Shopping list not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Shopping list not found' }, { status: 404 });
     }
 
     // Check if source already exists for this Prism list

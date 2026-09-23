@@ -42,7 +42,14 @@ export function mealFingerprint(f: {
   mealTime: string | null;
   servings: number | null;
 }): string {
-  return JSON.stringify([f.name, f.weekOf, f.dayOfWeek, f.mealType, f.mealTime ?? '', f.servings ?? '']);
+  return JSON.stringify([
+    f.name,
+    f.weekOf,
+    f.dayOfWeek,
+    f.mealType,
+    f.mealTime ?? '',
+    f.servings ?? '',
+  ]);
 }
 
 /** Local meals previously synced from a given source tag, as generic LocalItems. */
@@ -69,7 +76,7 @@ export async function loadLocalMeals(sourceTag: string): Promise<LocalItem[]> {
       updatedAt: row.updatedAt,
       fingerprint: mealFingerprint(row),
       label: `${row.name} — ${row.dayOfWeek} ${row.mealType}`,
-    }),
+    })
   );
 }
 
@@ -78,7 +85,7 @@ export async function writeMealRow(
   sourceTag: string,
   p: NormalizedMeal,
   recipeId: string | null,
-  localId: string | null,
+  localId: string | null
 ): Promise<void> {
   const values = {
     name: p.name,

@@ -37,11 +37,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useBabysitterInfo, type BabysitterSection, type BabysitterInfoItem } from '@/lib/hooks/useBabysitterInfo';
+import {
+  useBabysitterInfo,
+  type BabysitterSection,
+  type BabysitterInfoItem,
+} from '@/lib/hooks/useBabysitterInfo';
 import { useWifiConfig } from '@/lib/hooks/useWifiConfig';
 import { WifiQRCode } from '@/components/ui/WifiQRCode';
 
-const SECTION_CONFIG: Record<BabysitterSection, { label: string; singular: string; icon: React.ReactNode; description: string }> = {
+const SECTION_CONFIG: Record<
+  BabysitterSection,
+  { label: string; singular: string; icon: React.ReactNode; description: string }
+> = {
   emergency_contact: {
     label: 'Emergency Contacts',
     singular: 'Emergency Contact',
@@ -182,8 +189,8 @@ export function BabysitterInfoSection() {
     return (
       <Card>
         <CardContent className="p-6">
-          <div className="flex items-center justify-center h-32">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
+          <div className="flex h-32 items-center justify-center">
+            <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-primary" />
           </div>
         </CardContent>
       </Card>
@@ -199,14 +206,12 @@ export function BabysitterInfoSection() {
             <Wifi className="h-5 w-5" />
             WiFi QR Code
           </CardTitle>
-          <CardDescription>
-            Babysitters can scan this to connect to your WiFi
-          </CardDescription>
+          <CardDescription>Babysitters can scan this to connect to your WiFi</CardDescription>
         </CardHeader>
         <CardContent>
           {wifiLoading ? (
-            <div className="flex items-center justify-center h-32">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
+            <div className="flex h-32 items-center justify-center">
+              <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-primary" />
             </div>
           ) : wifiEditing || !hasWifiConfig ? (
             <div className="space-y-4">
@@ -275,10 +280,8 @@ export function BabysitterInfoSection() {
               </div>
             </div>
           ) : (
-            <div className="flex flex-col sm:flex-row items-center gap-6">
-              {qrString && (
-                <WifiQRCode ssid={wifiConfig.ssid} qrString={qrString} size={150} />
-              )}
+            <div className="flex flex-col items-center gap-6 sm:flex-row">
+              {qrString && <WifiQRCode ssid={wifiConfig.ssid} qrString={qrString} size={150} />}
               <div className="flex-1 space-y-2">
                 <div className="text-sm">
                   <span className="text-muted-foreground">Network:</span>{' '}
@@ -286,10 +289,12 @@ export function BabysitterInfoSection() {
                 </div>
                 <div className="text-sm">
                   <span className="text-muted-foreground">Security:</span>{' '}
-                  {wifiConfig.securityType === 'nopass' ? 'Open (no password)' : wifiConfig.securityType}
+                  {wifiConfig.securityType === 'nopass'
+                    ? 'Open (no password)'
+                    : wifiConfig.securityType}
                 </div>
                 <Button variant="outline" size="sm" onClick={startWifiEdit}>
-                  <Pencil className="h-4 w-4 mr-1" />
+                  <Pencil className="mr-1 h-4 w-4" />
                   Edit
                 </Button>
               </div>
@@ -316,24 +321,16 @@ export function BabysitterInfoSection() {
                   <div className="flex items-center gap-2">
                     {config.icon}
                     <span className="font-medium">{config.label}</span>
-                    <span className="text-sm text-muted-foreground">
-                      ({sectionItems.length})
-                    </span>
+                    <span className="text-sm text-muted-foreground">({sectionItems.length})</span>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => openAddModal(section)}
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
+                  <Button variant="outline" size="sm" onClick={() => openAddModal(section)}>
+                    <Plus className="mr-1 h-4 w-4" />
                     Add
                   </Button>
                 </div>
 
                 {sectionItems.length === 0 ? (
-                  <p className="text-sm text-muted-foreground pl-6">
-                    {config.description}
-                  </p>
+                  <p className="pl-6 text-sm text-muted-foreground">{config.description}</p>
                 ) : (
                   <div className="space-y-2 pl-6">
                     {sectionItems.map((item) => (
@@ -370,16 +367,12 @@ export function BabysitterInfoSection() {
               onChange={setFormContent}
             />
 
-            <div className="flex items-center justify-between pt-2 border-t">
+            <div className="flex items-center justify-between border-t pt-2">
               <div className="flex items-center gap-2">
                 <Lock className="h-4 w-4 text-muted-foreground" />
                 <Label htmlFor="sensitive">Sensitive (requires PIN to view)</Label>
               </div>
-              <Switch
-                id="sensitive"
-                checked={formSensitive}
-                onCheckedChange={setFormSensitive}
-              />
+              <Switch id="sensitive" checked={formSensitive} onCheckedChange={setFormSensitive} />
             </div>
           </div>
 
@@ -410,15 +403,19 @@ function ItemRow({ item, section, onEdit, onDelete, isDeleting }: ItemRowProps) 
   const label = getItemLabel(section, content);
 
   return (
-    <div className="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
-      <div className="flex items-center gap-2 min-w-0">
-        {item.isSensitive && (
-          <Lock className="h-3 w-3 text-muted-foreground shrink-0" />
-        )}
-        <span className="text-sm truncate">{label}</span>
+    <div className="flex items-center justify-between rounded-lg bg-muted/50 p-2">
+      <div className="flex min-w-0 items-center gap-2">
+        {item.isSensitive && <Lock className="h-3 w-3 shrink-0 text-muted-foreground" />}
+        <span className="truncate text-sm">{label}</span>
       </div>
       <div className="flex items-center gap-1">
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onEdit} aria-label="Edit item">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={onEdit}
+          aria-label="Edit item"
+        >
           <Pencil className="h-4 w-4" />
         </Button>
         <Button

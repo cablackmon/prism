@@ -31,16 +31,13 @@ export const PhotoWidget = React.memo(function PhotoWidget({ className }: PhotoW
       className={className}
     >
       {isEmpty ? (
-        <WidgetEmpty
-          icon={<ImageIcon className="h-8 w-8" />}
-          message="No photos yet"
-        />
+        <WidgetEmpty icon={<ImageIcon className="h-8 w-8" />} message="No photos yet" />
       ) : perfMode && firstPhoto ? (
-        <div className="relative w-full h-full overflow-hidden rounded">
+        <div className="relative h-full w-full overflow-hidden rounded">
           <img
             src={`/api/photos/${firstPhoto.id}/file?thumb=1`}
             alt=""
-            className="w-full h-full object-cover"
+            className="h-full w-full object-cover"
             loading="lazy"
             decoding="async"
           />

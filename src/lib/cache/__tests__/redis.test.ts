@@ -55,7 +55,11 @@ describe('getCached', () => {
 
     expect(result).toEqual({ name: 'Bob' });
     expect(fetchFn).toHaveBeenCalledTimes(1);
-    expect(mockRedisClient.setEx).toHaveBeenCalledWith('user:2', 600, JSON.stringify({ name: 'Bob' }));
+    expect(mockRedisClient.setEx).toHaveBeenCalledWith(
+      'user:2',
+      600,
+      JSON.stringify({ name: 'Bob' })
+    );
   });
 
   it('uses default TTL of 300s', async () => {
@@ -117,7 +121,9 @@ describe('setCache', () => {
     await setCache('my-key', { items: [1, 2, 3] }, 120);
 
     expect(mockRedisClient.setEx).toHaveBeenCalledWith(
-      'my-key', 120, JSON.stringify({ items: [1, 2, 3] })
+      'my-key',
+      120,
+      JSON.stringify({ items: [1, 2, 3] })
     );
   });
 
@@ -150,11 +156,13 @@ describe('invalidateCache', () => {
 
   it('deletes all keys matching the pattern', async () => {
     // Mock scanIterator as async generator yielding string keys
-    mockRedisClient.scanIterator.mockReturnValue((async function* () {
-      yield 'cache:user:1';
-      yield 'cache:user:2';
-      yield 'cache:user:3';
-    })());
+    mockRedisClient.scanIterator.mockReturnValue(
+      (async function* () {
+        yield 'cache:user:1';
+        yield 'cache:user:2';
+        yield 'cache:user:3';
+      })()
+    );
 
     await invalidateCache('cache:user:*');
 
@@ -166,10 +174,12 @@ describe('invalidateCache', () => {
   });
 
   it('handles scanIterator returning arrays', async () => {
-    mockRedisClient.scanIterator.mockReturnValue((async function* () {
-      yield ['key:a', 'key:b'];
-      yield 'key:c';
-    })());
+    mockRedisClient.scanIterator.mockReturnValue(
+      (async function* () {
+        yield ['key:a', 'key:b'];
+        yield 'key:c';
+      })()
+    );
 
     await invalidateCache('key:*');
 
@@ -180,9 +190,11 @@ describe('invalidateCache', () => {
   });
 
   it('does nothing when no keys match', async () => {
-    mockRedisClient.scanIterator.mockReturnValue((async function* () {
-      // empty generator
-    })());
+    mockRedisClient.scanIterator.mockReturnValue(
+      (async function* () {
+        // empty generator
+      })()
+    );
 
     await invalidateCache('nonexistent:*');
 
@@ -198,9 +210,11 @@ describe('invalidateCache', () => {
   });
 
   it('does not throw when scan throws', async () => {
-    mockRedisClient.scanIterator.mockReturnValue((async function* () {
-      throw new Error('scan failed');
-    })());
+    mockRedisClient.scanIterator.mockReturnValue(
+      (async function* () {
+        throw new Error('scan failed');
+      })()
+    );
 
     await expect(invalidateCache('key:*')).resolves.toBeUndefined();
   });

@@ -23,10 +23,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
     const filePath = await getBackupPath(filename);
 
     if (!filePath) {
-      return NextResponse.json(
-        { error: 'Backup not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Backup not found' }, { status: 404 });
     }
 
     const fileBuffer = await fs.readFile(filePath);
@@ -38,10 +35,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
     });
   } catch (error) {
     logError('Error downloading backup:', error);
-    return NextResponse.json(
-      { error: 'Failed to download backup' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to download backup' }, { status: 500 });
   }
 }
 
@@ -69,10 +63,7 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ success: true });
   } catch (error) {
     logError('Error restoring backup:', error);
-    return NextResponse.json(
-      { error: 'Failed to restore backup' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to restore backup' }, { status: 500 });
   }
 }
 
@@ -100,9 +91,6 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ success: true });
   } catch (error) {
     logError('Error deleting backup:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete backup' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to delete backup' }, { status: 500 });
   }
 }

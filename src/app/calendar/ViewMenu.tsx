@@ -42,10 +42,7 @@ interface ViewOption {
   /** Returns true when this option matches the current view state. */
   isActive: (viewType: ViewType, weekCount: MultiWeekCount) => boolean;
   /** Switches the calendar to this option. */
-  apply: (
-    setView: (v: ViewType) => void,
-    setWeekCount: (n: MultiWeekCount) => void,
-  ) => void;
+  apply: (setView: (v: ViewType) => void, setWeekCount: (n: MultiWeekCount) => void) => void;
 }
 
 const OPTIONS: ViewOption[] = [
@@ -77,25 +74,37 @@ const OPTIONS: ViewOption[] = [
     label: '1 Week',
     Icon: CalendarRange,
     isActive: (v, wc) => v === 'multiWeek' && wc === 1,
-    apply: (setView, setWeekCount) => { setView('multiWeek'); setWeekCount(1); },
+    apply: (setView, setWeekCount) => {
+      setView('multiWeek');
+      setWeekCount(1);
+    },
   },
   {
     label: '2 Weeks',
     Icon: CalendarRange,
     isActive: (v, wc) => v === 'multiWeek' && wc === 2,
-    apply: (setView, setWeekCount) => { setView('multiWeek'); setWeekCount(2); },
+    apply: (setView, setWeekCount) => {
+      setView('multiWeek');
+      setWeekCount(2);
+    },
   },
   {
     label: '3 Weeks',
     Icon: CalendarRange,
     isActive: (v, wc) => v === 'multiWeek' && wc === 3,
-    apply: (setView, setWeekCount) => { setView('multiWeek'); setWeekCount(3); },
+    apply: (setView, setWeekCount) => {
+      setView('multiWeek');
+      setWeekCount(3);
+    },
   },
   {
     label: '4 Weeks',
     Icon: CalendarRange,
     isActive: (v, wc) => v === 'multiWeek' && wc === 4,
-    apply: (setView, setWeekCount) => { setView('multiWeek'); setWeekCount(4); },
+    apply: (setView, setWeekCount) => {
+      setView('multiWeek');
+      setWeekCount(4);
+    },
   },
   {
     label: 'Month',
@@ -115,7 +124,7 @@ export function ViewMenu({ viewType, weekCount, onViewChange, onWeekCountChange 
   const [open, setOpen] = React.useState(false);
   const activeIndex = Math.max(
     0,
-    OPTIONS.findIndex((o) => o.isActive(viewType, weekCount)),
+    OPTIONS.findIndex((o) => o.isActive(viewType, weekCount))
   );
   const active = OPTIONS[activeIndex] ?? OPTIONS[0]!;
   const ActiveIcon = active.Icon;
@@ -133,13 +142,13 @@ export function ViewMenu({ viewType, weekCount, onViewChange, onWeekCountChange 
     // grid-rows-2 (each row 1fr) on the triangle stack guarantees every
     // child shares the exact same top AND bottom edge, regardless of any
     // sub-pixel rounding from individual heights.
-    <div className="inline-flex items-stretch gap-1 h-9">
+    <div className="inline-flex h-9 items-stretch gap-1">
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <Button variant="outline" size="sm" className="gap-1.5 w-32 h-full justify-center">
+          <Button variant="outline" size="sm" className="h-full w-32 justify-center gap-1.5">
             <ActiveIcon className="h-4 w-4 shrink-0" />
             <span className="truncate">{active.label}</span>
-            <ChevronDown className="h-3.5 w-3.5 opacity-60 shrink-0" />
+            <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-60" />
           </Button>
         </PopoverTrigger>
         <PopoverContent align="end" className="w-44 p-1">
@@ -156,8 +165,8 @@ export function ViewMenu({ viewType, weekCount, onViewChange, onWeekCountChange 
                 }}
                 className={cn(
                   'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm',
-                  'hover:bg-accent hover:text-accent-foreground transition-colors',
-                  isActive ? 'bg-accent/60 text-foreground font-medium' : 'text-muted-foreground',
+                  'transition-colors hover:bg-accent hover:text-accent-foreground',
+                  isActive ? 'bg-accent/60 font-medium text-foreground' : 'text-muted-foreground'
                 )}
               >
                 <Icon className="h-4 w-4 shrink-0" />
@@ -167,13 +176,13 @@ export function ViewMenu({ viewType, weekCount, onViewChange, onWeekCountChange 
           })}
         </PopoverContent>
       </Popover>
-      <div className="grid grid-rows-2 gap-0.5 w-7 h-full">
+      <div className="grid h-full w-7 grid-rows-2 gap-0.5">
         <button
           type="button"
           aria-label="Previous view"
           title="Previous view"
           onClick={() => cycle(-1)}
-          className="rounded border border-input hover:bg-accent inline-flex items-center justify-center text-foreground/80 hover:text-foreground transition-colors min-h-0"
+          className="inline-flex min-h-0 items-center justify-center rounded border border-input text-foreground/80 transition-colors hover:bg-accent hover:text-foreground"
         >
           <span className="block text-[10px] leading-none">▲</span>
         </button>
@@ -182,7 +191,7 @@ export function ViewMenu({ viewType, weekCount, onViewChange, onWeekCountChange 
           aria-label="Next view"
           title="Next view"
           onClick={() => cycle(1)}
-          className="rounded border border-input hover:bg-accent inline-flex items-center justify-center text-foreground/80 hover:text-foreground transition-colors min-h-0"
+          className="inline-flex min-h-0 items-center justify-center rounded border border-input text-foreground/80 transition-colors hover:bg-accent hover:text-foreground"
         >
           <span className="block text-[10px] leading-none">▼</span>
         </button>

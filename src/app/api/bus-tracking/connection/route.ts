@@ -28,29 +28,32 @@ export async function GET() {
 }
 
 export async function DELETE() {
-  return withAuth(async (auth) => {
-    try {
-      const cred = await db.query.apiCredentials.findFirst({
-        where: (c, { eq }) => eq(c.service, 'gmail-bus'),
-      });
+  return withAuth(
+    async (auth) => {
+      try {
+        const cred = await db.query.apiCredentials.findFirst({
+          where: (c, { eq }) => eq(c.service, 'gmail-bus'),
+        });
 
-      if (!cred) {
-        return NextResponse.json({ error: 'Gmail not connected' }, { status: 404 });
+        if (!cred) {
+          return NextResponse.json({ error: 'Gmail not connected' }, { status: 404 });
+        }
+
+        await db.delete(apiCredentials).where(eq(apiCredentials.id, cred.id));
+
+        logActivity({
+          userId: auth.userId,
+          action: 'delete',
+          entityType: 'integration',
+          summary: 'Disconnected Gmail for bus tracking',
+        });
+
+        return NextResponse.json({ success: true });
+      } catch (error) {
+        logError('Failed to disconnect Gmail:', error);
+        return NextResponse.json({ error: 'Failed to disconnect' }, { status: 500 });
       }
-
-      await db.delete(apiCredentials).where(eq(apiCredentials.id, cred.id));
-
-      logActivity({
-        userId: auth.userId,
-        action: 'delete',
-        entityType: 'integration',
-        summary: 'Disconnected Gmail for bus tracking',
-      });
-
-      return NextResponse.json({ success: true });
-    } catch (error) {
-      logError('Failed to disconnect Gmail:', error);
-      return NextResponse.json({ error: 'Failed to disconnect' }, { status: 500 });
-    }
-  }, { permission: 'canModifySettings' });
+    },
+    { permission: 'canModifySettings' }
+  );
 }

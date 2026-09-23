@@ -5,7 +5,11 @@ import { format } from 'date-fns';
 import { Cloud, CloudRain, CloudSnow, Sun, CloudSun, Droplets, Wind } from 'lucide-react';
 import { useAwayMode } from '@/lib/hooks/useAwayMode';
 import { usePhotos } from '@/lib/hooks/usePhotos';
-import { useAutoOrientationSetting, usePinnedPhoto, useScreensaverInterval } from '@/components/layout/WallpaperBackground';
+import {
+  useAutoOrientationSetting,
+  usePinnedPhoto,
+  useScreensaverInterval,
+} from '@/components/layout/WallpaperBackground';
 import { useScreenOrientation } from '@/lib/hooks/useScreenOrientation';
 import { ExitAwayModeModal } from './ExitAwayModeModal';
 import { useTimeFormat } from '@/components/providers';
@@ -18,9 +22,11 @@ export function AwayModeOverlay() {
   const { interval: photoInterval } = useScreensaverInterval();
   const screenOrientation = useScreenOrientation();
 
-  const orientationOverride = typeof window !== 'undefined'
-    ? (localStorage.getItem('prism-orientation-override') as 'landscape' | 'portrait' | null) || null
-    : null;
+  const orientationOverride =
+    typeof window !== 'undefined'
+      ? (localStorage.getItem('prism-orientation-override') as 'landscape' | 'portrait' | null) ||
+        null
+      : null;
   const effectiveOrientation = orientationOverride || screenOrientation;
 
   const { photos } = usePhotos({
@@ -78,7 +84,7 @@ export function AwayModeOverlay() {
 
   return (
     <div
-      className={`fixed inset-0 z-[9998] bg-black transition-opacity duration-1000 cursor-pointer ${
+      className={`fixed inset-0 z-[9998] cursor-pointer bg-black transition-opacity duration-1000 ${
         visible ? 'opacity-100' : 'opacity-0'
       }`}
       onClick={handleOverlayClick}
@@ -98,7 +104,7 @@ export function AwayModeOverlay() {
       <div className="absolute inset-0 bg-black/40" />
 
       {/* Header bar — clock left, weather right */}
-      <div className="absolute top-0 left-0 right-0 z-10 bg-black/30 backdrop-blur-sm border-b border-white/10">
+      <div className="absolute left-0 right-0 top-0 z-10 border-b border-white/10 bg-black/30 backdrop-blur-sm">
         <div className="flex items-center justify-between px-6 py-4">
           <AwayModeClock />
           <AwayModeWeather />
@@ -106,10 +112,8 @@ export function AwayModeOverlay() {
       </div>
 
       {/* Center tap prompt */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="text-white/40 text-sm">
-          Tap anywhere to unlock
-        </div>
+      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+        <div className="text-sm text-white/40">Tap anywhere to unlock</div>
       </div>
 
       {/* Exit modal */}
@@ -145,7 +149,13 @@ function AwayModeClock() {
 
 function AwayModeWeather() {
   const [data, setData] = useState<{
-    current: { temperature: number; condition: string; description: string; humidity: number; windSpeed: number };
+    current: {
+      temperature: number;
+      condition: string;
+      description: string;
+      humidity: number;
+      windSpeed: number;
+    };
     units: { temperature: 'F' | 'C'; windSpeed: 'mph' | 'km/h'; precipitation: 'in' | 'mm' };
   } | null>(null);
 
@@ -174,11 +184,19 @@ function AwayModeWeather() {
   return (
     <div className="flex items-center gap-3 text-white/80">
       <div className="text-2xl">{icon}</div>
-      <div className="text-xl font-light">{Math.round(weather.temperature)}°{units.temperature}</div>
-      <div className="text-sm text-white/50 capitalize">{weather.description}</div>
-      <div className="flex items-center gap-3 ml-2 text-xs text-white/40">
-        <span className="flex items-center gap-1"><Droplets className="h-3 w-3" />{weather.humidity}%</span>
-        <span className="flex items-center gap-1"><Wind className="h-3 w-3" />{weather.windSpeed} {units.windSpeed}</span>
+      <div className="text-xl font-light">
+        {Math.round(weather.temperature)}°{units.temperature}
+      </div>
+      <div className="text-sm capitalize text-white/50">{weather.description}</div>
+      <div className="ml-2 flex items-center gap-3 text-xs text-white/40">
+        <span className="flex items-center gap-1">
+          <Droplets className="h-3 w-3" />
+          {weather.humidity}%
+        </span>
+        <span className="flex items-center gap-1">
+          <Wind className="h-3 w-3" />
+          {weather.windSpeed} {units.windSpeed}
+        </span>
       </div>
     </div>
   );

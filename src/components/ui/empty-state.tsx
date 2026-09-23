@@ -28,7 +28,6 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
-
 export interface EmptyStateProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'title'> {
   /**
    * Icon element, e.g. `<CheckSquare />`. Do not pass sizing/color classes —
@@ -84,9 +83,7 @@ const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
         <div
           className={cn(
             'opacity-40',
-            size === 'sm'
-              ? 'mb-2 [&>svg]:h-6 [&>svg]:w-6'
-              : 'mb-3 [&>svg]:h-12 [&>svg]:w-12'
+            size === 'sm' ? 'mb-2 [&>svg]:h-6 [&>svg]:w-6' : 'mb-3 [&>svg]:h-12 [&>svg]:w-12'
           )}
         >
           {icon}
@@ -103,6 +100,5 @@ const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
   )
 );
 EmptyState.displayName = 'EmptyState';
-
 
 export { EmptyState };

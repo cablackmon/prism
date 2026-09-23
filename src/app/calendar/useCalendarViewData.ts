@@ -20,7 +20,14 @@ import type { CalendarEvent } from '@/types/calendar';
 import { useTimeFormat } from '@/components/providers';
 import { toDisplayDate } from '@/lib/utils/timeFormat';
 
-export type CalendarViewType = 'agenda' | 'day' | 'week' | 'weekVertical' | 'multiWeek' | 'month' | 'threeMonth';
+export type CalendarViewType =
+  | 'agenda'
+  | 'day'
+  | 'week'
+  | 'weekVertical'
+  | 'multiWeek'
+  | 'month'
+  | 'threeMonth';
 export type MultiWeekCount = 1 | 2 | 3 | 4;
 
 export type { CalendarGroup } from '@/lib/hooks';
@@ -40,14 +47,22 @@ export function useCalendarViewData() {
   const [viewType, setViewTypeState] = useState<CalendarViewType>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('prism-calendar-view-type') as CalendarViewType | null;
-      const valid: CalendarViewType[] = ['agenda', 'day', 'week', 'weekVertical', 'multiWeek', 'month', 'threeMonth'];
+      const valid: CalendarViewType[] = [
+        'agenda',
+        'day',
+        'week',
+        'weekVertical',
+        'multiWeek',
+        'month',
+        'threeMonth',
+      ];
       if (saved && valid.includes(saved)) return saved;
     }
     return 'month';
   });
   const setViewType = useCallback(
     (next: CalendarViewType) => startTransition(() => setViewTypeState(next)),
-    [],
+    []
   );
 
   useEffect(() => {
@@ -101,7 +116,12 @@ export function useCalendarViewData() {
     localStorage.setItem('prism-calendar-display-mode', displayMode);
   }, [displayMode]);
 
-  const [overlays, setOverlays] = useState<{ events: boolean; meals: boolean; chores: boolean; tasks: boolean }>(() => {
+  const [overlays, setOverlays] = useState<{
+    events: boolean;
+    meals: boolean;
+    chores: boolean;
+    tasks: boolean;
+  }>(() => {
     if (typeof window !== 'undefined') {
       const raw = localStorage.getItem('prism-calendar-overlays');
       if (raw) {
@@ -113,7 +133,9 @@ export function useCalendarViewData() {
             chores: parsed.chores !== false,
             tasks: parsed.tasks !== false,
           };
-        } catch { /* fall through */ }
+        } catch {
+          /* fall through */
+        }
       }
     }
     return { events: true, meals: true, chores: true, tasks: true };
@@ -129,7 +151,12 @@ export function useCalendarViewData() {
   // they're more than a couple months out (#250). Fixed window => navigation
   // reuses one cached dataset instead of refetching on every prev/next.
   const fetchRange = useMemo(() => getFullCalendarRange(new Date()), []);
-  const { events: apiEvents, loading, error, refresh: refreshEvents } = useCalendarEvents({
+  const {
+    events: apiEvents,
+    loading,
+    error,
+    refresh: refreshEvents,
+  } = useCalendarEvents({
     rangeStart: fetchRange.start,
     rangeEnd: fetchRange.end,
     limit: MAX_CALENDAR_EVENTS,
@@ -155,35 +182,53 @@ export function useCalendarViewData() {
 
   const goToToday = useCallback(
     () => startTransition(() => setCurrentDate(toDisplayDate(new Date(), displayTimezone))),
-    [displayTimezone],
+    [displayTimezone]
   );
 
   const goToPrevious = useCallback(() => {
-    startTransition(() => setCurrentDate(prev => {
-      switch (viewType) {
-        case 'agenda': return prev; // no navigation
-        case 'day': return subDays(prev, 1);
-        case 'week': return subWeeks(prev, 1);
-        case 'weekVertical': return subWeeks(prev, 1);
-        case 'multiWeek': return subWeeks(prev, weekCount);
-        case 'month': return subMonths(prev, 1);
-        case 'threeMonth': return subMonths(prev, 1);
-      }
-    }));
+    startTransition(() =>
+      setCurrentDate((prev) => {
+        switch (viewType) {
+          case 'agenda':
+            return prev; // no navigation
+          case 'day':
+            return subDays(prev, 1);
+          case 'week':
+            return subWeeks(prev, 1);
+          case 'weekVertical':
+            return subWeeks(prev, 1);
+          case 'multiWeek':
+            return subWeeks(prev, weekCount);
+          case 'month':
+            return subMonths(prev, 1);
+          case 'threeMonth':
+            return subMonths(prev, 1);
+        }
+      })
+    );
   }, [viewType, weekCount]);
 
   const goToNext = useCallback(() => {
-    startTransition(() => setCurrentDate(prev => {
-      switch (viewType) {
-        case 'agenda': return prev; // no navigation
-        case 'day': return addDays(prev, 1);
-        case 'week': return addWeeks(prev, 1);
-        case 'weekVertical': return addWeeks(prev, 1);
-        case 'multiWeek': return addWeeks(prev, weekCount);
-        case 'month': return addMonths(prev, 1);
-        case 'threeMonth': return addMonths(prev, 1);
-      }
-    }));
+    startTransition(() =>
+      setCurrentDate((prev) => {
+        switch (viewType) {
+          case 'agenda':
+            return prev; // no navigation
+          case 'day':
+            return addDays(prev, 1);
+          case 'week':
+            return addWeeks(prev, 1);
+          case 'weekVertical':
+            return addWeeks(prev, 1);
+          case 'multiWeek':
+            return addWeeks(prev, weekCount);
+          case 'month':
+            return addMonths(prev, 1);
+          case 'threeMonth':
+            return addMonths(prev, 1);
+        }
+      })
+    );
   }, [viewType, weekCount]);
 
   const getDateRangeTitle = useCallback((): string => {
@@ -210,22 +255,39 @@ export function useCalendarViewData() {
   }, [viewType, weekCount, currentDate, weekStartsOn]);
 
   return {
-    currentDate, setCurrentDate,
-    viewType, setViewType,
-    weekCount, setWeekCount,
-    selectedEvent, setSelectedEvent,
-    showAddEvent, setShowAddEvent,
-    editingEvent, setEditingEvent,
+    currentDate,
+    setCurrentDate,
+    viewType,
+    setViewType,
+    weekCount,
+    setWeekCount,
+    selectedEvent,
+    setSelectedEvent,
+    showAddEvent,
+    setShowAddEvent,
+    editingEvent,
+    setEditingEvent,
     selectedCalendarIds,
     calendarGroups,
     toggleCalendar,
-    mergedView, setMergedView,
-    weeksBordered, setWeeksBordered,
-    displayMode, setDisplayMode,
-    hideWeekends, setHideWeekends,
-    overlays, setOverlays,
-    events, loading, error, refreshEvents,
-    goToToday, goToPrevious, goToNext, getDateRangeTitle,
+    mergedView,
+    setMergedView,
+    weeksBordered,
+    setWeeksBordered,
+    displayMode,
+    setDisplayMode,
+    hideWeekends,
+    setHideWeekends,
+    overlays,
+    setOverlays,
+    events,
+    loading,
+    error,
+    refreshEvents,
+    goToToday,
+    goToPrevious,
+    goToNext,
+    getDateRangeTitle,
     isNavPending,
   };
 }

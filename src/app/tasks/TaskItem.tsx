@@ -28,7 +28,7 @@ export function TaskItem({
   onDelete: () => void;
   taskLists?: TaskList[];
 }) {
-  const taskList = taskLists.find(l => l.id === task.listId);
+  const taskList = taskLists.find((l) => l.id === task.listId);
   const isOverdue = task.dueDate && isPast(task.dueDate) && !task.completed;
 
   const formatDueDate = (date: Date | string) => {
@@ -40,8 +40,8 @@ export function TaskItem({
   return (
     <div
       className={cn(
-        'group flex items-center gap-4 p-4 rounded-lg border border-border bg-card/85 backdrop-blur-sm',
-        'hover:border-seasonal-accent hover:ring-2 hover:ring-seasonal-accent/50 transition-all',
+        'group flex items-center gap-4 rounded-lg border border-border bg-card/85 p-4 backdrop-blur-sm',
+        'transition-all hover:border-seasonal-accent hover:ring-2 hover:ring-seasonal-accent/50',
         task.completed && 'opacity-60'
       )}
     >
@@ -54,13 +54,10 @@ export function TaskItem({
       />
 
       {/* Content */}
-      <div className="flex-1 min-w-0">
+      <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span
-            className={cn(
-              'font-medium',
-              task.completed && 'line-through text-muted-foreground'
-            )}
+            className={cn('font-medium', task.completed && 'text-muted-foreground line-through')}
           >
             {task.title}
           </span>
@@ -78,7 +75,7 @@ export function TaskItem({
           )}
         </div>
 
-        <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
+        <div className="mt-1 flex items-center gap-3 text-sm text-muted-foreground">
           {task.assignedTo && (
             <div className="flex items-center gap-1">
               <UserAvatar
@@ -92,8 +89,8 @@ export function TaskItem({
           )}
 
           {task.dueDate && (
-            <span className={cn(isOverdue && 'text-destructive font-medium')}>
-              {isOverdue && <AlertCircle className="h-3 w-3 inline mr-1" />}
+            <span className={cn(isOverdue && 'font-medium text-destructive')}>
+              {isOverdue && <AlertCircle className="mr-1 inline h-3 w-3" />}
               {formatDueDate(task.dueDate)}
             </span>
           )}
@@ -102,9 +99,9 @@ export function TaskItem({
 
       {/* List Tag */}
       {taskList && (
-        <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50 text-xs text-muted-foreground">
+        <div className="flex items-center gap-1.5 rounded-md bg-muted/50 px-2 py-1 text-xs text-muted-foreground">
           <div
-            className="w-2 h-2 rounded-full"
+            className="h-2 w-2 rounded-full"
             style={{ backgroundColor: taskList.color || '#6B7280' }}
           />
           <span>{taskList.name}</span>
@@ -112,7 +109,7 @@ export function TaskItem({
       )}
 
       {/* Actions */}
-      <div className="flex items-center gap-1 opacity-50 group-hover:opacity-100 transition-opacity">
+      <div className="flex items-center gap-1 opacity-50 transition-opacity group-hover:opacity-100">
         <Button
           variant="ghost"
           size="icon"

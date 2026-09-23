@@ -79,7 +79,11 @@ interface ConnectionStatus {
 export function BusTrackingSection() {
   const { members } = useFamily();
   const [routes, setRoutes] = useState<BusRoute[]>([]);
-  const [connection, setConnection] = useState<ConnectionStatus>({ connected: false, expiresAt: null, updatedAt: null });
+  const [connection, setConnection] = useState<ConnectionStatus>({
+    connected: false,
+    expiresAt: null,
+    updatedAt: null,
+  });
   const [loading, setLoading] = useState(true);
   const [showRouteDialog, setShowRouteDialog] = useState(false);
   const [editingRoute, setEditingRoute] = useState<BusRoute | null>(null);
@@ -90,7 +94,7 @@ export function BusTrackingSection() {
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 500, tolerance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 500, tolerance: 5 } })
   );
 
   const fetchData = useCallback(async () => {
@@ -114,7 +118,9 @@ export function BusTrackingSection() {
     }
   }, []);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleSync = async () => {
     setSyncing(true);
@@ -122,7 +128,10 @@ export function BusTrackingSection() {
       const res = await fetch('/api/bus-tracking/sync', { method: 'POST' });
       const data = await res.json();
       if (res.ok) {
-        toast({ title: 'Sync complete', description: `Processed ${data.processed} emails, ${data.newEvents} new events` });
+        toast({
+          title: 'Sync complete',
+          description: `Processed ${data.processed} emails, ${data.newEvents} new events`,
+        });
       } else {
         toast({ title: 'Sync failed', description: data.error, variant: 'destructive' });
       }
@@ -140,12 +149,19 @@ export function BusTrackingSection() {
       const discoverData = await discoverRes.json();
 
       if (!discoverRes.ok) {
-        toast({ title: 'Discovery failed', description: discoverData.error, variant: 'destructive' });
+        toast({
+          title: 'Discovery failed',
+          description: discoverData.error,
+          variant: 'destructive',
+        });
         return;
       }
 
       if (!discoverData.discovered || discoverData.discovered.length === 0) {
-        toast({ title: 'No routes found', description: 'No FirstView emails were found in Gmail.' });
+        toast({
+          title: 'No routes found',
+          description: 'No FirstView emails were found in Gmail.',
+        });
         return;
       }
 
@@ -166,7 +182,11 @@ export function BusTrackingSection() {
         });
         fetchData();
       } else {
-        toast({ title: 'Failed to create routes', description: createData.error, variant: 'destructive' });
+        toast({
+          title: 'Failed to create routes',
+          description: createData.error,
+          variant: 'destructive',
+        });
       }
     } catch {
       toast({ title: 'Discovery failed', variant: 'destructive' });
@@ -212,7 +232,7 @@ export function BusTrackingSection() {
     try {
       const res = await fetch(`/api/bus-tracking/routes/${id}`, { method: 'DELETE' });
       if (res.ok) {
-        setRoutes(prev => prev.filter(r => r.id !== id));
+        setRoutes((prev) => prev.filter((r) => r.id !== id));
         toast({ title: 'Route deleted' });
       }
     } catch {
@@ -228,7 +248,9 @@ export function BusTrackingSection() {
         body: JSON.stringify({ enabled: !route.enabled }),
       });
       if (res.ok) {
-        setRoutes(prev => prev.map(r => r.id === route.id ? { ...r, enabled: !r.enabled } : r));
+        setRoutes((prev) =>
+          prev.map((r) => (r.id === route.id ? { ...r, enabled: !r.enabled } : r))
+        );
       }
     } catch {
       toast({ title: 'Failed to update route', variant: 'destructive' });
@@ -239,8 +261,8 @@ export function BusTrackingSection() {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
-    const oldIndex = routes.findIndex(r => r.id === active.id);
-    const newIndex = routes.findIndex(r => r.id === over.id);
+    const oldIndex = routes.findIndex((r) => r.id === active.id);
+    const newIndex = routes.findIndex((r) => r.id === over.id);
     if (oldIndex === -1 || newIndex === -1) return;
 
     const reordered = arrayMove(routes, oldIndex, newIndex).map((r, i) => ({ ...r, sortOrder: i }));
@@ -250,7 +272,7 @@ export function BusTrackingSection() {
       const res = await fetch('/api/bus-tracking/routes/reorder', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(reordered.map(r => ({ id: r.id, sortOrder: r.sortOrder }))),
+        body: JSON.stringify(reordered.map((r) => ({ id: r.id, sortOrder: r.sortOrder }))),
       });
       if (!res.ok) throw new Error('Reorder failed');
     } catch {
@@ -288,12 +310,18 @@ export function BusTrackingSection() {
             <div className="flex gap-2">
               {connection.connected && (
                 <Button size="sm" variant="outline" onClick={handleDiscover} disabled={discovering}>
-                  <Search className={`h-4 w-4 mr-1 ${discovering ? 'animate-pulse' : ''}`} />
+                  <Search className={`mr-1 h-4 w-4 ${discovering ? 'animate-pulse' : ''}`} />
                   {discovering ? 'Scanning...' : 'Discover from Emails'}
                 </Button>
               )}
-              <Button size="sm" onClick={() => { setEditingRoute(null); setShowRouteDialog(true); }}>
-                <Plus className="h-4 w-4 mr-1" /> Add Route
+              <Button
+                size="sm"
+                onClick={() => {
+                  setEditingRoute(null);
+                  setShowRouteDialog(true);
+                }}
+              >
+                <Plus className="mr-1 h-4 w-4" /> Add Route
               </Button>
             </div>
           </div>
@@ -301,10 +329,12 @@ export function BusTrackingSection() {
         <CardContent>
           {loading ? (
             <div className="space-y-2">
-              {[1, 2].map(i => <div key={i} className="h-16 bg-muted animate-pulse rounded" />)}
+              {[1, 2].map((i) => (
+                <div key={i} className="h-16 animate-pulse rounded bg-muted" />
+              ))}
             </div>
           ) : routes.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">
+            <p className="py-4 text-center text-sm text-muted-foreground">
               No bus routes configured yet. Add a route to start tracking.
             </p>
           ) : (
@@ -314,13 +344,19 @@ export function BusTrackingSection() {
               modifiers={[restrictToVerticalAxis]}
               onDragEnd={handleRouteDragEnd}
             >
-              <SortableContext items={routes.map(r => r.id)} strategy={verticalListSortingStrategy}>
+              <SortableContext
+                items={routes.map((r) => r.id)}
+                strategy={verticalListSortingStrategy}
+              >
                 <div className="space-y-2">
-                  {routes.map(route => (
+                  {routes.map((route) => (
                     <SortableRouteRow
                       key={route.id}
                       route={route}
-                      onEdit={() => { setEditingRoute(route); setShowRouteDialog(true); }}
+                      onEdit={() => {
+                        setEditingRoute(route);
+                        setShowRouteDialog(true);
+                      }}
                       onDelete={() => handleDeleteRoute(route.id)}
                       onToggle={() => handleToggleRoute(route)}
                     />
@@ -339,9 +375,9 @@ export function BusTrackingSection() {
           onClose={() => setShowRouteDialog(false)}
           onSaved={(saved) => {
             if (editingRoute) {
-              setRoutes(prev => prev.map(r => r.id === saved.id ? saved : r));
+              setRoutes((prev) => prev.map((r) => (r.id === saved.id ? saved : r)));
             } else {
-              setRoutes(prev => [...prev, saved]);
+              setRoutes((prev) => [...prev, saved]);
             }
             setShowRouteDialog(false);
           }}
@@ -350,7 +386,6 @@ export function BusTrackingSection() {
     </div>
   );
 }
-
 
 function GmailConnectionCard({
   connection,
@@ -372,7 +407,9 @@ function GmailConnectionCard({
   const [labelInput, setLabelInput] = useState(gmailLabel);
   const labelDirty = labelInput.trim() !== gmailLabel;
 
-  useEffect(() => { setLabelInput(gmailLabel); }, [gmailLabel]);
+  useEffect(() => {
+    setLabelInput(gmailLabel);
+  }, [gmailLabel]);
 
   return (
     <Card>
@@ -388,7 +425,9 @@ function GmailConnectionCard({
             </div>
           </div>
           {connection.connected ? (
-            <Badge variant="default" className="bg-green-600">Connected</Badge>
+            <Badge variant="default" className="bg-green-600">
+              Connected
+            </Badge>
           ) : (
             <Badge variant="secondary">Not Connected</Badge>
           )}
@@ -399,18 +438,18 @@ function GmailConnectionCard({
           {connection.connected ? (
             <>
               <Button size="sm" variant="outline" onClick={onSync} disabled={syncing}>
-                <RefreshCw className={`h-4 w-4 mr-1 ${syncing ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`mr-1 h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
                 {syncing ? 'Syncing...' : 'Sync Now'}
               </Button>
               <Button size="sm" variant="outline" onClick={onDisconnect} disabled={disconnecting}>
-                <Unplug className="h-4 w-4 mr-1" />
+                <Unplug className="mr-1 h-4 w-4" />
                 Disconnect
               </Button>
             </>
           ) : (
             <Button size="sm" asChild>
               <a href="/api/auth/google-bus">
-                <Mail className="h-4 w-4 mr-1" />
+                <Mail className="mr-1 h-4 w-4" />
                 Connect Gmail
               </a>
             </Button>
@@ -422,17 +461,18 @@ function GmailConnectionCard({
               <Label className="text-xs">Gmail Label</Label>
               <Input
                 value={labelInput}
-                onChange={e => setLabelInput(e.target.value)}
+                onChange={(e) => setLabelInput(e.target.value)}
                 placeholder="e.g. bus"
                 className="h-8 text-sm"
               />
-              <p className="text-[11px] text-muted-foreground mt-0.5">
-                If you filter bus emails to a Gmail label, enter it here. Leave blank to search all mail.
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
+                If you filter bus emails to a Gmail label, enter it here. Leave blank to search all
+                mail.
               </p>
             </div>
             {labelDirty && (
               <Button size="sm" onClick={() => onSaveLabel(labelInput)}>
-                <Check className="h-4 w-4 mr-1" />
+                <Check className="mr-1 h-4 w-4" />
                 Save
               </Button>
             )}
@@ -442,7 +482,6 @@ function GmailConnectionCard({
     </Card>
   );
 }
-
 
 function SortableRouteRow({
   route,
@@ -455,7 +494,9 @@ function SortableRouteRow({
   onDelete: () => void;
   onToggle: () => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: route.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: route.id,
+  });
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -464,31 +505,42 @@ function SortableRouteRow({
   const geofenceCount = route.checkpoints?.length || 0;
 
   return (
-    <div ref={setNodeRef} style={style} className="flex items-center justify-between p-3 rounded-lg border">
-      <div className="flex items-center gap-3 min-w-0">
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center justify-between rounded-lg border p-3"
+    >
+      <div className="flex min-w-0 items-center gap-3">
         <button
           {...attributes}
           {...listeners}
-          className="cursor-grab active:cursor-grabbing touch-none p-0.5 text-muted-foreground hover:text-foreground flex-shrink-0"
+          className="flex-shrink-0 cursor-grab touch-none p-0.5 text-muted-foreground hover:text-foreground active:cursor-grabbing"
           style={{ touchAction: 'none' }}
         >
           <GripVertical className="h-5 w-5" />
         </button>
-        <Bus className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+        <Bus className="h-5 w-5 flex-shrink-0 text-muted-foreground" />
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <span className="font-medium text-sm truncate">{route.label}</span>
-            <Badge variant="outline" className="text-[10px]">{route.direction}</Badge>
+            <span className="truncate text-sm font-medium">{route.label}</span>
+            <Badge variant="outline" className="text-[10px]">
+              {route.direction}
+            </Badge>
           </div>
           <div className="text-xs text-muted-foreground">
             Trip {route.tripId} &middot; {route.scheduledTime}
-            {geofenceCount > 0 && <> &middot; {geofenceCount} geofence{geofenceCount !== 1 ? 's' : ''}</>}
+            {geofenceCount > 0 && (
+              <>
+                {' '}
+                &middot; {geofenceCount} geofence{geofenceCount !== 1 ? 's' : ''}
+              </>
+            )}
             {route.stopName && <> &middot; Stop: {route.stopName}</>}
             {route.schoolName && <> &middot; School</>}
           </div>
         </div>
       </div>
-      <div className="flex items-center gap-2 flex-shrink-0">
+      <div className="flex flex-shrink-0 items-center gap-2">
         <Switch checked={route.enabled} onCheckedChange={onToggle} />
         <Button size="icon" variant="ghost" className="h-8 w-8" onClick={onEdit}>
           <Pencil className="h-4 w-4" />
@@ -500,7 +552,6 @@ function SortableRouteRow({
     </div>
   );
 }
-
 
 function SortableCheckpointItem({
   cp,
@@ -515,7 +566,9 @@ function SortableCheckpointItem({
   onRemove: (index: number) => void;
   isStop: boolean;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: cp.name || `cp-${index}` });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: cp.name || `cp-${index}`,
+  });
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -523,28 +576,34 @@ function SortableCheckpointItem({
   };
 
   return (
-    <div ref={setNodeRef} style={style} className="flex items-center gap-2 p-1.5 rounded border text-sm">
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center gap-2 rounded border p-1.5 text-sm"
+    >
       <button
         {...attributes}
         {...listeners}
-        className="cursor-grab active:cursor-grabbing touch-none flex-shrink-0 text-muted-foreground hover:text-foreground"
+        className="flex-shrink-0 cursor-grab touch-none text-muted-foreground hover:text-foreground active:cursor-grabbing"
         style={{ touchAction: 'none' }}
       >
         <GripVertical className="h-4 w-4" />
       </button>
-      <span className="text-xs text-muted-foreground w-5 flex-shrink-0">{index + 1}.</span>
+      <span className="w-5 flex-shrink-0 text-xs text-muted-foreground">{index + 1}.</span>
       <Input
         value={cp.name}
-        onChange={e => onNameChange(index, e.target.value)}
-        className="flex-1 h-7 text-sm"
+        onChange={(e) => onNameChange(index, e.target.value)}
+        className="h-7 flex-1 text-sm"
       />
       {isStop && (
-        <Badge variant="outline" className="text-[10px] flex-shrink-0">stop</Badge>
+        <Badge variant="outline" className="flex-shrink-0 text-[10px]">
+          stop
+        </Badge>
       )}
       <Button
         size="icon"
         variant="ghost"
-        className="h-6 w-6 text-destructive flex-shrink-0"
+        className="h-6 w-6 flex-shrink-0 text-destructive"
         onClick={() => onRemove(index)}
       >
         <X className="h-3 w-3" />
@@ -552,7 +611,6 @@ function SortableCheckpointItem({
     </div>
   );
 }
-
 
 function RouteDialog({
   route,
@@ -571,25 +629,25 @@ function RouteDialog({
     studentName: route?.studentName || '',
     userId: route?.userId || '',
     tripId: route?.tripId || '',
-    direction: route?.direction || 'AM' as 'AM' | 'PM',
+    direction: route?.direction || ('AM' as 'AM' | 'PM'),
     label: route?.label || '',
     scheduledTime: route?.scheduledTime || '07:00',
     stopName: route?.stopName || '',
     schoolName: route?.schoolName || '',
-    checkpoints: route?.checkpoints || [] as { name: string; sortOrder: number }[],
+    checkpoints: route?.checkpoints || ([] as { name: string; sortOrder: number }[]),
   });
   const [newCheckpointName, setNewCheckpointName] = useState('');
 
   const checkpointSensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 500, tolerance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 500, tolerance: 5 } })
   );
 
   const checkpointIds = form.checkpoints.map((cp, i) => cp.name || `cp-${i}`);
 
   const addCheckpoint = () => {
     if (!newCheckpointName.trim()) return;
-    setForm(prev => ({
+    setForm((prev) => ({
       ...prev,
       checkpoints: [
         ...prev.checkpoints,
@@ -600,7 +658,7 @@ function RouteDialog({
   };
 
   const removeCheckpoint = (index: number) => {
-    setForm(prev => {
+    setForm((prev) => {
       const updated = prev.checkpoints
         .filter((_, i) => i !== index)
         .map((cp, i) => ({ ...cp, sortOrder: i }));
@@ -615,11 +673,9 @@ function RouteDialog({
   };
 
   const handleCheckpointNameChange = (index: number, name: string) => {
-    setForm(prev => {
+    setForm((prev) => {
       const oldName = prev.checkpoints[index]?.name;
-      const updated = prev.checkpoints.map((cp, i) =>
-        i === index ? { ...cp, name } : cp
-      );
+      const updated = prev.checkpoints.map((cp, i) => (i === index ? { ...cp, name } : cp));
       return {
         ...prev,
         checkpoints: updated,
@@ -637,18 +693,19 @@ function RouteDialog({
     const newIndex = checkpointIds.indexOf(String(over.id));
     if (oldIndex === -1 || newIndex === -1) return;
 
-    setForm(prev => ({
+    setForm((prev) => ({
       ...prev,
-      checkpoints: arrayMove(prev.checkpoints, oldIndex, newIndex).map((cp, i) => ({ ...cp, sortOrder: i })),
+      checkpoints: arrayMove(prev.checkpoints, oldIndex, newIndex).map((cp, i) => ({
+        ...cp,
+        sortOrder: i,
+      })),
     }));
   };
 
   const handleSave = async () => {
     setSaving(true);
     try {
-      const url = isEditing
-        ? `/api/bus-tracking/routes/${route.id}`
-        : '/api/bus-tracking/routes';
+      const url = isEditing ? `/api/bus-tracking/routes/${route.id}` : '/api/bus-tracking/routes';
       const method = isEditing ? 'PATCH' : 'POST';
 
       const body = {
@@ -679,11 +736,11 @@ function RouteDialog({
     }
   };
 
-  const checkpointNames = form.checkpoints.map(cp => cp.name).filter(Boolean);
+  const checkpointNames = form.checkpoints.map((cp) => cp.name).filter(Boolean);
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-h-[80vh] max-w-md overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEditing ? 'Edit Route' : 'Add Bus Route'}</DialogTitle>
         </DialogHeader>
@@ -694,17 +751,24 @@ function RouteDialog({
               <Label>Student Name</Label>
               <Input
                 value={form.studentName}
-                onChange={e => setForm(p => ({ ...p, studentName: e.target.value }))}
+                onChange={(e) => setForm((p) => ({ ...p, studentName: e.target.value }))}
                 placeholder="e.g. Emma"
               />
             </div>
             <div>
               <Label>Family Member</Label>
-              <Select value={form.userId} onValueChange={v => setForm(p => ({ ...p, userId: v }))}>
-                <SelectTrigger><SelectValue placeholder="Optional" /></SelectTrigger>
+              <Select
+                value={form.userId}
+                onValueChange={(v) => setForm((p) => ({ ...p, userId: v }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Optional" />
+                </SelectTrigger>
                 <SelectContent>
-                  {members.map(m => (
-                    <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                  {members.map((m) => (
+                    <SelectItem key={m.id} value={m.id}>
+                      {m.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -715,7 +779,7 @@ function RouteDialog({
             <Label>Label</Label>
             <Input
               value={form.label}
-              onChange={e => setForm(p => ({ ...p, label: e.target.value }))}
+              onChange={(e) => setForm((p) => ({ ...p, label: e.target.value }))}
               placeholder="e.g. Emma Morning Pickup"
             />
           </div>
@@ -725,14 +789,19 @@ function RouteDialog({
               <Label>Trip ID</Label>
               <Input
                 value={form.tripId}
-                onChange={e => setForm(p => ({ ...p, tripId: e.target.value }))}
+                onChange={(e) => setForm((p) => ({ ...p, tripId: e.target.value }))}
                 placeholder="e.g. 28-C"
               />
             </div>
             <div>
               <Label>Direction</Label>
-              <Select value={form.direction} onValueChange={v => setForm(p => ({ ...p, direction: v as 'AM' | 'PM' }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select
+                value={form.direction}
+                onValueChange={(v) => setForm((p) => ({ ...p, direction: v as 'AM' | 'PM' }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="AM">AM (Pickup)</SelectItem>
                   <SelectItem value="PM">PM (Dropoff)</SelectItem>
@@ -744,9 +813,9 @@ function RouteDialog({
               <Input
                 type="time"
                 value={form.scheduledTime}
-                onChange={e => setForm(p => ({ ...p, scheduledTime: e.target.value }))}
+                onChange={(e) => setForm((p) => ({ ...p, scheduledTime: e.target.value }))}
               />
-              <p className="text-[11px] text-muted-foreground mt-0.5">
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
                 Expected arrival at your stop.
               </p>
             </div>
@@ -758,26 +827,28 @@ function RouteDialog({
               {checkpointNames.length > 0 ? (
                 <Select
                   value={form.stopName}
-                  onValueChange={v => setForm(p => ({ ...p, stopName: v }))}
+                  onValueChange={(v) => setForm((p) => ({ ...p, stopName: v }))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select checkpoint" />
                   </SelectTrigger>
                   <SelectContent>
-                    {checkpointNames.map(name => (
-                      <SelectItem key={name} value={name}>{name}</SelectItem>
+                    {checkpointNames.map((name) => (
+                      <SelectItem key={name} value={name}>
+                        {name}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               ) : (
                 <Input
                   value={form.stopName}
-                  onChange={e => setForm(p => ({ ...p, stopName: e.target.value }))}
+                  onChange={(e) => setForm((p) => ({ ...p, stopName: e.target.value }))}
                   placeholder="Add checkpoints first"
                   disabled={checkpointNames.length === 0}
                 />
               )}
-              <p className="text-[11px] text-muted-foreground mt-0.5">
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
                 ETA target — select the checkpoint where your child gets off.
               </p>
             </div>
@@ -785,7 +856,7 @@ function RouteDialog({
               <Label>School Name</Label>
               <Input
                 value={form.schoolName}
-                onChange={e => setForm(p => ({ ...p, schoolName: e.target.value }))}
+                onChange={(e) => setForm((p) => ({ ...p, schoolName: e.target.value }))}
                 placeholder="School name"
               />
             </div>
@@ -794,7 +865,7 @@ function RouteDialog({
           {/* Checkpoints editor */}
           <div>
             <Label>Geofence Checkpoints (in order)</Label>
-            <p className="text-xs text-muted-foreground mb-2">
+            <p className="mb-2 text-xs text-muted-foreground">
               Add the ordered geofence labels from FirstView. Drag to reorder.
             </p>
 
@@ -806,7 +877,7 @@ function RouteDialog({
                 onDragEnd={handleCheckpointDragEnd}
               >
                 <SortableContext items={checkpointIds} strategy={verticalListSortingStrategy}>
-                  <div className="space-y-1 mb-2">
+                  <div className="mb-2 space-y-1">
                     {form.checkpoints.map((cp, i) => (
                       <SortableCheckpointItem
                         key={cp.name || `cp-${i}`}
@@ -825,11 +896,16 @@ function RouteDialog({
             <div className="flex gap-2">
               <Input
                 value={newCheckpointName}
-                onChange={e => setNewCheckpointName(e.target.value)}
+                onChange={(e) => setNewCheckpointName(e.target.value)}
                 placeholder="Checkpoint name"
-                onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addCheckpoint())}
+                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addCheckpoint())}
               />
-              <Button size="sm" variant="outline" onClick={addCheckpoint} disabled={!newCheckpointName.trim()}>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={addCheckpoint}
+                disabled={!newCheckpointName.trim()}
+              >
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
@@ -837,8 +913,13 @@ function RouteDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSave} disabled={saving || !form.studentName || !form.tripId || !form.label}>
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSave}
+            disabled={saving || !form.studentName || !form.tripId || !form.label}
+          >
             {saving ? 'Saving...' : isEditing ? 'Update' : 'Create'}
           </Button>
         </DialogFooter>

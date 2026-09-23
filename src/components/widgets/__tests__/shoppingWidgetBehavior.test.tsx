@@ -29,24 +29,15 @@ jest.mock('@/components/ui', () => ({
     </button>
   ),
   Badge: ({ children }: React.PropsWithChildren) => <span>{children}</span>,
-  Checkbox: ({
-    checked,
-    onCheckedChange,
-  }: {
-    checked?: boolean;
-    onCheckedChange?: () => void;
-  }) => <input type="checkbox" checked={checked} onChange={onCheckedChange} />,
-  Progress: ({ value }: { value?: number }) => (
-    <div role="progressbar" aria-valuenow={value} />
+  Checkbox: ({ checked, onCheckedChange }: { checked?: boolean; onCheckedChange?: () => void }) => (
+    <input type="checkbox" checked={checked} onChange={onCheckedChange} />
   ),
+  Progress: ({ value }: { value?: number }) => <div role="progressbar" aria-valuenow={value} />,
   UserAvatar: ({ name }: { name: string }) => <span>{name}</span>,
   DropdownMenu: ({ children }: React.PropsWithChildren) => <div>{children}</div>,
   DropdownMenuTrigger: ({ children }: React.PropsWithChildren) => <div>{children}</div>,
   DropdownMenuContent: ({ children }: React.PropsWithChildren) => <div>{children}</div>,
-  DropdownMenuItem: ({
-    children,
-    onClick,
-  }: React.PropsWithChildren<{ onClick?: () => void }>) => (
+  DropdownMenuItem: ({ children, onClick }: React.PropsWithChildren<{ onClick?: () => void }>) => (
     <div onClick={onClick}>{children}</div>
   ),
 }));
@@ -192,17 +183,13 @@ describe('ShoppingWidget — behavioral', () => {
       });
       render(<ShoppingWidget lists={[listAllUnchecked]} />);
 
-      const progressBefore = Number(
-        screen.getByRole('progressbar').getAttribute('aria-valuenow')
-      );
+      const progressBefore = Number(screen.getByRole('progressbar').getAttribute('aria-valuenow'));
       expect(progressBefore).toBeCloseTo(0, 0);
 
       // Check the first item → 1/2 = 50%
       fireEvent.click(getCheckboxes()[0]!);
 
-      const progressAfter = Number(
-        screen.getByRole('progressbar').getAttribute('aria-valuenow')
-      );
+      const progressAfter = Number(screen.getByRole('progressbar').getAttribute('aria-valuenow'));
       expect(progressAfter).toBeCloseTo(50, 0);
     });
   });
@@ -210,12 +197,7 @@ describe('ShoppingWidget — behavioral', () => {
   describe('List switching', () => {
     it('calls onListChange with the new list ID when switching via dropdown', () => {
       const onListChange = jest.fn();
-      render(
-        <ShoppingWidget
-          lists={[makeList(), secondList]}
-          onListChange={onListChange}
-        />
-      );
+      render(<ShoppingWidget lists={[makeList(), secondList]} onListChange={onListChange} />);
 
       // The dropdown items for each list name should be present because the
       // DropdownMenuContent is always rendered in the mock
@@ -228,12 +210,7 @@ describe('ShoppingWidget — behavioral', () => {
 
     it('switches active list content after clicking a dropdown item', () => {
       const onListChange = jest.fn();
-      render(
-        <ShoppingWidget
-          lists={[makeList(), secondList]}
-          onListChange={onListChange}
-        />
-      );
+      render(<ShoppingWidget lists={[makeList(), secondList]} onListChange={onListChange} />);
 
       // Initially Grocery list items are shown
       expect(screen.getByText('Apples')).toBeTruthy();

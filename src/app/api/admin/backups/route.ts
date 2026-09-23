@@ -19,10 +19,7 @@ export async function GET() {
     return NextResponse.json({ backups });
   } catch (error) {
     logError('Error listing backups:', error);
-    return NextResponse.json(
-      { error: 'Failed to list backups' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to list backups' }, { status: 500 });
   }
 }
 
@@ -55,9 +52,6 @@ export async function POST() {
     });
   } catch (error) {
     logError('Error creating backup:', error);
-    return NextResponse.json(
-      { error: 'Failed to create backup' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to create backup' }, { status: 500 });
   }
 }

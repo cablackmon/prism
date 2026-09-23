@@ -49,7 +49,6 @@ async function deleteTaskUpstream(taskSourceId: string, externalId: string): Pro
   }
 }
 
-
 /**
  * ROUTE PARAMS TYPE
  * Next.js 14 App Router provides route params as a Promise.
@@ -58,7 +57,6 @@ async function deleteTaskUpstream(taskSourceId: string, externalId: string): Pro
 interface RouteParams {
   params: Promise<{ id: string }>;
 }
-
 
 /**
  * GET /api/tasks/[id]
@@ -75,10 +73,7 @@ interface RouteParams {
  * EXAMPLE:
  * GET /api/tasks/550e8400-e29b-41d4-a716-446655440000
  */
-export async function GET(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function GET(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -87,10 +82,7 @@ export async function GET(
 
     // Validate UUID format (basic check)
     if (!id || id.length < 10) {
-      return NextResponse.json(
-        { error: 'Invalid task ID' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid task ID' }, { status: 400 });
     }
 
     // Fetch task with assigned user data
@@ -118,23 +110,16 @@ export async function GET(
       .where(eq(tasks.id, id));
 
     if (!taskWithUser) {
-      return NextResponse.json(
-        { error: 'Task not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
 
     // Format and return response
     return NextResponse.json(formatTaskRow(taskWithUser));
   } catch (error) {
     logError('Error fetching task:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch task' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch task' }, { status: 500 });
   }
 }
-
 
 /**
  * PATCH /api/tasks/[id]
@@ -168,10 +153,7 @@ export async function GET(
  * PATCH /api/tasks/abc123
  * { "completed": true, "completedBy": "user-uuid" }
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -190,16 +172,14 @@ export async function PATCH(
       .where(eq(tasks.id, id));
 
     if (!existingTask) {
-      return NextResponse.json(
-        { error: 'Task not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
 
     // AUTHORIZATION CHECK - Children can only toggle their own tasks
     if ('completed' in body) {
       const isChild = auth.role === 'child';
-      const isOwner = existingTask.createdBy === auth.userId || existingTask.assignedTo === auth.userId;
+      const isOwner =
+        existingTask.createdBy === auth.userId || existingTask.assignedTo === auth.userId;
 
       if (isChild && !isOwner) {
         return NextResponse.json(
@@ -218,10 +198,7 @@ export async function PATCH(
     // Validate and add each field if present in request body
     if ('title' in body) {
       if (typeof body.title !== 'string' || body.title.trim().length === 0) {
-        return NextResponse.json(
-          { error: 'Title must be a non-empty string' },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: 'Title must be a non-empty string' }, { status: 400 });
       }
       updateData.title = body.title.trim();
     }
@@ -240,10 +217,7 @@ export async function PATCH(
       } else if (body.dueDate) {
         const date = new Date(body.dueDate);
         if (isNaN(date.getTime())) {
-          return NextResponse.json(
-            { error: 'Invalid dueDate format' },
-            { status: 400 }
-          );
+          return NextResponse.json({ error: 'Invalid dueDate format' }, { status: 400 });
         }
         updateData.dueDate = date;
       }
@@ -284,10 +258,7 @@ export async function PATCH(
     }
 
     // Execute update
-    await db
-      .update(tasks)
-      .set(updateData)
-      .where(eq(tasks.id, id));
+    await db.update(tasks).set(updateData).where(eq(tasks.id, id));
 
     // Fetch and return updated task
     const [updatedTaskWithUser] = await db
@@ -314,10 +285,7 @@ export async function PATCH(
       .where(eq(tasks.id, id));
 
     if (!updatedTaskWithUser) {
-      return NextResponse.json(
-        { error: 'Task not found after update' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Task not found after update' }, { status: 404 });
     }
 
     await invalidateEntity('tasks');
@@ -336,13 +304,9 @@ export async function PATCH(
     return NextResponse.json(formatTaskRow(updatedTaskWithUser));
   } catch (error) {
     logError('Error updating task:', error);
-    return NextResponse.json(
-      { error: 'Failed to update task' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to update task' }, { status: 500 });
   }
 }
-
 
 /**
  * DELETE /api/tasks/[id]
@@ -365,10 +329,7 @@ export async function PATCH(
  * EXAMPLE:
  * DELETE /api/tasks/abc123
  */
-export async function DELETE(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -389,14 +350,12 @@ export async function DELETE(
       .where(eq(tasks.id, id));
 
     if (!existingTask) {
-      return NextResponse.json(
-        { error: 'Task not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
 
     // AUTHORIZATION CHECK
-    const isOwner = existingTask.createdBy === auth.userId || existingTask.assignedTo === auth.userId;
+    const isOwner =
+      existingTask.createdBy === auth.userId || existingTask.assignedTo === auth.userId;
     if (!isOwner) {
       const forbidden = requireRole(auth, 'canDeleteTasks');
       if (forbidden) return forbidden;
@@ -407,10 +366,7 @@ export async function DELETE(
     // the reconciler saw a task present remotely with no local match, treated
     // it as newly created, and re-added it within about five minutes.
     if (existingTask.taskSourceId && existingTask.externalId) {
-      await deleteTaskUpstream(
-        existingTask.taskSourceId,
-        existingTask.externalId,
-      );
+      await deleteTaskUpstream(existingTask.taskSourceId, existingTask.externalId);
 
       // Tombstone regardless of whether the call above succeeded. A failed or
       // unsupported upstream delete, or a remote that still lists the task on
@@ -425,9 +381,7 @@ export async function DELETE(
     }
 
     // Delete the task
-    await db
-      .delete(tasks)
-      .where(eq(tasks.id, id));
+    await db.delete(tasks).where(eq(tasks.id, id));
 
     await invalidateEntity('tasks');
 
@@ -449,9 +403,6 @@ export async function DELETE(
     });
   } catch (error) {
     logError('Error deleting task:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete task' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to delete task' }, { status: 500 });
   }
 }

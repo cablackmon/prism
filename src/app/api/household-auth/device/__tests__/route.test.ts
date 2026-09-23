@@ -35,7 +35,9 @@ describe('GET /api/household-auth/device', () => {
   });
 
   it('sets the session and redirects an explicit wall destination', async () => {
-    const response = await GET(request(`?token=${process.env.KYST_AUTH_DEVICE_TOKEN}&next=%2Fwall.html`));
+    const response = await GET(
+      request(`?token=${process.env.KYST_AUTH_DEVICE_TOKEN}&next=%2Fwall.html`)
+    );
 
     expect(response.status).toBe(303);
     const location = new URL(response.headers.get('location')!);

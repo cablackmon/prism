@@ -37,17 +37,17 @@ interface LayoutPreviewProps {
 
 // Consistent color palette for widget types
 const WIDGET_COLORS: Record<string, string> = {
-  clock: '#3B82F6',     // blue
-  weather: '#06B6D4',   // cyan
-  calendar: '#8B5CF6',  // violet
-  tasks: '#22C55E',     // green
-  messages: '#F59E0B',  // amber
-  chores: '#EF4444',    // red
-  shopping: '#EC4899',  // pink
-  meals: '#F97316',     // orange
+  clock: '#3B82F6', // blue
+  weather: '#06B6D4', // cyan
+  calendar: '#8B5CF6', // violet
+  tasks: '#22C55E', // green
+  messages: '#F59E0B', // amber
+  chores: '#EF4444', // red
+  shopping: '#EC4899', // pink
+  meals: '#F97316', // orange
   birthdays: '#A855F7', // purple
-  photos: '#14B8A6',    // teal
-  points: '#EAB308',    // yellow
+  photos: '#14B8A6', // teal
+  points: '#EAB308', // yellow
 };
 
 const WIDGET_LABELS: Record<string, string> = {
@@ -76,7 +76,7 @@ export function computePreviewLayout(
   zones: { cols: number; rows: number }[],
   widgets: { x: number; y: number; w: number; h: number }[],
   cols: number,
-  maxPx: number,
+  maxPx: number
 ) {
   // Bounding box of zones + widgets in grid units
   let maxX = cols;
@@ -118,8 +118,7 @@ export function LayoutPreview({
 
   const safeZones = useMemo(() => {
     if (!screenGuideOrientation || !enabledSizes) return [];
-    return ZONES[screenGuideOrientation]
-      .filter(z => enabledSizes.includes(z.name));
+    return ZONES[screenGuideOrientation].filter((z) => enabledSizes.includes(z.name));
   }, [screenGuideOrientation, enabledSizes, ZONES]);
 
   const { vbW, vbH, scale } = useMemo(() => {
@@ -130,28 +129,31 @@ export function LayoutPreview({
   const contentH = vbH * scale;
 
   // Number of grid columns to draw (max of base cols and any zone that extends further)
-  const gridCols = useMemo(() =>
-    Math.max(cols, ...safeZones.map(z => z.cols)),
-  [cols, safeZones]);
+  const gridCols = useMemo(
+    () => Math.max(cols, ...safeZones.map((z) => z.cols)),
+    [cols, safeZones]
+  );
 
-  const handleClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (!onScrollTo || visibleRows == null) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const clickY = e.clientY - rect.top;
-    // Convert pixel position to grid coordinates using the single scale
-    const gridX = clickX / scale;
-    const gridY = clickY / scale;
-    const newScrollY = Math.max(0, Math.floor(gridY) - Math.floor(visibleRows / 2));
-    const newScrollX = visibleCols != null
-      ? Math.max(0, Math.floor(gridX) - Math.floor(visibleCols / 2))
-      : 0;
-    onScrollTo(newScrollY, visibleCols != null ? newScrollX : undefined);
-  }, [onScrollTo, visibleRows, visibleCols, scale]);
+  const handleClick = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (!onScrollTo || visibleRows == null) return;
+      const rect = e.currentTarget.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const clickY = e.clientY - rect.top;
+      // Convert pixel position to grid coordinates using the single scale
+      const gridX = clickX / scale;
+      const gridY = clickY / scale;
+      const newScrollY = Math.max(0, Math.floor(gridY) - Math.floor(visibleRows / 2));
+      const newScrollX =
+        visibleCols != null ? Math.max(0, Math.floor(gridX) - Math.floor(visibleCols / 2)) : 0;
+      onScrollTo(newScrollY, visibleCols != null ? newScrollX : undefined);
+    },
+    [onScrollTo, visibleRows, visibleCols, scale]
+  );
 
   return (
     <div
-      className={`relative bg-muted/50 rounded overflow-hidden ${onScrollTo ? 'cursor-pointer' : ''} ${className}`}
+      className={`relative overflow-hidden rounded bg-muted/50 ${onScrollTo ? 'cursor-pointer' : ''} ${className}`}
       style={{ width: contentW, height: contentH, outline: '1px solid var(--border)' }}
       onClick={onScrollTo ? handleClick : undefined}
     >
@@ -178,10 +180,10 @@ export function LayoutPreview({
       )}
 
       {/* Screen guide rectangles */}
-      {safeZones.map(zone => (
+      {safeZones.map((zone) => (
         <div
           key={zone.name}
-          className="absolute pointer-events-none z-[2]"
+          className="pointer-events-none absolute z-[2]"
           style={{
             left: 0,
             top: 0,
@@ -193,7 +195,7 @@ export function LayoutPreview({
           }}
         >
           <span
-            className="absolute text-[7px] px-0.5 rounded-tl font-medium pointer-events-none"
+            className="pointer-events-none absolute rounded-tl px-0.5 text-[7px] font-medium"
             style={{ backgroundColor: zone.color, color: 'white', bottom: 1, right: 1 }}
           >
             {zone.name}
@@ -202,7 +204,7 @@ export function LayoutPreview({
       ))}
 
       {/* Widget rectangles */}
-      {widgets.map(w => {
+      {widgets.map((w) => {
         const color = WIDGET_COLORS[w.i] || '#6B7280';
         const isHighlighted = highlightWidget === w.i;
         const pxW = w.w * scale;
@@ -210,7 +212,7 @@ export function LayoutPreview({
         return (
           <div
             key={w.i}
-            className="absolute rounded-[2px] flex items-center justify-center transition-all"
+            className="absolute flex items-center justify-center rounded-[2px] transition-all"
             style={{
               left: w.x * scale + 0.5,
               top: w.y * scale + 0.5,
@@ -223,7 +225,7 @@ export function LayoutPreview({
           >
             {showLabels && pxW > 16 && pxH > 10 && (
               <span
-                className="text-white font-bold leading-none select-none"
+                className="select-none font-bold leading-none text-white"
                 style={{ fontSize: Math.min(9, Math.min(pxW, pxH) * 0.35) }}
               >
                 {WIDGET_LABELS[w.i] || w.i.slice(0, 3).toUpperCase()}
@@ -236,7 +238,7 @@ export function LayoutPreview({
       {/* Viewport indicator ("you are here" window) — clips at content edges via overflow:hidden */}
       {visibleRows != null && scrollY != null && (
         <div
-          className="absolute pointer-events-none z-[3] border-2 border-black/70 dark:border-white/80 bg-white/25 dark:bg-white/15"
+          className="pointer-events-none absolute z-[3] border-2 border-black/70 bg-white/25 dark:border-white/80 dark:bg-white/15"
           style={{
             left: (scrollX ?? 0) * scale,
             top: scrollY * scale,

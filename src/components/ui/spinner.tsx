@@ -19,7 +19,6 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
-
 const spinnerSizes = {
   sm: 'h-6 w-6',
   default: 'h-8 w-8',
@@ -55,7 +54,6 @@ const Spinner = React.forwardRef<HTMLDivElement, SpinnerProps>(
 );
 Spinner.displayName = 'Spinner';
 
-
 export interface PageLoaderProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Optional text shown below the spinner, e.g. "Loading tasks...". */
   label?: React.ReactNode;
@@ -88,6 +86,5 @@ const PageLoader = React.forwardRef<HTMLDivElement, PageLoaderProps>(
   )
 );
 PageLoader.displayName = 'PageLoader';
-
 
 export { Spinner, PageLoader };

@@ -10,10 +10,7 @@ import { logError } from '@/lib/utils/logError';
 import { MIN_PIN_LENGTH, MAX_PIN_LENGTH } from '@/lib/constants';
 import { isSetupComplete } from '@/lib/setup';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -36,10 +33,7 @@ export async function GET(
       .where(eq(users.id, id));
 
     if (!member) {
-      return NextResponse.json(
-        { error: 'Family member not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Family member not found' }, { status: 404 });
     }
 
     return NextResponse.json({
@@ -55,18 +49,11 @@ export async function GET(
     });
   } catch (error) {
     logError('Error fetching family member:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch family member' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch family member' }, { status: 500 });
   }
 }
 
-
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const authResult = await requireAuth();
   let auth: AuthResult | null = null;
 
@@ -98,16 +85,10 @@ export async function PATCH(
     }
 
     // Get current member
-    const [currentMember] = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, id));
+    const [currentMember] = await db.select().from(users).where(eq(users.id, id));
 
     if (!currentMember) {
-      return NextResponse.json(
-        { error: 'Family member not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Family member not found' }, { status: 404 });
     }
 
     // Build updates object
@@ -116,10 +97,7 @@ export async function PATCH(
     if (body.name && typeof body.name === 'string') {
       const trimmedName = body.name.trim();
       if (!trimmedName) {
-        return NextResponse.json(
-          { error: 'Name is required' },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: 'Name is required' }, { status: 400 });
       }
 
       // Names must be unique (case-insensitive, trimmed) across every OTHER
@@ -197,10 +175,7 @@ export async function PATCH(
         // Verify current PIN
         const isPinValid = await bcrypt.compare(body.currentPin, currentMember.pin);
         if (!isPinValid) {
-          return NextResponse.json(
-            { error: 'Current PIN is incorrect' },
-            { status: 401 }
-          );
+          return NextResponse.json({ error: 'Current PIN is incorrect' }, { status: 401 });
         }
       }
 
@@ -226,25 +201,15 @@ export async function PATCH(
 
     // Perform update if there are changes
     if (Object.keys(updates).length === 0) {
-      return NextResponse.json(
-        { error: 'No valid updates provided' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'No valid updates provided' }, { status: 400 });
     }
 
     updates.updatedAt = new Date();
 
-    const [updatedMember] = await db
-      .update(users)
-      .set(updates)
-      .where(eq(users.id, id))
-      .returning();
+    const [updatedMember] = await db.update(users).set(updates).where(eq(users.id, id)).returning();
 
     if (!updatedMember) {
-      return NextResponse.json(
-        { error: 'Failed to update family member' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to update family member' }, { status: 500 });
     }
 
     // Sync calendar group color if user color was updated
@@ -252,10 +217,7 @@ export async function PATCH(
       await db
         .update(calendarGroups)
         .set({ color: updates.color, updatedAt: new Date() })
-        .where(and(
-          eq(calendarGroups.userId, id),
-          eq(calendarGroups.type, 'user')
-        ));
+        .where(and(eq(calendarGroups.userId, id), eq(calendarGroups.type, 'user')));
     }
 
     await invalidateEntity('family');
@@ -284,13 +246,9 @@ export async function PATCH(
     });
   } catch (error) {
     logError('Error updating family member:', error);
-    return NextResponse.json(
-      { error: 'Failed to update family member' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to update family member' }, { status: 500 });
   }
 }
-
 
 export async function DELETE(
   request: NextRequest,
@@ -314,16 +272,10 @@ export async function DELETE(
   try {
     const { id } = await params;
 
-    const [currentMember] = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, id));
+    const [currentMember] = await db.select().from(users).where(eq(users.id, id));
 
     if (!currentMember) {
-      return NextResponse.json(
-        { error: 'Family member not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Family member not found' }, { status: 404 });
     }
 
     // Check parent count + delete atomically to prevent race condition
@@ -360,9 +312,6 @@ export async function DELETE(
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
     logError('Error deleting family member:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete family member' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to delete family member' }, { status: 500 });
   }
 }

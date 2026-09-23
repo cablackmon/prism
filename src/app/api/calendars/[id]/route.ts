@@ -69,10 +69,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     });
   } catch (error) {
     logError('Error fetching calendar:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch calendar' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch calendar' }, { status: 500 });
   }
 }
 
@@ -124,7 +121,11 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       // so sync won't auto-disable it again, and clear failure counters
       if (body.enabled) {
         const prevErrors = (existing.syncErrors as Record<string, unknown>) || {};
-        if (prevErrors.autoDisabled || prevErrors.consecutiveFailures || prevErrors.consecutiveNotFound) {
+        if (
+          prevErrors.autoDisabled ||
+          prevErrors.consecutiveFailures ||
+          prevErrors.consecutiveNotFound
+        ) {
           updates.syncErrors = {
             userOverride: true,
             previousError: prevErrors.lastError || null,
@@ -193,10 +194,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       .returning();
 
     if (!updated) {
-      return NextResponse.json(
-        { error: 'Failed to update calendar' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to update calendar' }, { status: 500 });
     }
 
     return NextResponse.json({
@@ -211,10 +209,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     });
   } catch (error) {
     logError('Error updating calendar:', error);
-    return NextResponse.json(
-      { error: 'Failed to update calendar' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to update calendar' }, { status: 500 });
   }
 }
 
@@ -264,9 +259,6 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     });
   } catch (error) {
     logError('Error deleting calendar:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete calendar' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to delete calendar' }, { status: 500 });
   }
 }

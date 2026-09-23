@@ -51,8 +51,17 @@ export function GoalsView() {
   const isParent = activeUser?.role === 'parent';
 
   const {
-    goals, progress, goalChildren, loading: goalsLoading, error: goalsError,
-    createGoal, updateGoal, deleteGoal, reorderGoals, resetGoal, refresh: refreshGoals,
+    goals,
+    progress,
+    goalChildren,
+    loading: goalsLoading,
+    error: goalsError,
+    createGoal,
+    updateGoal,
+    deleteGoal,
+    reorderGoals,
+    resetGoal,
+    refresh: refreshGoals,
   } = useGoals();
   const { points, loading: pointsLoading, error: pointsError } = usePoints();
 
@@ -77,8 +86,8 @@ export function GoalsView() {
       }
     }
     // Clean up stale IDs for goals no longer achieved (e.g. after reset)
-    const activeIds = new Set(goals.filter(g => g.fullyAchieved).map(g => g.id));
-    const cleaned = [...celebrated].filter(id => activeIds.has(id));
+    const activeIds = new Set(goals.filter((g) => g.fullyAchieved).map((g) => g.id));
+    const cleaned = [...celebrated].filter((id) => activeIds.has(id));
     if (cleaned.length !== celebrated.size) {
       sessionStorage.setItem('prism:celebrated-goals', JSON.stringify(cleaned));
     }
@@ -90,7 +99,9 @@ export function GoalsView() {
   const [formPointCost, setFormPointCost] = useState('');
   const [formEmoji, setFormEmoji] = useState('🎯');
   const [formRecurring, setFormRecurring] = useState(false);
-  const [formRecurrencePeriod, setFormRecurrencePeriod] = useState<'weekly' | 'monthly' | 'yearly'>('weekly');
+  const [formRecurrencePeriod, setFormRecurrencePeriod] = useState<'weekly' | 'monthly' | 'yearly'>(
+    'weekly'
+  );
   const [saving, setSaving] = useState(false);
 
   const loading = goalsLoading || pointsLoading;
@@ -147,14 +158,25 @@ export function GoalsView() {
   };
 
   const handleDelete = async (id: string) => {
-    try { await deleteGoal(id); } catch (err) { console.error('Failed to delete:', err); }
+    try {
+      await deleteGoal(id);
+    } catch (err) {
+      console.error('Failed to delete:', err);
+    }
   };
 
-  const goalIds = useMemo(() => goals.map(g => g.id), [goals]);
+  const goalIds = useMemo(() => goals.map((g) => g.id), [goals]);
 
-  const handleDragReorder = useCallback(async (newOrder: string[]) => {
-    try { await reorderGoals(newOrder); } catch (err) { console.error('Failed to reorder:', err); }
-  }, [reorderGoals]);
+  const handleDragReorder = useCallback(
+    async (newOrder: string[]) => {
+      try {
+        await reorderGoals(newOrder);
+      } catch (err) {
+        console.error('Failed to reorder:', err);
+      }
+    },
+    [reorderGoals]
+  );
 
   const { draggedId: draggedGoalId, getDragProps: getGoalDragProps } = useDragReorder({
     order: goalIds,
@@ -165,38 +187,52 @@ export function GoalsView() {
     if (index === 0) return;
     const ids = [...goalIds];
     [ids[index - 1], ids[index]] = [ids[index]!, ids[index - 1]!];
-    try { await reorderGoals(ids); } catch (err) { console.error('Failed to reorder:', err); }
+    try {
+      await reorderGoals(ids);
+    } catch (err) {
+      console.error('Failed to reorder:', err);
+    }
   };
 
   const handleMoveDown = async (index: number) => {
     if (index >= goals.length - 1) return;
     const ids = [...goalIds];
     [ids[index], ids[index + 1]] = [ids[index + 1]!, ids[index]!];
-    try { await reorderGoals(ids); } catch (err) { console.error('Failed to reorder:', err); }
+    try {
+      await reorderGoals(ids);
+    } catch (err) {
+      console.error('Failed to reorder:', err);
+    }
   };
 
   const handleReset = async (goalId: string) => {
-    try { await resetGoal(goalId); } catch (err) { console.error('Failed to reset:', err); }
+    try {
+      await resetGoal(goalId);
+    } catch (err) {
+      console.error('Failed to reset:', err);
+    }
   };
 
   return (
     <PageWrapper>
-      <div className="h-screen flex flex-col">
+      <div className="flex h-screen flex-col">
         <SubpageHeader
           icon={<Trophy className="h-5 w-5 text-primary" />}
           title="Goals & Points"
-          actions={isParent ? (
-            <Button onClick={openAddModal} size="sm">
-              <Plus className="h-4 w-4 mr-1" />
-              Add Goal
-            </Button>
-          ) : undefined}
+          actions={
+            isParent ? (
+              <Button onClick={openAddModal} size="sm">
+                <Plus className="mr-1 h-4 w-4" />
+                Add Goal
+              </Button>
+            ) : undefined
+          }
         />
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-6">
+        <div className="flex-1 space-y-6 overflow-y-auto p-4">
           {error && (
-            <div className="flex items-center gap-2 text-destructive bg-destructive/10 rounded-lg p-3">
+            <div className="flex items-center gap-2 rounded-lg bg-destructive/10 p-3 text-destructive">
               <AlertCircle className="h-4 w-4" />
               <span className="text-sm">{error}</span>
             </div>
@@ -205,12 +241,15 @@ export function GoalsView() {
           {/* Point Counters */}
           {points.length > 0 && (
             <section>
-              <h2 className="text-lg font-semibold mb-3">Point Counters</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <h2 className="mb-3 text-lg font-semibold">Point Counters</h2>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 {points.map((child) => (
-                  <div key={child.userId} className="bg-card rounded-lg border border-border p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: child.color }} />
+                  <div key={child.userId} className="rounded-lg border border-border bg-card p-4">
+                    <div className="mb-2 flex items-center gap-2">
+                      <div
+                        className="h-3 w-3 rounded-full"
+                        style={{ backgroundColor: child.color }}
+                      />
                       <span className="font-medium">{child.name}</span>
                     </div>
                     <div className="grid grid-cols-3 gap-2 text-center">
@@ -235,22 +274,25 @@ export function GoalsView() {
 
           {/* Goals (priority order) */}
           <section>
-            <h2 className="text-lg font-semibold mb-3">Goals (Priority Order)</h2>
+            <h2 className="mb-3 text-lg font-semibold">Goals (Priority Order)</h2>
             {loading && goals.length === 0 ? (
               <div className="space-y-3">
                 {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="h-28 bg-muted/50 rounded-lg animate-pulse" />
+                  <div key={i} className="h-28 animate-pulse rounded-lg bg-muted/50" />
                 ))}
               </div>
             ) : goals.length === 0 ? (
               <EmptyState
                 icon={<Trophy />}
                 title="No goals yet."
-                action={isParent ? (
-                  <Button variant="outline" onClick={openAddModal}>
-                    <Plus className="h-4 w-4 mr-1" />Add your first goal
-                  </Button>
-                ) : undefined}
+                action={
+                  isParent ? (
+                    <Button variant="outline" onClick={openAddModal}>
+                      <Plus className="mr-1 h-4 w-4" />
+                      Add your first goal
+                    </Button>
+                  ) : undefined
+                }
               />
             ) : (
               <div className="space-y-3">
@@ -262,19 +304,19 @@ export function GoalsView() {
                       'rounded-lg border p-4 transition-all',
                       goal.fullyAchieved
                         ? 'border-green-500/50 bg-green-100 dark:bg-green-950'
-                        : 'bg-card border-border',
-                      isParent && 'cursor-grab active:cursor-grabbing touch-none',
-                      draggedGoalId === goal.id && 'opacity-50 scale-95 ring-4 ring-primary/50'
+                        : 'border-border bg-card',
+                      isParent && 'cursor-grab touch-none active:cursor-grabbing',
+                      draggedGoalId === goal.id && 'scale-95 opacity-50 ring-4 ring-primary/50'
                     )}
                   >
                     {/* Goal header */}
-                    <div className="flex items-center gap-2 mb-3">
+                    <div className="mb-3 flex items-center gap-2">
                       {isParent && (
                         <div className="flex flex-col items-center gap-0.5">
                           <button
                             onClick={() => handleMoveUp(index)}
                             disabled={index === 0}
-                            className="text-muted-foreground hover:text-foreground disabled:opacity-20 p-0.5"
+                            className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-20"
                             aria-label="Move goal up"
                           >
                             <ChevronUp className="h-3.5 w-3.5" />
@@ -283,7 +325,7 @@ export function GoalsView() {
                           <button
                             onClick={() => handleMoveDown(index)}
                             disabled={index >= goals.length - 1}
-                            className="text-muted-foreground hover:text-foreground disabled:opacity-20 p-0.5"
+                            className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-20"
                             aria-label="Move goal down"
                           >
                             <ChevronDown className="h-3.5 w-3.5" />
@@ -291,27 +333,31 @@ export function GoalsView() {
                         </div>
                       )}
 
-                      <span className="text-xl"><Emoji e={goal.emoji || '🎯'} /></span>
+                      <span className="text-xl">
+                        <Emoji e={goal.emoji || '🎯'} />
+                      </span>
 
-                      <div className="flex-1 min-w-0">
+                      <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <h3 className="font-semibold truncate">{goal.name}</h3>
+                          <h3 className="truncate font-semibold">{goal.name}</h3>
                           {goal.fullyAchieved && (
-                            <Check className="h-5 w-5 text-green-500 shrink-0" />
+                            <Check className="h-5 w-5 shrink-0 text-green-500" />
                           )}
                         </div>
                         {goal.description && (
-                          <p className="text-xs text-muted-foreground truncate">{goal.description}</p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {goal.description}
+                          </p>
                         )}
                       </div>
 
-                      <div className="flex items-center gap-2 shrink-0">
+                      <div className="flex shrink-0 items-center gap-2">
                         <Badge variant="secondary" className="tabular-nums">
                           {goal.pointCost} pts
                         </Badge>
                         {goal.recurring && (
                           <Badge variant="outline" className="text-xs">
-                            <RefreshCw className="h-3 w-3 mr-1" />
+                            <RefreshCw className="mr-1 h-3 w-3" />
                             {goal.recurrencePeriod}
                           </Badge>
                         )}
@@ -328,15 +374,15 @@ export function GoalsView() {
 
                         return (
                           <div key={child.userId} className="flex items-center gap-2">
-                            <div className="flex items-center gap-1.5 w-20 shrink-0">
+                            <div className="flex w-20 shrink-0 items-center gap-1.5">
                               {achieved ? (
                                 <Check className="h-4 w-4" style={{ color: child.color }} />
                               ) : (
-                                <div className="w-4 h-4 rounded-full border-2 border-muted shrink-0" />
+                                <div className="h-4 w-4 shrink-0 rounded-full border-2 border-muted" />
                               )}
-                              <span className="text-sm truncate">{child.name}</span>
+                              <span className="truncate text-sm">{child.name}</span>
                             </div>
-                            <div className="flex-1 h-3 bg-muted rounded-full overflow-hidden">
+                            <div className="h-3 flex-1 overflow-hidden rounded-full bg-muted">
                               <div
                                 className={cn(
                                   'h-full rounded-full transition-all',
@@ -345,7 +391,7 @@ export function GoalsView() {
                                 style={{ width: `${pct}%`, backgroundColor: child.color }}
                               />
                             </div>
-                            <span className="text-sm tabular-nums text-muted-foreground w-16 text-right shrink-0">
+                            <span className="w-16 shrink-0 text-right text-sm tabular-nums text-muted-foreground">
                               {allocated}/{goal.pointCost}
                             </span>
                           </div>
@@ -355,7 +401,7 @@ export function GoalsView() {
 
                     {/* Actions */}
                     {isParent && (
-                      <div className="flex justify-end gap-1 pt-2 mt-2 border-t border-border/50">
+                      <div className="mt-2 flex justify-end gap-1 border-t border-border/50 pt-2">
                         {goal.fullyAchieved && !goal.recurring && (
                           <Button
                             variant="outline"
@@ -363,11 +409,16 @@ export function GoalsView() {
                             onClick={() => handleReset(goal.id)}
                             className="text-green-600 hover:text-green-700"
                           >
-                            <RotateCcw className="h-3.5 w-3.5 mr-1" />
+                            <RotateCcw className="mr-1 h-3.5 w-3.5" />
                             Reset
                           </Button>
                         )}
-                        <Button variant="ghost" size="sm" onClick={() => openEditModal(goal)} aria-label="Edit goal">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openEditModal(goal)}
+                          aria-label="Edit goal"
+                        >
                           <Pencil className="h-3.5 w-3.5" />
                         </Button>
                         <Button
@@ -410,8 +461,10 @@ export function GoalsView() {
                         key={e}
                         type="button"
                         className={cn(
-                          'w-10 h-10 rounded-lg text-xl flex items-center justify-center border transition-colors',
-                          formEmoji === e ? 'border-primary bg-primary/10' : 'border-border hover:bg-accent'
+                          'flex h-10 w-10 items-center justify-center rounded-lg border text-xl transition-colors',
+                          formEmoji === e
+                            ? 'border-primary bg-primary/10'
+                            : 'border-border hover:bg-accent'
                         )}
                         onClick={() => setFormEmoji(e)}
                       >
@@ -461,7 +514,12 @@ export function GoalsView() {
                 {formRecurring && (
                   <div className="space-y-2">
                     <Label>Reset Period</Label>
-                    <Select value={formRecurrencePeriod} onValueChange={(v) => setFormRecurrencePeriod(v as 'weekly' | 'monthly' | 'yearly')}>
+                    <Select
+                      value={formRecurrencePeriod}
+                      onValueChange={(v) =>
+                        setFormRecurrencePeriod(v as 'weekly' | 'monthly' | 'yearly')
+                      }
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -475,10 +533,14 @@ export function GoalsView() {
                 )}
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setShowGoalModal(false)}>Cancel</Button>
+                <Button variant="outline" onClick={() => setShowGoalModal(false)}>
+                  Cancel
+                </Button>
                 <Button
                   onClick={handleSave}
-                  disabled={saving || !formName.trim() || !formPointCost || parseInt(formPointCost) < 1}
+                  disabled={
+                    saving || !formName.trim() || !formPointCost || parseInt(formPointCost) < 1
+                  }
                 >
                   {saving ? 'Saving...' : editingGoal ? 'Update' : 'Create'}
                 </Button>

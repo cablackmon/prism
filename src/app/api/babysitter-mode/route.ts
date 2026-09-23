@@ -16,10 +16,7 @@ interface BabysitterModeState {
 
 export async function GET() {
   try {
-    const [row] = await db
-      .select()
-      .from(settings)
-      .where(eq(settings.key, BABYSITTER_MODE_KEY));
+    const [row] = await db.select().from(settings).where(eq(settings.key, BABYSITTER_MODE_KEY));
 
     if (!row) {
       return NextResponse.json({
@@ -33,10 +30,7 @@ export async function GET() {
     return NextResponse.json(state);
   } catch (error) {
     logError('Error fetching babysitter mode state:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch babysitter mode state' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch babysitter mode state' }, { status: 500 });
   }
 }
 
@@ -93,9 +87,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(newState);
   } catch (error) {
     logError('Error toggling babysitter mode:', error);
-    return NextResponse.json(
-      { error: 'Failed to toggle babysitter mode' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to toggle babysitter mode' }, { status: 500 });
   }
 }

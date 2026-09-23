@@ -55,7 +55,6 @@ import { ActivityLogSection } from './sections/ActivityLogSection';
 import { DisplaysSection } from './sections/DisplaysSection';
 import { IntegrationsSection } from './sections/integrations/IntegrationsSection';
 
-
 // Exported hooks (consumed by other components)
 
 const DISPLAY_CONTEXTS_STORAGE_KEY = 'prism-display-contexts';
@@ -64,8 +63,14 @@ const ORIENTATION_OVERRIDE_KEY = 'prism-orientation-override';
 
 interface DisplayContextFilters {
   gallery: { orientation: ('landscape' | 'portrait' | 'square')[]; usage: ('gallery' | 'all')[] };
-  wallpaper: { orientation: ('landscape' | 'portrait' | 'square')[]; usage: ('wallpaper' | 'all')[] };
-  screensaver: { orientation: ('landscape' | 'portrait' | 'square')[]; usage: ('screensaver' | 'all')[] };
+  wallpaper: {
+    orientation: ('landscape' | 'portrait' | 'square')[];
+    usage: ('wallpaper' | 'all')[];
+  };
+  screensaver: {
+    orientation: ('landscape' | 'portrait' | 'square')[];
+    usage: ('screensaver' | 'all')[];
+  };
 }
 
 const defaultDisplayContexts: DisplayContextFilters = {
@@ -80,7 +85,9 @@ export function useDisplayContextFilters() {
     try {
       const stored = localStorage.getItem(DISPLAY_CONTEXTS_STORAGE_KEY);
       return stored ? JSON.parse(stored) : defaultDisplayContexts;
-    } catch { return defaultDisplayContexts; }
+    } catch {
+      return defaultDisplayContexts;
+    }
   });
 
   const setFilters = React.useCallback((f: DisplayContextFilters) => {
@@ -94,7 +101,10 @@ export function useDisplayContextFilters() {
 export function useOrientationOverride() {
   const [override, setOverrideState] = React.useState<'auto' | 'landscape' | 'portrait'>(() => {
     if (typeof window === 'undefined') return 'auto';
-    return (localStorage.getItem(ORIENTATION_OVERRIDE_KEY) as 'auto' | 'landscape' | 'portrait') || 'auto';
+    return (
+      (localStorage.getItem(ORIENTATION_OVERRIDE_KEY) as 'auto' | 'landscape' | 'portrait') ||
+      'auto'
+    );
   });
 
   const setOverride = React.useCallback((v: 'auto' | 'landscape' | 'portrait') => {
@@ -111,7 +121,9 @@ export function useTargetResolution() {
     try {
       const stored = localStorage.getItem(TARGET_RESOLUTION_STORAGE_KEY);
       return stored ? JSON.parse(stored) : { width: 1920, height: 1080 };
-    } catch { return { width: 1920, height: 1080 }; }
+    } catch {
+      return { width: 1920, height: 1080 };
+    }
   });
 
   const setResolution = React.useCallback((r: { width: number; height: number }) => {
@@ -126,7 +138,6 @@ export function useTargetResolution() {
 
   return { resolution, setResolution, screenSize };
 }
-
 
 // Main Settings View
 
@@ -205,9 +216,9 @@ export function SettingsView() {
 
   return (
     <PageWrapper>
-      <div className="h-screen flex flex-col">
-        <header className="flex-shrink-0 border-b border-border bg-card/85 backdrop-blur-sm px-4">
-          <div className="flex items-center gap-4 h-16">
+      <div className="flex h-screen flex-col">
+        <header className="flex-shrink-0 border-b border-border bg-card/85 px-4 backdrop-blur-sm">
+          <div className="flex h-16 items-center gap-4">
             <Button variant="ghost" size="icon" asChild>
               <Link href="/" aria-label="Back to dashboard">
                 <Home className="h-5 w-5" />
@@ -220,8 +231,8 @@ export function SettingsView() {
           </div>
         </header>
 
-        <div className="flex-1 flex overflow-hidden">
-          <nav className="hidden md:block w-64 flex-shrink-0 border-r border-border bg-card/85 backdrop-blur-sm p-4">
+        <div className="flex flex-1 overflow-hidden">
+          <nav className="hidden w-64 flex-shrink-0 border-r border-border bg-card/85 p-4 backdrop-blur-sm md:block">
             <div className="space-y-1">
               {sections.map((section) => {
                 const Icon = section.icon;
@@ -230,8 +241,8 @@ export function SettingsView() {
                     key={section.id}
                     onClick={() => setActiveSection(section.id)}
                     className={cn(
-                      'w-full flex items-center gap-3 px-3 py-2 rounded-md text-left',
-                      'hover:bg-accent/50 transition-colors',
+                      'flex w-full items-center gap-3 rounded-md px-3 py-2 text-left',
+                      'transition-colors hover:bg-accent/50',
                       activeSection === section.id && 'bg-accent text-accent-foreground'
                     )}
                   >
@@ -241,7 +252,6 @@ export function SettingsView() {
                 );
               })}
             </div>
-
           </nav>
 
           <div className="flex-1 overflow-y-auto p-4 md:p-6">
@@ -250,7 +260,7 @@ export function SettingsView() {
               <md, so without this the Settings page is reachable from MobileNav
               but every section other than 'account' (the default) is not.
             */}
-            <div className="md:hidden mb-4">
+            <div className="mb-4 md:hidden">
               <label htmlFor="settings-section-select" className="sr-only">
                 Settings section
               </label>
@@ -290,38 +300,62 @@ export function SettingsView() {
                   <Card>
                     <CardContent className="p-6">
                       <div className="flex flex-col items-center">
-                        <Image src="/kyst-emblem.svg" alt="" width={96} height={96} className="mb-4 drop-shadow-lg" />
-                        <h3 className="text-4xl font-bold text-primary mb-6">KYST</h3>
-                        <div className="text-sm text-muted-foreground max-w-lg space-y-4 text-left">
+                        <Image
+                          src="/kyst-emblem.svg"
+                          alt=""
+                          width={96}
+                          height={96}
+                          className="mb-4 drop-shadow-lg"
+                        />
+                        <h3 className="mb-6 text-4xl font-bold text-primary">KYST</h3>
+                        <div className="max-w-lg space-y-4 text-left text-sm text-muted-foreground">
                           <p>
-                            KYST is a subscription-free, self-hosted family dashboard that pulls together
-                            your calendars, tasks, and photos from the services you already use.
+                            KYST is a subscription-free, self-hosted family dashboard that pulls
+                            together your calendars, tasks, and photos from the services you already
+                            use.
                           </p>
                           <p>
-                            KYST is source-available under the PolyForm Noncommercial 1.0.0 license — free for
-                            personal and non-commercial use. If you find it useful,
+                            KYST is source-available under the PolyForm Noncommercial 1.0.0 license
+                            — free for personal and non-commercial use. If you find it useful,
                             please star the repo and share it with others who might benefit.
                           </p>
                           <div className="space-y-1 pt-2">
                             <p>
                               <strong>GitHub:</strong>{' '}
-                              <a href="https://github.com/sandydargoport/prism" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">
+                              <a
+                                href="https://github.com/sandydargoport/prism"
+                                className="text-primary hover:underline"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
                                 github.com/sandydargoport/prism
                               </a>
                             </p>
                             <p>
                               <strong>Report issues or request features:</strong>{' '}
-                              <a href="https://github.com/sandydargoport/prism/issues" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">
+                              <a
+                                href="https://github.com/sandydargoport/prism/issues"
+                                className="text-primary hover:underline"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
                                 github.com/sandydargoport/prism/issues
                               </a>
                             </p>
                             <p>
                               <strong>See what&apos;s being worked on:</strong>{' '}
-                              <a href="https://github.com/sandydargoport/prism/projects" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">
+                              <a
+                                href="https://github.com/sandydargoport/prism/projects"
+                                className="text-primary hover:underline"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
                                 github.com/sandydargoport/prism/projects
                               </a>
                             </p>
-                            <p><strong>Version:</strong> {APP_VERSION}</p>
+                            <p>
+                              <strong>Version:</strong> {APP_VERSION}
+                            </p>
                             <p>
                               <strong>Help Guide:</strong>{' '}
                               <a href="/help" className="text-primary hover:underline">
@@ -329,15 +363,13 @@ export function SettingsView() {
                               </a>
                             </p>
                           </div>
-                          <p className="pt-2 text-xs">
-                            Built with Claude Code.
-                          </p>
+                          <p className="pt-2 text-xs">Built with Claude Code.</p>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
                   <Card>
-                    <CardContent className="p-6 flex items-center justify-between">
+                    <CardContent className="flex items-center justify-between p-6">
                       <div>
                         <p className="font-medium">Setup Wizard</p>
                         <p className="text-sm text-muted-foreground">

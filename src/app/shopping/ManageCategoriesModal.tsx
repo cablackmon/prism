@@ -22,15 +22,52 @@ import { PageLoader } from '@/components/ui/spinner';
 
 const EMOJI_OPTIONS = [
   // Grocery
-  '🥬', '🥛', '🥩', '🥖', '🧊', '🥫',
+  '🥬',
+  '🥛',
+  '🥩',
+  '🥖',
+  '🧊',
+  '🥫',
   // General defaults
-  '👕', '🏠', '🌱', '🔌', '📎', '🎁',
+  '👕',
+  '🏠',
+  '🌱',
+  '🔌',
+  '📎',
+  '🎁',
   // Extra pool
-  '🧴', '🥤', '🍿', '🧀', '🥚', '🍕', '🧹', '💊',
-  '🐾', '🍬', '🧃', '🥜', '🫒', '🌶️', '🍯',
+  '🧴',
+  '🥤',
+  '🍿',
+  '🧀',
+  '🥚',
+  '🍕',
+  '🧹',
+  '💊',
+  '🐾',
+  '🍬',
+  '🧃',
+  '🥜',
+  '🫒',
+  '🌶️',
+  '🍯',
   // Additional common
-  '🛒', '🧺', '🍎', '🥦', '🧈', '🥐', '🍳', '🧂',
-  '🫧', '🪥', '🧻', '🧽', '💡', '🔋', '🎉', '✏️',
+  '🛒',
+  '🧺',
+  '🍎',
+  '🥦',
+  '🧈',
+  '🥐',
+  '🍳',
+  '🧂',
+  '🫧',
+  '🪥',
+  '🧻',
+  '🧽',
+  '💡',
+  '🔋',
+  '🎉',
+  '✏️',
 ];
 
 interface ManageCategoriesModalProps {
@@ -39,14 +76,8 @@ interface ManageCategoriesModalProps {
 }
 
 export function ManageCategoriesModal({ open, onOpenChange }: ManageCategoriesModalProps) {
-  const {
-    categories,
-    loading,
-    addCategory,
-    updateCategory,
-    removeCategory,
-    reorderCategories,
-  } = useShoppingCategories();
+  const { categories, loading, addCategory, updateCategory, removeCategory, reorderCategories } =
+    useShoppingCategories();
 
   const [newName, setNewName] = useState('');
   const [newEmoji, setNewEmoji] = useState<string | null>(null);
@@ -84,7 +115,7 @@ export function ManageCategoriesModal({ open, onOpenChange }: ManageCategoriesMo
       if (newEmoji) {
         await updateCategory(result.id, { emoji: newEmoji });
       }
-      setLocalCategories(prev => [...prev, { ...result, emoji: newEmoji || result.emoji }]);
+      setLocalCategories((prev) => [...prev, { ...result, emoji: newEmoji || result.emoji }]);
       setNewName('');
       setNewEmoji(null);
       toast({ title: `Added "${name}" category` });
@@ -100,7 +131,7 @@ export function ManageCategoriesModal({ open, onOpenChange }: ManageCategoriesMo
     );
     if (!ok) return;
     await removeCategory(cat.id);
-    setLocalCategories(prev => prev.filter(c => c.id !== cat.id));
+    setLocalCategories((prev) => prev.filter((c) => c.id !== cat.id));
     toast({ title: `Removed "${cat.name}" category` });
   };
 
@@ -117,9 +148,7 @@ export function ManageCategoriesModal({ open, onOpenChange }: ManageCategoriesMo
 
   const handleEmojiSelect = async (categoryId: string, emoji: string) => {
     await updateCategory(categoryId, { emoji });
-    setLocalCategories(prev =>
-      prev.map(c => c.id === categoryId ? { ...c, emoji } : c)
-    );
+    setLocalCategories((prev) => prev.map((c) => (c.id === categoryId ? { ...c, emoji } : c)));
     setEmojiPickerFor(null);
   };
 
@@ -132,8 +161,8 @@ export function ManageCategoriesModal({ open, onOpenChange }: ManageCategoriesMo
     if (!draggedId || draggedId === targetId) return;
 
     const newOrder = [...localCategories];
-    const draggedIdx = newOrder.findIndex(c => c.id === draggedId);
-    const targetIdx = newOrder.findIndex(c => c.id === targetId);
+    const draggedIdx = newOrder.findIndex((c) => c.id === draggedId);
+    const targetIdx = newOrder.findIndex((c) => c.id === targetId);
 
     if (draggedIdx !== -1 && targetIdx !== -1) {
       const draggedItem = localCategories[draggedIdx]!;
@@ -164,7 +193,7 @@ export function ManageCategoriesModal({ open, onOpenChange }: ManageCategoriesMo
           ) : (
             <div className="space-y-4">
               {/* Category list */}
-              <div className="space-y-1 max-h-[50vh] overflow-y-auto">
+              <div className="max-h-[50vh] space-y-1 overflow-y-auto">
                 {localCategories.map((cat) => (
                   <div
                     key={cat.id}
@@ -173,17 +202,17 @@ export function ManageCategoriesModal({ open, onOpenChange }: ManageCategoriesMo
                     onDragOver={(e) => handleDragOver(e, cat.id)}
                     onDragEnd={handleDragEnd}
                     className={cn(
-                      'flex items-center gap-2 p-2 rounded-md border border-border cursor-grab active:cursor-grabbing transition-opacity',
+                      'flex cursor-grab items-center gap-2 rounded-md border border-border p-2 transition-opacity active:cursor-grabbing',
                       draggedId === cat.id && 'opacity-50'
                     )}
                   >
-                    <GripVertical className="h-4 w-4 text-muted-foreground/50 shrink-0" />
+                    <GripVertical className="h-4 w-4 shrink-0 text-muted-foreground/50" />
 
                     {/* Emoji button — click to open picker */}
                     <div className="relative">
                       <button
                         type="button"
-                        className="text-xl hover:bg-accent rounded p-0.5 transition-colors"
+                        className="rounded p-0.5 text-xl transition-colors hover:bg-accent"
                         onClick={() => setEmojiPickerFor(emojiPickerFor === cat.id ? null : cat.id)}
                         title="Change emoji"
                       >
@@ -193,7 +222,7 @@ export function ManageCategoriesModal({ open, onOpenChange }: ManageCategoriesMo
                       {emojiPickerFor === cat.id && (
                         <div
                           ref={emojiPickerRef}
-                          className="absolute left-0 top-full mt-1 z-50 bg-card border border-border rounded-lg shadow-lg p-2 w-64"
+                          className="absolute left-0 top-full z-50 mt-1 w-64 rounded-lg border border-border bg-card p-2 shadow-lg"
                         >
                           <div className="grid grid-cols-8 gap-1">
                             {EMOJI_OPTIONS.map((emoji) => (
@@ -201,7 +230,7 @@ export function ManageCategoriesModal({ open, onOpenChange }: ManageCategoriesMo
                                 key={emoji}
                                 type="button"
                                 className={cn(
-                                  'text-lg p-1 rounded hover:bg-accent transition-colors',
+                                  'rounded p-1 text-lg transition-colors hover:bg-accent',
                                   cat.emoji === emoji && 'bg-accent ring-1 ring-primary'
                                 )}
                                 onClick={() => handleEmojiSelect(cat.id, emoji)}
@@ -214,15 +243,15 @@ export function ManageCategoriesModal({ open, onOpenChange }: ManageCategoriesMo
                       )}
                     </div>
 
-                    <span className="font-medium flex-1 text-sm">{cat.name}</span>
+                    <span className="flex-1 text-sm font-medium">{cat.name}</span>
                     <div
-                      className="w-4 h-4 rounded-full shrink-0 border border-border"
+                      className="h-4 w-4 shrink-0 rounded-full border border-border"
                       style={{ backgroundColor: cat.color }}
                     />
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0"
+                      className="h-7 w-7 shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
                       onClick={() => handleRemove(cat)}
                       title={`Remove ${cat.name}`}
                     >
@@ -238,7 +267,7 @@ export function ManageCategoriesModal({ open, onOpenChange }: ManageCategoriesMo
                 <div className="relative">
                   <button
                     type="button"
-                    className="text-xl hover:bg-accent rounded p-1 transition-colors border border-border"
+                    className="rounded border border-border p-1 text-xl transition-colors hover:bg-accent"
                     onClick={() => setEmojiPickerFor(emojiPickerFor === '_new' ? null : '_new')}
                     title="Pick emoji"
                   >
@@ -248,7 +277,7 @@ export function ManageCategoriesModal({ open, onOpenChange }: ManageCategoriesMo
                   {emojiPickerFor === '_new' && (
                     <div
                       ref={emojiPickerRef}
-                      className="absolute left-0 bottom-full mb-1 z-50 bg-card border border-border rounded-lg shadow-lg p-2 w-64"
+                      className="absolute bottom-full left-0 z-50 mb-1 w-64 rounded-lg border border-border bg-card p-2 shadow-lg"
                     >
                       <div className="grid grid-cols-8 gap-1">
                         {EMOJI_OPTIONS.map((emoji) => (
@@ -256,7 +285,7 @@ export function ManageCategoriesModal({ open, onOpenChange }: ManageCategoriesMo
                             key={emoji}
                             type="button"
                             className={cn(
-                              'text-lg p-1 rounded hover:bg-accent transition-colors',
+                              'rounded p-1 text-lg transition-colors hover:bg-accent',
                               newEmoji === emoji && 'bg-accent ring-1 ring-primary'
                             )}
                             onClick={() => {
@@ -285,13 +314,13 @@ export function ManageCategoriesModal({ open, onOpenChange }: ManageCategoriesMo
                   }}
                 />
                 <Button onClick={handleAdd} disabled={!newName.trim()} size="sm">
-                  <Plus className="h-4 w-4 mr-1" />
+                  <Plus className="mr-1 h-4 w-4" />
                   Add
                 </Button>
               </div>
 
               {/* Reset to defaults */}
-              <div className="pt-2 border-t border-border">
+              <div className="border-t border-border pt-2">
                 <Button variant="outline" size="sm" onClick={handleResetDefaults} className="gap-1">
                   <RotateCcw className="h-3.5 w-3.5" />
                   Reset to Defaults

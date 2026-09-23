@@ -78,10 +78,7 @@ export const microsoftTodoWishItemProvider: WishItemProvider = {
   displayName: 'Microsoft To-Do',
 
   async fetchLists(tokens: WishItemProviderTokens): Promise<ExternalWishList[]> {
-    const response = await graphFetch<{ value: MsGraphTaskList[] }>(
-      '/me/todo/lists',
-      tokens
-    );
+    const response = await graphFetch<{ value: MsGraphTaskList[] }>('/me/todo/lists', tokens);
 
     return response.value.map((list) => ({
       id: list.id,
@@ -99,7 +96,10 @@ export const microsoftTodoWishItemProvider: WishItemProvider = {
     return response.value.map((task) => parseGraphTask(task, listId));
   },
 
-  async createItem(tokens: WishItemProviderTokens, item: CreateWishItemInput): Promise<ExternalWishItem> {
+  async createItem(
+    tokens: WishItemProviderTokens,
+    item: CreateWishItemInput
+  ): Promise<ExternalWishItem> {
     const body: Record<string, unknown> = {
       title: item.name,
     };
@@ -111,14 +111,10 @@ export const microsoftTodoWishItemProvider: WishItemProvider = {
       };
     }
 
-    const response = await graphFetch<MsGraphTask>(
-      `/me/todo/lists/${item.listId}/tasks`,
-      tokens,
-      {
-        method: 'POST',
-        body: JSON.stringify(body),
-      }
-    );
+    const response = await graphFetch<MsGraphTask>(`/me/todo/lists/${item.listId}/tasks`, tokens, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
 
     return parseGraphTask(response, item.listId);
   },
@@ -136,9 +132,7 @@ export const microsoftTodoWishItemProvider: WishItemProvider = {
     }
 
     if (updates.notes !== undefined) {
-      body.body = updates.notes
-        ? { content: updates.notes, contentType: 'text' }
-        : null;
+      body.body = updates.notes ? { content: updates.notes, contentType: 'text' } : null;
     }
 
     const response = await graphFetch<MsGraphTask>(
@@ -154,11 +148,7 @@ export const microsoftTodoWishItemProvider: WishItemProvider = {
   },
 
   async deleteItem(tokens: WishItemProviderTokens, itemId: string, listId: string): Promise<void> {
-    await graphFetch(
-      `/me/todo/lists/${listId}/tasks/${itemId}`,
-      tokens,
-      { method: 'DELETE' }
-    );
+    await graphFetch(`/me/todo/lists/${listId}/tasks/${itemId}`, tokens, { method: 'DELETE' });
   },
 
   async refreshTokens(tokens: WishItemProviderTokens): Promise<WishItemProviderTokens | null> {
@@ -175,19 +165,22 @@ export const microsoftTodoWishItemProvider: WishItemProvider = {
     }
 
     try {
-      const response = await fetch('https://login.microsoftonline.com/consumers/oauth2/v2.0/token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          client_id: clientId,
-          client_secret: clientSecret,
-          refresh_token: tokens.refreshToken,
-          grant_type: 'refresh_token',
-          scope: 'Tasks.ReadWrite offline_access',
-        }),
-      });
+      const response = await fetch(
+        'https://login.microsoftonline.com/consumers/oauth2/v2.0/token',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({
+            client_id: clientId,
+            client_secret: clientSecret,
+            refresh_token: tokens.refreshToken,
+            grant_type: 'refresh_token',
+            scope: 'Tasks.ReadWrite offline_access',
+          }),
+        }
+      );
 
       if (!response.ok) {
         console.error('Failed to refresh Microsoft tokens:', await response.text());

@@ -41,7 +41,15 @@ export interface Chore {
   title: string;
   description?: string;
   category: 'cleaning' | 'laundry' | 'dishes' | 'yard' | 'pets' | 'trash' | 'other';
-  frequency: 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'quarterly' | 'semi-annually' | 'annually' | 'custom';
+  frequency:
+    | 'daily'
+    | 'weekly'
+    | 'biweekly'
+    | 'monthly'
+    | 'quarterly'
+    | 'semi-annually'
+    | 'annually'
+    | 'custom';
   customIntervalDays?: number;
   startDay?: string | null;
   lastCompleted?: Date | string;

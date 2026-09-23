@@ -151,9 +151,10 @@ export function AddMessageModal({
         '7d': 7 * 24 * 60 * 60 * 1000,
       };
 
-      const expiresAt = expiresIn !== 'never' && durationMs[expiresIn]
-        ? new Date(Date.now() + durationMs[expiresIn]).toISOString()
-        : undefined;
+      const expiresAt =
+        expiresIn !== 'never' && durationMs[expiresIn]
+          ? new Date(Date.now() + durationMs[expiresIn]).toISOString()
+          : undefined;
 
       const response = await fetch('/api/messages', {
         method: 'POST',
@@ -187,16 +188,14 @@ export function AddMessageModal({
   }
 
   // Get selected author for preview
-  const selectedAuthor = currentUser || familyMembers.find(m => m.id === authorId);
+  const selectedAuthor = currentUser || familyMembers.find((m) => m.id === authorId);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Post Message</DialogTitle>
-          <DialogDescription>
-            Leave a message for your family.
-          </DialogDescription>
+          <DialogDescription>Leave a message for your family.</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -205,7 +204,7 @@ export function AddMessageModal({
             <Label htmlFor="author">Posting As</Label>
             {isAuthorLocked && currentUser ? (
               // Show locked user (cannot change)
-              <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50 border">
+              <div className="flex items-center gap-2 rounded-md border bg-muted/50 p-2">
                 <UserAvatar
                   name={currentUser.name}
                   color={currentUser.color}
@@ -253,9 +252,7 @@ export function AddMessageModal({
               autoFocus
               maxLength={500}
             />
-            <div className="text-xs text-muted-foreground text-right">
-              {message.length}/500
-            </div>
+            <div className="text-right text-xs text-muted-foreground">{message.length}/500</div>
           </div>
 
           {/* Options */}
@@ -266,7 +263,7 @@ export function AddMessageModal({
                 checked={pinned}
                 onCheckedChange={(checked) => setPinned(checked === true)}
               />
-              <Label htmlFor="pinned" className="flex items-center gap-1.5 cursor-pointer">
+              <Label htmlFor="pinned" className="flex cursor-pointer items-center gap-1.5">
                 <Pin className="h-3.5 w-3.5" />
                 Pin to top
               </Label>
@@ -278,7 +275,7 @@ export function AddMessageModal({
                 checked={important}
                 onCheckedChange={(checked) => setImportant(checked === true)}
               />
-              <Label htmlFor="important" className="flex items-center gap-1.5 cursor-pointer">
+              <Label htmlFor="important" className="flex cursor-pointer items-center gap-1.5">
                 <AlertTriangle className="h-3.5 w-3.5" />
                 Mark as important
               </Label>
@@ -286,7 +283,9 @@ export function AddMessageModal({
 
             <div className="flex items-center gap-2">
               <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-              <Label htmlFor="expiresIn" className="text-sm whitespace-nowrap">Expires after</Label>
+              <Label htmlFor="expiresIn" className="whitespace-nowrap text-sm">
+                Expires after
+              </Label>
               {/* Native select: Radix Select's tap-to-commit is unreliable on
                   the touch wall display; the OS picker is rock-solid on touch. */}
               <select
@@ -307,8 +306,8 @@ export function AddMessageModal({
 
           {/* Preview */}
           {message.trim() && selectedAuthor && (
-            <div className="p-3 rounded-lg bg-muted/50 border">
-              <div className="text-xs text-muted-foreground mb-1">Preview</div>
+            <div className="rounded-lg border bg-muted/50 p-3">
+              <div className="mb-1 text-xs text-muted-foreground">Preview</div>
               <div className="flex items-start gap-2">
                 <UserAvatar
                   name={selectedAuthor.name}
@@ -317,7 +316,7 @@ export function AddMessageModal({
                   size="sm"
                   className="h-6 w-6 text-[10px]"
                 />
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
                     <span className="text-sm font-medium" style={{ color: selectedAuthor.color }}>
                       {selectedAuthor.name}
@@ -332,9 +331,7 @@ export function AddMessageModal({
           )}
 
           {/* Error message */}
-          {error && (
-            <div className="text-sm text-destructive">{error}</div>
-          )}
+          {error && <div className="text-sm text-destructive">{error}</div>}
 
           {/* Actions */}
           <DialogFooter>

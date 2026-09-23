@@ -6,10 +6,7 @@ import { eq } from 'drizzle-orm';
 import { deletePhoto } from '@/lib/services/photo-storage';
 import { logError } from '@/lib/utils/logError';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -30,10 +27,7 @@ export async function GET(
   }
 }
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -52,11 +46,7 @@ export async function PATCH(
       updates.usage = tags.join(',') || '';
     }
 
-    const [updated] = await db
-      .update(photos)
-      .set(updates)
-      .where(eq(photos.id, id))
-      .returning();
+    const [updated] = await db.update(photos).set(updates).where(eq(photos.id, id)).returning();
 
     if (!updated) {
       return NextResponse.json({ error: 'Photo not found' }, { status: 404 });

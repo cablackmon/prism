@@ -46,9 +46,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error) {
     logError('Error reordering babysitter info:', error);
-    return NextResponse.json(
-      { error: 'Failed to reorder babysitter info' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to reorder babysitter info' }, { status: 500 });
   }
 }

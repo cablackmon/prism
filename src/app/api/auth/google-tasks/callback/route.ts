@@ -17,13 +17,18 @@ interface GoogleTokens {
   expires_in: number;
 }
 
-async function exchangeCodeForTokens(code: string, redirectUriOverride?: string): Promise<GoogleTokens> {
+async function exchangeCodeForTokens(
+  code: string,
+  redirectUriOverride?: string
+): Promise<GoogleTokens> {
   // Same store the connect route reads, so the pair that started the flow is
   // the pair that completes it.
   const credentials = await getGoogleCredentials();
   const clientId = credentials?.clientId;
   const clientSecret = credentials?.clientSecret;
-  const redirectUri = redirectUriOverride || process.env.GOOGLE_TASKS_REDIRECT_URI ||
+  const redirectUri =
+    redirectUriOverride ||
+    process.env.GOOGLE_TASKS_REDIRECT_URI ||
     `${BASE_URL}/api/auth/google-tasks/callback`;
 
   if (!clientId || !clientSecret) {
@@ -72,12 +77,13 @@ export async function GET(request: Request) {
       const parsed = JSON.parse(state);
       taskListId = parsed.taskListId || null;
       returnSection = parsed.returnSection || 'tasks';
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }
 
   // Anchor for error redirects when returnSection === 'integrations'.
-  const errorAnchor =
-    returnSection === 'integrations' ? '#google-tasks' : '';
+  const errorAnchor = returnSection === 'integrations' ? '#google-tasks' : '';
 
   try {
     const code = searchParams.get('code');
@@ -96,7 +102,10 @@ export async function GET(request: Request) {
       );
     }
 
-    const tokens = await exchangeCodeForTokens(code, resolveRedirectUri(request, '/api/auth/google-tasks/callback')); // dynamic redirect URI per request (#124)
+    const tokens = await exchangeCodeForTokens(
+      code,
+      resolveRedirectUri(request, '/api/auth/google-tasks/callback')
+    ); // dynamic redirect URI per request (#124)
     const tokenExpiresAt = new Date(Date.now() + tokens.expires_in * 1000);
 
     // Which Google account this is, carried through the temp store to the
@@ -104,16 +113,12 @@ export async function GET(request: Request) {
     const accountEmail = await fetchGoogleAccountEmail(tokens.access_token);
 
     const encryptedAccessToken = encrypt(tokens.access_token);
-    const encryptedRefreshToken = tokens.refresh_token
-      ? encrypt(tokens.refresh_token)
-      : null;
+    const encryptedRefreshToken = tokens.refresh_token ? encrypt(tokens.refresh_token) : null;
 
     // Store tokens temporarily in Redis
     const redis = await getRedisClient();
     if (!redis) {
-      return NextResponse.redirect(
-        `${BASE_URL}/settings?section=tasks&error=redis_unavailable`
-      );
+      return NextResponse.redirect(`${BASE_URL}/settings?section=tasks&error=redis_unavailable`);
     }
 
     const tempKey = taskListId

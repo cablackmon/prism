@@ -11,7 +11,9 @@ async function getSetting(key: string): Promise<unknown> {
     const { settings } = await import('@/lib/db/schema');
     const row = await db.query.settings.findFirst({ where: eq(settings.key, key) });
     return row?.value ?? null;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 async function resolveTargetList(defaultListId: string | null): Promise<string | null> {
@@ -21,10 +23,11 @@ async function resolveTargetList(defaultListId: string | null): Promise<string |
     });
     if (list) return list.id;
   }
-  const all = await db.select({ id: shoppingLists.id, name: shoppingLists.name })
+  const all = await db
+    .select({ id: shoppingLists.id, name: shoppingLists.name })
     .from(shoppingLists)
     .orderBy(asc(shoppingLists.sortOrder));
-  const groceries = all.find(l => l.name.toLowerCase().includes('groceries'));
+  const groceries = all.find((l) => l.name.toLowerCase().includes('groceries'));
   return groceries?.id ?? all[0]?.id ?? null;
 }
 
@@ -33,7 +36,7 @@ export async function POST(req: Request) {
   if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
-    const body = await req.json() as {
+    const body = (await req.json()) as {
       barcode?: string;
       listId?: string;
       category?: string;
@@ -67,15 +70,17 @@ export async function POST(req: Request) {
         })
         .from(shoppingItems)
         .innerJoin(shoppingLists, eq(shoppingItems.listId, shoppingLists.id))
-        .where(and(
-          ilike(shoppingItems.name, product.name),
-          or(eq(shoppingItems.checked, false), isNull(shoppingItems.checked)),
-        ));
+        .where(
+          and(
+            ilike(shoppingItems.name, product.name),
+            or(eq(shoppingItems.checked, false), isNull(shoppingItems.checked))
+          )
+        );
 
       return NextResponse.json({
         found: true,
         product: { name: product.name, brand: product.brand, suggestedCategory: product.category },
-        existingInLists: existingRows.map(r => ({
+        existingInLists: existingRows.map((r) => ({
           listId: r.listId,
           listName: r.listName,
           itemId: r.itemId,
@@ -84,24 +89,29 @@ export async function POST(req: Request) {
     }
 
     // Actual add
-    const defaultListId = requestedListId ?? ((await getSetting('scanner.defaultListId')) as string | null);
+    const defaultListId =
+      requestedListId ?? ((await getSetting('scanner.defaultListId')) as string | null);
     const listId = await resolveTargetList(defaultListId);
     if (!listId) return NextResponse.json({ error: 'No shopping list found' }, { status: 500 });
 
     const categoryToUse = body.category ?? product.category ?? null;
 
     // Duplicate check within the target list
-    const existing = await db.select({ id: shoppingItems.id })
+    const existing = await db
+      .select({ id: shoppingItems.id })
       .from(shoppingItems)
-      .where(and(
-        eq(shoppingItems.listId, listId),
-        ilike(shoppingItems.name, product.name),
-        or(eq(shoppingItems.checked, false), isNull(shoppingItems.checked)),
-      ))
+      .where(
+        and(
+          eq(shoppingItems.listId, listId),
+          ilike(shoppingItems.name, product.name),
+          or(eq(shoppingItems.checked, false), isNull(shoppingItems.checked))
+        )
+      )
       .limit(1);
 
     if (existing.length > 0) {
-      await db.update(shoppingItems)
+      await db
+        .update(shoppingItems)
         .set({ source: 'scan' })
         .where(eq(shoppingItems.id, existing[0]!.id));
       await invalidateEntity('shopping-lists');
@@ -114,14 +124,17 @@ export async function POST(req: Request) {
       });
     }
 
-    const [newItem] = await db.insert(shoppingItems).values({
-      listId,
-      name: product.name,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      category: categoryToUse as any,
-      source: 'scan',
-      notes: product.brand ?? null,
-    }).returning({ id: shoppingItems.id });
+    const [newItem] = await db
+      .insert(shoppingItems)
+      .values({
+        listId,
+        name: product.name,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        category: categoryToUse as any,
+        source: 'scan',
+        notes: product.brand ?? null,
+      })
+      .returning({ id: shoppingItems.id });
 
     await invalidateEntity('shopping-lists');
     return NextResponse.json({

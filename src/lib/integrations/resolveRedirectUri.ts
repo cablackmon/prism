@@ -42,7 +42,9 @@ export function resolveRedirectUri(request: Request, callbackPath: string): stri
         if (b.protocol === 'https:' && !isPrivateHostname(b.hostname)) {
           return new URL(callbackPath, b).toString();
         }
-      } catch { /* malformed APP_URL — fall through to the derived value */ }
+      } catch {
+        /* malformed APP_URL — fall through to the derived value */
+      }
     }
   }
   return derived;

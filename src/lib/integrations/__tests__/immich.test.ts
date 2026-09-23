@@ -51,7 +51,7 @@ describe('parseImmichShareUrl', () => {
 
   it('throws on a URL with no /share/ segment', () => {
     expect(() => parseImmichShareUrl('https://immich.example.com/album/abc123')).toThrow(
-      /must contain \/share\//,
+      /must contain \/share\//
     );
   });
 
@@ -108,16 +108,16 @@ describe('fetchSharedLink (public)', () => {
 
   it('throws ImmichPasswordRequiredError on 401', async () => {
     mockFetchOnce(() => ({ ok: false, status: 401, headers: new Headers() }));
-    await expect(
-      fetchSharedLink({ serverUrl: 'https://x', shareKey: 'k' }),
-    ).rejects.toBeInstanceOf(ImmichPasswordRequiredError);
+    await expect(fetchSharedLink({ serverUrl: 'https://x', shareKey: 'k' })).rejects.toBeInstanceOf(
+      ImmichPasswordRequiredError
+    );
   });
 
   it('throws ImmichShareNotFoundError on 404', async () => {
     mockFetchOnce(() => ({ ok: false, status: 404, headers: new Headers() }));
-    await expect(
-      fetchSharedLink({ serverUrl: 'https://x', shareKey: 'k' }),
-    ).rejects.toBeInstanceOf(ImmichShareNotFoundError);
+    await expect(fetchSharedLink({ serverUrl: 'https://x', shareKey: 'k' })).rejects.toBeInstanceOf(
+      ImmichShareNotFoundError
+    );
   });
 
   it('exposes hasPassword=false when password field is null', async () => {
@@ -335,14 +335,14 @@ describe('fetchSharedLink (password-protected)', () => {
   it('throws ImmichInvalidPasswordError on 401 from login', async () => {
     mockFetchOnce(() => ({ ok: false, status: 401, headers: new Headers() }));
     await expect(
-      fetchSharedLink({ serverUrl: 'https://x', shareKey: 'k', password: 'wrong' }),
+      fetchSharedLink({ serverUrl: 'https://x', shareKey: 'k', password: 'wrong' })
     ).rejects.toBeInstanceOf(ImmichInvalidPasswordError);
   });
 
   it('throws ImmichShareNotFoundError on 404 from login', async () => {
     mockFetchOnce(() => ({ ok: false, status: 404, headers: new Headers() }));
     await expect(
-      fetchSharedLink({ serverUrl: 'https://x', shareKey: 'gone', password: 'pw' }),
+      fetchSharedLink({ serverUrl: 'https://x', shareKey: 'gone', password: 'pw' })
     ).rejects.toBeInstanceOf(ImmichShareNotFoundError);
   });
 });
@@ -356,10 +356,7 @@ describe('downloadImmichAsset', () => {
       arrayBuffer: () => Promise.resolve(new Uint8Array([0xff, 0xd8]).buffer),
     }));
 
-    const result = await downloadImmichAsset(
-      { serverUrl: 'https://x', shareKey: 'k' },
-      'asset-1',
-    );
+    const result = await downloadImmichAsset({ serverUrl: 'https://x', shareKey: 'k' }, 'asset-1');
 
     const url = (global.fetch as jest.Mock).mock.calls[0][0];
     expect(url).toBe('https://x/api/assets/asset-1/original?key=k');
@@ -375,11 +372,9 @@ describe('downloadImmichAsset', () => {
       arrayBuffer: () => Promise.resolve(new ArrayBuffer(4)),
     }));
 
-    await downloadImmichAsset(
-      { serverUrl: 'https://x', shareKey: 'k' },
-      'asset-1',
-      { thumb: true },
-    );
+    await downloadImmichAsset({ serverUrl: 'https://x', shareKey: 'k' }, 'asset-1', {
+      thumb: true,
+    });
 
     const url = (global.fetch as jest.Mock).mock.calls[0][0];
     expect(url).toBe('https://x/api/assets/asset-1/thumbnail?key=k&size=preview');
@@ -404,10 +399,7 @@ describe('downloadImmichAsset', () => {
       }),
     ]);
 
-    await downloadImmichAsset(
-      { serverUrl: 'https://x', shareKey: 'k', password: 'pw' },
-      'asset-1',
-    );
+    await downloadImmichAsset({ serverUrl: 'https://x', shareKey: 'k', password: 'pw' }, 'asset-1');
 
     expect((global.fetch as jest.Mock).mock.calls).toHaveLength(2);
     const [, downloadInit] = (global.fetch as jest.Mock).mock.calls[1];
@@ -417,7 +409,7 @@ describe('downloadImmichAsset', () => {
   it('throws on a non-OK download response', async () => {
     mockFetchOnce(() => ({ ok: false, status: 500, statusText: 'Internal Server Error' }));
     await expect(
-      downloadImmichAsset({ serverUrl: 'https://x', shareKey: 'k' }, 'asset-1'),
+      downloadImmichAsset({ serverUrl: 'https://x', shareKey: 'k' }, 'asset-1')
     ).rejects.toThrow(/Failed to download Immich asset/);
   });
 });
@@ -470,10 +462,30 @@ describe('downloadImmichAsset cookie cache (password-protected, with sourceId)',
     loginHeaders.append('set-cookie', 'immich_auth=t1; Path=/; HttpOnly');
 
     mockFetchSequence([
-      () => ({ ok: true, status: 201, headers: loginHeaders, json: () => Promise.resolve({ assets: [] }) }),
-      () => ({ ok: true, status: 200, headers: new Headers(), arrayBuffer: () => Promise.resolve(new ArrayBuffer(2)) }),
-      () => ({ ok: true, status: 201, headers: loginHeaders, json: () => Promise.resolve({ assets: [] }) }),
-      () => ({ ok: true, status: 200, headers: new Headers(), arrayBuffer: () => Promise.resolve(new ArrayBuffer(3)) }),
+      () => ({
+        ok: true,
+        status: 201,
+        headers: loginHeaders,
+        json: () => Promise.resolve({ assets: [] }),
+      }),
+      () => ({
+        ok: true,
+        status: 200,
+        headers: new Headers(),
+        arrayBuffer: () => Promise.resolve(new ArrayBuffer(2)),
+      }),
+      () => ({
+        ok: true,
+        status: 201,
+        headers: loginHeaders,
+        json: () => Promise.resolve({ assets: [] }),
+      }),
+      () => ({
+        ok: true,
+        status: 200,
+        headers: new Headers(),
+        arrayBuffer: () => Promise.resolve(new ArrayBuffer(3)),
+      }),
     ]);
 
     const creds = { serverUrl: 'https://x', shareKey: 'k', password: 'pw' };
@@ -488,12 +500,27 @@ describe('downloadImmichAsset cookie cache (password-protected, with sourceId)',
     loginHeaders.append('set-cookie', 'immich_auth=stale; Path=/; HttpOnly');
 
     mockFetchSequence([
-      () => ({ ok: true, status: 201, headers: loginHeaders, json: () => Promise.resolve({ assets: [] }) }),
+      () => ({
+        ok: true,
+        status: 201,
+        headers: loginHeaders,
+        json: () => Promise.resolve({ assets: [] }),
+      }),
       // Download fails with 401: cache should be invalidated.
       () => ({ ok: false, status: 401, statusText: 'Unauthorized' }),
       // Next call: fresh login + download.
-      () => ({ ok: true, status: 201, headers: loginHeaders, json: () => Promise.resolve({ assets: [] }) }),
-      () => ({ ok: true, status: 200, headers: new Headers(), arrayBuffer: () => Promise.resolve(new ArrayBuffer(2)) }),
+      () => ({
+        ok: true,
+        status: 201,
+        headers: loginHeaders,
+        json: () => Promise.resolve({ assets: [] }),
+      }),
+      () => ({
+        ok: true,
+        status: 200,
+        headers: new Headers(),
+        arrayBuffer: () => Promise.resolve(new ArrayBuffer(2)),
+      }),
     ]);
 
     const creds = { serverUrl: 'https://x', shareKey: 'k', password: 'pw', sourceId: 'src-2' };
@@ -510,9 +537,19 @@ describe('downloadImmichAsset cookie cache (password-protected, with sourceId)',
 
     mockFetchSequence([
       // fetchSharedLink with password = login + (no follow-up because not ALBUM).
-      () => ({ ok: true, status: 201, headers: loginHeaders, json: () => Promise.resolve({ assets: [] }) }),
+      () => ({
+        ok: true,
+        status: 201,
+        headers: loginHeaders,
+        json: () => Promise.resolve({ assets: [] }),
+      }),
       // Subsequent download should reuse the seeded cookie.
-      () => ({ ok: true, status: 200, headers: new Headers(), arrayBuffer: () => Promise.resolve(new ArrayBuffer(2)) }),
+      () => ({
+        ok: true,
+        status: 200,
+        headers: new Headers(),
+        arrayBuffer: () => Promise.resolve(new ArrayBuffer(2)),
+      }),
     ]);
 
     const creds = { serverUrl: 'https://x', shareKey: 'k', password: 'pw', sourceId: 'src-3' };
@@ -534,31 +571,31 @@ describe('SSRF guard on Immich serverUrl', () => {
 
   it('rejects fetchSharedLink with a loopback serverUrl', async () => {
     await expect(
-      fetchSharedLink({ serverUrl: 'http://127.0.0.1:2283', shareKey: 'k' }),
+      fetchSharedLink({ serverUrl: 'http://127.0.0.1:2283', shareKey: 'k' })
     ).rejects.toBeInstanceOf(UnsafeUrlError);
   });
 
   it('rejects fetchSharedLink with an RFC1918 serverUrl', async () => {
     await expect(
-      fetchSharedLink({ serverUrl: 'http://10.0.0.5', shareKey: 'k' }),
+      fetchSharedLink({ serverUrl: 'http://10.0.0.5', shareKey: 'k' })
     ).rejects.toBeInstanceOf(UnsafeUrlError);
   });
 
   it('rejects fetchSharedLink with the cloud metadata IP', async () => {
     await expect(
-      fetchSharedLink({ serverUrl: 'http://169.254.169.254', shareKey: 'k' }),
+      fetchSharedLink({ serverUrl: 'http://169.254.169.254', shareKey: 'k' })
     ).rejects.toBeInstanceOf(UnsafeUrlError);
   });
 
   it('rejects downloadImmichAsset with a loopback serverUrl', async () => {
     await expect(
-      downloadImmichAsset({ serverUrl: 'http://127.0.0.1', shareKey: 'k' }, 'asset-1'),
+      downloadImmichAsset({ serverUrl: 'http://127.0.0.1', shareKey: 'k' }, 'asset-1')
     ).rejects.toBeInstanceOf(UnsafeUrlError);
   });
 
   it('rejects downloadImmichAsset with an IPv6 loopback serverUrl', async () => {
     await expect(
-      downloadImmichAsset({ serverUrl: 'http://[::1]', shareKey: 'k' }, 'asset-1'),
+      downloadImmichAsset({ serverUrl: 'http://[::1]', shareKey: 'k' }, 'asset-1')
     ).rejects.toBeInstanceOf(UnsafeUrlError);
   });
 
@@ -572,7 +609,7 @@ describe('SSRF guard on Immich serverUrl', () => {
     }));
 
     await expect(
-      downloadImmichAsset({ serverUrl: 'https://immich.example.com', shareKey: 'k' }, 'asset-1'),
+      downloadImmichAsset({ serverUrl: 'https://immich.example.com', shareKey: 'k' }, 'asset-1')
     ).rejects.toBeInstanceOf(UnsafeUrlError);
     // Only the first (public) hop was fetched; the internal target never was.
     expect((global.fetch as jest.Mock).mock.calls).toHaveLength(1);

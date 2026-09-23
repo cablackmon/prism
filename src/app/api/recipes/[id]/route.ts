@@ -10,10 +10,7 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-export async function GET(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function GET(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -51,26 +48,17 @@ export async function GET(
       .where(eq(recipes.id, id));
 
     if (!recipe) {
-      return NextResponse.json(
-        { error: 'Recipe not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Recipe not found' }, { status: 404 });
     }
 
     return NextResponse.json(recipe);
   } catch (error) {
     logError('Error fetching recipe:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch recipe' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch recipe' }, { status: 500 });
   }
 }
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -81,16 +69,10 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
 
-    const [existing] = await db
-      .select()
-      .from(recipes)
-      .where(eq(recipes.id, id));
+    const [existing] = await db.select().from(recipes).where(eq(recipes.id, id));
 
     if (!existing) {
-      return NextResponse.json(
-        { error: 'Recipe not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Recipe not found' }, { status: 404 });
     }
 
     const updateData: Record<string, unknown> = {
@@ -99,10 +81,7 @@ export async function PATCH(
 
     if ('name' in body) {
       if (typeof body.name !== 'string' || body.name.trim().length === 0) {
-        return NextResponse.json(
-          { error: 'Name must be a non-empty string' },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: 'Name must be a non-empty string' }, { status: 400 });
       }
       updateData.name = body.name.trim();
     }
@@ -182,17 +161,11 @@ export async function PATCH(
     return NextResponse.json(updated);
   } catch (error) {
     logError('Error updating recipe:', error);
-    return NextResponse.json(
-      { error: 'Failed to update recipe' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to update recipe' }, { status: 500 });
   }
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -205,10 +178,7 @@ export async function DELETE(
       .where(eq(recipes.id, id));
 
     if (!existing) {
-      return NextResponse.json(
-        { error: 'Recipe not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Recipe not found' }, { status: 404 });
     }
 
     // Only allow deletion if user created it or has parent permissions
@@ -233,9 +203,6 @@ export async function DELETE(
     });
   } catch (error) {
     logError('Error deleting recipe:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete recipe' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to delete recipe' }, { status: 500 });
   }
 }

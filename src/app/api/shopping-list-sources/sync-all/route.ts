@@ -85,7 +85,9 @@ export async function POST(request: NextRequest) {
                 .update(shoppingListSources)
                 .set({
                   accessToken: encrypt(newTokens.accessToken),
-                  refreshToken: newTokens.refreshToken ? encrypt(newTokens.refreshToken) : source.refreshToken,
+                  refreshToken: newTokens.refreshToken
+                    ? encrypt(newTokens.refreshToken)
+                    : source.refreshToken,
                   tokenExpiresAt: newTokens.expiresAt,
                   updatedAt: new Date(),
                 })
@@ -152,7 +154,7 @@ export async function POST(request: NextRequest) {
     await invalidateEntity('shopping-lists');
     await invalidateEntity('shopping-list-sources');
 
-    const successCount = results.filter(r => r.success).length;
+    const successCount = results.filter((r) => r.success).length;
 
     logActivity({
       userId: auth.userId,

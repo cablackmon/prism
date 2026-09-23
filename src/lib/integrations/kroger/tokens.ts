@@ -38,8 +38,7 @@ export async function getUserTokens(userId: string): Promise<PersistedKrogerToke
   }
 
   const expiresAt = row.tokenExpiresAt;
-  const needsRefresh =
-    expiresAt && expiresAt.getTime() - Date.now() < REFRESH_THRESHOLD_MS;
+  const needsRefresh = expiresAt && expiresAt.getTime() - Date.now() < REFRESH_THRESHOLD_MS;
 
   if (needsRefresh && refreshToken) {
     const refreshed = await refreshTokens(refreshToken);
@@ -92,7 +91,5 @@ export async function saveUserTokens(userId: string, tokens: KrogerTokens): Prom
 }
 
 export async function deleteUserTokens(userId: string): Promise<void> {
-  await db
-    .delete(userKrogerConnections)
-    .where(eq(userKrogerConnections.userId, userId));
+  await db.delete(userKrogerConnections).where(eq(userKrogerConnections.userId, userId));
 }

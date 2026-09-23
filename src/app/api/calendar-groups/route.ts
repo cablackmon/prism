@@ -18,27 +18,29 @@ export async function GET() {
   }
 
   try {
-    const data = await getCached('calendar-groups:all', async () => {
-      // Auto-seed: ensure every user has a group, plus one "Family" group
-      await seedDefaultGroups();
+    const data = await getCached(
+      'calendar-groups:all',
+      async () => {
+        // Auto-seed: ensure every user has a group, plus one "Family" group
+        await seedDefaultGroups();
 
-      // Get groups with user names joined for type='user' groups
-      const groups = await db
-        .select({
-          id: calendarGroups.id,
-          storedName: calendarGroups.name,
-          color: calendarGroups.color,
-          type: calendarGroups.type,
-          userId: calendarGroups.userId,
-          sortOrder: calendarGroups.sortOrder,
-          userSortOrder: users.sortOrder,
-          // Count only sources that actually carry events — CalDAV reminder
-          // lists (supportsEvents=false) are hidden from the Calendar UI so
-          // including them here would make the badge show "3 sources" while
-          // the user can only see 2. The IS DISTINCT FROM 'false' check
-          // treats missing/null flags as truthy for backward compatibility
-          // with non-CalDAV providers and legacy rows.
-          sourceCount: sql<number>`(
+        // Get groups with user names joined for type='user' groups
+        const groups = await db
+          .select({
+            id: calendarGroups.id,
+            storedName: calendarGroups.name,
+            color: calendarGroups.color,
+            type: calendarGroups.type,
+            userId: calendarGroups.userId,
+            sortOrder: calendarGroups.sortOrder,
+            userSortOrder: users.sortOrder,
+            // Count only sources that actually carry events — CalDAV reminder
+            // lists (supportsEvents=false) are hidden from the Calendar UI so
+            // including them here would make the badge show "3 sources" while
+            // the user can only see 2. The IS DISTINCT FROM 'false' check
+            // treats missing/null flags as truthy for backward compatibility
+            // with non-CalDAV providers and legacy rows.
+            sourceCount: sql<number>`(
             SELECT count(*)::int FROM calendar_sources
             WHERE calendar_sources.group_id = ${calendarGroups.id}
               AND (
@@ -46,32 +48,34 @@ export async function GET() {
                 OR (calendar_sources.sync_errors->>'supportsEvents') IS DISTINCT FROM 'false'
               )
           )`,
-          userName: users.name,
-          userColor: users.color,
-        })
-        .from(calendarGroups)
-        .leftJoin(users, eq(calendarGroups.userId, users.id))
-        .orderBy(
-          // Non-user groups (Family, etc.) come first, then user groups in family member order
-          sql`CASE WHEN ${calendarGroups.type} = 'user' THEN 1 ELSE 0 END`,
-          sql`CASE WHEN ${calendarGroups.type} = 'user' THEN COALESCE(${users.sortOrder}, 999) ELSE ${calendarGroups.sortOrder} END`,
-          asc(calendarGroups.name)
-        );
+            userName: users.name,
+            userColor: users.color,
+          })
+          .from(calendarGroups)
+          .leftJoin(users, eq(calendarGroups.userId, users.id))
+          .orderBy(
+            // Non-user groups (Family, etc.) come first, then user groups in family member order
+            sql`CASE WHEN ${calendarGroups.type} = 'user' THEN 1 ELSE 0 END`,
+            sql`CASE WHEN ${calendarGroups.type} = 'user' THEN COALESCE(${users.sortOrder}, 999) ELSE ${calendarGroups.sortOrder} END`,
+            asc(calendarGroups.name)
+          );
 
-      // For user-type groups, use the current user name but preserve the stored color
-      // (allows users to customize calendar colors independently of their profile color)
-      const processedGroups = groups.map(g => ({
-        id: g.id,
-        name: g.type === 'user' && g.userName ? g.userName : g.storedName,
-        color: g.color,
-        type: g.type,
-        userId: g.userId,
-        sortOrder: g.sortOrder,
-        sourceCount: g.sourceCount,
-      }));
+        // For user-type groups, use the current user name but preserve the stored color
+        // (allows users to customize calendar colors independently of their profile color)
+        const processedGroups = groups.map((g) => ({
+          id: g.id,
+          name: g.type === 'user' && g.userName ? g.userName : g.storedName,
+          color: g.color,
+          type: g.type,
+          userId: g.userId,
+          sortOrder: g.sortOrder,
+          sourceCount: g.sourceCount,
+        }));
 
-      return { groups: processedGroups };
-    }, 600);
+        return { groups: processedGroups };
+      },
+      600
+    );
 
     return NextResponse.json(data);
   } catch (error) {
@@ -144,7 +148,9 @@ export async function POST(request: NextRequest) {
  * Auto-seed default groups for all users + migrate family/user assignments.
  */
 async function seedDefaultGroups() {
-  const allUsers = await db.select({ id: users.id, name: users.name, color: users.color }).from(users);
+  const allUsers = await db
+    .select({ id: users.id, name: users.name, color: users.color })
+    .from(users);
   const existingGroups = await db.select().from(calendarGroups);
 
   // Batch-insert missing user groups
@@ -181,21 +187,36 @@ async function seedDefaultGroups() {
 
   // Migrate ungrouped sources using a Map for O(1) lookups
   const ungroupedSources = await db
-    .select({ id: calendarSources.id, userId: calendarSources.userId, isFamily: calendarSources.isFamily })
+    .select({
+      id: calendarSources.id,
+      userId: calendarSources.userId,
+      isFamily: calendarSources.isFamily,
+    })
     .from(calendarSources)
-    .where(sql`${calendarSources.groupId} IS NULL AND (${calendarSources.userId} IS NOT NULL OR ${calendarSources.isFamily} = true)`);
+    .where(
+      sql`${calendarSources.groupId} IS NULL AND (${calendarSources.userId} IS NOT NULL OR ${calendarSources.isFamily} = true)`
+    );
 
   if (ungroupedSources.length > 0) {
     const refreshedGroups = await db.select().from(calendarGroups);
     const userGroupMap = new Map(
       refreshedGroups.filter((g) => g.type === 'user' && g.userId).map((g) => [g.userId!, g.id])
     );
-    const familyGroupId = refreshedGroups.find((g) => g.type === 'family' || g.name === 'Family')?.id;
+    const familyGroupId = refreshedGroups.find(
+      (g) => g.type === 'family' || g.name === 'Family'
+    )?.id;
 
     for (const source of ungroupedSources) {
-      const targetGroupId = source.isFamily ? familyGroupId : (source.userId ? userGroupMap.get(source.userId) : undefined);
+      const targetGroupId = source.isFamily
+        ? familyGroupId
+        : source.userId
+          ? userGroupMap.get(source.userId)
+          : undefined;
       if (targetGroupId) {
-        await db.update(calendarSources).set({ groupId: targetGroupId }).where(eq(calendarSources.id, source.id));
+        await db
+          .update(calendarSources)
+          .set({ groupId: targetGroupId })
+          .where(eq(calendarSources.id, source.id));
       }
     }
   }

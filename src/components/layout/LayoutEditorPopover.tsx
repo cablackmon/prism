@@ -22,10 +22,8 @@ export function PopoverButton({
     <div className="relative">
       <button
         onClick={onToggle}
-        className={`px-2 py-1.5 text-xs rounded-md transition-colors flex items-center gap-1 whitespace-nowrap ${
-          isActive
-            ? 'bg-accent text-accent-foreground'
-            : 'bg-muted hover:bg-accent'
+        className={`flex items-center gap-1 whitespace-nowrap rounded-md px-2 py-1.5 text-xs transition-colors ${
+          isActive ? 'bg-accent text-accent-foreground' : 'bg-muted hover:bg-accent'
         }`}
       >
         {label}
@@ -33,7 +31,7 @@ export function PopoverButton({
       </button>
       {isActive && (
         <div
-          className="absolute top-full mt-1 z-50 bg-popover border border-border rounded-md shadow-lg"
+          className="absolute top-full z-50 mt-1 rounded-md border border-border bg-popover shadow-lg"
           style={{
             width: width ?? 'auto',
             ...(align === 'right' ? { right: 0 } : { left: 0 }),

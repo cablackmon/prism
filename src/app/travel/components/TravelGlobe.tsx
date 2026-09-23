@@ -25,8 +25,15 @@ interface TravelGlobeProps {
 }
 
 export function TravelGlobe({
-  pins, trips, selectedPinId, selectedTripId, darkMode, overlayOpen,
-  onPinClick, onTripStopClick, onMapClick,
+  pins,
+  trips,
+  selectedPinId,
+  selectedTripId,
+  darkMode,
+  overlayOpen,
+  onPinClick,
+  onTripStopClick,
+  onMapClick,
 }: TravelGlobeProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -40,14 +47,26 @@ export function TravelGlobe({
   const updateCullingRef = useRef<(() => void) | null>(null);
   const [zoomTier, setZoomTier] = useState(0);
 
-  const { startRotation, stopRotation, scheduleResume, cleanup, overlayOpenRef } =
-    useGlobeRotation(mapRef, overlayOpen);
+  const { startRotation, stopRotation, scheduleResume, cleanup, overlayOpenRef } = useGlobeRotation(
+    mapRef,
+    overlayOpen
+  );
 
-  useEffect(() => { onPinClickRef.current = onPinClick; }, [onPinClick]);
-  useEffect(() => { onTripStopClickRef.current = onTripStopClick; }, [onTripStopClick]);
-  useEffect(() => { onMapClickRef.current = onMapClick; }, [onMapClick]);
-  useEffect(() => { pinsRef.current = pins; }, [pins]);
-  useEffect(() => { tripsRef.current = trips; }, [trips]);
+  useEffect(() => {
+    onPinClickRef.current = onPinClick;
+  }, [onPinClick]);
+  useEffect(() => {
+    onTripStopClickRef.current = onTripStopClick;
+  }, [onTripStopClick]);
+  useEffect(() => {
+    onMapClickRef.current = onMapClick;
+  }, [onMapClick]);
+  useEffect(() => {
+    pinsRef.current = pins;
+  }, [pins]);
+  useEffect(() => {
+    tripsRef.current = trips;
+  }, [trips]);
 
   // Initialize map once
   useEffect(() => {
@@ -55,7 +74,10 @@ export function TravelGlobe({
     const map = new maplibregl.Map({
       container: containerRef.current,
       style: STYLE_LIGHT,
-      zoom: 2.8, center: [0, 20], pitchWithRotate: false, attributionControl: false,
+      zoom: 2.8,
+      center: [0, 20],
+      pitchWithRotate: false,
+      attributionControl: false,
     });
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
     map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-left');
@@ -103,14 +125,22 @@ export function TravelGlobe({
     updateCullingRef.current = updateCulling;
     map.on('move', updateCulling);
 
-    const onInteraction = () => { stopRotation(); scheduleResume(); };
+    const onInteraction = () => {
+      stopRotation();
+      scheduleResume();
+    };
     map.on('mousedown', onInteraction);
     map.on('touchstart', onInteraction);
     map.on('wheel', onInteraction);
 
-    popupRef.current = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 14, className: 'travel-pin-popup' });
+    popupRef.current = new maplibregl.Popup({
+      closeButton: false,
+      closeOnClick: false,
+      offset: 14,
+      className: 'travel-pin-popup',
+    });
     map.on('click', (e) => {
-      const lng = ((e.lngLat.lng + 180) % 360 + 360) % 360 - 180;
+      const lng = ((((e.lngLat.lng + 180) % 360) + 360) % 360) - 180;
       onMapClickRef.current(e.lngLat.lat, lng);
     });
     mapRef.current = map;
@@ -134,7 +164,10 @@ export function TravelGlobe({
     const currentIds = new Set(pins.map((p) => p.id));
 
     for (const [id, marker] of markersRef.current) {
-      if (!currentIds.has(id)) { marker.remove(); markersRef.current.delete(id); }
+      if (!currentIds.has(id)) {
+        marker.remove();
+        markersRef.current.delete(id);
+      }
     }
 
     for (const pin of pins) {
@@ -148,18 +181,29 @@ export function TravelGlobe({
         popupRef.current?.remove();
         if (pin.tripId) {
           const trip = tripsRef.current.find((t) => t.id === pin.tripId);
-          if (trip) { onTripStopClickRef.current(pin, trip); return; }
+          if (trip) {
+            onTripStopClickRef.current(pin, trip);
+            return;
+          }
         }
         onPinClickRef.current(pin);
       });
       el.addEventListener('mouseenter', () => {
         if (!map) return;
-        popupRef.current?.setLngLat([pin.longitude, pin.latitude]).setHTML(buildTooltipHTML(pin, ctx)).addTo(map);
+        popupRef.current
+          ?.setLngLat([pin.longitude, pin.latitude])
+          .setHTML(buildTooltipHTML(pin, ctx))
+          .addTo(map);
       });
-      el.addEventListener('mouseleave', () => { popupRef.current?.remove(); });
+      el.addEventListener('mouseleave', () => {
+        popupRef.current?.remove();
+      });
 
       const existing = markersRef.current.get(pin.id);
-      if (existing) { existing.remove(); markersRef.current.delete(pin.id); }
+      if (existing) {
+        existing.remove();
+        markersRef.current.delete(pin.id);
+      }
       el.dataset.baseOpacity = el.style.opacity || '1';
       const marker = new maplibregl.Marker({ element: el, anchor })
         .setLngLat([pin.longitude, pin.latitude])
@@ -190,12 +234,23 @@ export function TravelGlobe({
     if (selectedPinId) {
       const parent = pins.find((p) => p.id === selectedPinId);
       if (parent && !parent.tripId && (parent.latitude !== 0 || parent.longitude !== 0)) {
-        const children = pins.filter((p) => p.parentId === selectedPinId && (p.latitude !== 0 || p.longitude !== 0));
+        const children = pins.filter(
+          (p) => p.parentId === selectedPinId && (p.latitude !== 0 || p.longitude !== 0)
+        );
         children.forEach((c) => {
           spokeFeatures.push({
             type: 'Feature' as const,
-            properties: { color: c.pinType === 'national_park' ? NPS_COLOR : '#8B5CF6', active: true },
-            geometry: { type: 'LineString' as const, coordinates: [[parent.longitude, parent.latitude], [c.longitude, c.latitude]] },
+            properties: {
+              color: c.pinType === 'national_park' ? NPS_COLOR : '#8B5CF6',
+              active: true,
+            },
+            geometry: {
+              type: 'LineString' as const,
+              coordinates: [
+                [parent.longitude, parent.latitude],
+                [c.longitude, c.latitude],
+              ],
+            },
           });
         });
       }
@@ -210,16 +265,26 @@ export function TravelGlobe({
     if (!map) return;
 
     if (selectedTripId) {
-      const tripStops = pins.filter((p) => p.tripId === selectedTripId && (p.latitude !== 0 || p.longitude !== 0));
+      const tripStops = pins.filter(
+        (p) => p.tripId === selectedTripId && (p.latitude !== 0 || p.longitude !== 0)
+      );
       if (tripStops.length === 0) return;
       const firstStop = tripStops[0]!;
       if (tripStops.length === 1) {
-        map.flyTo({ center: [firstStop.longitude, firstStop.latitude], zoom: Math.max(map.getZoom(), 4), duration: 800, essential: true });
+        map.flyTo({
+          center: [firstStop.longitude, firstStop.latitude],
+          zoom: Math.max(map.getZoom(), 4),
+          duration: 800,
+          essential: true,
+        });
         return;
       }
       const bounds = tripStops.reduce(
         (b, p) => b.extend([p.longitude, p.latitude]),
-        new maplibregl.LngLatBounds([firstStop.longitude, firstStop.latitude], [firstStop.longitude, firstStop.latitude])
+        new maplibregl.LngLatBounds(
+          [firstStop.longitude, firstStop.latitude],
+          [firstStop.longitude, firstStop.latitude]
+        )
       );
       map.fitBounds(bounds, { padding: 80, duration: 800, essential: true, maxZoom: 10 });
       return;
@@ -228,7 +293,12 @@ export function TravelGlobe({
     if (selectedPinId) {
       const pin = pins.find((p) => p.id === selectedPinId);
       if (!pin || (pin.latitude === 0 && pin.longitude === 0)) return;
-      map.flyTo({ center: [pin.longitude, pin.latitude], zoom: Math.max(map.getZoom(), 4), duration: 800, essential: true });
+      map.flyTo({
+        center: [pin.longitude, pin.latitude],
+        zoom: Math.max(map.getZoom(), 4),
+        duration: 800,
+        essential: true,
+      });
     }
   }, [selectedPinId, selectedTripId, pins]);
 
@@ -240,7 +310,10 @@ export function TravelGlobe({
         .globe-dark .maplibregl-canvas-container { filter: brightness(0.72) saturate(0.55) contrast(1.08) hue-rotate(5deg); }
         .travel-pin-hidden { opacity: 0 !important; pointer-events: none !important; visibility: hidden !important; }
       `}</style>
-      <div ref={containerRef} className={`flex-1 rounded-lg overflow-hidden${darkMode ? ' globe-dark' : ''}`} />
+      <div
+        ref={containerRef}
+        className={`flex-1 rounded-lg overflow-hidden${darkMode ? 'globe-dark' : ''}`}
+      />
     </>
   );
 }

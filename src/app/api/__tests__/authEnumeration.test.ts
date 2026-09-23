@@ -25,15 +25,18 @@ jest.mock('@/lib/auth', () => ({
 
 // ---- DB mock (chainable, returns empty arrays) ----
 function makeChain(): unknown {
-  return new Proxy({}, {
-    get: (_t, prop) => {
-      if (prop === 'then') {
-        const p = Promise.resolve([]);
-        return (p as Promise<unknown[]>).then.bind(p);
-      }
-      return (..._args: unknown[]) => makeChain();
-    },
-  });
+  return new Proxy(
+    {},
+    {
+      get: (_t, prop) => {
+        if (prop === 'then') {
+          const p = Promise.resolve([]);
+          return (p as Promise<unknown[]>).then.bind(p);
+        }
+        return (..._args: unknown[]) => makeChain();
+      },
+    }
+  );
 }
 
 jest.mock('@/lib/db/client', () => ({
@@ -42,9 +45,18 @@ jest.mock('@/lib/db/client', () => ({
 
 jest.mock('@/lib/db/schema', () => ({}));
 jest.mock('drizzle-orm', () => ({
-  eq: jest.fn(), and: jest.fn(), desc: jest.fn(), asc: jest.fn(),
-  gte: jest.fn(), lte: jest.fn(), or: jest.fn(), isNull: jest.fn(),
-  sql: jest.fn(), ne: jest.fn(), count: jest.fn(), inArray: jest.fn(),
+  eq: jest.fn(),
+  and: jest.fn(),
+  desc: jest.fn(),
+  asc: jest.fn(),
+  gte: jest.fn(),
+  lte: jest.fn(),
+  or: jest.fn(),
+  isNull: jest.fn(),
+  sql: jest.fn(),
+  ne: jest.fn(),
+  count: jest.fn(),
+  inArray: jest.fn(),
   aliasedTable: jest.fn(() => ({})),
 }));
 jest.mock('drizzle-orm/pg-core', () => ({ alias: jest.fn(() => ({})) }));

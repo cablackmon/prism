@@ -64,7 +64,12 @@ export function useMeals(options: UseMealsOptions = {}) {
   const params = new URLSearchParams();
   if (weekOf) params.set('weekOf', weekOf);
 
-  const { data: meals, loading, error, refresh } = useFetch<Meal[]>({
+  const {
+    data: meals,
+    loading,
+    error,
+    refresh,
+  } = useFetch<Meal[]>({
     url: `/api/meals?${params.toString()}`,
     initialData: [],
     transform: transformMeals,

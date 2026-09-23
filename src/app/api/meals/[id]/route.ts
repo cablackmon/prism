@@ -32,10 +32,7 @@ interface RouteParams {
  * GET /api/meals/[id]
  * Retrieves a single meal by its ID.
  */
-export async function GET(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function GET(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -77,19 +74,13 @@ export async function GET(
       .where(eq(meals.id, id));
 
     if (!mealWithUser) {
-      return NextResponse.json(
-        { error: 'Meal not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Meal not found' }, { status: 404 });
     }
 
     return NextResponse.json(formatMealRow(mealWithUser));
   } catch (error) {
     logError('Error fetching meal:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch meal' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch meal' }, { status: 500 });
   }
 }
 
@@ -106,10 +97,7 @@ export async function GET(
  *   cooked?: boolean  // Mark as cooked/uncooked
  * }
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -125,10 +113,7 @@ export async function PATCH(
       .where(eq(meals.id, id));
 
     if (!existingMeal) {
-      return NextResponse.json(
-        { error: 'Meal not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Meal not found' }, { status: 404 });
     }
 
     // Validate request body
@@ -146,14 +131,16 @@ export async function PATCH(
     };
 
     if ('name' in validation.data) updateData.name = validation.data.name;
-    if ('description' in validation.data) updateData.description = validation.data.description || null;
+    if ('description' in validation.data)
+      updateData.description = validation.data.description || null;
     if ('recipe' in validation.data) updateData.recipe = validation.data.recipe || null;
     if ('recipeUrl' in validation.data) updateData.recipeUrl = validation.data.recipeUrl || null;
     if ('recipeId' in validation.data) updateData.recipeId = validation.data.recipeId || null;
     if ('prepTime' in validation.data) updateData.prepTime = validation.data.prepTime || null;
     if ('cookTime' in validation.data) updateData.cookTime = validation.data.cookTime || null;
     if ('servings' in validation.data) updateData.servings = validation.data.servings || null;
-    if ('ingredients' in validation.data) updateData.ingredients = validation.data.ingredients || null;
+    if ('ingredients' in validation.data)
+      updateData.ingredients = validation.data.ingredients || null;
     if ('dayOfWeek' in validation.data) updateData.dayOfWeek = validation.data.dayOfWeek;
     if ('mealType' in validation.data) updateData.mealType = validation.data.mealType;
     if ('mealTime' in validation.data) updateData.mealTime = validation.data.mealTime;
@@ -176,10 +163,7 @@ export async function PATCH(
     }
 
     // Execute update
-    await db
-      .update(meals)
-      .set(updateData)
-      .where(eq(meals.id, id));
+    await db.update(meals).set(updateData).where(eq(meals.id, id));
 
     // Fetch and return updated meal
     const [updatedMealWithUser] = await db
@@ -217,17 +201,15 @@ export async function PATCH(
       .where(eq(meals.id, id));
 
     if (!updatedMealWithUser) {
-      return NextResponse.json(
-        { error: 'Meal not found after update' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Meal not found after update' }, { status: 404 });
     }
 
     await invalidateEntity('meals');
 
-    const patchSummary = ('cookedBy' in validation.data && validation.data.cookedBy)
-      ? `Marked cooked: ${updatedMealWithUser.name}`
-      : `Updated meal: ${updatedMealWithUser.name}`;
+    const patchSummary =
+      'cookedBy' in validation.data && validation.data.cookedBy
+        ? `Marked cooked: ${updatedMealWithUser.name}`
+        : `Updated meal: ${updatedMealWithUser.name}`;
 
     logActivity({
       userId: auth.userId,
@@ -240,10 +222,7 @@ export async function PATCH(
     return NextResponse.json(formatMealRow(updatedMealWithUser));
   } catch (error) {
     logError('Error updating meal:', error);
-    return NextResponse.json(
-      { error: 'Failed to update meal' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to update meal' }, { status: 500 });
   }
 }
 
@@ -251,10 +230,7 @@ export async function PATCH(
  * DELETE /api/meals/[id]
  * Deletes a specific meal.
  */
-export async function DELETE(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -268,16 +244,11 @@ export async function DELETE(
       .where(eq(meals.id, id));
 
     if (!existingMeal) {
-      return NextResponse.json(
-        { error: 'Meal not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Meal not found' }, { status: 404 });
     }
 
     // Delete the meal
-    await db
-      .delete(meals)
-      .where(eq(meals.id, id));
+    await db.delete(meals).where(eq(meals.id, id));
 
     await invalidateEntity('meals');
 
@@ -298,9 +269,6 @@ export async function DELETE(
     });
   } catch (error) {
     logError('Error deleting meal:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete meal' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to delete meal' }, { status: 500 });
   }
 }

@@ -29,7 +29,9 @@ import {
 } from '@/lib/services/calendar-sync';
 import { logError } from '@/lib/utils/logError';
 
-interface RouteCtx { params: Promise<{ sourceId: string }> }
+interface RouteCtx {
+  params: Promise<{ sourceId: string }>;
+}
 
 async function assertWritable(sourceId: string): Promise<true | NextResponse> {
   const source = await db.query.calendarSources.findFirst({
@@ -42,8 +44,11 @@ async function assertWritable(sourceId: string): Promise<true | NextResponse> {
   const cfg = (source.providerConfig as Record<string, unknown> | null) ?? {};
   if (cfg.writable !== true) {
     return NextResponse.json(
-      { error: 'CalDAV source is not flagged writable. Set providerConfig.writable=true to enable two-way write.' },
-      { status: 403 },
+      {
+        error:
+          'CalDAV source is not flagged writable. Set providerConfig.writable=true to enable two-way write.',
+      },
+      { status: 403 }
     );
   }
   return true;

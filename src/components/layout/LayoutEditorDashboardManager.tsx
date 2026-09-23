@@ -8,10 +8,24 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 const moreItemClass = 'w-full text-left px-3 py-1.5 text-sm hover:bg-accent transition-colors';
 
-export function DashboardDropdown({ layoutName, isActive, onToggle, allDashboards, currentDashboardId, onSwitchDashboard, onClose, onCreateOpen }: {
-  layoutName?: string; isActive: boolean; onToggle: () => void;
-  allDashboards: DashboardInfo[]; currentDashboardId?: string;
-  onSwitchDashboard?: (slug: string) => void; onClose: () => void; onCreateOpen: () => void;
+export function DashboardDropdown({
+  layoutName,
+  isActive,
+  onToggle,
+  allDashboards,
+  currentDashboardId,
+  onSwitchDashboard,
+  onClose,
+  onCreateOpen,
+}: {
+  layoutName?: string;
+  isActive: boolean;
+  onToggle: () => void;
+  allDashboards: DashboardInfo[];
+  currentDashboardId?: string;
+  onSwitchDashboard?: (slug: string) => void;
+  onClose: () => void;
+  onCreateOpen: () => void;
 }) {
   return (
     <PopoverButton
@@ -20,23 +34,33 @@ export function DashboardDropdown({ layoutName, isActive, onToggle, allDashboard
       onToggle={onToggle}
       width={220}
     >
-      <div className="py-1 max-h-[40vh] overflow-auto">
-        {allDashboards.map(d => (
-          <button key={d.id} onClick={() => {
-            if (d.id !== currentDashboardId && d.slug) {
-              sessionStorage.setItem('prism:editing', 'true'); onSwitchDashboard?.(d.slug);
-            } else if (d.id !== currentDashboardId && d.isDefault) {
-              sessionStorage.setItem('prism:editing', 'true'); window.location.href = '/';
-            }
-            onClose();
-          }} className={`w-full text-left px-3 py-1.5 text-sm hover:bg-accent transition-colors flex items-center gap-2 ${d.id === currentDashboardId ? 'bg-accent/50' : ''}`}>
+      <div className="max-h-[40vh] overflow-auto py-1">
+        {allDashboards.map((d) => (
+          <button
+            key={d.id}
+            onClick={() => {
+              if (d.id !== currentDashboardId && d.slug) {
+                sessionStorage.setItem('prism:editing', 'true');
+                onSwitchDashboard?.(d.slug);
+              } else if (d.id !== currentDashboardId && d.isDefault) {
+                sessionStorage.setItem('prism:editing', 'true');
+                window.location.href = '/';
+              }
+              onClose();
+            }}
+            className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition-colors hover:bg-accent ${d.id === currentDashboardId ? 'bg-accent/50' : ''}`}
+          >
             <span className="flex-1 truncate">{d.name}</span>
             {d.id === currentDashboardId && <CheckIcon />}
-            {d.isDefault && d.id !== currentDashboardId && <span className="text-[10px] text-muted-foreground">default</span>}
+            {d.isDefault && d.id !== currentDashboardId && (
+              <span className="text-[10px] text-muted-foreground">default</span>
+            )}
           </button>
         ))}
-        <div className="border-t border-border my-1" />
-        <button onClick={onCreateOpen} className={`${moreItemClass} text-primary`}>+ New Dashboard...</button>
+        <div className="my-1 border-t border-border" />
+        <button onClick={onCreateOpen} className={`${moreItemClass} text-primary`}>
+          + New Dashboard...
+        </button>
       </div>
     </PopoverButton>
   );
@@ -89,20 +113,28 @@ export function SaveAsDialog({
 
   return (
     <>
-      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50" onClick={onClose}>
-        <div className="bg-popover border border-border rounded-lg shadow-xl p-4 max-w-sm w-full mx-4 space-y-3" onClick={e => e.stopPropagation()}>
+      <div
+        className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50"
+        onClick={onClose}
+      >
+        <div
+          className="mx-4 w-full max-w-sm space-y-3 rounded-lg border border-border bg-popover p-4 shadow-xl"
+          onClick={(e) => e.stopPropagation()}
+        >
           <div className="text-sm font-medium">Save As</div>
 
           {/* Overwrite existing */}
           {allDashboards.length > 0 && (
             <div>
-              <div className="text-xs text-muted-foreground mb-1">Overwrite an existing dashboard</div>
-              <div className="space-y-1 max-h-[30vh] overflow-auto">
-                {allDashboards.map(d => (
+              <div className="mb-1 text-xs text-muted-foreground">
+                Overwrite an existing dashboard
+              </div>
+              <div className="max-h-[30vh] space-y-1 overflow-auto">
+                {allDashboards.map((d) => (
                   <button
                     key={d.id}
                     onClick={() => handleOverwriteClick(d)}
-                    className="w-full text-left px-2 py-1.5 text-sm rounded-md hover:bg-accent transition-colors flex items-center gap-2"
+                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors hover:bg-accent"
                   >
                     <span className="flex-1 truncate">{d.name}</span>
                     {d.id === currentDashboardId && (
@@ -119,21 +151,25 @@ export function SaveAsDialog({
 
           {/* New dashboard */}
           <div className="border-t border-border pt-3">
-            <label className="text-xs text-muted-foreground block mb-1">Save as a new dashboard</label>
+            <label className="mb-1 block text-xs text-muted-foreground">
+              Save as a new dashboard
+            </label>
             <div className="flex gap-2">
               <input
                 type="text"
                 value={newName}
-                onChange={e => setNewName(e.target.value)}
+                onChange={(e) => setNewName(e.target.value)}
                 placeholder="New dashboard name"
-                className="flex-1 px-2 py-1.5 text-sm bg-muted border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                className="flex-1 rounded-md border border-border bg-muted px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                 maxLength={100}
-                onKeyDown={e => { if (e.key === 'Enter') handleCreateNew(); }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleCreateNew();
+                }}
               />
               <button
                 onClick={handleCreateNew}
                 disabled={!newName.trim()}
-                className="px-3 py-1.5 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                className="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
               >
                 Create
               </button>
@@ -143,7 +179,7 @@ export function SaveAsDialog({
           <div className="flex justify-end">
             <button
               onClick={onClose}
-              className="px-3 py-1.5 text-sm rounded-md bg-muted hover:bg-accent transition-colors"
+              className="rounded-md bg-muted px-3 py-1.5 text-sm transition-colors hover:bg-accent"
             >
               Cancel
             </button>
@@ -173,7 +209,10 @@ export function CreateDashboardDialog({
   onClose: () => void;
   onCreate: (name: string, startFrom: 'blank' | 'template' | 'copy') => void;
 }) {
-  const [createForm, setCreateForm] = useState({ name: '', startFrom: 'template' as 'blank' | 'template' | 'copy' });
+  const [createForm, setCreateForm] = useState({
+    name: '',
+    startFrom: 'template' as 'blank' | 'template' | 'copy',
+  });
 
   if (!open) return null;
 
@@ -184,37 +223,45 @@ export function CreateDashboardDialog({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50" onClick={onClose}>
-      <div className="bg-popover border border-border rounded-lg shadow-xl p-4 max-w-sm w-full mx-4 space-y-3" onClick={e => e.stopPropagation()}>
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50"
+      onClick={onClose}
+    >
+      <div
+        className="mx-4 w-full max-w-sm space-y-3 rounded-lg border border-border bg-popover p-4 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="text-sm font-medium">New Dashboard</div>
         <div>
           <label className="text-xs text-muted-foreground">Name</label>
           <input
             type="text"
             value={createForm.name}
-            onChange={e => setCreateForm(f => ({ ...f, name: e.target.value }))}
+            onChange={(e) => setCreateForm((f) => ({ ...f, name: e.target.value }))}
             placeholder="e.g. Kitchen Display"
-            className="w-full px-2 py-1.5 text-sm bg-muted border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full rounded-md border border-border bg-muted px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             maxLength={100}
             autoFocus
-            onKeyDown={e => { if (e.key === 'Enter') handleSubmit(); }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleSubmit();
+            }}
           />
         </div>
         <div>
-          <label className="text-xs text-muted-foreground block mb-1">Start from</label>
+          <label className="mb-1 block text-xs text-muted-foreground">Start from</label>
           <div className="flex gap-2">
-            {([
+            {[
               { value: 'template' as const, label: 'Default Template' },
               { value: 'copy' as const, label: 'Copy Current' },
               { value: 'blank' as const, label: 'Blank' },
-            ]).map(opt => (
+            ].map((opt) => (
               <button
                 key={opt.value}
-                onClick={() => setCreateForm(f => ({ ...f, startFrom: opt.value }))}
-                className={`px-2 py-1 text-xs rounded-md border transition-colors ${
+                onClick={() => setCreateForm((f) => ({ ...f, startFrom: opt.value }))}
+                className={`rounded-md border px-2 py-1 text-xs transition-colors ${
                   createForm.startFrom === opt.value
-                    ? 'bg-primary text-primary-foreground border-primary'
-                    : 'bg-muted border-border hover:bg-accent'
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : 'border-border bg-muted hover:bg-accent'
                 }`}
               >
                 {opt.label}
@@ -222,17 +269,17 @@ export function CreateDashboardDialog({
             ))}
           </div>
         </div>
-        <div className="flex gap-2 justify-end">
+        <div className="flex justify-end gap-2">
           <button
             onClick={onClose}
-            className="px-3 py-1.5 text-sm rounded-md bg-muted hover:bg-accent transition-colors"
+            className="rounded-md bg-muted px-3 py-1.5 text-sm transition-colors hover:bg-accent"
           >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
             disabled={!createForm.name.trim()}
-            className="px-3 py-1.5 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
+            className="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
           >
             Create
           </button>

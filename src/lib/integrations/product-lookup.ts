@@ -4,8 +4,15 @@
  * Each provider has a 3-second timeout.
  */
 
-
-type ShoppingCategory = 'produce' | 'dairy' | 'meat' | 'bakery' | 'frozen' | 'pantry' | 'household' | 'other';
+type ShoppingCategory =
+  | 'produce'
+  | 'dairy'
+  | 'meat'
+  | 'bakery'
+  | 'frozen'
+  | 'pantry'
+  | 'household'
+  | 'other';
 
 export interface ProductLookupResult {
   name: string;
@@ -18,22 +25,21 @@ const CACHE_TTL = 60 * 60 * 24 * 7; // 7 days in seconds
 
 function mapCategory(raw: string): ShoppingCategory {
   const s = raw.toLowerCase();
-  if (/dairy|milk|cheese|yogurt|egg|butter|cream/.test(s))      return 'dairy';
+  if (/dairy|milk|cheese|yogurt|egg|butter|cream/.test(s)) return 'dairy';
   if (/meat|beef|pork|chicken|poultry|seafood|fish|deli/.test(s)) return 'meat';
-  if (/produce|fruit|vegetable|fresh|salad|herb/.test(s))       return 'produce';
-  if (/frozen/.test(s))                                           return 'frozen';
-  if (/bread|bak|pastry|cake|roll|bun|muffin/.test(s))          return 'bakery';
+  if (/produce|fruit|vegetable|fresh|salad|herb/.test(s)) return 'produce';
+  if (/frozen/.test(s)) return 'frozen';
+  if (/bread|bak|pastry|cake|roll|bun|muffin/.test(s)) return 'bakery';
   if (/household|cleaning|paper|hygiene|laundry|soap|detergent/.test(s)) return 'household';
-  if (/cereal|pasta|rice|sauce|canned|snack|bever|drink|juice|soda|chip|cracker|coffee|tea/.test(s)) return 'pantry';
+  if (/cereal|pasta|rice|sauce|canned|snack|bever|drink|juice|soda|chip|cracker|coffee|tea/.test(s))
+    return 'pantry';
   return 'other';
 }
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return Promise.race([
     promise,
-    new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('timeout')), ms)
-    ),
+    new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), ms)),
   ]);
 }
 
@@ -42,10 +48,10 @@ async function lookupOpenFoodFacts(barcode: string): Promise<ProductLookupResult
     fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`, {
       headers: { 'User-Agent': 'Prism-Dashboard/1.0' },
     }),
-    3000,
+    3000
   );
   if (!res.ok) return null;
-  const data = await res.json() as {
+  const data = (await res.json()) as {
     status: number;
     product?: {
       product_name?: string;
@@ -68,10 +74,10 @@ async function lookupOpenFoodFacts(barcode: string): Promise<ProductLookupResult
 async function lookupUpcItemDb(barcode: string): Promise<ProductLookupResult | null> {
   const res = await withTimeout(
     fetch(`https://api.upcitemdb.com/prod/trial/lookup?upc=${barcode}`),
-    3000,
+    3000
   );
   if (!res.ok) return null;
-  const data = await res.json() as {
+  const data = (await res.json()) as {
     code?: string;
     items?: { title?: string; brand?: string; category?: string }[];
   };
@@ -102,7 +108,9 @@ export async function lookupBarcode(barcode: string): Promise<ProductLookupResul
     if (client) {
       await client.set(`barcode:${barcode}`, JSON.stringify(result), { EX: CACHE_TTL });
     }
-  } catch { /* Redis unavailable — continue without caching */ }
+  } catch {
+    /* Redis unavailable — continue without caching */
+  }
 
   return result;
 }

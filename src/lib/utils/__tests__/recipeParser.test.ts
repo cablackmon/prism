@@ -86,7 +86,9 @@ describe('parseRecipeFromUrl', () => {
     });
 
     it('rejects non-HTTP protocols', async () => {
-      await expect(parseRecipe('ftp://example.com/recipe')).rejects.toThrow('Only HTTP/HTTPS URLs are supported');
+      await expect(parseRecipe('ftp://example.com/recipe')).rejects.toThrow(
+        'Only HTTP/HTTPS URLs are supported'
+      );
     });
 
     it('blocks localhost', async () => {
@@ -124,7 +126,9 @@ describe('parseRecipeFromUrl', () => {
   describe('fetch error handling', () => {
     it('throws on non-OK response', async () => {
       mockFetchError(404);
-      await expect(parseRecipe('https://example.com/recipe')).rejects.toThrow('Failed to fetch URL: 404');
+      await expect(parseRecipe('https://example.com/recipe')).rejects.toThrow(
+        'Failed to fetch URL: 404'
+      );
     });
   });
 
@@ -136,10 +140,7 @@ describe('parseRecipeFromUrl', () => {
     });
 
     it('finds Recipe in @graph array', async () => {
-      mockFetchHtml(makeGraphHtml([
-        { '@type': 'WebPage', name: 'Page' },
-        RECIPE_JSON_LD,
-      ]));
+      mockFetchHtml(makeGraphHtml([{ '@type': 'WebPage', name: 'Page' }, RECIPE_JSON_LD]));
       const result = await parseRecipe('https://example.com/recipe');
       expect(result?.name).toBe('Test Pasta');
     });
@@ -163,7 +164,9 @@ describe('parseRecipeFromUrl', () => {
     });
 
     it('handles invalid JSON-LD gracefully', async () => {
-      mockFetchHtml('<html><head><script type="application/ld+json">{not valid json}</script></head></html>');
+      mockFetchHtml(
+        '<html><head><script type="application/ld+json">{not valid json}</script></head></html>'
+      );
       const result = await parseRecipe('https://example.com/recipe');
       expect(result).toBeNull();
     });
@@ -229,7 +232,9 @@ describe('parseRecipeFromUrl', () => {
     });
 
     it('handles array of strings', async () => {
-      mockFetchHtml(makeHtml({ ...RECIPE_JSON_LD, image: ['https://img.com/1.jpg', 'https://img.com/2.jpg'] }));
+      mockFetchHtml(
+        makeHtml({ ...RECIPE_JSON_LD, image: ['https://img.com/1.jpg', 'https://img.com/2.jpg'] })
+      );
       const result = await parseRecipe('https://example.com/recipe');
       expect(result?.imageUrl).toBe('https://img.com/1.jpg');
     });
@@ -293,11 +298,13 @@ describe('parseRecipeFromUrl', () => {
     });
 
     it('extracts first value from arrays', async () => {
-      mockFetchHtml(makeHtml({
-        ...RECIPE_JSON_LD,
-        recipeCuisine: ['Mexican', 'Tex-Mex'],
-        recipeCategory: ['Appetizer', 'Snack'],
-      }));
+      mockFetchHtml(
+        makeHtml({
+          ...RECIPE_JSON_LD,
+          recipeCuisine: ['Mexican', 'Tex-Mex'],
+          recipeCategory: ['Appetizer', 'Snack'],
+        })
+      );
       const result = await parseRecipe('https://example.com/recipe');
       expect(result?.cuisine).toBe('Mexican');
       expect(result?.category).toBe('Appetizer');

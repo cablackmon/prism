@@ -46,7 +46,7 @@ export function useAutoHideUI() {
 
     const events = ['mousedown', 'touchstart', 'keydown', 'scroll'] as const;
     const handler = () => resetTimer();
-    events.forEach(e => window.addEventListener(e, handler, { passive: true }));
+    events.forEach((e) => window.addEventListener(e, handler, { passive: true }));
 
     // Also reveal on pointer MOVEMENT (throttled). Without this, the hidden
     // toolbar can only be un-hidden by a click — but a click on the collapsed
@@ -69,7 +69,7 @@ export function useAutoHideUI() {
     resetTimer();
 
     return () => {
-      events.forEach(e => window.removeEventListener(e, handler));
+      events.forEach((e) => window.removeEventListener(e, handler));
       window.removeEventListener('mousemove', moveHandler);
       if (timerRef.current) clearTimeout(timerRef.current);
     };
@@ -90,5 +90,9 @@ export function useAutoHideUI() {
     };
   }, []);
 
-  return { autoHideEnabled: enabled, setAutoHideEnabled: setEnabled, uiHidden: mounted && enabled && isDashboard && hidden };
+  return {
+    autoHideEnabled: enabled,
+    setAutoHideEnabled: setEnabled,
+    uiHidden: mounted && enabled && isDashboard && hidden,
+  };
 }

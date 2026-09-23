@@ -70,9 +70,7 @@ describe('POST /api/setup/complete', () => {
       expect.objectContaining({ key: 'displayUserId', value: 'parent-1' })
     );
     // and the completion marker was written too.
-    expect(insertValues).toHaveBeenCalledWith(
-      expect.objectContaining({ key: 'setupComplete' })
-    );
+    expect(insertValues).toHaveBeenCalledWith(expect.objectContaining({ key: 'setupComplete' }));
   });
 
   it('does not overwrite an existing display-user choice', async () => {

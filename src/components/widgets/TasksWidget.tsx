@@ -35,7 +35,6 @@ import { cn } from '@/lib/utils';
 import { WidgetContainer, WidgetEmpty } from './WidgetContainer';
 import { Button, Checkbox, Badge, UserAvatar } from '@/components/ui';
 
-
 /**
  * TASK TYPE
  * Represents a single task item.
@@ -43,7 +42,6 @@ import { Button, Checkbox, Badge, UserAvatar } from '@/components/ui';
 // Task type imported from shared types
 import type { Task } from '@/types';
 export type { Task };
-
 
 /**
  * TASKS WIDGET PROPS
@@ -72,7 +70,6 @@ export interface TasksWidgetProps {
   /** Additional CSS classes */
   className?: string;
 }
-
 
 /**
  * TASKS WIDGET COMPONENT
@@ -122,11 +119,14 @@ export const TasksWidget = React.memo(function TasksWidget({
 
   // Handle toggle - calls external handler which manages auth
   // No optimistic update since auth might be cancelled
-  const handleToggle = useCallback((taskId: string, currentCompleted: boolean) => {
-    const newCompleted = !currentCompleted;
-    // Call external handler - it will handle auth and refresh
-    onTaskToggle?.(taskId, newCompleted);
-  }, [onTaskToggle]);
+  const handleToggle = useCallback(
+    (taskId: string, currentCompleted: boolean) => {
+      const newCompleted = !currentCompleted;
+      // Call external handler - it will handle auth and refresh
+      onTaskToggle?.(taskId, newCompleted);
+    },
+    [onTaskToggle]
+  );
 
   return (
     <WidgetContainer
@@ -167,7 +167,7 @@ export const TasksWidget = React.memo(function TasksWidget({
           }
         />
       ) : (
-        <div className="overflow-auto h-full -mr-2 pr-2">
+        <div className="-mr-2 h-full overflow-auto pr-2">
           <div className="space-y-2">
             {displayTasks.map((task) => (
               <TaskItem
@@ -191,7 +191,6 @@ export const TasksWidget = React.memo(function TasksWidget({
     </WidgetContainer>
   );
 });
-
 
 /**
  * TASK ITEM
@@ -218,8 +217,8 @@ function TaskItem({
   return (
     <div
       className={cn(
-        'flex items-start gap-3 p-2 rounded-lg',
-        'hover:bg-accent/50 transition-colors',
+        'flex items-start gap-3 rounded-lg p-2',
+        'transition-colors hover:bg-accent/50',
         'touch-action-manipulation',
         completed && 'opacity-60'
       )}
@@ -228,7 +227,7 @@ function TaskItem({
           edit modal when the user is just toggling completion. */}
       <Checkbox
         checked={completed}
-        aria-label={`Mark ${task.title} ${completed ? "incomplete" : "complete"}`}
+        aria-label={`Mark ${task.title} ${completed ? 'incomplete' : 'complete'}`}
         onCheckedChange={onToggle}
         onClick={(e) => e.stopPropagation()}
         className="mt-0.5"
@@ -241,18 +240,27 @@ function TaskItem({
 
       {/* Task content — clickable surface that opens the edit modal. */}
       <div
-        className={cn('flex-1 min-w-0', onClick && 'cursor-pointer')}
+        className={cn('min-w-0 flex-1', onClick && 'cursor-pointer')}
         role={onClick ? 'button' : undefined}
         tabIndex={onClick ? 0 : undefined}
         onClick={onClick}
-        onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } } : undefined}
+        onKeyDown={
+          onClick
+            ? (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onClick();
+                }
+              }
+            : undefined
+        }
       >
         <div className="flex items-center gap-2">
           {/* Title */}
           <span
             className={cn(
-              'text-sm font-medium truncate',
-              completed && 'line-through text-muted-foreground'
+              'truncate text-sm font-medium',
+              completed && 'text-muted-foreground line-through'
             )}
           >
             {task.title}
@@ -260,14 +268,14 @@ function TaskItem({
 
           {/* Priority badge */}
           {task.priority === 'high' && (
-            <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
+            <Badge variant="destructive" className="px-1.5 py-0 text-[10px]">
               High
             </Badge>
           )}
         </div>
 
         {/* Metadata row */}
-        <div className="flex items-center gap-2 mt-0.5">
+        <div className="mt-0.5 flex items-center gap-2">
           {/* Assigned to */}
           {task.assignedTo && (
             <div className="flex items-center gap-1">
@@ -278,9 +286,7 @@ function TaskItem({
                 size="sm"
                 className="h-4 w-4 text-[8px]"
               />
-              <span className="text-xs text-muted-foreground">
-                {task.assignedTo.name}
-              </span>
+              <span className="text-xs text-muted-foreground">{task.assignedTo.name}</span>
             </div>
           )}
 
@@ -289,12 +295,10 @@ function TaskItem({
             <span
               className={cn(
                 'text-xs',
-                isOverdue
-                  ? 'text-destructive font-medium'
-                  : 'text-muted-foreground'
+                isOverdue ? 'font-medium text-destructive' : 'text-muted-foreground'
               )}
             >
-              {isOverdue && <AlertCircle className="h-3 w-3 inline mr-0.5" />}
+              {isOverdue && <AlertCircle className="mr-0.5 inline h-3 w-3" />}
               {dueDateDisplay}
             </span>
           )}
@@ -303,7 +307,6 @@ function TaskItem({
     </div>
   );
 }
-
 
 /**
  * FORMAT DUE DATE
@@ -315,5 +318,3 @@ function formatDueDate(date: Date): string {
   if (isPast(date)) return format(date, 'MMM d'); // Overdue
   return format(date, 'EEE, MMM d'); // e.g., "Mon, Jan 21"
 }
-
-

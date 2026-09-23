@@ -51,7 +51,7 @@ export function CarouselArrows({ scrollRef }: CarouselArrowsProps) {
         onClick={() => scrollByPage(-1)}
         disabled={!canLeft}
         aria-label="Scroll left"
-        className={cn(btn, 'left-1', !canLeft && 'opacity-0 pointer-events-none')}
+        className={cn(btn, 'left-1', !canLeft && 'pointer-events-none opacity-0')}
       >
         <ChevronLeft className="h-5 w-5" />
       </button>
@@ -60,7 +60,7 @@ export function CarouselArrows({ scrollRef }: CarouselArrowsProps) {
         onClick={() => scrollByPage(1)}
         disabled={!canRight}
         aria-label="Scroll right"
-        className={cn(btn, 'right-1', !canRight && 'opacity-0 pointer-events-none')}
+        className={cn(btn, 'right-1', !canRight && 'pointer-events-none opacity-0')}
       >
         <ChevronRight className="h-5 w-5" />
       </button>

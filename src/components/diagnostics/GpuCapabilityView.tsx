@@ -159,6 +159,7 @@ export function GpuCapabilityView() {
             error: webgpu.error ?? 'no WebGPU adapter',
             runs: [],
             benchmarkedAdapter: null,
+            readbackControl: 'untested',
           });
           continue;
         }

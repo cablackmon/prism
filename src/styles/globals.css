@@ -146,7 +146,7 @@
   }
 
   ::-webkit-scrollbar {
-    @apply w-2 h-2;
+    @apply h-2 w-2;
   }
 
   ::-webkit-scrollbar-track {
@@ -154,7 +154,7 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-muted-foreground/30 rounded-full;
+    @apply rounded-full bg-muted-foreground/30;
   }
 
   ::-webkit-scrollbar-thumb:hover {
@@ -167,16 +167,16 @@
   }
 
   button,
-  [role="button"],
-  [role="tab"],
-  [role="switch"] {
+  [role='button'],
+  [role='tab'],
+  [role='switch'] {
     -webkit-user-select: none;
     user-select: none;
   }
 
   a,
   button,
-  [role="button"] {
+  [role='button'] {
     touch-action: manipulation;
   }
 
@@ -388,18 +388,32 @@
 }
 
 @keyframes spin-fast {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes rope-wave {
-  0%, 100% { d: path("M0 10 Q10 5 20 10 Q30 15 40 10"); }
-  50% { d: path("M0 10 Q10 15 20 10 Q30 5 40 10"); }
+  0%,
+  100% {
+    d: path('M0 10 Q10 5 20 10 Q30 15 40 10');
+  }
+  50% {
+    d: path('M0 10 Q10 15 20 10 Q30 5 40 10');
+  }
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
 }
 
 .animate-plane-fly {
@@ -419,8 +433,13 @@
 }
 
 @keyframes wiggle {
-  0%, 100% { transform: rotate(-3deg); }
-  50% { transform: rotate(3deg); }
+  0%,
+  100% {
+    transform: rotate(-3deg);
+  }
+  50% {
+    transform: rotate(3deg);
+  }
 }
 
 .animate-wiggle {
@@ -456,16 +475,64 @@
 }
 
 /* Edge handles - 44px for touch targets */
-.react-resizable-handle-n { top: -22px; left: 24px; right: 24px; height: 44px; cursor: n-resize; }
-.react-resizable-handle-s { bottom: -22px; left: 24px; right: 24px; height: 44px; cursor: s-resize; }
-.react-resizable-handle-e { right: -22px; top: 24px; bottom: 24px; width: 44px; cursor: e-resize; }
-.react-resizable-handle-w { left: -22px; top: 24px; bottom: 24px; width: 44px; cursor: w-resize; }
+.react-resizable-handle-n {
+  top: -22px;
+  left: 24px;
+  right: 24px;
+  height: 44px;
+  cursor: n-resize;
+}
+.react-resizable-handle-s {
+  bottom: -22px;
+  left: 24px;
+  right: 24px;
+  height: 44px;
+  cursor: s-resize;
+}
+.react-resizable-handle-e {
+  right: -22px;
+  top: 24px;
+  bottom: 24px;
+  width: 44px;
+  cursor: e-resize;
+}
+.react-resizable-handle-w {
+  left: -22px;
+  top: 24px;
+  bottom: 24px;
+  width: 44px;
+  cursor: w-resize;
+}
 
 /* Corner handles - 48x48 */
-.react-resizable-handle-ne { top: -20px; right: -20px; width: 48px; height: 48px; cursor: ne-resize; }
-.react-resizable-handle-nw { top: -20px; left: -20px; width: 48px; height: 48px; cursor: nw-resize; }
-.react-resizable-handle-se { bottom: -20px; right: -20px; width: 48px; height: 48px; cursor: se-resize; }
-.react-resizable-handle-sw { bottom: -20px; left: -20px; width: 48px; height: 48px; cursor: sw-resize; }
+.react-resizable-handle-ne {
+  top: -20px;
+  right: -20px;
+  width: 48px;
+  height: 48px;
+  cursor: ne-resize;
+}
+.react-resizable-handle-nw {
+  top: -20px;
+  left: -20px;
+  width: 48px;
+  height: 48px;
+  cursor: nw-resize;
+}
+.react-resizable-handle-se {
+  bottom: -20px;
+  right: -20px;
+  width: 48px;
+  height: 48px;
+  cursor: se-resize;
+}
+.react-resizable-handle-sw {
+  bottom: -20px;
+  left: -20px;
+  width: 48px;
+  height: 48px;
+  cursor: sw-resize;
+}
 
 .react-resizable-handle::after {
   content: '';
@@ -534,27 +601,50 @@
 
 /* Keyboard slide animations */
 @keyframes keyboard-in {
-  from { transform: translateY(100%); }
-  to   { transform: translateY(0); }
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
 }
 @keyframes keyboard-out {
-  from { transform: translateY(0); }
-  to   { transform: translateY(100%); }
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(100%);
+  }
 }
-.animate-keyboard-in  { animation: keyboard-in  200ms ease-out forwards; }
-.animate-keyboard-out { animation: keyboard-out 200ms ease-in  forwards; }
+.animate-keyboard-in {
+  animation: keyboard-in 200ms ease-out forwards;
+}
+.animate-keyboard-out {
+  animation: keyboard-out 200ms ease-in forwards;
+}
 
 /* Scan highlight flash on shopping items */
 @keyframes scan-highlight {
-  0%   { background-color: hsl(var(--primary) / 0.25); }
-  100% { background-color: transparent; }
+  0% {
+    background-color: hsl(var(--primary) / 0.25);
+  }
+  100% {
+    background-color: transparent;
+  }
 }
-.scan-highlight { animation: scan-highlight 1.5s ease-out forwards; }
+.scan-highlight {
+  animation: scan-highlight 1.5s ease-out forwards;
+}
 
 /* Mic pulse when listening */
 @keyframes mic-pulse {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.4; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
 }
 [data-virtual-keyboard].is-listening .key-mic {
   animation: mic-pulse 1s infinite;

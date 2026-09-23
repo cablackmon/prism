@@ -63,7 +63,7 @@ describe('TimeFormatProvider', () => {
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
 
     await expect(act(async () => result.current.setTimeFormat('24h'))).rejects.toThrow(
-      'Failed to save time format',
+      'Failed to save time format'
     );
     expect(result.current.timeFormat).toBe('12h');
   });

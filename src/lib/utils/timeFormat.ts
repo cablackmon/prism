@@ -58,7 +58,7 @@ export function toDisplayDate(date: Date | number, timeZone?: string): Date {
       value('hour'),
       value('minute'),
       value('second'),
-      source.getMilliseconds(),
+      source.getMilliseconds()
     );
   } catch {
     return source;
@@ -86,23 +86,20 @@ function getUtcDateKey(date: Date): string {
 }
 
 function nextUtcDateKey(date: Date): string {
-  return getUtcDateKey(new Date(Date.UTC(
-    date.getUTCFullYear(),
-    date.getUTCMonth(),
-    date.getUTCDate() + 1,
-  )));
+  return getUtcDateKey(
+    new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + 1))
+  );
 }
 
 function getAllDayExclusiveEndKey(eventStart: Date, eventEnd: Date): string {
   const startKey = getUtcDateKey(eventStart);
-  const endIsExclusiveMidnight = eventEnd > eventStart
-    && eventEnd.getUTCHours() === 0
-    && eventEnd.getUTCMinutes() === 0
-    && eventEnd.getUTCSeconds() === 0
-    && eventEnd.getUTCMilliseconds() === 0;
-  const endKey = endIsExclusiveMidnight
-    ? getUtcDateKey(eventEnd)
-    : nextUtcDateKey(eventEnd);
+  const endIsExclusiveMidnight =
+    eventEnd > eventStart &&
+    eventEnd.getUTCHours() === 0 &&
+    eventEnd.getUTCMinutes() === 0 &&
+    eventEnd.getUTCSeconds() === 0 &&
+    eventEnd.getUTCMilliseconds() === 0;
+  const endKey = endIsExclusiveMidnight ? getUtcDateKey(eventEnd) : nextUtcDateKey(eventEnd);
 
   return endKey > startKey ? endKey : nextUtcDateKey(eventStart);
 }
@@ -112,15 +109,16 @@ export function eventSpansMultipleDisplayDays(
   start: Date | number,
   end: Date | number,
   allDay: boolean,
-  timeZone?: string,
+  timeZone?: string
 ): boolean {
   const eventStart = new Date(start);
   const eventEnd = new Date(end);
   if (
-    Number.isNaN(eventStart.getTime())
-    || Number.isNaN(eventEnd.getTime())
-    || eventEnd <= eventStart
-  ) return false;
+    Number.isNaN(eventStart.getTime()) ||
+    Number.isNaN(eventEnd.getTime()) ||
+    eventEnd <= eventStart
+  )
+    return false;
 
   if (allDay) {
     return getAllDayExclusiveEndKey(eventStart, eventEnd) > nextUtcDateKey(eventStart);
@@ -136,7 +134,7 @@ export function eventStartsOnDisplayDay(
   start: Date | number,
   allDay: boolean,
   day: Date,
-  timeZone?: string,
+  timeZone?: string
 ): boolean {
   const eventStart = new Date(start);
   if (Number.isNaN(eventStart.getTime())) return false;
@@ -158,16 +156,17 @@ export function isCalendarEventPast(
   end: Date | number,
   allDay: boolean,
   now: Date | number = new Date(),
-  timeZone?: string,
+  timeZone?: string
 ): boolean {
   const eventStart = new Date(start);
   const eventEnd = new Date(end);
   const current = new Date(now);
   if (
-    Number.isNaN(eventStart.getTime())
-    || Number.isNaN(eventEnd.getTime())
-    || Number.isNaN(current.getTime())
-  ) return false;
+    Number.isNaN(eventStart.getTime()) ||
+    Number.isNaN(eventEnd.getTime()) ||
+    Number.isNaN(current.getTime())
+  )
+    return false;
 
   if (allDay) {
     return getAllDayExclusiveEndKey(eventStart, eventEnd) <= getDisplayDateKey(current, timeZone);
@@ -189,7 +188,7 @@ export function eventOccursOnDisplayDay(
   end: Date | number,
   allDay: boolean,
   day: Date,
-  timeZone?: string,
+  timeZone?: string
 ): boolean {
   const eventStart = new Date(start);
   const eventEnd = new Date(end);
@@ -217,11 +216,7 @@ export function eventOccursOnDisplayDay(
  * real instant that should be persisted. This is the inverse of
  * `toDisplayDate` for calendar form values.
  */
-export function fromDisplayDateTime(
-  date: string,
-  time: string,
-  timeZone?: string,
-): Date {
+export function fromDisplayDateTime(date: string, time: string, timeZone?: string): Date {
   const [year, month, day] = date.split('-').map(Number);
   const [hour, minute, second = 0] = time.split(':').map(Number);
 
@@ -249,7 +244,7 @@ export function fromDisplayDateTime(
         value('day'),
         value('hour'),
         value('minute'),
-        value('second'),
+        value('second')
       );
       const correction = displayedWallTime - targetWallTime;
       if (correction === 0) break;
@@ -266,12 +261,17 @@ export function formatDisplayTime(
   date: Date | number,
   timeFormat: TimeFormat,
   options: { showSeconds?: boolean } = {},
-  timeZone?: string,
+  timeZone?: string
 ): string {
   const { showSeconds = false } = options;
-  const pattern = timeFormat === '24h'
-    ? showSeconds ? 'HH:mm:ss' : 'HH:mm'
-    : showSeconds ? 'h:mm:ss a' : 'h:mm a';
+  const pattern =
+    timeFormat === '24h'
+      ? showSeconds
+        ? 'HH:mm:ss'
+        : 'HH:mm'
+      : showSeconds
+        ? 'h:mm:ss a'
+        : 'h:mm a';
   return format(toDisplayDate(date, timeZone), pattern);
 }
 
@@ -279,12 +279,10 @@ export function formatDisplayHour(
   date: Date | number,
   timeFormat: TimeFormat,
   options: { compact?: boolean } = {},
-  timeZone?: string,
+  timeZone?: string
 ): string {
   const { compact = false } = options;
-  const pattern = timeFormat === '24h'
-    ? compact ? 'HH' : 'HH:mm'
-    : compact ? 'ha' : 'h a';
+  const pattern = timeFormat === '24h' ? (compact ? 'HH' : 'HH:mm') : compact ? 'ha' : 'h a';
   return format(toDisplayDate(date, timeZone), pattern);
 }
 
@@ -292,7 +290,7 @@ export function formatDisplayTimeRange(
   start: Date | number,
   end: Date | number,
   timeFormat: TimeFormat,
-  timeZone?: string,
+  timeZone?: string
 ): string {
   const displayStart = toDisplayDate(start, timeZone);
   const displayEnd = toDisplayDate(end, timeZone);

@@ -25,6 +25,7 @@ import {
   MESH_ALPHA,
   WARMUP_FRAMES,
   classifyReadback,
+  classifyReadbackControl,
   modelViewMatrix,
   perspectiveZeroToOne,
   summarizeFrames,
@@ -32,6 +33,7 @@ import {
   type FrameStats,
   type Mesh,
   type PixelCheckStatus,
+  type ReadbackControl,
   VERTEX_STRIDE_BYTES,
 } from './gpuBenchmark';
 
@@ -74,10 +76,20 @@ type BenchRenderer = {
    * read — not evidence that it was clamped.
    */
   drawingBufferSize(): { width: number | null; height: number | null };
+  /**
+   * Clears the canvas and ends the frame without binding the mesh pipeline or
+   * drawing geometry. Reading this back is independent evidence about whether
+   * the readback mechanism works, because its expected pixels are CLEAR_COLOR
+   * no matter what is wrong with the rendering path.
+   */
+  drawControlFrame(): void;
   /** Adapter strings read from the context that is doing the drawing. */
   describeAdapter(): string | null;
   dispose(): void;
 };
+
+/** The minimal renderer surface the readback control needs. */
+type BenchRendererLike = Pick<BenchRenderer, 'drawControlFrame' | 'waitForGpuIdle'>;
 
 export type BackendKey = 'webgl2' | 'webgpu';
 
@@ -141,6 +153,13 @@ export type BackendReport = {
    * string in this report cannot describe a different GPU from the fps.
    */
   benchmarkedAdapter: string | null;
+  /**
+   * What the clear-only control frame proved about readback on this backend.
+   * Recorded because it is the reason an all-zero benchmark frame was or was
+   * not credited — without it, a reader cannot tell a healthy backend with a
+   * broken readback from one that simply drew nothing.
+   */
+  readbackControl: ReadbackControl;
 };
 
 export type Webgl2Info = {
@@ -467,6 +486,14 @@ function createWebgl2Renderer(canvas: HTMLCanvasElement, mesh: Mesh): BenchRende
       gl.uniformMatrix4fv(projectionLocation, false, projection);
       gl.drawElements(gl.TRIANGLES, indexCount, gl.UNSIGNED_INT, 0);
     },
+    drawControlFrame() {
+      // Clear only — no shader, no pipeline, no geometry. That is the whole
+      // point: this frame's expected pixels are CLEAR_COLOR no matter what is
+      // wrong with the mesh path, so reading it back tells us whether readback
+      // works *independently* of whether rendering works.
+      gl.viewport(0, 0, canvas.width, canvas.height);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+    },
     async waitForGpuIdle() {
       // A blocking finish() rather than a fenceSync + clientWaitSync poll: the
       // poll would have to come back through setTimeout, whose nested clamp of
@@ -663,6 +690,26 @@ async function createWebgpuRenderer(canvas: HTMLCanvasElement, mesh: Mesh): Prom
       pass.end();
       device.queue.submit([encoder.finish()]);
     },
+    drawControlFrame() {
+      // A render pass that clears and ends without binding the pipeline. It
+      // shares nothing with the mesh path except the device and the swap chain,
+      // so if this reads back as CLEAR_COLOR the readback mechanism works, and
+      // an all-zero *benchmark* frame is a rendering failure rather than a
+      // readback one. That is the distinction the P1 turns on.
+      const encoder = device.createCommandEncoder();
+      const pass = encoder.beginRenderPass({
+        colorAttachments: [
+          {
+            view: context.getCurrentTexture().createView(),
+            clearValue: { ...CLEAR_COLOR, a: 1 },
+            loadOp: 'clear',
+            storeOp: 'store',
+          },
+        ],
+      });
+      pass.end();
+      device.queue.submit([encoder.finish()]);
+    },
     waitForGpuIdle() {
       return device.queue.onSubmittedWorkDone();
     },
@@ -713,7 +760,89 @@ const PIXEL_CHECK_HEIGHT = 36;
  * than assumed fatal, and why the decision rule only refuses to credit a run
  * that is positively blank on hardware that can read itself back.
  */
-export async function inspectCanvasPixels(canvas: HTMLCanvasElement): Promise<CanvasPixelCheck> {
+type CanvasSample = {
+  uniqueColors: number;
+  flatColor: { r: number; g: number; b: number } | null;
+  meanLuma: number | null;
+};
+
+/**
+ * Reads the canvas back and reduces it to the three facts the classifiers need.
+ * Extracted so the clear-only control frame and the benchmark frame go through
+ * exactly the same readback path — a control read a different way would not be
+ * evidence about the benchmark's readback.
+ */
+async function sampleCanvas(canvas: HTMLCanvasElement): Promise<CanvasSample> {
+  if (typeof createImageBitmap !== 'function') {
+    throw new Error('createImageBitmap is unavailable');
+  }
+  const bitmap = await createImageBitmap(canvas, {
+    resizeWidth: PIXEL_CHECK_WIDTH,
+    resizeHeight: PIXEL_CHECK_HEIGHT,
+    resizeQuality: 'low',
+  });
+  const target = document.createElement('canvas');
+  target.width = bitmap.width;
+  target.height = bitmap.height;
+  const context = target.getContext('2d', { willReadFrequently: true });
+  if (!context) throw new Error('2d context for readback returned null');
+  context.drawImage(bitmap, 0, 0);
+  bitmap.close();
+
+  const { data } = context.getImageData(0, 0, target.width, target.height);
+  const seen = new Set<number>();
+  let lumaSum = 0;
+  let firstR: number | null = null;
+  let firstG: number | null = null;
+  let firstB: number | null = null;
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i] as number;
+    const g = data[i + 1] as number;
+    const b = data[i + 2] as number;
+    if (firstR === null) {
+      firstR = r;
+      firstG = g;
+      firstB = b;
+    }
+    seen.add((r << 16) | (g << 8) | b);
+    lumaSum += (r + g + b) / 3;
+  }
+  const pixels = data.length / 4;
+  return {
+    uniqueColors: seen.size,
+    flatColor: firstR === null ? null : { r: firstR, g: firstG as number, b: firstB as number },
+    meanLuma: pixels > 0 ? lumaSum / pixels : null,
+  };
+}
+
+/**
+ * Draws the clear-only control frame and reports what it proves about readback.
+ *
+ * Run once per backend, before the timed resolutions. A failure here is itself
+ * the `broken` answer: if the control cannot even be drawn or read, the
+ * readback mechanism is not trustworthy on this backend.
+ */
+export async function probeReadbackControl(
+  renderer: BenchRendererLike,
+  canvas: HTMLCanvasElement
+): Promise<ReadbackControl> {
+  try {
+    renderer.drawControlFrame();
+    await renderer.waitForGpuIdle().catch(() => {
+      // A fence failure does not invalidate the control: the question is only
+      // whether pixels can be read, and the readback below answers it.
+    });
+    const sample = await sampleCanvas(canvas);
+    return classifyReadbackControl(sample.uniqueColors, sample.flatColor);
+  } catch {
+    return 'broken';
+  }
+}
+
+export async function inspectCanvasPixels(
+  canvas: HTMLCanvasElement,
+  control: ReadbackControl = 'untested'
+): Promise<CanvasPixelCheck> {
   const unavailable = (error: unknown): CanvasPixelCheck => ({
     status: 'unavailable',
     uniqueColors: null,
@@ -722,54 +851,17 @@ export async function inspectCanvasPixels(canvas: HTMLCanvasElement): Promise<Ca
   });
 
   try {
-    if (typeof createImageBitmap !== 'function') {
-      throw new Error('createImageBitmap is unavailable');
-    }
-    const bitmap = await createImageBitmap(canvas, {
-      resizeWidth: PIXEL_CHECK_WIDTH,
-      resizeHeight: PIXEL_CHECK_HEIGHT,
-      resizeQuality: 'low',
-    });
-    const target = document.createElement('canvas');
-    target.width = bitmap.width;
-    target.height = bitmap.height;
-    const context = target.getContext('2d', { willReadFrequently: true });
-    if (!context) throw new Error('2d context for readback returned null');
-    context.drawImage(bitmap, 0, 0);
-    bitmap.close();
-
-    const { data } = context.getImageData(0, 0, target.width, target.height);
-    const seen = new Set<number>();
-    let lumaSum = 0;
-    let firstR: number | null = null;
-    let firstG: number | null = null;
-    let firstB: number | null = null;
-    for (let i = 0; i < data.length; i += 4) {
-      const r = data[i] as number;
-      const g = data[i + 1] as number;
-      const b = data[i + 2] as number;
-      if (firstR === null) {
-        firstR = r;
-        firstG = g;
-        firstB = b;
-      }
-      seen.add((r << 16) | (g << 8) | b);
-      lumaSum += (r + g + b) / 3;
-    }
-    const pixels = data.length / 4;
+    const sample = await sampleCanvas(canvas);
     // A correct frame carries the clear colour, the lit body and the rim, so
     // even a downsampled readback has many distinct colours. One colour is
     // ambiguous between "nothing was drawn" and "nothing could be read", and
-    // `classifyReadback` separates the two by whether that colour is the
-    // configured non-black clear.
-    const verdict = classifyReadback(
-      seen.size,
-      firstR === null ? null : { r: firstR, g: firstG as number, b: firstB as number }
-    );
+    // the clear-only control decides which, because its expected pixels do not
+    // depend on the rendering path being healthy.
+    const verdict = classifyReadback(sample.uniqueColors, sample.flatColor, control);
     return {
       status: verdict.status,
-      uniqueColors: seen.size,
-      meanLuma: pixels > 0 ? lumaSum / pixels : null,
+      uniqueColors: sample.uniqueColors,
+      meanLuma: sample.meanLuma,
       error: verdict.note,
     };
   } catch (error) {
@@ -819,7 +911,8 @@ async function measureRun(
   renderer: BenchRenderer,
   canvas: HTMLCanvasElement,
   resolution: BenchmarkResolution,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  readbackControl: ReadbackControl = 'untested'
 ): Promise<BackendRun> {
   renderer.resize(resolution.width, resolution.height);
 
@@ -899,7 +992,7 @@ async function measureRun(
       fenceError = describeError(error);
     }
     const drawingBufferSize = renderer.drawingBufferSize();
-    const pixelCheck = await inspectCanvasPixels(canvas);
+    const pixelCheck = await inspectCanvasPixels(canvas, readbackControl);
 
     return {
       resolution,
@@ -962,17 +1055,24 @@ export async function runBackend(
       error: describeError(error),
       runs: [],
       benchmarkedAdapter: null,
+      readbackControl: 'untested',
     };
   }
 
   const runs: BackendRun[] = [];
   let error: string | null = null;
   let benchmarkedAdapter: string | null = null;
+  let readbackControl: ReadbackControl = 'untested';
   try {
     benchmarkedAdapter = renderer.describeAdapter();
+    // Once per backend, before any timed frame. Establishes whether this
+    // backend can read its own canvas back at all, so an all-zero benchmark
+    // frame later is decidable as "rendered nothing" rather than assumed to be
+    // a readback failure and credited.
+    readbackControl = await probeReadbackControl(renderer, canvas);
     for (const resolution of resolutions) {
       if (signal?.aborted) throw new Error('benchmark cancelled');
-      const run = await measureRun(renderer, canvas, resolution, signal);
+      const run = await measureRun(renderer, canvas, resolution, signal, readbackControl);
       runs.push(run);
       onRunComplete?.(run);
     }
@@ -987,5 +1087,12 @@ export async function runBackend(
     canvas.remove();
   }
 
-  return { backend: factory.backend, available: true, error, runs, benchmarkedAdapter };
+  return {
+    backend: factory.backend,
+    available: true,
+    error,
+    runs,
+    benchmarkedAdapter,
+    readbackControl,
+  };
 }

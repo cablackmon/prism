@@ -150,11 +150,12 @@ function formatAllDayDate(date: Date | string | undefined): string {
 function formatAllDayEndDate(start: Date | string, end: Date | string): string {
   const startValue = typeof start === 'string' ? new Date(start) : start;
   const endValue = typeof end === 'string' ? new Date(end) : new Date(end.getTime());
-  const isExclusiveMidnight = endValue.getTime() > startValue.getTime()
-    && endValue.getUTCHours() === 0
-    && endValue.getUTCMinutes() === 0
-    && endValue.getUTCSeconds() === 0
-    && endValue.getUTCMilliseconds() === 0;
+  const isExclusiveMidnight =
+    endValue.getTime() > startValue.getTime() &&
+    endValue.getUTCHours() === 0 &&
+    endValue.getUTCMinutes() === 0 &&
+    endValue.getUTCSeconds() === 0 &&
+    endValue.getUTCMilliseconds() === 0;
 
   if (isExclusiveMidnight) endValue.setUTCDate(endValue.getUTCDate() - 1);
   return formatAllDayDate(endValue);
@@ -180,9 +181,10 @@ export function AddEventModal({
   // Filter to only writable, non-read-only calendars with showInEventModal enabled
   const writableCalendars = useMemo(() => {
     return calendars.filter(
-      (cal) => cal.enabled &&
-               (cal.provider === 'google' || cal.provider === 'local') &&
-               cal.showInEventModal !== false
+      (cal) =>
+        cal.enabled &&
+        (cal.provider === 'google' || cal.provider === 'local') &&
+        cal.showInEventModal !== false
     );
   }, [calendars]);
 
@@ -204,7 +206,7 @@ export function AddEventModal({
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
-  const [startDate, setStartDate] = useState('');    // YYYY-MM-DD
+  const [startDate, setStartDate] = useState(''); // YYYY-MM-DD
   const [startTimeStr, setStartTimeStr] = useState(''); // HH:MM
   const [endDate, setEndDate] = useState('');
   const [endTimeStr, setEndTimeStr] = useState('');
@@ -226,7 +228,12 @@ export function AddEventModal({
   const eventColor = useMemo(() => {
     if (!selectedCalendar) return undefined;
     // Priority: group color > calendar source color > user color
-    return selectedCalendar.groupColor || selectedCalendar.color || selectedCalendar.user?.color || undefined;
+    return (
+      selectedCalendar.groupColor ||
+      selectedCalendar.color ||
+      selectedCalendar.user?.color ||
+      undefined
+    );
   }, [selectedCalendar]);
 
   function addHour(hhmm: string, hrs = 1): string {
@@ -286,7 +293,9 @@ export function AddEventModal({
       setRecurrenceRule(event.recurrenceRule || '');
       setReminderMinutes(event.reminderMinutes ?? '');
       setCalendarSourceId(event.calendarSourceId || defaultCalendarId);
-      setShowMore(!!(event.description || event.location || event.reminderMinutes || event.recurrenceRule));
+      setShowMore(
+        !!(event.description || event.location || event.reminderMinutes || event.recurrenceRule)
+      );
     } else if (open && defaultDate) {
       // Calendar cells are already presentation-only wall dates.
       const d = format(defaultDate, 'yyyy-MM-dd');
@@ -307,10 +316,19 @@ export function AddEventModal({
   // Reset form when modal closes
   useEffect(() => {
     if (!open) {
-      setTitle(''); setDescription(''); setLocation('');
-      setStartDate(''); setStartTimeStr(''); setEndDate(''); setEndTimeStr('');
-      setAllDay(false); setRecurrenceRule(''); setReminderMinutes('');
-      setCalendarSourceId(defaultCalendarId); setShowMore(false); setError(null);
+      setTitle('');
+      setDescription('');
+      setLocation('');
+      setStartDate('');
+      setStartTimeStr('');
+      setEndDate('');
+      setEndTimeStr('');
+      setAllDay(false);
+      setRecurrenceRule('');
+      setReminderMinutes('');
+      setCalendarSourceId(defaultCalendarId);
+      setShowMore(false);
+      setError(null);
     }
   }, [open, defaultCalendarId]);
 
@@ -406,19 +424,21 @@ export function AddEventModal({
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Add title"
-            className="text-base border-0 border-b rounded-none px-0 focus-visible:ring-0 focus-visible:border-primary"
+            className="rounded-none border-0 border-b px-0 text-base focus-visible:border-primary focus-visible:ring-0"
             autoFocus
             required
           />
 
           {/* Date & Time — Google Calendar style */}
-          <div className="flex items-center gap-1 flex-wrap -mx-1 px-1 py-1 rounded-lg hover:bg-muted/40 transition-colors">
+          <div className="-mx-1 flex flex-wrap items-center gap-1 rounded-lg px-1 py-1 transition-colors hover:bg-muted/40">
             {/* Start date */}
             <div className="relative">
               <button
                 type="button"
-                onClick={(e) => (e.currentTarget.nextElementSibling as HTMLInputElement | null)?.showPicker?.()}
-                className="h-8 px-2.5 rounded-md text-sm font-medium hover:bg-muted transition-colors whitespace-nowrap"
+                onClick={(e) =>
+                  (e.currentTarget.nextElementSibling as HTMLInputElement | null)?.showPicker?.()
+                }
+                className="h-8 whitespace-nowrap rounded-md px-2.5 text-sm font-medium transition-colors hover:bg-muted"
               >
                 {startDate ? format(parseISO(startDate + 'T00:00:00'), 'EEE, MMM d') : 'Start date'}
               </button>
@@ -427,25 +447,25 @@ export function AddEventModal({
                 value={startDate}
                 onChange={(e) => handleStartDateChange(e.target.value)}
                 onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker?.()}
-                className="absolute inset-0 opacity-0 w-full cursor-pointer"
+                className="absolute inset-0 w-full cursor-pointer opacity-0"
                 required
               />
             </div>
 
             {/* Start time (hidden when all-day) */}
-            {!allDay && (
-              <TimeDropdown value={startTimeStr} onChange={handleStartTimeChange} />
-            )}
+            {!allDay && <TimeDropdown value={startTimeStr} onChange={handleStartTimeChange} />}
 
-            <span className="text-muted-foreground text-sm px-0.5">–</span>
+            <span className="px-0.5 text-sm text-muted-foreground">–</span>
 
             {/* End date (only shown when different from start) */}
             {endDate !== startDate && (
               <div className="relative">
                 <button
                   type="button"
-                  onClick={(e) => (e.currentTarget.nextElementSibling as HTMLInputElement | null)?.showPicker?.()}
-                  className="h-8 px-2.5 rounded-md text-sm font-medium hover:bg-muted transition-colors whitespace-nowrap"
+                  onClick={(e) =>
+                    (e.currentTarget.nextElementSibling as HTMLInputElement | null)?.showPicker?.()
+                  }
+                  className="h-8 whitespace-nowrap rounded-md px-2.5 text-sm font-medium transition-colors hover:bg-muted"
                 >
                   {endDate ? format(parseISO(endDate + 'T00:00:00'), 'EEE, MMM d') : 'End date'}
                 </button>
@@ -455,7 +475,7 @@ export function AddEventModal({
                   min={startDate}
                   onChange={(e) => setEndDate(e.target.value)}
                   onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker?.()}
-                  className="absolute inset-0 opacity-0 w-full cursor-pointer"
+                  className="absolute inset-0 w-full cursor-pointer opacity-0"
                 />
               </div>
             )}
@@ -470,9 +490,11 @@ export function AddEventModal({
             )}
 
             {/* All day toggle */}
-            <div className="flex items-center gap-1.5 ml-1">
+            <div className="ml-1 flex items-center gap-1.5">
               <Switch id="event-all-day" checked={allDay} onCheckedChange={handleAllDayChange} />
-              <Label htmlFor="event-all-day" className="text-sm cursor-pointer select-none">All day</Label>
+              <Label htmlFor="event-all-day" className="cursor-pointer select-none text-sm">
+                All day
+              </Label>
             </div>
 
             {/* End date selector when all-day and same date (show explicit end date control) */}
@@ -480,8 +502,10 @@ export function AddEventModal({
               <div className="relative ml-0">
                 <button
                   type="button"
-                  onClick={(e) => (e.currentTarget.nextElementSibling as HTMLInputElement | null)?.showPicker?.()}
-                  className="h-8 px-2.5 rounded-md text-sm font-medium hover:bg-muted transition-colors whitespace-nowrap text-muted-foreground"
+                  onClick={(e) =>
+                    (e.currentTarget.nextElementSibling as HTMLInputElement | null)?.showPicker?.()
+                  }
+                  className="h-8 whitespace-nowrap rounded-md px-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted"
                 >
                   {endDate ? format(parseISO(endDate + 'T00:00:00'), 'EEE, MMM d') : 'End date'}
                 </button>
@@ -491,7 +515,7 @@ export function AddEventModal({
                   min={startDate}
                   onChange={(e) => setEndDate(e.target.value)}
                   onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker?.()}
-                  className="absolute inset-0 opacity-0 w-full cursor-pointer"
+                  className="absolute inset-0 w-full cursor-pointer opacity-0"
                 />
               </div>
             )}
@@ -507,23 +531,24 @@ export function AddEventModal({
                 <SelectItem key={cal.id} value={cal.id}>
                   <div className="flex items-center gap-2">
                     <div
-                      className="w-2.5 h-2.5 rounded-full shrink-0"
+                      className="h-2.5 w-2.5 shrink-0 rounded-full"
                       style={{ backgroundColor: cal.groupColor || cal.color || '#3B82F6' }}
                     />
                     <span className="truncate">{cal.displayName || cal.dashboardCalendarName}</span>
-                    {cal.groupName && cal.groupName !== (cal.displayName || cal.dashboardCalendarName) && (
-                      <span
-                        className="text-xs font-medium shrink-0 px-1.5 py-0.5 rounded-full"
-                        style={{
-                          backgroundColor: (cal.groupColor || '#3B82F6') + '20',
-                          color: cal.groupColor || '#3B82F6',
-                        }}
-                      >
-                        {cal.groupName}
-                      </span>
-                    )}
+                    {cal.groupName &&
+                      cal.groupName !== (cal.displayName || cal.dashboardCalendarName) && (
+                        <span
+                          className="shrink-0 rounded-full px-1.5 py-0.5 text-xs font-medium"
+                          style={{
+                            backgroundColor: (cal.groupColor || '#3B82F6') + '20',
+                            color: cal.groupColor || '#3B82F6',
+                          }}
+                        >
+                          {cal.groupName}
+                        </span>
+                      )}
                     {cal.provider === 'google' && (
-                      <span className="text-xs text-muted-foreground shrink-0">Google</span>
+                      <span className="shrink-0 text-xs text-muted-foreground">Google</span>
                     )}
                   </div>
                 </SelectItem>
@@ -536,7 +561,8 @@ export function AddEventModal({
               outward — and only once such an account actually exists. */}
           {writableCalendars.some((c) => c.provider === 'google') && (
             <p className="text-xs text-muted-foreground">
-              Local calendars stay on this dashboard. Connected calendars (like Google) sync both ways.
+              Local calendars stay on this dashboard. Connected calendars (like Google) sync both
+              ways.
             </p>
           )}
 
@@ -544,7 +570,7 @@ export function AddEventModal({
           <button
             type="button"
             onClick={() => setShowMore(!showMore)}
-            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            className="flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             {showMore ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             {showMore ? 'Less options' : 'More options'}
@@ -554,7 +580,7 @@ export function AddEventModal({
             <div className="space-y-3">
               {/* Location */}
               <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
+                <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <Input
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
@@ -565,7 +591,7 @@ export function AddEventModal({
 
               {/* Description */}
               <div className="flex items-start gap-2">
-                <AlignLeft className="h-4 w-4 text-muted-foreground shrink-0 mt-2.5" />
+                <AlignLeft className="mt-2.5 h-4 w-4 shrink-0 text-muted-foreground" />
                 <Textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
@@ -614,9 +640,7 @@ export function AddEventModal({
 
           {/* Error message */}
           {error && (
-            <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-lg">
-              {error}
-            </div>
+            <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
           )}
 
           {/* Actions */}
@@ -629,14 +653,25 @@ export function AddEventModal({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={!title.trim() || !startDate || !endDate || (!allDay && (!startTimeStr || !endTimeStr)) || isSubmitting}>
+            <Button
+              type="submit"
+              disabled={
+                !title.trim() ||
+                !startDate ||
+                !endDate ||
+                (!allDay && (!startTimeStr || !endTimeStr)) ||
+                isSubmitting
+              }
+            >
               {isSubmitting ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Saving...
                 </>
+              ) : isEditMode ? (
+                'Save'
               ) : (
-                isEditMode ? 'Save' : 'Save'
+                'Save'
               )}
             </Button>
           </div>

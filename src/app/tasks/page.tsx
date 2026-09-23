@@ -17,7 +17,6 @@
 import { Suspense } from 'react';
 import { TasksView } from './TasksView';
 
-
 /**
  * PAGE METADATA
  */
@@ -25,7 +24,6 @@ export const metadata = {
   title: 'Tasks',
   description: 'Manage your family tasks and to-dos.',
 };
-
 
 /**
  * TASKS PAGE COMPONENT
@@ -40,33 +38,32 @@ export default function TasksPage() {
   );
 }
 
-
 /**
  * TASKS SKELETON
  */
 function TasksSkeleton() {
   return (
-    <div className="h-screen flex flex-col p-4">
+    <div className="flex h-screen flex-col p-4">
       {/* Header skeleton */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="h-8 w-32 bg-muted rounded animate-pulse" />
+      <div className="mb-6 flex items-center justify-between">
+        <div className="h-8 w-32 animate-pulse rounded bg-muted" />
         <div className="flex gap-2">
-          <div className="h-10 w-32 bg-muted rounded animate-pulse" />
-          <div className="h-10 w-24 bg-muted rounded animate-pulse" />
+          <div className="h-10 w-32 animate-pulse rounded bg-muted" />
+          <div className="h-10 w-24 animate-pulse rounded bg-muted" />
         </div>
       </div>
 
       {/* Filter bar skeleton */}
-      <div className="flex gap-2 mb-4">
-        <div className="h-10 w-40 bg-muted rounded animate-pulse" />
-        <div className="h-10 w-40 bg-muted rounded animate-pulse" />
-        <div className="h-10 w-40 bg-muted rounded animate-pulse" />
+      <div className="mb-4 flex gap-2">
+        <div className="h-10 w-40 animate-pulse rounded bg-muted" />
+        <div className="h-10 w-40 animate-pulse rounded bg-muted" />
+        <div className="h-10 w-40 animate-pulse rounded bg-muted" />
       </div>
 
       {/* Task list skeleton */}
       <div className="space-y-2">
         {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="h-16 bg-muted/50 rounded animate-pulse" />
+          <div key={i} className="h-16 animate-pulse rounded bg-muted/50" />
         ))}
       </div>
     </div>

@@ -27,9 +27,7 @@ export function useAwayModeTimeout() {
     if (typeof window !== 'undefined') {
       localStorage.setItem(STORAGE_KEY, String(hours));
       // Dispatch event to notify other components
-      window.dispatchEvent(
-        new CustomEvent('prism:away-mode-timeout-change', { detail: hours })
-      );
+      window.dispatchEvent(new CustomEvent('prism:away-mode-timeout-change', { detail: hours }));
     }
   }, []);
 
@@ -39,7 +37,8 @@ export function useAwayModeTimeout() {
       setTimeoutValue(e.detail);
     };
     window.addEventListener('prism:away-mode-timeout-change', handler as EventListener);
-    return () => window.removeEventListener('prism:away-mode-timeout-change', handler as EventListener);
+    return () =>
+      window.removeEventListener('prism:away-mode-timeout-change', handler as EventListener);
   }, []);
 
   return { timeout, setTimeout };

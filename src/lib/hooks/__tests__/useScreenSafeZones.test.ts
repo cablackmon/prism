@@ -21,7 +21,7 @@ describe('computeZones', () => {
 
     expect(zones).toHaveLength(1);
     expect(zones[0]!.cols).toBe(48); // 1920 >= 1200
-    expect(zones[0]!.rows).toBe(Math.min(Math.round(48 * 1080 / 1920), 50));
+    expect(zones[0]!.rows).toBe(Math.min(Math.round((48 * 1080) / 1920), 50));
     expect(zones[0]!.name).toBe('16:9');
   });
 
@@ -61,9 +61,7 @@ describe('computeZones', () => {
 
   it('caps rows at 64', () => {
     // Very tall aspect ratio: 100x5000
-    const screens: ScreenZoneConfig[] = [
-      { name: 'tall', width: 100, height: 5000, color: '#000' },
-    ];
+    const screens: ScreenZoneConfig[] = [{ name: 'tall', width: 100, height: 5000, color: '#000' }];
 
     const zones = computeZones(screens, 'portrait');
 
@@ -75,7 +73,7 @@ describe('computeZones', () => {
     const zones = computeZones(DEFAULT_SCREENS, 'landscape');
 
     expect(zones).toHaveLength(DEFAULT_SCREENS.length);
-    zones.forEach(z => {
+    zones.forEach((z) => {
       expect(z.cols).toBeGreaterThanOrEqual(12);
       expect(z.cols).toBeLessThanOrEqual(48);
       expect(z.rows).toBeGreaterThan(0);
@@ -118,7 +116,7 @@ describe('DEFAULT_SCREEN_SAFE_ZONES', () => {
   });
 
   it('all default landscape zones use 48 cols (all screens >= 1200px)', () => {
-    DEFAULT_SCREEN_SAFE_ZONES.landscape.forEach(z => {
+    DEFAULT_SCREEN_SAFE_ZONES.landscape.forEach((z) => {
       expect(z.cols).toBe(48);
     });
   });

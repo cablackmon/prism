@@ -62,18 +62,21 @@ export interface GeocodeResult {
 
 export const STATUS_CONFIG: Record<PinStatus, { label: string; color: string }> = {
   want_to_go: { label: 'Want to Go', color: '#3B82F6' }, // blue
-  been_there:  { label: 'Been There', color: '#10B981' }, // green
+  been_there: { label: 'Been There', color: '#10B981' }, // green
 };
 
-export const TRIP_STYLE_CONFIG: Record<TripStyle, { label: string; description: string; icon: string }> = {
-  route:  { label: 'Road Trip',  description: 'One-way chain of stops A → B → C', icon: '🛣️' },
-  loop:   { label: 'Loop Trip',  description: 'Circular route returning to start',  icon: '🔄' },
-  hub:    { label: 'Home Base',  description: 'Day trips radiating from a hub',     icon: '⭐' },
+export const TRIP_STYLE_CONFIG: Record<
+  TripStyle,
+  { label: string; description: string; icon: string }
+> = {
+  route: { label: 'Road Trip', description: 'One-way chain of stops A → B → C', icon: '🛣️' },
+  loop: { label: 'Loop Trip', description: 'Circular route returning to start', icon: '🔄' },
+  hub: { label: 'Home Base', description: 'Day trips radiating from a hub', icon: '⭐' },
 };
 
 export const PIN_TYPE_CONFIG: Record<PinType, { label: string; color: string; icon: string }> = {
-  location:      { label: 'Location',      color: '#3B82F6', icon: '📍' },
-  stop:          { label: 'Stop',          color: '#8B5CF6', icon: '📍' },
+  location: { label: 'Location', color: '#3B82F6', icon: '📍' },
+  stop: { label: 'Stop', color: '#8B5CF6', icon: '📍' },
   national_park: { label: 'National Park', color: '#2D6A4F', icon: '🌲' },
 };
 

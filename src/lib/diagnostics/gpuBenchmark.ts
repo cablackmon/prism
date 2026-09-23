@@ -286,23 +286,61 @@ export type PixelCheckStatus = 'content' | 'blank' | 'unavailable';
 export type ReadbackVerdict = { status: PixelCheckStatus; note: string | null };
 
 /**
+ * What a clear-only control frame proved about the readback mechanism itself.
+ *
+ * `working` — the control read back as a real non-black colour, so readback
+ * functions on this backend. `broken` — the control read back as zeroes or not
+ * at all, even though it only cleared; readback cannot be trusted here.
+ * `untested` — no control result, so nothing is proven either way.
+ */
+export type ReadbackControl = 'working' | 'broken' | 'untested';
+
+/**
+ * Classifies the clear-only control frame.
+ *
+ * The control binds no pipeline and draws no geometry, so its expected pixels
+ * are `CLEAR_COLOR` regardless of what is wrong with the mesh path. That is
+ * what makes it independent evidence about readback rather than about
+ * rendering.
+ */
+export function classifyReadbackControl(
+  uniqueColors: number,
+  flatColor: { r: number; g: number; b: number } | null
+): ReadbackControl {
+  if (uniqueColors === 0 || flatColor === null) return 'broken';
+  if (flatColor.r === 0 && flatColor.g === 0 && flatColor.b === 0) return 'broken';
+  return 'working';
+}
+
+/**
  * Turns a canvas readback into a three-valued verdict.
  *
- * More than one colour means the mesh reached the canvas. One colour is
- * ambiguous, and the ambiguity is not cosmetic: headless Chromium on a
- * SwiftShader adapter returns all-zero pixels for *any* WebGPU canvas — a bare
- * clear-to-red with no shaders and no pipeline reads back black too. That is a
- * broken readback, not an empty canvas.
+ * More than one colour means the mesh reached the canvas. One flat colour is
+ * ambiguous, and the ambiguity is not cosmetic in either direction:
  *
- * The two are separable because a canvas that merely cleared and drew nothing
- * still carries `CLEAR_COLOR`, which is non-black by construction. So a flat
- * frame holding pure black is the known readback failure and reports
- * `unavailable`; any other flat colour is a real blank frame. Collapsing them
- * would veto a healthy fenced backend on the strength of the measuring tool.
+ *   - Headless Chromium on a SwiftShader adapter returns all-zero pixels for
+ *     *any* WebGPU canvas — a bare clear-to-red with no shaders and no pipeline
+ *     reads back black too. Calling that `blank` vetoes a healthy backend.
+ *   - But WebGPU validation can also fail before the clear executes (an invalid
+ *     shader, pipeline or command buffer) while `onSubmittedWorkDone()` still
+ *     resolves having done no work. That canvas is *genuinely* black, and
+ *     calling it `unavailable` credits a broken backend with the high fps that
+ *     drawing nothing produces — the fastest result a GPU can post.
+ *
+ * A non-black clear colour proves black was not a *successful* frame, but on
+ * its own it cannot say which of those two happened. So the clear-only control
+ * decides it: if the control reads back, readback works and an all-zero
+ * benchmark frame means rendering failed (`blank`, not creditable). If the
+ * control also comes back black, the readback is the broken part
+ * (`unavailable`, still creditable).
+ *
+ * With no control, this fails closed to `blank`. Crediting an unproven all-zero
+ * frame is the error that ships a backend which draws nothing.
  */
 export function classifyReadback(
   uniqueColors: number,
-  flatColor: { r: number; g: number; b: number } | null
+  flatColor: { r: number; g: number; b: number } | null,
+  control: ReadbackControl = 'untested'
 ): ReadbackVerdict {
   if (uniqueColors > 1) return { status: 'content', note: null };
   if (uniqueColors === 0 || flatColor === null) {
@@ -311,11 +349,24 @@ export function classifyReadback(
     return { status: 'unavailable', note: 'readback produced no pixels to inspect' };
   }
   if (flatColor.r === 0 && flatColor.g === 0 && flatColor.b === 0) {
+    if (control === 'broken') {
+      return {
+        status: 'unavailable',
+        note:
+          'readback returned uniform zeroes, and the clear-only control frame came back ' +
+          'black too — readback is broken on this backend, so the canvas could not be ' +
+          'read rather than being empty',
+      };
+    }
     return {
-      status: 'unavailable',
+      status: 'blank',
       note:
-        'readback returned uniform zeroes, which the configured non-black clear colour ' +
-        'cannot produce — the canvas could not be read back rather than being empty',
+        control === 'working'
+          ? 'readback returned uniform zeroes while the clear-only control read back ' +
+            'correctly, so readback works and the benchmark frame genuinely rendered ' +
+            'nothing — the configured clear colour is not black'
+          : 'readback returned uniform zeroes and no clear-only control proved readback ' +
+            'works, so this is treated as an empty frame rather than credited',
     };
   }
   return {

@@ -31,12 +31,20 @@ describe('microsoftTodoProvider', () => {
 
   describe('fetchLists', () => {
     it('maps Graph task lists to ExternalTaskList', async () => {
-      mockFetch.mockReturnValueOnce(jsonResponse({
-        value: [
-          { id: 'list-1', displayName: 'Tasks', isOwner: true, isShared: false, wellknownListName: 'defaultList' },
-          { id: 'list-2', displayName: 'Work', isOwner: true, isShared: false },
-        ],
-      }));
+      mockFetch.mockReturnValueOnce(
+        jsonResponse({
+          value: [
+            {
+              id: 'list-1',
+              displayName: 'Tasks',
+              isOwner: true,
+              isShared: false,
+              wellknownListName: 'defaultList',
+            },
+            { id: 'list-2', displayName: 'Work', isOwner: true, isShared: false },
+          ],
+        })
+      );
 
       const lists = await microsoftTodoProvider.fetchLists(TOKENS);
 
@@ -49,21 +57,23 @@ describe('microsoftTodoProvider', () => {
 
   describe('fetchTasks', () => {
     it('parses Graph tasks with all fields', async () => {
-      mockFetch.mockReturnValueOnce(jsonResponse({
-        value: [
-          {
-            id: 'task-1',
-            title: 'Buy groceries',
-            body: { content: 'From the store', contentType: 'text' },
-            dueDateTime: { dateTime: '2026-03-01T00:00:00', timeZone: 'UTC' },
-            status: 'notStarted',
-            importance: 'high',
-            completedDateTime: undefined,
-            createdDateTime: '2026-02-15T10:00:00Z',
-            lastModifiedDateTime: '2026-02-16T08:00:00Z',
-          },
-        ],
-      }));
+      mockFetch.mockReturnValueOnce(
+        jsonResponse({
+          value: [
+            {
+              id: 'task-1',
+              title: 'Buy groceries',
+              body: { content: 'From the store', contentType: 'text' },
+              dueDateTime: { dateTime: '2026-03-01T00:00:00', timeZone: 'UTC' },
+              status: 'notStarted',
+              importance: 'high',
+              completedDateTime: undefined,
+              createdDateTime: '2026-02-15T10:00:00Z',
+              lastModifiedDateTime: '2026-02-16T08:00:00Z',
+            },
+          ],
+        })
+      );
 
       const tasks = await microsoftTodoProvider.fetchTasks(TOKENS, 'list-1');
 
@@ -83,19 +93,21 @@ describe('microsoftTodoProvider', () => {
     });
 
     it('maps completed status correctly', async () => {
-      mockFetch.mockReturnValueOnce(jsonResponse({
-        value: [
-          {
-            id: 'task-2',
-            title: 'Done task',
-            status: 'completed',
-            importance: 'normal',
-            completedDateTime: { dateTime: '2026-02-16T14:00:00', timeZone: 'UTC' },
-            createdDateTime: '2026-02-15T10:00:00Z',
-            lastModifiedDateTime: '2026-02-16T14:00:00Z',
-          },
-        ],
-      }));
+      mockFetch.mockReturnValueOnce(
+        jsonResponse({
+          value: [
+            {
+              id: 'task-2',
+              title: 'Done task',
+              status: 'completed',
+              importance: 'normal',
+              completedDateTime: { dateTime: '2026-02-16T14:00:00', timeZone: 'UTC' },
+              createdDateTime: '2026-02-15T10:00:00Z',
+              lastModifiedDateTime: '2026-02-16T14:00:00Z',
+            },
+          ],
+        })
+      );
 
       const tasks = await microsoftTodoProvider.fetchTasks(TOKENS, 'list-1');
 
@@ -113,9 +125,11 @@ describe('microsoftTodoProvider', () => {
         lastModifiedDateTime: '2026-02-16T08:00:00Z',
       });
 
-      mockFetch.mockReturnValueOnce(jsonResponse({
-        value: [makeTask('high'), makeTask('normal'), makeTask('low')],
-      }));
+      mockFetch.mockReturnValueOnce(
+        jsonResponse({
+          value: [makeTask('high'), makeTask('normal'), makeTask('low')],
+        })
+      );
 
       const tasks = await microsoftTodoProvider.fetchTasks(TOKENS, 'list-1');
 
@@ -125,18 +139,20 @@ describe('microsoftTodoProvider', () => {
     });
 
     it('handles missing optional fields', async () => {
-      mockFetch.mockReturnValueOnce(jsonResponse({
-        value: [
-          {
-            id: 'task-3',
-            title: 'Simple',
-            status: 'notStarted',
-            importance: 'normal',
-            createdDateTime: '2026-02-15T10:00:00Z',
-            lastModifiedDateTime: '2026-02-16T08:00:00Z',
-          },
-        ],
-      }));
+      mockFetch.mockReturnValueOnce(
+        jsonResponse({
+          value: [
+            {
+              id: 'task-3',
+              title: 'Simple',
+              status: 'notStarted',
+              importance: 'normal',
+              createdDateTime: '2026-02-15T10:00:00Z',
+              lastModifiedDateTime: '2026-02-16T08:00:00Z',
+            },
+          ],
+        })
+      );
 
       const tasks = await microsoftTodoProvider.fetchTasks(TOKENS, 'list-1');
 
@@ -148,16 +164,18 @@ describe('microsoftTodoProvider', () => {
 
   describe('createTask', () => {
     it('sends POST with all fields', async () => {
-      mockFetch.mockReturnValueOnce(jsonResponse({
-        id: 'new-1',
-        title: 'New task',
-        body: { content: 'Details', contentType: 'text' },
-        dueDateTime: { dateTime: '2026-03-01T00:00:00.000Z', timeZone: 'UTC' },
-        status: 'notStarted',
-        importance: 'high',
-        createdDateTime: '2026-02-16T10:00:00Z',
-        lastModifiedDateTime: '2026-02-16T10:00:00Z',
-      }));
+      mockFetch.mockReturnValueOnce(
+        jsonResponse({
+          id: 'new-1',
+          title: 'New task',
+          body: { content: 'Details', contentType: 'text' },
+          dueDateTime: { dateTime: '2026-03-01T00:00:00.000Z', timeZone: 'UTC' },
+          status: 'notStarted',
+          importance: 'high',
+          createdDateTime: '2026-02-16T10:00:00Z',
+          lastModifiedDateTime: '2026-02-16T10:00:00Z',
+        })
+      );
 
       await microsoftTodoProvider.createTask(TOKENS, {
         listId: 'list-1',
@@ -175,14 +193,16 @@ describe('microsoftTodoProvider', () => {
     });
 
     it('maps medium priority to normal importance', async () => {
-      mockFetch.mockReturnValueOnce(jsonResponse({
-        id: 'new-2',
-        title: 'Task',
-        status: 'notStarted',
-        importance: 'normal',
-        createdDateTime: '2026-02-16T10:00:00Z',
-        lastModifiedDateTime: '2026-02-16T10:00:00Z',
-      }));
+      mockFetch.mockReturnValueOnce(
+        jsonResponse({
+          id: 'new-2',
+          title: 'Task',
+          status: 'notStarted',
+          importance: 'normal',
+          createdDateTime: '2026-02-16T10:00:00Z',
+          lastModifiedDateTime: '2026-02-16T10:00:00Z',
+        })
+      );
 
       await microsoftTodoProvider.createTask(TOKENS, {
         listId: 'list-1',
@@ -197,14 +217,16 @@ describe('microsoftTodoProvider', () => {
 
   describe('updateTask', () => {
     it('parses compound listId:taskId format', async () => {
-      mockFetch.mockReturnValueOnce(jsonResponse({
-        id: 'task-1',
-        title: 'Updated',
-        status: 'notStarted',
-        importance: 'normal',
-        createdDateTime: '2026-02-15T10:00:00Z',
-        lastModifiedDateTime: '2026-02-16T12:00:00Z',
-      }));
+      mockFetch.mockReturnValueOnce(
+        jsonResponse({
+          id: 'task-1',
+          title: 'Updated',
+          status: 'notStarted',
+          importance: 'normal',
+          createdDateTime: '2026-02-15T10:00:00Z',
+          lastModifiedDateTime: '2026-02-16T12:00:00Z',
+        })
+      );
 
       await microsoftTodoProvider.updateTask(TOKENS, 'list-1:task-1', { title: 'Updated' });
 
@@ -221,14 +243,16 @@ describe('microsoftTodoProvider', () => {
     });
 
     it('maps completed to status field', async () => {
-      mockFetch.mockReturnValueOnce(jsonResponse({
-        id: 'task-1',
-        title: 'Task',
-        status: 'completed',
-        importance: 'normal',
-        createdDateTime: '2026-02-15T10:00:00Z',
-        lastModifiedDateTime: '2026-02-16T12:00:00Z',
-      }));
+      mockFetch.mockReturnValueOnce(
+        jsonResponse({
+          id: 'task-1',
+          title: 'Task',
+          status: 'completed',
+          importance: 'normal',
+          createdDateTime: '2026-02-15T10:00:00Z',
+          lastModifiedDateTime: '2026-02-16T12:00:00Z',
+        })
+      );
 
       await microsoftTodoProvider.updateTask(TOKENS, 'list-1:task-1', { completed: true });
 
@@ -237,14 +261,16 @@ describe('microsoftTodoProvider', () => {
     });
 
     it('clears description by setting body to null', async () => {
-      mockFetch.mockReturnValueOnce(jsonResponse({
-        id: 'task-1',
-        title: 'Task',
-        status: 'notStarted',
-        importance: 'normal',
-        createdDateTime: '2026-02-15T10:00:00Z',
-        lastModifiedDateTime: '2026-02-16T12:00:00Z',
-      }));
+      mockFetch.mockReturnValueOnce(
+        jsonResponse({
+          id: 'task-1',
+          title: 'Task',
+          status: 'notStarted',
+          importance: 'normal',
+          createdDateTime: '2026-02-15T10:00:00Z',
+          lastModifiedDateTime: '2026-02-16T12:00:00Z',
+        })
+      );
 
       await microsoftTodoProvider.updateTask(TOKENS, 'list-1:task-1', { description: null });
 
@@ -253,14 +279,16 @@ describe('microsoftTodoProvider', () => {
     });
 
     it('clears dueDate by setting dueDateTime to null', async () => {
-      mockFetch.mockReturnValueOnce(jsonResponse({
-        id: 'task-1',
-        title: 'Task',
-        status: 'notStarted',
-        importance: 'normal',
-        createdDateTime: '2026-02-15T10:00:00Z',
-        lastModifiedDateTime: '2026-02-16T12:00:00Z',
-      }));
+      mockFetch.mockReturnValueOnce(
+        jsonResponse({
+          id: 'task-1',
+          title: 'Task',
+          status: 'notStarted',
+          importance: 'normal',
+          createdDateTime: '2026-02-15T10:00:00Z',
+          lastModifiedDateTime: '2026-02-16T12:00:00Z',
+        })
+      );
 
       await microsoftTodoProvider.updateTask(TOKENS, 'list-1:task-1', { dueDate: null });
 
@@ -271,12 +299,14 @@ describe('microsoftTodoProvider', () => {
 
   describe('deleteTask', () => {
     it('sends DELETE with parsed listId:taskId', async () => {
-      mockFetch.mockReturnValueOnce(Promise.resolve({
-        ok: true,
-        status: 204,
-        json: () => Promise.resolve(undefined),
-        text: () => Promise.resolve(''),
-      }));
+      mockFetch.mockReturnValueOnce(
+        Promise.resolve({
+          ok: true,
+          status: 204,
+          json: () => Promise.resolve(undefined),
+          text: () => Promise.resolve(''),
+        })
+      );
 
       await microsoftTodoProvider.deleteTask(TOKENS, 'list-1:task-1');
 
@@ -287,22 +317,25 @@ describe('microsoftTodoProvider', () => {
     });
 
     it('throws when taskId has no listId prefix', async () => {
-      await expect(
-        microsoftTodoProvider.deleteTask(TOKENS, 'task-only')
-      ).rejects.toThrow('Task ID must include list ID');
+      await expect(microsoftTodoProvider.deleteTask(TOKENS, 'task-only')).rejects.toThrow(
+        'Task ID must include list ID'
+      );
     });
   });
 
   describe('error handling', () => {
     it('throws on API error with status code', async () => {
-      mockFetch.mockReturnValueOnce(Promise.resolve({
-        ok: false,
-        status: 403,
-        text: () => Promise.resolve('Forbidden'),
-      }));
+      mockFetch.mockReturnValueOnce(
+        Promise.resolve({
+          ok: false,
+          status: 403,
+          text: () => Promise.resolve('Forbidden'),
+        })
+      );
 
-      await expect(microsoftTodoProvider.fetchLists(TOKENS))
-        .rejects.toThrow('Microsoft Graph API error: 403');
+      await expect(microsoftTodoProvider.fetchLists(TOKENS)).rejects.toThrow(
+        'Microsoft Graph API error: 403'
+      );
     });
   });
 
@@ -318,11 +351,13 @@ describe('microsoftTodoProvider', () => {
     });
 
     it('returns new tokens on success', async () => {
-      mockFetch.mockReturnValueOnce(jsonResponse({
-        access_token: 'new-access',
-        refresh_token: 'new-refresh',
-        expires_in: 3600,
-      }));
+      mockFetch.mockReturnValueOnce(
+        jsonResponse({
+          access_token: 'new-access',
+          refresh_token: 'new-refresh',
+          expires_in: 3600,
+        })
+      );
 
       const result = await microsoftTodoProvider.refreshTokens!(TOKENS);
 

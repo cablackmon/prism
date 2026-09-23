@@ -152,9 +152,7 @@ export function AddTaskModal({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Add Task</DialogTitle>
-          <DialogDescription>
-            Create a new task for your family.
-          </DialogDescription>
+          <DialogDescription>Create a new task for your family.</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -185,7 +183,10 @@ export function AddTaskModal({
           {/* Assign To */}
           <div className="space-y-2">
             <Label htmlFor="assignedTo">Assign To</Label>
-            <Select value={assignedTo || '_unassigned'} onValueChange={(v) => setAssignedTo(v === '_unassigned' ? '' : v)}>
+            <Select
+              value={assignedTo || '_unassigned'}
+              onValueChange={(v) => setAssignedTo(v === '_unassigned' ? '' : v)}
+            >
               <SelectTrigger id="assignedTo">
                 <SelectValue placeholder={loadingMembers ? 'Loading...' : 'Select person'} />
               </SelectTrigger>
@@ -226,7 +227,10 @@ export function AddTaskModal({
           {/* Priority */}
           <div className="space-y-2">
             <Label htmlFor="priority">Priority</Label>
-            <Select value={priority || '_none'} onValueChange={(v) => setPriority(v === '_none' ? '' : v)}>
+            <Select
+              value={priority || '_none'}
+              onValueChange={(v) => setPriority(v === '_none' ? '' : v)}
+            >
               <SelectTrigger id="priority">
                 <SelectValue placeholder="Select priority" />
               </SelectTrigger>
@@ -235,22 +239,20 @@ export function AddTaskModal({
                   <span className="text-muted-foreground">None</span>
                 </SelectItem>
                 <SelectItem value="high">
-                  <span className="text-red-500 font-medium">High</span>
+                  <span className="font-medium text-red-500">High</span>
                 </SelectItem>
                 <SelectItem value="medium">
-                  <span className="text-yellow-500 font-medium">Medium</span>
+                  <span className="font-medium text-yellow-500">Medium</span>
                 </SelectItem>
                 <SelectItem value="low">
-                  <span className="text-green-500 font-medium">Low</span>
+                  <span className="font-medium text-green-500">Low</span>
                 </SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           {/* Error message */}
-          {error && (
-            <div className="text-sm text-destructive">{error}</div>
-          )}
+          {error && <div className="text-sm text-destructive">{error}</div>}
 
           {/* Actions */}
           <DialogFooter>

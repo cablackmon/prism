@@ -19,36 +19,53 @@ interface WeekendPlaceDetailProps {
 }
 
 export function WeekendPlaceDetail({
-  place, onClose, onEdit, onDelete, onToggleFavorite, onMarkVisited,
+  place,
+  onClose,
+  onEdit,
+  onDelete,
+  onToggleFavorite,
+  onMarkVisited,
 }: WeekendPlaceDetailProps) {
   const cfg = STATUS_CONFIG[place.status];
-  const pipColor = place.isFavorite ? '#F59E0B' : place.status === 'visited' ? '#10B981' : '#6B7280';
+  const pipColor = place.isFavorite
+    ? '#F59E0B'
+    : place.status === 'visited'
+      ? '#10B981'
+      : '#6B7280';
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="flex items-start gap-2 px-4 py-3 border-b border-border shrink-0">
-        <div className="flex-1 min-w-0">
+      <div className="flex shrink-0 items-start gap-2 border-b border-border px-4 py-3">
+        <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
-            {place.isFavorite && <Star className="h-4 w-4 fill-amber-400 text-amber-400 shrink-0" />}
-            <h2 className="font-bold text-base leading-tight">{place.name}</h2>
+            {place.isFavorite && (
+              <Star className="h-4 w-4 shrink-0 fill-amber-400 text-amber-400" />
+            )}
+            <h2 className="text-base font-bold leading-tight">{place.name}</h2>
           </div>
           {place.placeName && (
-            <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
-              <MapPin className="h-3 w-3 shrink-0" />{place.placeName}
+            <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+              <MapPin className="h-3 w-3 shrink-0" />
+              {place.placeName}
             </p>
           )}
         </div>
-        <button onClick={onClose} className="text-muted-foreground hover:text-foreground p-1 shrink-0">
+        <button
+          onClick={onClose}
+          className="shrink-0 p-1 text-muted-foreground hover:text-foreground"
+        >
           <X className="h-4 w-4" />
         </button>
       </div>
 
       {/* Body */}
-      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
+      <div className="flex-1 space-y-4 overflow-y-auto px-4 py-3">
         {/* Status + visits */}
         <div className="flex items-center justify-between">
-          <span className={cn('text-xs font-medium px-2 py-1 rounded-full', cfg.bgClass, cfg.textClass)}>
+          <span
+            className={cn('rounded-full px-2 py-1 text-xs font-medium', cfg.bgClass, cfg.textClass)}
+          >
             {cfg.label}
           </span>
           <VisitPips count={place.visitCount} color={pipColor} />
@@ -68,7 +85,7 @@ export function WeekendPlaceDetail({
         {/* Description */}
         {place.description && (
           <div>
-            <p className="text-xs font-medium text-muted-foreground mb-1">About</p>
+            <p className="mb-1 text-xs font-medium text-muted-foreground">About</p>
             <p className="text-sm">{place.description}</p>
           </div>
         )}
@@ -76,17 +93,19 @@ export function WeekendPlaceDetail({
         {/* Notes */}
         {place.notes && (
           <div>
-            <p className="text-xs font-medium text-muted-foreground mb-1">Notes</p>
-            <p className="text-sm whitespace-pre-wrap">{place.notes}</p>
+            <p className="mb-1 text-xs font-medium text-muted-foreground">Notes</p>
+            <p className="whitespace-pre-wrap text-sm">{place.notes}</p>
           </div>
         )}
 
         {/* Tags */}
         {place.tags.length > 0 && (
           <div>
-            <p className="text-xs font-medium text-muted-foreground mb-1.5">Tags</p>
+            <p className="mb-1.5 text-xs font-medium text-muted-foreground">Tags</p>
             <div className="flex flex-wrap gap-1.5">
-              {place.tags.map((tag) => <TagChip key={tag} tag={tag} />)}
+              {place.tags.map((tag) => (
+                <TagChip key={tag} tag={tag} />
+              ))}
             </div>
           </div>
         )}
@@ -105,22 +124,20 @@ export function WeekendPlaceDetail({
         )}
 
         {/* Address */}
-        {place.address && (
-          <p className="text-xs text-muted-foreground">{place.address}</p>
-        )}
+        {place.address && <p className="text-xs text-muted-foreground">{place.address}</p>}
       </div>
 
       {/* Actions */}
-      <div className="px-4 py-3 border-t border-border shrink-0 space-y-2">
+      <div className="shrink-0 space-y-2 border-t border-border px-4 py-3">
         {place.status === 'backlog' && (
           <Button onClick={onMarkVisited} className="w-full" size="sm" variant="default">
-            <CheckCircle2 className="h-4 w-4 mr-1.5" />
+            <CheckCircle2 className="mr-1.5 h-4 w-4" />
             Mark as Visited
           </Button>
         )}
         {place.status === 'visited' && (
           <Button onClick={onMarkVisited} className="w-full" size="sm" variant="outline">
-            <Circle className="h-4 w-4 mr-1.5" />
+            <Circle className="mr-1.5 h-4 w-4" />
             Log Another Visit
           </Button>
         )}
@@ -131,14 +148,19 @@ export function WeekendPlaceDetail({
             size="sm"
             className={cn('flex-1', place.isFavorite && 'border-amber-400 text-amber-500')}
           >
-            <Star className={cn('h-4 w-4 mr-1.5', place.isFavorite && 'fill-amber-400')} />
+            <Star className={cn('mr-1.5 h-4 w-4', place.isFavorite && 'fill-amber-400')} />
             {place.isFavorite ? 'Unfavorite' : 'Favorite'}
           </Button>
           <Button onClick={onEdit} variant="outline" size="sm" className="flex-1">
-            <Pencil className="h-4 w-4 mr-1.5" />
+            <Pencil className="mr-1.5 h-4 w-4" />
             Edit
           </Button>
-          <Button onClick={onDelete} variant="outline" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
+          <Button
+            onClick={onDelete}
+            variant="outline"
+            size="sm"
+            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+          >
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>

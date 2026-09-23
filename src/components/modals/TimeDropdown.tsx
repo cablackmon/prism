@@ -18,14 +18,16 @@ function parseTimeInput(raw: string): string | null {
   const isPM = s.includes('pm');
   const isAM = s.includes('am');
   const digits = s.replace(/[apm]/g, '');
-  let h = -1, m = 0;
+  let h = -1,
+    m = 0;
 
   if (digits.includes(':')) {
     const [hp, mp] = digits.split(':');
     h = parseInt(hp ?? '', 10);
     m = parseInt(mp ?? '0', 10);
   } else if (digits.length <= 2) {
-    h = parseInt(digits, 10); m = 0;
+    h = parseInt(digits, 10);
+    m = 0;
   } else if (digits.length === 3) {
     h = parseInt(digits[0] ?? '', 10);
     m = parseInt(digits.slice(1), 10);
@@ -94,8 +96,10 @@ export function TimeDropdown({ value, onChange, minTime, disabled, className }: 
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === 'Enter') { commitDraft(); setOpen(false); }
-    else if (e.key === 'Escape') setOpen(false);
+    if (e.key === 'Enter') {
+      commitDraft();
+      setOpen(false);
+    } else if (e.key === 'Escape') setOpen(false);
   }
 
   return (
@@ -104,14 +108,14 @@ export function TimeDropdown({ value, onChange, minTime, disabled, className }: 
         type="button"
         disabled={disabled}
         onClick={() => setOpen((v) => !v)}
-        className="h-8 px-2.5 rounded-md text-sm font-medium hover:bg-muted transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+        className="h-8 whitespace-nowrap rounded-md px-2.5 text-sm font-medium transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
       >
         {value ? formatTime12(value) : 'Time'}
       </button>
 
       {open && (
-        <div className="absolute z-50 top-full left-0 mt-1 w-44 bg-popover border border-border rounded-lg shadow-xl overflow-hidden">
-          <div className="p-1.5 border-b border-border">
+        <div className="absolute left-0 top-full z-50 mt-1 w-44 overflow-hidden rounded-lg border border-border bg-popover shadow-xl">
+          <div className="border-b border-border p-1.5">
             <input
               ref={inputRef}
               value={draft}
@@ -119,7 +123,7 @@ export function TimeDropdown({ value, onChange, minTime, disabled, className }: 
               onKeyDown={handleKeyDown}
               onBlur={commitDraft}
               placeholder="e.g. 2:30 PM"
-              className="w-full text-xs px-2 py-1.5 rounded-md bg-muted/50 placeholder:text-muted-foreground/50 outline-none focus:ring-1 focus:ring-primary"
+              className="w-full rounded-md bg-muted/50 px-2 py-1.5 text-xs outline-none placeholder:text-muted-foreground/50 focus:ring-1 focus:ring-primary"
             />
           </div>
           <ul ref={listRef} className="max-h-56 overflow-y-auto py-1">
@@ -129,8 +133,9 @@ export function TimeDropdown({ value, onChange, minTime, disabled, className }: 
                   type="button"
                   onClick={() => select(slot)}
                   className={cn(
-                    'w-full text-left px-3 py-1 text-sm hover:bg-muted transition-colors',
-                    slot === value && 'bg-primary text-primary-foreground hover:bg-primary/90 font-medium',
+                    'w-full px-3 py-1 text-left text-sm transition-colors hover:bg-muted',
+                    slot === value &&
+                      'bg-primary font-medium text-primary-foreground hover:bg-primary/90',
                     minTime && slot < minTime && slot !== value && 'text-muted-foreground/50'
                   )}
                 >

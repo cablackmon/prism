@@ -14,7 +14,9 @@ jest.mock('../getRedisClient', () => ({
 import { getRedisClient } from '../getRedisClient';
 const mockedGetRedisClient = getRedisClient as jest.MockedFunction<typeof getRedisClient>;
 
-function setupRedisClient(overrides?: Partial<{ incr: typeof mockIncr; expire: typeof mockExpire; ttl: typeof mockTtl }>) {
+function setupRedisClient(
+  overrides?: Partial<{ incr: typeof mockIncr; expire: typeof mockExpire; ttl: typeof mockTtl }>
+) {
   const client = {
     incr: overrides?.incr ?? mockIncr,
     expire: overrides?.expire ?? mockExpire,

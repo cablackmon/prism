@@ -3,11 +3,27 @@
 import { useState, useEffect, useCallback } from 'react';
 import { format } from 'date-fns';
 import {
-  Cloud, CloudRain, CloudSnow, Sun, CloudSun, Droplets, Wind, Wifi,
-  Phone, Home, User, ScrollText, AlertTriangle, Lock,
+  Cloud,
+  CloudRain,
+  CloudSnow,
+  Sun,
+  CloudSun,
+  Droplets,
+  Wind,
+  Wifi,
+  Phone,
+  Home,
+  User,
+  ScrollText,
+  AlertTriangle,
+  Lock,
 } from 'lucide-react';
 import { useBabysitterMode } from '@/lib/hooks/useBabysitterMode';
-import { useBabysitterInfo, type BabysitterSection, type BabysitterInfoItem } from '@/lib/hooks/useBabysitterInfo';
+import {
+  useBabysitterInfo,
+  type BabysitterSection,
+  type BabysitterInfoItem,
+} from '@/lib/hooks/useBabysitterInfo';
 import { useWifiConfig } from '@/lib/hooks/useWifiConfig';
 import { ExitBabysitterModeModal } from './ExitBabysitterModeModal';
 import { WifiQRCode } from '@/components/ui/WifiQRCode';
@@ -45,7 +61,11 @@ export function BabysitterModeOverlay() {
   const { isActive, toggle } = useBabysitterMode();
   // Only fetch sensitive data when the overlay is actually active — avoids 401s for unauthenticated users
   const { items } = useBabysitterInfo({ includeSensitive: isActive });
-  const { config: wifiConfig, qrString, hasConfig: hasWifiConfig } = useWifiConfig({ enabled: isActive });
+  const {
+    config: wifiConfig,
+    qrString,
+    hasConfig: hasWifiConfig,
+  } = useWifiConfig({ enabled: isActive });
   const [visible, setVisible] = useState(false);
   const [showExitModal, setShowExitModal] = useState(false);
 
@@ -76,13 +96,13 @@ export function BabysitterModeOverlay() {
 
   return (
     <div
-      className={`fixed inset-0 z-[9997] bg-gradient-to-br from-blue-900 via-indigo-900 to-purple-900 transition-opacity duration-1000 cursor-pointer overflow-auto ${
+      className={`fixed inset-0 z-[9997] cursor-pointer overflow-auto bg-gradient-to-br from-blue-900 via-indigo-900 to-purple-900 transition-opacity duration-1000 ${
         visible ? 'opacity-100' : 'opacity-0'
       }`}
       onClick={handleOverlayClick}
     >
       {/* Header with clock and weather */}
-      <div className="sticky top-0 z-10 bg-black/30 backdrop-blur-sm border-b border-white/10">
+      <div className="sticky top-0 z-10 border-b border-white/10 bg-black/30 backdrop-blur-sm">
         <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-4">
             <BabysitterClock />
@@ -93,22 +113,20 @@ export function BabysitterModeOverlay() {
 
       {/* Main content */}
       <div className="p-6 pb-24">
-        <h1 className="text-3xl font-bold text-white mb-6 text-center">
-          Babysitter Information
-        </h1>
+        <h1 className="mb-6 text-center text-3xl font-bold text-white">Babysitter Information</h1>
 
         {items.length === 0 ? (
-          <div className="text-center text-white/60 py-12">
-            <ScrollText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+          <div className="py-12 text-center text-white/60">
+            <ScrollText className="mx-auto mb-4 h-12 w-12 opacity-50" />
             <p className="text-lg">No information configured</p>
-            <p className="text-sm mt-1">Parents can add info in Settings</p>
+            <p className="mt-1 text-sm">Parents can add info in Settings</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl mx-auto">
+          <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 md:grid-cols-2">
             {/* WiFi QR Code */}
             {hasWifiConfig && qrString && (
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-                <h2 className="flex items-center gap-2 text-lg font-semibold text-white mb-3">
+              <div className="rounded-xl border border-white/20 bg-white/10 p-4 backdrop-blur-sm">
+                <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-white">
                   <Wifi className="h-5 w-5" />
                   WiFi
                 </h2>
@@ -167,8 +185,8 @@ export function BabysitterModeOverlay() {
       </div>
 
       {/* Footer */}
-      <div className="fixed bottom-0 left-0 right-0 text-center py-4 bg-black/30 backdrop-blur-sm">
-        <p className="text-white/50 text-sm">Tap anywhere to unlock</p>
+      <div className="fixed bottom-0 left-0 right-0 bg-black/30 py-4 text-center backdrop-blur-sm">
+        <p className="text-sm text-white/50">Tap anywhere to unlock</p>
       </div>
 
       {/* Exit modal */}
@@ -234,8 +252,10 @@ function BabysitterWeather() {
     <div className="flex items-center gap-3 text-white/80">
       <div className="text-3xl">{icon}</div>
       <div>
-        <div className="text-2xl font-light">{Math.round(weather.temperature)}°{units.temperature}</div>
-        <div className="text-xs text-white/50 capitalize">{weather.description}</div>
+        <div className="text-2xl font-light">
+          {Math.round(weather.temperature)}°{units.temperature}
+        </div>
+        <div className="text-xs capitalize text-white/50">{weather.description}</div>
       </div>
     </div>
   );
@@ -271,8 +291,8 @@ function SectionCard({ title, icon, items, renderItem }: SectionCardProps) {
   if (items.length === 0) return null;
 
   return (
-    <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-      <h2 className="flex items-center gap-2 text-lg font-semibold text-white mb-3">
+    <div className="rounded-xl border border-white/20 bg-white/10 p-4 backdrop-blur-sm">
+      <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-white">
         {icon}
         {title}
       </h2>
@@ -289,12 +309,12 @@ function EmergencyContactCard({ content }: { content: EmergencyContact }) {
   if (!content) return null;
 
   return (
-    <div className="flex items-center justify-between p-3 bg-white/10 rounded-lg">
+    <div className="flex items-center justify-between rounded-lg bg-white/10 p-3">
       <div>
         <div className="flex items-center gap-2">
           <span className="font-medium text-white">{content.name}</span>
           {content.isPrimary === 'true' && (
-            <span className="text-xs bg-green-500/30 text-green-300 px-2 py-0.5 rounded">
+            <span className="rounded bg-green-500/30 px-2 py-0.5 text-xs text-green-300">
               Primary
             </span>
           )}
@@ -304,7 +324,7 @@ function EmergencyContactCard({ content }: { content: EmergencyContact }) {
       <a
         href={`tel:${content.phone}`}
         onClick={(e) => e.stopPropagation()}
-        className="text-blue-300 font-medium hover:text-blue-200 text-lg"
+        className="text-lg font-medium text-blue-300 hover:text-blue-200"
       >
         {content.phone}
       </a>
@@ -316,7 +336,7 @@ function HouseInfoCard({ content }: { content: HouseInfo }) {
   if (!content) return null;
 
   return (
-    <div className="flex items-center justify-between p-3 bg-white/10 rounded-lg">
+    <div className="flex items-center justify-between rounded-lg bg-white/10 p-3">
       <span className="text-sm text-white/60">{content.label}</span>
       <span className="font-medium text-white">{content.value}</span>
     </div>
@@ -327,16 +347,14 @@ function ChildInfoCard({ content }: { content: ChildInfo }) {
   if (!content) return null;
 
   return (
-    <div className="p-3 bg-white/10 rounded-lg space-y-1">
+    <div className="space-y-1 rounded-lg bg-white/10 p-3">
       <div className="flex items-center justify-between">
         <span className="font-medium text-white">{content.name}</span>
-        {content.age && (
-          <span className="text-sm text-white/60">Age: {content.age}</span>
-        )}
+        {content.age && <span className="text-sm text-white/60">Age: {content.age}</span>}
       </div>
       {content.allergies && (
         <div className="flex items-start gap-2">
-          <AlertTriangle className="h-4 w-4 text-red-400 shrink-0 mt-0.5" />
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
           <span className="text-sm text-red-300">
             <strong>Allergies:</strong> {content.allergies}
           </span>
@@ -352,9 +370,7 @@ function ChildInfoCard({ content }: { content: ChildInfo }) {
           <span className="text-white/50">Bedtime:</span> {content.bedtime}
         </p>
       )}
-      {content.notes && (
-        <p className="text-sm text-white/50 italic">{content.notes}</p>
-      )}
+      {content.notes && <p className="text-sm italic text-white/50">{content.notes}</p>}
     </div>
   );
 }
@@ -371,7 +387,7 @@ function HouseRuleCard({ content }: { content: HouseRule }) {
   return (
     <div
       className={cn(
-        'p-3 bg-white/10 rounded-lg border-l-4',
+        'rounded-lg border-l-4 bg-white/10 p-3',
         importanceColors[content.importance || 'medium']
       )}
     >

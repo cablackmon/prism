@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
       if (!shareUrl || typeof shareUrl !== 'string') {
         return NextResponse.json(
           { error: 'shareUrl is required for Immich sources' },
-          { status: 400 },
+          { status: 400 }
         );
       }
 
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
       } catch (err) {
         return NextResponse.json(
           { error: err instanceof Error ? err.message : 'Invalid share URL' },
-          { status: 400 },
+          { status: 400 }
         );
       }
 
@@ -95,34 +95,32 @@ export async function POST(request: NextRequest) {
         if (err instanceof UnsafeUrlError) {
           return NextResponse.json(
             { error: 'unsafe_url', message: 'Share URL points at a private or loopback address' },
-            { status: 400 },
+            { status: 400 }
           );
         }
         if (err instanceof ImmichPasswordRequiredError) {
           return NextResponse.json(
             { error: 'password_required', message: 'This shared link requires a password' },
-            { status: 401 },
+            { status: 401 }
           );
         }
         if (err instanceof ImmichInvalidPasswordError) {
           return NextResponse.json(
             { error: 'invalid_password', message: 'Incorrect password' },
-            { status: 401 },
+            { status: 401 }
           );
         }
         if (err instanceof ImmichShareNotFoundError) {
           return NextResponse.json(
             { error: 'not_found', message: 'Shared link not found at the given URL' },
-            { status: 404 },
+            { status: 404 }
           );
         }
         throw err;
       }
 
       const sourceName =
-        (typeof name === 'string' && name.trim()) ||
-        link.albumName ||
-        'Immich album';
+        (typeof name === 'string' && name.trim()) || link.albumName || 'Immich album';
 
       const [source] = await db
         .insert(photoSources)

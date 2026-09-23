@@ -35,7 +35,10 @@ mockDelete.mockReturnValue({ where: mockDeleteWhere });
 jest.mock('@/lib/db/client', () => ({
   db: {
     query: {
-      calendarSources: { findFirst: (...args: unknown[]) => mockFindFirst(...args), findMany: (...args: unknown[]) => mockFindMany(...args) },
+      calendarSources: {
+        findFirst: (...args: unknown[]) => mockFindFirst(...args),
+        findMany: (...args: unknown[]) => mockFindMany(...args),
+      },
       events: { findMany: (...args: unknown[]) => mockFindMany(...args) },
     },
     select: (...args: unknown[]) => mockSelect(...args),
@@ -47,7 +50,13 @@ jest.mock('@/lib/db/client', () => ({
 
 jest.mock('@/lib/db/schema', () => ({
   calendarSources: { id: 'id', provider: 'provider', enabled: 'enabled' },
-  events: { calendarSourceId: 'calendarSourceId', externalEventId: 'externalEventId', startTime: 'startTime', id: 'id', pendingDeletion: 'pendingDeletion' },
+  events: {
+    calendarSourceId: 'calendarSourceId',
+    externalEventId: 'externalEventId',
+    startTime: 'startTime',
+    id: 'id',
+    pendingDeletion: 'pendingDeletion',
+  },
   dismissedEvents: { calendarSourceId: 'calendarSourceId', externalEventId: 'externalEventId' },
 }));
 
@@ -257,9 +266,7 @@ describe('syncGoogleCalendarSource', () => {
   it('flags (pending deletion) events no longer in Google instead of deleting them', async () => {
     mockFindFirst.mockResolvedValue(makeSource());
     // Google only has event-1
-    mockFetchCalendarEvents.mockResolvedValue([
-      { id: 'event-1', summary: 'Still exists' },
-    ]);
+    mockFetchCalendarEvents.mockResolvedValue([{ id: 'event-1', summary: 'Still exists' }]);
     mockConvertEvent.mockReturnValue({
       externalEventId: 'event-1',
       title: 'Still exists',
@@ -277,7 +284,7 @@ describe('syncGoogleCalendarSource', () => {
     // Deletes-only review: prism-2 is FLAGGED pending, not hard-deleted.
     expect(mockDelete).not.toHaveBeenCalled();
     expect(mockUpdateSet).toHaveBeenCalledWith(
-      expect.objectContaining({ pendingDeletion: expect.any(Date) }),
+      expect.objectContaining({ pendingDeletion: expect.any(Date) })
     );
   });
 
@@ -313,7 +320,7 @@ describe('syncGoogleCalendarSource — auto-disable gated on consecutive 404s (M
   it('does not auto-disable on the first 404 after transient (non-404) failures', async () => {
     // Two prior transient failures already reset the 404 streak to 0.
     mockFindFirst.mockResolvedValue(
-      makeSource({ syncErrors: { consecutiveFailures: 2, consecutive404: 0 } }),
+      makeSource({ syncErrors: { consecutiveFailures: 2, consecutive404: 0 } })
     );
     mockFetchCalendarEvents.mockRejectedValue(new Error('Google API error: 404 Not Found'));
 
@@ -326,7 +333,7 @@ describe('syncGoogleCalendarSource — auto-disable gated on consecutive 404s (M
 
   it('auto-disables only after 3 consecutive 404s', async () => {
     mockFindFirst.mockResolvedValue(
-      makeSource({ syncErrors: { consecutiveFailures: 5, consecutive404: 2 } }),
+      makeSource({ syncErrors: { consecutiveFailures: 5, consecutive404: 2 } })
     );
     mockFetchCalendarEvents.mockRejectedValue(new Error('404 Not Found'));
 
@@ -339,7 +346,7 @@ describe('syncGoogleCalendarSource — auto-disable gated on consecutive 404s (M
 
   it('resets the 404 streak on a non-404 failure', async () => {
     mockFindFirst.mockResolvedValue(
-      makeSource({ syncErrors: { consecutiveFailures: 2, consecutive404: 2 } }),
+      makeSource({ syncErrors: { consecutiveFailures: 2, consecutive404: 2 } })
     );
     mockFetchCalendarEvents.mockRejectedValue(new Error('500 Internal Server Error'));
 
@@ -352,7 +359,7 @@ describe('syncGoogleCalendarSource — auto-disable gated on consecutive 404s (M
 
   it('never auto-disables a source the user manually re-enabled (userOverride)', async () => {
     mockFindFirst.mockResolvedValue(
-      makeSource({ syncErrors: { consecutive404: 5, userOverride: true } }),
+      makeSource({ syncErrors: { consecutive404: 5, userOverride: true } })
     );
     mockFetchCalendarEvents.mockRejectedValue(new Error('404 Not Found'));
 
@@ -569,7 +576,7 @@ describe('syncIcalCalendarSource', () => {
     expect(mockInsertValues).toHaveBeenCalledWith(
       expect.objectContaining({
         externalEventId: 'real-uid-123',
-      }),
+      })
     );
   });
 
@@ -607,7 +614,7 @@ describe('syncIcalCalendarSource', () => {
       expect.objectContaining({
         recurring: true,
         recurrenceRule: null,
-      }),
+      })
     );
   });
 

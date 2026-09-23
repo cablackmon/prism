@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
   if (forbidden) return forbidden;
 
   try {
-    const body = await request.json() as {
+    const body = (await request.json()) as {
       clientId?: string;
       clientSecret?: string;
       redirectUri?: string;
@@ -26,7 +26,10 @@ export async function POST(request: NextRequest) {
 
     const { clientId, clientSecret, redirectUri, gmailRedirectUri } = body;
     if (!clientId?.trim() || !clientSecret?.trim() || !redirectUri?.trim()) {
-      return NextResponse.json({ error: 'clientId, clientSecret, and redirectUri are required' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'clientId, clientSecret, and redirectUri are required' },
+        { status: 400 }
+      );
     }
 
     const value = {

@@ -35,7 +35,6 @@ import { useTimeFormat } from '@/components/providers';
 import { formatDisplayTime, toDisplayDate } from '@/lib/utils/timeFormat';
 import { WidgetContainer } from './WidgetContainer';
 
-
 /**
  * CLOCK WIDGET PROPS
  */
@@ -51,7 +50,6 @@ export interface ClockWidgetProps {
   /** Additional CSS classes */
   className?: string;
 }
-
 
 /**
  * CLOCK WIDGET COMPONENT
@@ -85,9 +83,8 @@ export const ClockWidget = React.memo(function ClockWidget({
 }: ClockWidgetProps) {
   const { timeFormat, displayTimezone } = useTimeFormat();
   const locale = useLocale();
-  const effectiveTimeFormat = format24Hour === undefined
-    ? timeFormat
-    : format24Hour ? '24h' : '12h';
+  const effectiveTimeFormat =
+    format24Hour === undefined ? timeFormat : format24Hour ? '24h' : '12h';
   // State to hold the current time
   // Initialize with current time to avoid hydration mismatch
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
@@ -108,7 +105,12 @@ export const ClockWidget = React.memo(function ClockWidget({
   }, []);
 
   // Formatted strings
-  const timeString = formatDisplayTime(currentTime, effectiveTimeFormat, { showSeconds }, displayTimezone);
+  const timeString = formatDisplayTime(
+    currentTime,
+    effectiveTimeFormat,
+    { showSeconds },
+    displayTimezone
+  );
   // Locale-aware, via Intl rather than a fixed date-fns pattern: word order
   // differs per language ("Tuesday, January 21" vs "Dienstag, 21. Januar"), so
   // a hardcoded pattern would render German words in US order.
@@ -139,7 +141,7 @@ export const ClockWidget = React.memo(function ClockWidget({
       showHeader={false}
       className={cn('flex items-center justify-center', className)}
     >
-      <div className="flex flex-col items-center justify-center h-full text-center">
+      <div className="flex h-full flex-col items-center justify-center text-center">
         {/* TIME DISPLAY */}
         <time
           dateTime={currentTime.toISOString()}
@@ -159,10 +161,7 @@ export const ClockWidget = React.memo(function ClockWidget({
         {showDate && (
           <time
             dateTime={currentTime.toISOString().split('T')[0]}
-            className={cn(
-              'text-muted-foreground mt-1',
-              dateStyles[size]
-            )}
+            className={cn('mt-1 text-muted-foreground', dateStyles[size])}
           >
             {dateString}
           </time>
@@ -171,7 +170,6 @@ export const ClockWidget = React.memo(function ClockWidget({
     </WidgetContainer>
   );
 });
-
 
 /**
  * USE CURRENT TIME HOOK
@@ -203,7 +201,6 @@ export function useCurrentTime(updateInterval = 1000): Date {
   return time;
 }
 
-
 /**
  * FORMAT TIME
  * Utility function to format time consistently throughout the app.
@@ -224,8 +221,12 @@ export function formatTime(
   const { format24Hour = false, showSeconds = false } = options;
 
   const formatString = format24Hour
-    ? showSeconds ? 'HH:mm:ss' : 'HH:mm'
-    : showSeconds ? 'h:mm:ss a' : 'h:mm a';
+    ? showSeconds
+      ? 'HH:mm:ss'
+      : 'HH:mm'
+    : showSeconds
+      ? 'h:mm:ss a'
+      : 'h:mm a';
 
   return format(date, formatString);
 }

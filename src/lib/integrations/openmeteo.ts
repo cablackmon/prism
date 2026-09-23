@@ -202,10 +202,9 @@ function zonedTimeToUtc(localIso: string, timeZone: string): Date {
 // Main fetch function
 // ---------------------------------------------------------------------------
 
-
 export async function fetchWeatherData(
   location?: LocationParam,
-  options?: WeatherOptions,
+  options?: WeatherOptions
 ): Promise<WeatherData> {
   const config = getConfig(location);
   const units = options?.units ?? defaultImperialUnits();
@@ -228,12 +227,9 @@ export async function fetchWeatherData(
       'weather_code',
       'precipitation',
     ].join(','),
-    hourly: [
-      'temperature_2m',
-      'precipitation_probability',
-      'precipitation',
-      'weather_code',
-    ].join(','),
+    hourly: ['temperature_2m', 'precipitation_probability', 'precipitation', 'weather_code'].join(
+      ','
+    ),
     daily: [
       'temperature_2m_max',
       'temperature_2m_min',
@@ -282,7 +278,7 @@ export async function fetchWeatherData(
   // clock string with the response's IANA timezone gives the correct UTC
   // instant in one step.
   const sunrise = daily.sunrise[0] ? zonedTimeToUtc(daily.sunrise[0], timezone) : undefined;
-  const sunset  = daily.sunset[0]  ? zonedTimeToUtc(daily.sunset[0],  timezone) : undefined;
+  const sunset = daily.sunset[0] ? zonedTimeToUtc(daily.sunset[0], timezone) : undefined;
 
   // ── 7-day forecast ────────────────────────────────────────────────────────
   // Today's local date at the forecast location — used to drop stale past-day
@@ -290,8 +286,7 @@ export async function fetchWeatherData(
   // Open-Meteo's `daily.time` strings are already in the response timezone, so
   // a YYYY-MM-DD comparison is sufficient. (See iann's PR #27 for the same
   // issue addressed in the OWM and Pirate Weather paths.)
-  const todayLocalStr = new Intl.DateTimeFormat('en-CA', { timeZone: timezone })
-    .format(new Date());
+  const todayLocalStr = new Intl.DateTimeFormat('en-CA', { timeZone: timezone }).format(new Date());
 
   const forecast: ForecastDay[] = daily.time
     .map((dateStr, i) => ({ dateStr, i }))
@@ -346,7 +341,7 @@ export async function fetchWeatherData(
           temp: currentWeather.temperature,
           precipIntensity: current.precipitation,
         }
-      : h,
+      : h
   );
 
   // ── Periods (Morning / Afternoon / Evening) ───────────────────────────────

@@ -46,9 +46,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ lists });
   } catch (error) {
     logError('Error fetching Google Tasks lists:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch Google Tasks lists' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch Google Tasks lists' }, { status: 500 });
   }
 }

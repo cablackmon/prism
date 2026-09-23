@@ -5,12 +5,7 @@ import { useState, useMemo } from 'react';
 import { User, Trash2, ShoppingCart, Package, Store, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useConfirmDialog } from '@/lib/hooks/useConfirmDialog';
 import { cn } from '@/lib/utils';
@@ -25,9 +20,9 @@ import {
 type ListType = 'grocery' | 'general' | 'other';
 type VisualType = ListType | 'custom';
 
-const GROCERY_IDS = new Set(GROCERY_CATEGORIES.map(c => c.id));
-const GENERAL_IDS = new Set(GENERAL_CATEGORIES.map(c => c.id));
-const ALL_IDS = new Set(ALL_DEFAULT_CATEGORIES.map(c => c.id));
+const GROCERY_IDS = new Set(GROCERY_CATEGORIES.map((c) => c.id));
+const GENERAL_IDS = new Set(GENERAL_CATEGORIES.map((c) => c.id));
+const ALL_IDS = new Set(ALL_DEFAULT_CATEGORIES.map((c) => c.id));
 
 export interface ListModalSaveData {
   name: string;
@@ -40,11 +35,11 @@ export interface ListModalSaveData {
 /** Determine which visual type preset matches a given selection (against available categories) */
 function deriveVisualType(selected: Set<string>, allCategoryIds: Set<string>): VisualType {
   // Check exact matches against presets (only considering categories that exist in the available set)
-  const effectiveGrocery = new Set([...GROCERY_IDS].filter(id => allCategoryIds.has(id)));
-  const effectiveGeneral = new Set([...GENERAL_IDS].filter(id => allCategoryIds.has(id)));
+  const effectiveGrocery = new Set([...GROCERY_IDS].filter((id) => allCategoryIds.has(id)));
+  const effectiveGeneral = new Set([...GENERAL_IDS].filter((id) => allCategoryIds.has(id)));
 
   const setsEqual = (a: Set<string>, b: Set<string>) =>
-    a.size === b.size && [...a].every(id => b.has(id));
+    a.size === b.size && [...a].every((id) => b.has(id));
 
   if (setsEqual(selected, effectiveGrocery)) return 'grocery';
   if (setsEqual(selected, effectiveGeneral)) return 'general';
@@ -56,9 +51,9 @@ function deriveVisualType(selected: Set<string>, allCategoryIds: Set<string>): V
 function presetForType(type: VisualType, allCategoryIds: Set<string>): Set<string> {
   switch (type) {
     case 'grocery':
-      return new Set([...GROCERY_IDS].filter(id => allCategoryIds.has(id)));
+      return new Set([...GROCERY_IDS].filter((id) => allCategoryIds.has(id)));
     case 'general':
-      return new Set([...GENERAL_IDS].filter(id => allCategoryIds.has(id)));
+      return new Set([...GENERAL_IDS].filter((id) => allCategoryIds.has(id)));
     case 'other':
       return new Set(allCategoryIds);
     case 'custom':
@@ -88,7 +83,7 @@ export function ListModal({
   const [deleting, setDeleting] = useState(false);
   const { confirm, dialogProps: confirmDialogProps } = useConfirmDialog();
 
-  const allCategoryIds = useMemo(() => new Set(categories.map(c => c.id)), [categories]);
+  const allCategoryIds = useMemo(() => new Set(categories.map((c) => c.id)), [categories]);
 
   // Initialize selected categories from list or type preset
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(() => {
@@ -102,10 +97,10 @@ export function ListModal({
         return new Set<string>();
       }
       // null means all visible
-      return new Set(categories.map(c => c.id));
+      return new Set(categories.map((c) => c.id));
     }
     // New list: default to grocery preset
-    return new Set([...GROCERY_IDS].filter(id => allCategoryIds.has(id)));
+    return new Set([...GROCERY_IDS].filter((id) => allCategoryIds.has(id)));
   });
 
   // Derive the visual type from current selection
@@ -119,7 +114,7 @@ export function ListModal({
   };
 
   const toggleCategory = (categoryId: string) => {
-    setSelectedCategories(prev => {
+    setSelectedCategories((prev) => {
       const next = new Set(prev);
       if (next.has(categoryId)) {
         next.delete(categoryId);
@@ -132,7 +127,8 @@ export function ListModal({
 
   const handleDelete = async () => {
     if (!onDelete) return;
-    if (!await confirm(`Delete "${list?.name}"?`, 'All items on this list will also be deleted.')) return;
+    if (!(await confirm(`Delete "${list?.name}"?`, 'All items on this list will also be deleted.')))
+      return;
 
     setDeleting(true);
     try {
@@ -148,8 +144,9 @@ export function ListModal({
 
     setSaving(true);
     try {
-      const allSelected = selectedCategories.size === categories.length &&
-        [...selectedCategories].every(id => allCategoryIds.has(id));
+      const allSelected =
+        selectedCategories.size === categories.length &&
+        [...selectedCategories].every((id) => allCategoryIds.has(id));
 
       const data: ListModalSaveData = {
         name: name.trim(),
@@ -166,7 +163,7 @@ export function ListModal({
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-md overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{list ? 'Edit List' : 'Create New List'}</DialogTitle>
         </DialogHeader>
@@ -193,7 +190,7 @@ export function ListModal({
 
           <div>
             <label className="text-sm font-medium">List Type</label>
-            <p className="text-xs text-muted-foreground mb-2">
+            <p className="mb-2 text-xs text-muted-foreground">
               Pick a preset or toggle individual categories below.
             </p>
             <div className="flex flex-wrap gap-2">
@@ -240,7 +237,7 @@ export function ListModal({
             </div>
 
             {/* Interactive category chips */}
-            <div className="flex flex-wrap gap-1.5 mt-3">
+            <div className="mt-3 flex flex-wrap gap-1.5">
               {categories.map((cat) => {
                 const isSelected = selectedCategories.has(cat.id);
                 return (
@@ -249,7 +246,7 @@ export function ListModal({
                     type="button"
                     onClick={() => toggleCategory(cat.id)}
                     className={cn(
-                      'inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full border transition-colors',
+                      'inline-flex items-center gap-1 rounded-full border px-2 py-1 text-xs transition-colors',
                       isSelected
                         ? 'border-primary/50 bg-primary/10 text-foreground'
                         : 'border-border bg-muted/30 text-muted-foreground opacity-50'
@@ -262,19 +259,20 @@ export function ListModal({
               })}
             </div>
             {selectedCategories.size === 0 && (
-              <p className="text-xs text-muted-foreground mt-1.5 italic">
+              <p className="mt-1.5 text-xs italic text-muted-foreground">
                 No categories selected. Items will appear in an uncategorized list.
               </p>
             )}
           </div>
 
           <div>
-            <label className="text-sm font-medium flex items-center gap-2">
+            <label className="flex items-center gap-2 text-sm font-medium">
               <User className="h-4 w-4" />
               Assign To
             </label>
-            <p className="text-xs text-muted-foreground mb-2">
-              Only the assigned person (or parents) can check items off. Leave empty for family-wide access.
+            <p className="mb-2 text-xs text-muted-foreground">
+              Only the assigned person (or parents) can check items off. Leave empty for family-wide
+              access.
             </p>
             <div className="flex flex-wrap gap-2">
               <Button
@@ -289,22 +287,24 @@ export function ListModal({
                   /api/family responses return id='' instead of a real UUID).
                   Otherwise selecting them sets assignedTo to an empty string
                   and the create endpoint fails validation. */}
-              {familyMembers.filter((m) => m.id).map((member) => (
-                <Button
-                  key={member.id}
-                  type="button"
-                  variant={assignedTo === member.id ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setAssignedTo(member.id)}
-                  className="gap-1"
-                >
-                  <span
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: member.color }}
-                  />
-                  {member.name}
-                </Button>
-              ))}
+              {familyMembers
+                .filter((m) => m.id)
+                .map((member) => (
+                  <Button
+                    key={member.id}
+                    type="button"
+                    variant={assignedTo === member.id ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setAssignedTo(member.id)}
+                    className="gap-1"
+                  >
+                    <span
+                      className="h-3 w-3 rounded-full"
+                      style={{ backgroundColor: member.color }}
+                    />
+                    {member.name}
+                  </Button>
+                ))}
             </div>
           </div>
 
@@ -316,14 +316,19 @@ export function ListModal({
                 onClick={handleDelete}
                 disabled={saving || deleting}
               >
-                <Trash2 className="h-4 w-4 mr-1" />
+                <Trash2 className="mr-1 h-4 w-4" />
                 {deleting ? 'Deleting...' : 'Delete List'}
               </Button>
             ) : (
               <div />
             )}
             <div className="flex gap-2">
-              <Button type="button" variant="outline" onClick={onClose} disabled={saving || deleting}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                disabled={saving || deleting}
+              >
                 Cancel
               </Button>
               <Button type="submit" disabled={!name.trim() || saving || deleting}>

@@ -25,10 +25,7 @@ interface RouteParams {
  * POST /api/wish-items/[id]/claim
  * Toggle claim on a wish item.
  */
-export async function POST(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function POST(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -48,10 +45,7 @@ export async function POST(
       .where(eq(wishItems.id, id));
 
     if (!existing) {
-      return NextResponse.json(
-        { error: 'Wish item not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Wish item not found' }, { status: 404 });
     }
 
     // If already claimed by someone else, prevent double-claim
@@ -59,7 +53,8 @@ export async function POST(
       // If the owner is trying to self-claim but someone already got it, give a friendly message
       const isSelfClaim = claimedBy === existing.memberId;
       return NextResponse.json(
-        { error: isSelfClaim
+        {
+          error: isSelfClaim
             ? 'Someone already got this for you!'
             : 'This item has already been claimed by someone else',
           alreadyPurchased: isSelfClaim,
@@ -70,12 +65,15 @@ export async function POST(
 
     if (claimedBy) {
       // Claim the item
-      await db.update(wishItems).set({
-        claimed: true,
-        claimedBy,
-        claimedAt: new Date(),
-        updatedAt: new Date(),
-      }).where(eq(wishItems.id, id));
+      await db
+        .update(wishItems)
+        .set({
+          claimed: true,
+          claimedBy,
+          claimedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(wishItems.id, id));
     } else {
       // Unclaim the item — only the claimer or a parent can unclaim
       if (existing.claimedBy !== auth.userId && auth.role !== 'parent') {
@@ -84,12 +82,15 @@ export async function POST(
           { status: 403 }
         );
       }
-      await db.update(wishItems).set({
-        claimed: false,
-        claimedBy: null,
-        claimedAt: null,
-        updatedAt: new Date(),
-      }).where(eq(wishItems.id, id));
+      await db
+        .update(wishItems)
+        .set({
+          claimed: false,
+          claimedBy: null,
+          claimedAt: null,
+          updatedAt: new Date(),
+        })
+        .where(eq(wishItems.id, id));
     }
 
     await invalidateEntity('wish-items');
@@ -97,9 +98,6 @@ export async function POST(
     return NextResponse.json({ success: true });
   } catch (error) {
     logError('Error claiming wish item:', error);
-    return NextResponse.json(
-      { error: 'Failed to claim wish item' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to claim wish item' }, { status: 500 });
   }
 }

@@ -42,7 +42,7 @@ export function CompleteStep() {
 
   return (
     <Card>
-      <CardContent className="pt-8 pb-8 text-center space-y-6">
+      <CardContent className="space-y-6 pb-8 pt-8 text-center">
         <div className="flex justify-center">
           <div className="rounded-full bg-primary/10 p-4">
             <PartyPopper className="h-10 w-10 text-primary" />
@@ -52,8 +52,8 @@ export function CompleteStep() {
         <div className="space-y-2">
           <h1 className="text-2xl font-bold">You&apos;re all set!</h1>
           <p className="text-muted-foreground">
-            KYST is ready. Head to your dashboard to get started, or visit Settings to
-            connect accounts, add more family members, or fine-tune your display.
+            KYST is ready. Head to your dashboard to get started, or visit Settings to connect
+            accounts, add more family members, or fine-tune your display.
           </p>
         </div>
 
@@ -81,11 +81,13 @@ export function CompleteStep() {
           </Button>
           <Button
             variant="outline"
-            onClick={() => { window.location.href = '/settings'; }}
+            onClick={() => {
+              window.location.href = '/settings';
+            }}
             disabled={marking}
             className="w-full"
           >
-            <Settings className="h-4 w-4 mr-2" />
+            <Settings className="mr-2 h-4 w-4" />
             Open Settings
           </Button>
         </div>
@@ -93,13 +95,15 @@ export function CompleteStep() {
         {/* First-run disclosure for the opt-out anonymous update check. */}
         <div className="rounded-lg border border-border/60 bg-muted/30 p-4 text-left">
           <div className="flex items-start gap-3">
-            <ShieldCheck className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+            <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
             <div className="flex-1 space-y-1">
               <p className="text-sm font-medium">Anonymous update check</p>
               <p className="text-xs text-muted-foreground">
-                Once a week KYST checks for a new version and counts this install
-                anonymously so we know how many families use it.{' '}
-                <span className="font-medium text-foreground">No personal data, no IP address, no tracking.</span>{' '}
+                Once a week KYST checks for a new version and counts this install anonymously so we
+                know how many families use it.{' '}
+                <span className="font-medium text-foreground">
+                  No personal data, no IP address, no tracking.
+                </span>{' '}
                 <button
                   type="button"
                   onClick={() => setShowSent((v) => !v)}
@@ -109,13 +113,13 @@ export function CompleteStep() {
                 </button>
               </p>
               {showSent && (
-                <ul className="text-xs text-muted-foreground list-disc pl-4 pt-1 space-y-0.5">
+                <ul className="list-disc space-y-0.5 pl-4 pt-1 text-xs text-muted-foreground">
                   <li>a random ID for this install (not linked to you)</li>
                   <li>the KYST version you&apos;re running</li>
                   <li>Docker vs. Home Assistant, and CPU type</li>
                 </ul>
               )}
-              <p className="text-xs text-muted-foreground pt-1">
+              <p className="pt-1 text-xs text-muted-foreground">
                 You can change this anytime in Settings &rarr; About.
               </p>
             </div>
@@ -123,7 +127,7 @@ export function CompleteStep() {
               checked={telemetryOn}
               onCheckedChange={toggleTelemetry}
               aria-label="Anonymous update check"
-              className="data-[state=checked]:bg-blue-500 shrink-0 mt-0.5"
+              className="mt-0.5 shrink-0 data-[state=checked]:bg-blue-500"
             />
           </div>
         </div>

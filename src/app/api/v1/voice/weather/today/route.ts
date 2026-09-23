@@ -31,39 +31,42 @@ async function resolveLocation(): Promise<LocationParam | undefined> {
  * OpenWeather) selected by WEATHER_PROVIDER.
  */
 export async function GET() {
-  return withAuth(async () => {
-    try {
-      const location = await resolveLocation();
-      const weather = await fetchWeatherData(location);
-      const today = weather.forecast[0];
+  return withAuth(
+    async () => {
+      try {
+        const location = await resolveLocation();
+        const weather = await fetchWeatherData(location);
+        const today = weather.forecast[0];
 
-      const spoken = phraseWeatherToday({
-        location: weather.location,
-        currentTemp: Math.round(weather.current.temperature),
-        feelsLike: Math.round(weather.current.feelsLike),
-        description: weather.current.description,
-        high: today ? Math.round(today.high) : null,
-        low: today ? Math.round(today.low) : null,
-        precipProbability: today?.precipProbability ?? null,
-      });
+        const spoken = phraseWeatherToday({
+          location: weather.location,
+          currentTemp: Math.round(weather.current.temperature),
+          feelsLike: Math.round(weather.current.feelsLike),
+          description: weather.current.description,
+          high: today ? Math.round(today.high) : null,
+          low: today ? Math.round(today.low) : null,
+          precipProbability: today?.precipProbability ?? null,
+        });
 
-      return voiceOk(spoken, {
-        location: weather.location,
-        currentTemp: weather.current.temperature,
-        feelsLike: weather.current.feelsLike,
-        description: weather.current.description,
-        condition: weather.current.condition,
-        humidity: weather.current.humidity,
-        high: today?.high ?? null,
-        low: today?.low ?? null,
-        precipProbability: today?.precipProbability ?? null,
-      });
-    } catch (error) {
-      logError('Voice API: weather/today failed', error);
-      return voiceError("Sorry, I couldn't get the weather right now.", 500);
+        return voiceOk(spoken, {
+          location: weather.location,
+          currentTemp: weather.current.temperature,
+          feelsLike: weather.current.feelsLike,
+          description: weather.current.description,
+          condition: weather.current.condition,
+          humidity: weather.current.humidity,
+          high: today?.high ?? null,
+          low: today?.low ?? null,
+          precipProbability: today?.precipProbability ?? null,
+        });
+      } catch (error) {
+        logError('Voice API: weather/today failed', error);
+        return voiceError("Sorry, I couldn't get the weather right now.", 500);
+      }
+    },
+    {
+      tokenScope: 'voice',
+      rateLimit: { feature: 'voice-api', limit: 60, windowSeconds: 60 },
     }
-  }, {
-    tokenScope: 'voice',
-    rateLimit: { feature: 'voice-api', limit: 60, windowSeconds: 60 },
-  });
+  );
 }

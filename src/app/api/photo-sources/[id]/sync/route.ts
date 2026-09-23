@@ -6,10 +6,7 @@ import { eq } from 'drizzle-orm';
 import { syncOneDriveSource, syncImmichSource } from '@/lib/services/photo-sync';
 import { logError } from '@/lib/utils/logError';
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -29,7 +26,7 @@ export async function POST(
     } else {
       return NextResponse.json(
         { error: `Sync not supported for source type "${source.type}"` },
-        { status: 400 },
+        { status: 400 }
       );
     }
 

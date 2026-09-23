@@ -45,8 +45,14 @@ import { PhotoSourcesCard } from './cards/PhotoSourcesCard';
  */
 const SETUP_PROMPTS: Record<string, { name: string; env: string }> = {
   google: { name: 'Google', env: 'GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET and GOOGLE_REDIRECT_URI' },
-  gmail: { name: 'Gmail / Bus tracking', env: 'GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET and GOOGLE_GMAIL_REDIRECT_URI' },
-  microsoft: { name: 'Microsoft', env: 'MICROSOFT_CLIENT_ID, MICROSOFT_CLIENT_SECRET and MICROSOFT_REDIRECT_URI' },
+  gmail: {
+    name: 'Gmail / Bus tracking',
+    env: 'GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET and GOOGLE_GMAIL_REDIRECT_URI',
+  },
+  microsoft: {
+    name: 'Microsoft',
+    env: 'MICROSOFT_CLIENT_ID, MICROSOFT_CLIENT_SECRET and MICROSOFT_REDIRECT_URI',
+  },
 };
 
 export function IntegrationsSection() {
@@ -97,9 +103,11 @@ export function IntegrationsSection() {
             <p className="mt-1">
               You skipped this during onboarding, so there are no OAuth credentials to connect with
               yet. Open the{' '}
-              <Link href="/setup/rerun" className="font-medium underline">Setup Wizard</Link>{' '}
-              to enter them, or set <code className="text-xs">{setupPrompt.env}</code> in your
-              {' '}<code className="text-xs">.env</code>.
+              <Link href="/setup/rerun" className="font-medium underline">
+                Setup Wizard
+              </Link>{' '}
+              to enter them, or set <code className="text-xs">{setupPrompt.env}</code> in your{' '}
+              <code className="text-xs">.env</code>.
             </p>
             <Link
               href="/setup/rerun"
@@ -119,25 +127,10 @@ export function IntegrationsSection() {
       )}
 
       <div className="space-y-4">
-        <GoogleProviderCard
-          status={status}
-          onChange={refetch}
-          forceSubSectionOpen={hash}
-        />
-        <MicrosoftProviderCard
-          status={status}
-          onChange={refetch}
-          forceSubSectionOpen={hash}
-        />
-        <GmailProviderCard
-          status={status}
-          onChange={refetch}
-          forceSubSectionOpen={hash}
-        />
-        <CalDAVProviderCard
-          onChange={refetch}
-          forceSubSectionOpen={hash}
-        />
+        <GoogleProviderCard status={status} onChange={refetch} forceSubSectionOpen={hash} />
+        <MicrosoftProviderCard status={status} onChange={refetch} forceSubSectionOpen={hash} />
+        <GmailProviderCard status={status} onChange={refetch} forceSubSectionOpen={hash} />
+        <CalDAVProviderCard onChange={refetch} forceSubSectionOpen={hash} />
         <KrogerProviderCard />
         <PhotoSourcesCard forceSubSectionOpen={hash} />
       </div>

@@ -34,7 +34,9 @@ interface GiftIdeasViewProps {
 export function GiftIdeasView({ selectedMemberIds }: GiftIdeasViewProps = {}) {
   const { members } = useFamily();
   const { activeUser, requireAuth } = useAuth();
-  const { ideas, loading, error, addIdea, updateIdea, deleteIdea, togglePurchased } = useGiftIdeas(activeUser?.id);
+  const { ideas, loading, error, addIdea, updateIdea, deleteIdea, togglePurchased } = useGiftIdeas(
+    activeUser?.id
+  );
   const { confirm, dialogProps } = useConfirmDialog();
   const orientation = useOrientation();
   const isMobile = useIsMobile();
@@ -73,12 +75,18 @@ export function GiftIdeasView({ selectedMemberIds }: GiftIdeasViewProps = {}) {
       await addIdea({ forUserId, name });
       setQuickAddByUser((prev) => ({ ...prev, [forUserId]: '' }));
     } catch (err) {
-      toast({ title: err instanceof Error ? err.message : 'Failed to add', variant: 'destructive' });
+      toast({
+        title: err instanceof Error ? err.message : 'Failed to add',
+        variant: 'destructive',
+      });
     }
   };
 
   const handleDelete = async (idea: GiftIdea) => {
-    const ok = await confirm(`Remove "${idea.name}"?`, 'This gift idea will be permanently deleted.');
+    const ok = await confirm(
+      `Remove "${idea.name}"?`,
+      'This gift idea will be permanently deleted.'
+    );
     if (!ok) return;
     try {
       await deleteIdea(idea.id);
@@ -98,7 +106,7 @@ export function GiftIdeasView({ selectedMemberIds }: GiftIdeasViewProps = {}) {
 
   if (!activeUser) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex h-64 items-center justify-center">
         <EmptyState icon={<Lightbulb />} title="Log in to see your gift ideas" />
       </div>
     );
@@ -109,7 +117,7 @@ export function GiftIdeasView({ selectedMemberIds }: GiftIdeasViewProps = {}) {
   }
 
   if (error) {
-    return <div className="text-destructive text-center py-8">{error}</div>;
+    return <div className="py-8 text-center text-destructive">{error}</div>;
   }
 
   // See ChoreGroupGrid for full context. N members visible at a time
@@ -124,78 +132,80 @@ export function GiftIdeasView({ selectedMemberIds }: GiftIdeasViewProps = {}) {
   return (
     <>
       <div className="relative h-full">
-      <div
-        ref={scrollRef}
-        className={cn(
-          // See ChoreGroupGrid for the grid-rows-1 reasoning.
-          'grid grid-rows-1 gap-3 h-full overflow-x-auto scroll-smooth',
-          isCarousel && 'snap-x snap-mandatory'
-        )}
-        style={{
-          gridTemplateColumns: `repeat(${Math.max(otherMembers.length, 1)}, ${colTrack})`,
-        }}
-      >
-        {otherMembers.map((member) => {
-          const memberIdeas = ideasByUser[member.id] || [];
-          return (
-            <div
-              key={member.id}
-              className={cn(
-                'flex flex-col rounded-xl border-2 bg-card/50 overflow-hidden min-h-0',
-                isCarousel && 'snap-start'
-              )}
-              style={{ borderColor: member.color }}
-            >
-              {/* Card header */}
+        <div
+          ref={scrollRef}
+          className={cn(
+            // See ChoreGroupGrid for the grid-rows-1 reasoning.
+            'grid h-full grid-rows-1 gap-3 overflow-x-auto scroll-smooth',
+            isCarousel && 'snap-x snap-mandatory'
+          )}
+          style={{
+            gridTemplateColumns: `repeat(${Math.max(otherMembers.length, 1)}, ${colTrack})`,
+          }}
+        >
+          {otherMembers.map((member) => {
+            const memberIdeas = ideasByUser[member.id] || [];
+            return (
               <div
-                className="flex items-center gap-1 px-2 py-1.5 shrink-0 select-none"
-                style={{ backgroundColor: member.color + '20' }}
-              >
-                <Lightbulb className="h-4 w-4 shrink-0" style={{ color: member.color }} />
-                <div
-                  className="w-3 h-3 rounded-full shrink-0"
-                  style={{ backgroundColor: member.color }}
-                />
-                <h3 className="font-semibold text-sm truncate" style={{ color: member.color }}>
-                  {member.name}
-                </h3>
-                <span className="text-xs text-muted-foreground whitespace-nowrap ml-1">
-                  {memberIdeas.length}
-                </span>
-              </div>
-
-              {/* Quick add + item list */}
-              <div className="flex-1 overflow-y-auto overscroll-contain p-2 space-y-1">
-                <Input
-                  placeholder={`Gift idea for ${member.name}...`}
-                  value={quickAddByUser[member.id] || ''}
-                  onChange={(e) => setQuickAddByUser((prev) => ({ ...prev, [member.id]: e.target.value }))}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleQuickAdd(member.id);
-                    }
-                  }}
-                  className="h-8 text-sm mb-1"
-                />
-                {memberIdeas.length === 0 ? (
-                  <EmptyState size="sm" title="No ideas yet" />
-                ) : (
-                  memberIdeas.map((idea) => (
-                    <GiftIdeaRow
-                      key={idea.id}
-                      idea={idea}
-                      onTogglePurchased={() => handleTogglePurchased(idea)}
-                      onEdit={() => setEditingIdea(idea)}
-                      onDelete={() => handleDelete(idea)}
-                    />
-                  ))
+                key={member.id}
+                className={cn(
+                  'flex min-h-0 flex-col overflow-hidden rounded-xl border-2 bg-card/50',
+                  isCarousel && 'snap-start'
                 )}
+                style={{ borderColor: member.color }}
+              >
+                {/* Card header */}
+                <div
+                  className="flex shrink-0 select-none items-center gap-1 px-2 py-1.5"
+                  style={{ backgroundColor: member.color + '20' }}
+                >
+                  <Lightbulb className="h-4 w-4 shrink-0" style={{ color: member.color }} />
+                  <div
+                    className="h-3 w-3 shrink-0 rounded-full"
+                    style={{ backgroundColor: member.color }}
+                  />
+                  <h3 className="truncate text-sm font-semibold" style={{ color: member.color }}>
+                    {member.name}
+                  </h3>
+                  <span className="ml-1 whitespace-nowrap text-xs text-muted-foreground">
+                    {memberIdeas.length}
+                  </span>
+                </div>
+
+                {/* Quick add + item list */}
+                <div className="flex-1 space-y-1 overflow-y-auto overscroll-contain p-2">
+                  <Input
+                    placeholder={`Gift idea for ${member.name}...`}
+                    value={quickAddByUser[member.id] || ''}
+                    onChange={(e) =>
+                      setQuickAddByUser((prev) => ({ ...prev, [member.id]: e.target.value }))
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleQuickAdd(member.id);
+                      }
+                    }}
+                    className="mb-1 h-8 text-sm"
+                  />
+                  {memberIdeas.length === 0 ? (
+                    <EmptyState size="sm" title="No ideas yet" />
+                  ) : (
+                    memberIdeas.map((idea) => (
+                      <GiftIdeaRow
+                        key={idea.id}
+                        idea={idea}
+                        onTogglePurchased={() => handleTogglePurchased(idea)}
+                        onEdit={() => setEditingIdea(idea)}
+                        onDelete={() => handleDelete(idea)}
+                      />
+                    ))
+                  )}
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
         {isCarousel && !isMobile && <CarouselArrows scrollRef={scrollRef} />}
       </div>
 
@@ -235,15 +245,20 @@ function GiftIdeaRow({
   return (
     <div
       className={cn(
-        'flex items-center gap-2 p-2 rounded-lg border border-border cursor-pointer',
-        'hover:bg-muted/50 transition-colors group',
-        idea.purchased && 'opacity-60',
+        'flex cursor-pointer items-center gap-2 rounded-lg border border-border p-2',
+        'group transition-colors hover:bg-muted/50',
+        idea.purchased && 'opacity-60'
       )}
       onClick={onTogglePurchased}
     >
-      <div className="flex-1 min-w-0">
+      <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <span className={cn('font-medium text-sm truncate', idea.purchased && 'line-through text-muted-foreground')}>
+          <span
+            className={cn(
+              'truncate text-sm font-medium',
+              idea.purchased && 'text-muted-foreground line-through'
+            )}
+          >
             {idea.name}
           </span>
           {idea.url && (
@@ -252,29 +267,33 @@ function GiftIdeaRow({
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
-              className="text-muted-foreground hover:text-foreground shrink-0"
+              className="shrink-0 text-muted-foreground hover:text-foreground"
               title="Open link"
             >
               <ExternalLink className="h-3.5 w-3.5" />
             </a>
           )}
           {idea.price && (
-            <span className="text-xs text-muted-foreground shrink-0 flex items-center gap-0.5">
-              <DollarSign className="h-3 w-3" />{idea.price}
+            <span className="flex shrink-0 items-center gap-0.5 text-xs text-muted-foreground">
+              <DollarSign className="h-3 w-3" />
+              {idea.price}
             </span>
           )}
         </div>
         {idea.notes && (
-          <p className="text-xs text-muted-foreground truncate mt-0.5">{idea.notes}</p>
+          <p className="mt-0.5 truncate text-xs text-muted-foreground">{idea.notes}</p>
         )}
       </div>
 
-      <div className="flex items-center gap-1 shrink-0">
+      <div className="flex shrink-0 items-center gap-1">
         <Button
           variant="ghost"
           size="icon"
           className="h-7 w-7 opacity-0 group-hover:opacity-100"
-          onClick={(e) => { e.stopPropagation(); onEdit(); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit();
+          }}
           title="Edit"
         >
           <Pencil className="h-3.5 w-3.5" />
@@ -282,8 +301,11 @@ function GiftIdeaRow({
         <Button
           variant="ghost"
           size="icon"
-          className="h-7 w-7 opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive hover:bg-destructive/10"
-          onClick={(e) => { e.stopPropagation(); onDelete(); }}
+          className="h-7 w-7 text-destructive opacity-0 hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
           title="Delete"
         >
           <Trash2 className="h-3.5 w-3.5" />
@@ -308,9 +330,15 @@ function EditGiftIdeaModal({
   const [price, setPrice] = useState(idea.price || '');
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
-      <div className="bg-card rounded-lg p-6 max-w-md w-full mx-4 shadow-lg border border-border" onClick={(e) => e.stopPropagation()}>
-        <h2 className="text-lg font-bold mb-4">Edit Gift Idea</h2>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      onClick={onClose}
+    >
+      <div
+        className="mx-4 w-full max-w-md rounded-lg border border-border bg-card p-6 shadow-lg"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 className="mb-4 text-lg font-bold">Edit Gift Idea</h2>
         <div className="space-y-3">
           <div>
             <label className="text-sm font-medium">Name</label>
@@ -326,12 +354,28 @@ function EditGiftIdeaModal({
           </div>
           <div>
             <label className="text-sm font-medium">Notes (optional)</label>
-            <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Size, color, etc." />
+            <Input
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Size, color, etc."
+            />
           </div>
         </div>
-        <div className="flex justify-end gap-2 mt-4">
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={() => onSave({ name, url: url || undefined, notes: notes || undefined, price: price || undefined })} disabled={!name.trim()}>
+        <div className="mt-4 flex justify-end gap-2">
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            onClick={() =>
+              onSave({
+                name,
+                url: url || undefined,
+                notes: notes || undefined,
+                price: price || undefined,
+              })
+            }
+            disabled={!name.trim()}
+          >
             Save
           </Button>
         </div>

@@ -81,4 +81,12 @@ export interface LayoutExportV2 {
   widgets: ExportWidget[];
 }
 
-export type ActivePopover = 'dashboard' | 'widgets' | 'templates' | 'community' | 'preview' | 'more' | 'save' | null;
+export type ActivePopover =
+  | 'dashboard'
+  | 'widgets'
+  | 'templates'
+  | 'community'
+  | 'preview'
+  | 'more'
+  | 'save'
+  | null;

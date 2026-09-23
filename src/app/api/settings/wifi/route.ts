@@ -23,23 +23,26 @@ export async function GET() {
       .where(eq(settings.key, WIFI_SETTINGS_KEY))
       .limit(1);
 
-    const raw = result[0]?.value as { ssid: string; password: string; securityType: string; hidden: boolean } | null;
+    const raw = result[0]?.value as {
+      ssid: string;
+      password: string;
+      securityType: string;
+      hidden: boolean;
+    } | null;
 
     // Decrypt password if it was stored encrypted (handles migration from plaintext)
     const config = raw
       ? {
           ...raw,
-          password: raw.password && isEncrypted(raw.password) ? decrypt(raw.password) : raw.password,
+          password:
+            raw.password && isEncrypted(raw.password) ? decrypt(raw.password) : raw.password,
         }
       : null;
 
     return NextResponse.json({ config });
   } catch (error) {
     logError('Error fetching WiFi config:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch WiFi config' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch WiFi config' }, { status: 500 });
   }
 }
 
@@ -58,10 +61,7 @@ export async function POST(request: NextRequest) {
     const { ssid, password, securityType, hidden } = body;
 
     if (!ssid) {
-      return NextResponse.json(
-        { error: 'SSID is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'SSID is required' }, { status: 400 });
     }
 
     const config = {
@@ -93,9 +93,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, config: { ...config, password: password || '' } });
   } catch (error) {
     logError('Error saving WiFi config:', error);
-    return NextResponse.json(
-      { error: 'Failed to save WiFi config' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to save WiFi config' }, { status: 500 });
   }
 }

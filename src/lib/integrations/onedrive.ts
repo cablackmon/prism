@@ -42,7 +42,10 @@ async function getConfig() {
   return creds;
 }
 
-export async function getMicrosoftAuthUrl(state?: string, redirectUriOverride?: string): Promise<string> {
+export async function getMicrosoftAuthUrl(
+  state?: string,
+  redirectUriOverride?: string
+): Promise<string> {
   const { clientId, redirectUri } = await getConfig();
 
   const params = new URLSearchParams({
@@ -60,7 +63,10 @@ export async function getMicrosoftAuthUrl(state?: string, redirectUriOverride?: 
   return `${MICROSOFT_AUTH_URL}?${params.toString()}`;
 }
 
-export async function exchangeCodeForTokens(code: string, redirectUriOverride?: string): Promise<MicrosoftTokens> {
+export async function exchangeCodeForTokens(
+  code: string,
+  redirectUriOverride?: string
+): Promise<MicrosoftTokens> {
   const { clientId, clientSecret, redirectUri } = await getConfig();
 
   const response = await fetch(MICROSOFT_TOKEN_URL, {
@@ -106,18 +112,12 @@ export async function refreshAccessToken(refreshToken: string): Promise<Microsof
   return response.json();
 }
 
-export async function listFolders(
-  accessToken: string,
-  parentId?: string
-): Promise<OneDriveItem[]> {
-  const itemPath = parentId
-    ? `/me/drive/items/${parentId}/children`
-    : '/me/drive/root/children';
+export async function listFolders(accessToken: string, parentId?: string): Promise<OneDriveItem[]> {
+  const itemPath = parentId ? `/me/drive/items/${parentId}/children` : '/me/drive/root/children';
 
-  const response = await fetch(
-    `${GRAPH_API}${itemPath}?$select=id,name,folder&$top=100`,
-    { headers: { Authorization: `Bearer ${accessToken}` } }
-  );
+  const response = await fetch(`${GRAPH_API}${itemPath}?$select=id,name,folder&$top=100`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
 
   if (!response.ok) {
     const error = await response.text();
@@ -156,9 +156,8 @@ export async function listPhotosInFolder(
     }
 
     const data: { value?: OneDriveItem[]; '@odata.nextLink'?: string } = await response.json();
-    const imageItems = (data.value || []).filter(
-      (item: OneDriveItem) =>
-        item.file?.mimeType?.startsWith('image/')
+    const imageItems = (data.value || []).filter((item: OneDriveItem) =>
+      item.file?.mimeType?.startsWith('image/')
     );
     allPhotos.push(...imageItems);
     nextLink = data['@odata.nextLink'] || null;
@@ -167,14 +166,11 @@ export async function listPhotosInFolder(
   return allPhotos;
 }
 
-export async function downloadPhoto(
-  accessToken: string,
-  itemId: string
-): Promise<Buffer> {
-  const response = await fetch(
-    `${GRAPH_API}/me/drive/items/${itemId}/content`,
-    { headers: { Authorization: `Bearer ${accessToken}` }, redirect: 'follow' }
-  );
+export async function downloadPhoto(accessToken: string, itemId: string): Promise<Buffer> {
+  const response = await fetch(`${GRAPH_API}/me/drive/items/${itemId}/content`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    redirect: 'follow',
+  });
 
   if (!response.ok) {
     throw new Error(`Failed to download OneDrive photo: ${response.statusText}`);

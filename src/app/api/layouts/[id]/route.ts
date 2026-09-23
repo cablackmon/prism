@@ -10,10 +10,7 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-export async function GET(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function GET(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -21,38 +18,23 @@ export async function GET(
     const { id } = await params;
 
     if (!id || id.length < 10) {
-      return NextResponse.json(
-        { error: 'Invalid layout ID' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid layout ID' }, { status: 400 });
     }
 
-    const [layout] = await db
-      .select()
-      .from(layouts)
-      .where(eq(layouts.id, id));
+    const [layout] = await db.select().from(layouts).where(eq(layouts.id, id));
 
     if (!layout) {
-      return NextResponse.json(
-        { error: 'Layout not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Layout not found' }, { status: 404 });
     }
 
     return NextResponse.json(layout);
   } catch (error) {
     logError('Error fetching layout:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch layout' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch layout' }, { status: 500 });
   }
 }
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -60,16 +42,10 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
 
-    const [existing] = await db
-      .select({ id: layouts.id })
-      .from(layouts)
-      .where(eq(layouts.id, id));
+    const [existing] = await db.select({ id: layouts.id }).from(layouts).where(eq(layouts.id, id));
 
     if (!existing) {
-      return NextResponse.json(
-        { error: 'Layout not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Layout not found' }, { status: 404 });
     }
 
     const validation = validateRequest(updateLayoutSchema, body);
@@ -93,7 +69,8 @@ export async function PATCH(
     };
 
     // Map validated fields to update data
-    const { name, widgets, isDefault, screensaverWidgets, orientation, fontScale } = validation.data;
+    const { name, widgets, isDefault, screensaverWidgets, orientation, fontScale } =
+      validation.data;
     if (name !== undefined) updateData.name = name;
     if (widgets !== undefined) updateData.widgets = widgets;
     if (isDefault !== undefined) updateData.isDefault = isDefault;
@@ -101,37 +78,22 @@ export async function PATCH(
     if (orientation !== undefined) updateData.orientation = orientation;
     if (fontScale !== undefined) updateData.fontScale = fontScale;
 
-    await db
-      .update(layouts)
-      .set(updateData)
-      .where(eq(layouts.id, id));
+    await db.update(layouts).set(updateData).where(eq(layouts.id, id));
 
-    const [updated] = await db
-      .select()
-      .from(layouts)
-      .where(eq(layouts.id, id));
+    const [updated] = await db.select().from(layouts).where(eq(layouts.id, id));
 
     if (!updated) {
-      return NextResponse.json(
-        { error: 'Layout not found after update' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Layout not found after update' }, { status: 404 });
     }
 
     return NextResponse.json(updated);
   } catch (error) {
     logError('Error updating layout:', error);
-    return NextResponse.json(
-      { error: 'Failed to update layout' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to update layout' }, { status: 500 });
   }
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -144,24 +106,16 @@ export async function DELETE(
       .where(eq(layouts.id, id));
 
     if (!existing) {
-      return NextResponse.json(
-        { error: 'Layout not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Layout not found' }, { status: 404 });
     }
 
     // Count remaining layouts
     const allLayouts = await db.select({ id: layouts.id }).from(layouts);
     if (allLayouts.length <= 1) {
-      return NextResponse.json(
-        { error: 'Cannot delete the last dashboard' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Cannot delete the last dashboard' }, { status: 400 });
     }
 
-    await db
-      .delete(layouts)
-      .where(eq(layouts.id, id));
+    await db.delete(layouts).where(eq(layouts.id, id));
 
     // If we deleted the default, make the oldest remaining layout the default
     if (existing.isDefault) {
@@ -187,9 +141,6 @@ export async function DELETE(
     });
   } catch (error) {
     logError('Error deleting layout:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete layout' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to delete layout' }, { status: 500 });
   }
 }

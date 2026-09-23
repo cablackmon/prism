@@ -31,65 +31,69 @@ export async function GET(request: NextRequest) {
 
     const cacheKey = `gift-ideas:${auth.userId}:${forUserId || 'all'}`;
 
-    const data = await getCached(cacheKey, async () => {
-      const conditions = [
-        eq(giftIdeas.createdBy, auth.userId),
-        ne(giftIdeas.forUserId, auth.userId), // Never return ideas for yourself
-      ];
+    const data = await getCached(
+      cacheKey,
+      async () => {
+        const conditions = [
+          eq(giftIdeas.createdBy, auth.userId),
+          ne(giftIdeas.forUserId, auth.userId), // Never return ideas for yourself
+        ];
 
-      if (forUserId) {
-        conditions.push(eq(giftIdeas.forUserId, forUserId));
-      }
+        if (forUserId) {
+          conditions.push(eq(giftIdeas.forUserId, forUserId));
+        }
 
-      const results = await db
-        .select({
-          id: giftIdeas.id,
-          name: giftIdeas.name,
-          url: giftIdeas.url,
-          notes: giftIdeas.notes,
-          price: giftIdeas.price,
-          purchased: giftIdeas.purchased,
-          purchasedAt: giftIdeas.purchasedAt,
-          sortOrder: giftIdeas.sortOrder,
-          createdAt: giftIdeas.createdAt,
-          forUserId: giftIdeas.forUserId,
-          forUserName: forUser.name,
-          forUserColor: forUser.color,
-          createdById: creatorUser.id,
-          createdByName: creatorUser.name,
-          createdByColor: creatorUser.color,
-        })
-        .from(giftIdeas)
-        .innerJoin(forUser, eq(giftIdeas.forUserId, forUser.id))
-        .innerJoin(creatorUser, eq(giftIdeas.createdBy, creatorUser.id))
-        .where(and(...conditions))
-        .orderBy(asc(giftIdeas.forUserId), asc(giftIdeas.sortOrder), asc(giftIdeas.createdAt));
+        const results = await db
+          .select({
+            id: giftIdeas.id,
+            name: giftIdeas.name,
+            url: giftIdeas.url,
+            notes: giftIdeas.notes,
+            price: giftIdeas.price,
+            purchased: giftIdeas.purchased,
+            purchasedAt: giftIdeas.purchasedAt,
+            sortOrder: giftIdeas.sortOrder,
+            createdAt: giftIdeas.createdAt,
+            forUserId: giftIdeas.forUserId,
+            forUserName: forUser.name,
+            forUserColor: forUser.color,
+            createdById: creatorUser.id,
+            createdByName: creatorUser.name,
+            createdByColor: creatorUser.color,
+          })
+          .from(giftIdeas)
+          .innerJoin(forUser, eq(giftIdeas.forUserId, forUser.id))
+          .innerJoin(creatorUser, eq(giftIdeas.createdBy, creatorUser.id))
+          .where(and(...conditions))
+          .orderBy(asc(giftIdeas.forUserId), asc(giftIdeas.sortOrder), asc(giftIdeas.createdAt));
 
-      return {
-        ideas: results.map((row) => ({
-          id: row.id,
-          name: row.name,
-          url: row.url,
-          notes: row.notes,
-          price: row.price,
-          purchased: row.purchased,
-          purchasedAt: row.purchasedAt?.toISOString() || null,
-          sortOrder: row.sortOrder,
-          createdAt: row.createdAt.toISOString(),
-          forUserId: row.forUserId,
-          forUser: {
-            id: row.forUserId,
-            name: row.forUserName,
-            color: row.forUserColor,
-          },
-          createdBy: {
-            id: row.createdById,
-            name: row.createdByName,
-            color: row.createdByColor,
-          },
-        })),
-      };
-    }, 60);
+        return {
+          ideas: results.map((row) => ({
+            id: row.id,
+            name: row.name,
+            url: row.url,
+            notes: row.notes,
+            price: row.price,
+            purchased: row.purchased,
+            purchasedAt: row.purchasedAt?.toISOString() || null,
+            sortOrder: row.sortOrder,
+            createdAt: row.createdAt.toISOString(),
+            forUserId: row.forUserId,
+            forUser: {
+              id: row.forUserId,
+              name: row.forUserName,
+              color: row.forUserColor,
+            },
+            createdBy: {
+              id: row.createdById,
+              name: row.createdByName,
+              color: row.createdByColor,
+            },
+          })),
+        };
+      },
+      60
+    );
 
     return NextResponse.json(data);
   } catch (error) {
@@ -160,17 +164,20 @@ export async function POST(request: NextRequest) {
       summary: `Added gift idea: ${name}`,
     });
 
-    return NextResponse.json({
-      id: newIdea.id,
-      name: newIdea.name,
-      url: newIdea.url,
-      notes: newIdea.notes,
-      price: newIdea.price,
-      purchased: newIdea.purchased,
-      sortOrder: newIdea.sortOrder,
-      forUserId: newIdea.forUserId,
-      createdAt: newIdea.createdAt.toISOString(),
-    }, { status: 201 });
+    return NextResponse.json(
+      {
+        id: newIdea.id,
+        name: newIdea.name,
+        url: newIdea.url,
+        notes: newIdea.notes,
+        price: newIdea.price,
+        purchased: newIdea.purchased,
+        sortOrder: newIdea.sortOrder,
+        forUserId: newIdea.forUserId,
+        createdAt: newIdea.createdAt.toISOString(),
+      },
+      { status: 201 }
+    );
   } catch (error) {
     logError('Error creating gift idea:', error);
     return NextResponse.json({ error: 'Failed to create gift idea' }, { status: 500 });

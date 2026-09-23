@@ -1,10 +1,14 @@
 import { calculateEventPositions, positionToCSS } from '../eventLayout';
 
-function makeEvent(id: string, startHour: number, startMin: number, endHour?: number, endMin?: number) {
+function makeEvent(
+  id: string,
+  startHour: number,
+  startMin: number,
+  endHour?: number,
+  endMin?: number
+) {
   const start = new Date(2026, 0, 1, startHour, startMin);
-  const end = endHour !== undefined
-    ? new Date(2026, 0, 1, endHour, endMin ?? 0)
-    : undefined;
+  const end = endHour !== undefined ? new Date(2026, 0, 1, endHour, endMin ?? 0) : undefined;
   return { id, startTime: start, endTime: end ?? null };
 }
 
@@ -21,10 +25,7 @@ describe('calculateEventPositions', () => {
   });
 
   it('puts two overlapping events in 2 columns', () => {
-    const events = [
-      makeEvent('a', 9, 0, 10, 0),
-      makeEvent('b', 9, 30, 10, 30),
-    ];
+    const events = [makeEvent('a', 9, 0, 10, 0), makeEvent('b', 9, 30, 10, 30)];
     const result = calculateEventPositions(events);
     expect(result.get('a')!.totalColumns).toBe(2);
     expect(result.get('b')!.totalColumns).toBe(2);
@@ -33,10 +34,7 @@ describe('calculateEventPositions', () => {
   });
 
   it('gives two non-overlapping events 1 column each', () => {
-    const events = [
-      makeEvent('a', 9, 0, 10, 0),
-      makeEvent('b', 10, 0, 11, 0),
-    ];
+    const events = [makeEvent('a', 9, 0, 10, 0), makeEvent('b', 10, 0, 11, 0)];
     const result = calculateEventPositions(events);
     expect(result.get('a')).toEqual({ column: 0, totalColumns: 1 });
     expect(result.get('b')).toEqual({ column: 0, totalColumns: 1 });
@@ -83,7 +81,7 @@ describe('calculateEventPositions', () => {
     // Event with no end time: 9:00 -> defaults to 10:00
     // Event at 9:30: overlaps with the first
     const events = [
-      makeEvent('a', 9, 0),         // no endTime → 10:00
+      makeEvent('a', 9, 0), // no endTime → 10:00
       makeEvent('b', 9, 30, 10, 0), // 9:30-10:00, overlaps with a
     ];
     const result = calculateEventPositions(events);

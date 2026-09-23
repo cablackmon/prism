@@ -9,6 +9,7 @@ import {
   backendEvidenceAt,
   chooseTessellation,
   classifyReadback,
+  classifyReadbackControl,
   classifyResolution,
   createSphereMesh,
   decideRenderPath,
@@ -455,13 +456,35 @@ describe('classifyReadback', () => {
     expect(classifyReadback(1, clearedOnly).status).toBe('blank');
   });
 
-  it('reports a flat frame of pure black as unavailable, not blank', () => {
+  it('reports all-zero as unavailable when the control proves readback is broken', () => {
     // Headless Chromium on SwiftShader returns all-zero pixels for any WebGPU
-    // canvas — a bare clear-to-red with no shaders reads back black too. The
-    // configured clear colour is non-black, so a canvas that merely cleared
-    // cannot produce this; all-zero means the readback failed. Calling it
-    // `blank` vetoes a healthy fenced backend for a broken measuring tool.
-    expect(classifyReadback(1, black).status).toBe('unavailable');
+    // canvas — a bare clear-to-red with no shaders reads back black too. When
+    // the clear-only control comes back black as well, the readback is the
+    // broken part, and vetoing the backend would punish it for the tool.
+    expect(classifyReadback(1, black, 'broken').status).toBe('unavailable');
+  });
+
+  it('reports all-zero as blank when the control proves readback works', () => {
+    // The dangerous direction. WebGPU validation can fail before the clear
+    // executes while `onSubmittedWorkDone()` still resolves having done no
+    // work, leaving a genuinely black canvas. If the control read back fine,
+    // readback is not the problem — the backend rendered nothing, and
+    // crediting it selects a path whose high fps comes from drawing nothing.
+    expect(classifyReadback(1, black, 'working').status).toBe('blank');
+  });
+
+  it('fails closed to blank when no control proved readback works', () => {
+    // Absence of evidence is not evidence of a broken readback. Crediting an
+    // unproven all-zero frame is what ships a backend that draws nothing.
+    expect(classifyReadback(1, black, 'untested').status).toBe('blank');
+    expect(classifyReadback(1, black).status).toBe('blank');
+  });
+
+  it('keeps a control verdict from overriding a frame that has real content', () => {
+    // The control speaks only to the ambiguous single-colour case; it must not
+    // reach in and discredit a frame that demonstrably drew something.
+    expect(classifyReadback(2, black, 'broken').status).toBe('content');
+    expect(classifyReadback(2, clearedOnly, 'working').status).toBe('content');
   });
 
   it('proves the clear colour is what makes the two separable', () => {
@@ -478,6 +501,40 @@ describe('classifyReadback', () => {
     expect(classifyReadback(0, null).status).toBe('unavailable');
     expect(classifyReadback(1, null).status).toBe('unavailable');
     expect(isRenderedBlank(classifyReadback(0, null))).toBe(false);
+  });
+});
+
+describe('classifyReadbackControl', () => {
+  const black = { r: 0, g: 0, b: 0 };
+
+  it('calls readback working when the clear-only frame comes back non-black', () => {
+    // The control binds no pipeline, so its pixels are the clear colour
+    // whatever is wrong with the mesh path. Getting them back proves readback.
+    expect(classifyReadbackControl(1, { r: 5, g: 8, b: 15 })).toBe('working');
+  });
+
+  it('calls readback broken when even the clear-only frame reads back black', () => {
+    expect(classifyReadbackControl(1, black)).toBe('broken');
+  });
+
+  it('calls readback broken when the control returned no pixels at all', () => {
+    // Failing to look is not evidence that readback works, and this verdict is
+    // the one that makes an all-zero benchmark frame creditable — so the
+    // permissive answer must never be the default.
+    expect(classifyReadbackControl(0, null)).toBe('broken');
+    expect(classifyReadbackControl(1, null)).toBe('broken');
+  });
+
+  it('is the only input that lets an all-zero benchmark frame be credited', () => {
+    // Ties the two classifiers together: the sole path from a black frame to a
+    // creditable run runs through a `broken` control.
+    const verdicts = (['working', 'broken', 'untested'] as const).map((control) => ({
+      control,
+      status: classifyReadback(1, black, control).status,
+    }));
+    expect(verdicts.filter((v) => v.status === 'unavailable').map((v) => v.control)).toEqual([
+      'broken',
+    ]);
   });
 });
 

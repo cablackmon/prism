@@ -16,7 +16,7 @@ export const googleManualTokenSchema = z.object({
     .max(200)
     .regex(
       /^[A-Za-z0-9\-_.]+\.apps\.googleusercontent\.com$/,
-      'Must be a Google OAuth client ID ending in .apps.googleusercontent.com',
+      'Must be a Google OAuth client ID ending in .apps.googleusercontent.com'
     ),
   clientSecret: z
     .string()

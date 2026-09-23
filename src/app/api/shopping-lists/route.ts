@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
       .orderBy(asc(shoppingLists.sortOrder), asc(shoppingLists.name));
 
     if (!includeItems) {
-      const formattedLists = lists.map(list => ({
+      const formattedLists = lists.map((list) => ({
         id: list.id,
         name: list.name,
         icon: list.icon,
@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
       itemsByList.set(item.listId, listItems);
     }
 
-    const formattedLists = lists.map(list => ({
+    const formattedLists = lists.map((list) => ({
       id: list.id,
       name: list.name,
       icon: list.icon,
@@ -105,7 +105,7 @@ export async function GET(request: NextRequest) {
       visibleCategories: list.visibleCategories,
       assignedTo: list.assignedTo,
       createdAt: list.createdAt.toISOString(),
-      items: (itemsByList.get(list.id) || []).map(item => ({
+      items: (itemsByList.get(list.id) || []).map((item) => ({
         id: item.id,
         name: item.name,
         quantity: item.quantity,
@@ -118,21 +118,20 @@ export async function GET(request: NextRequest) {
         listId: item.listId,
         krogerProductId: item.krogerProductId,
         createdAt: item.createdAt.toISOString(),
-        addedBy: item.addedById ? {
-          id: item.addedById,
-          name: item.addedByName,
-          color: item.addedByColor,
-        } : null,
+        addedBy: item.addedById
+          ? {
+              id: item.addedById,
+              name: item.addedByName,
+              color: item.addedByColor,
+            }
+          : null,
       })),
     }));
 
     return NextResponse.json({ lists: formattedLists });
   } catch (error) {
     logError('Error fetching shopping lists:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch shopping lists' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch shopping lists' }, { status: 500 });
   }
 }
 
@@ -164,13 +163,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { name, icon, color, listType, sortOrder, description, assignedTo, createdBy, visibleCategories } = validation.data;
+    const {
+      name,
+      icon,
+      color,
+      listType,
+      sortOrder,
+      description,
+      assignedTo,
+      createdBy,
+      visibleCategories,
+    } = validation.data;
 
     // Auto-populate visibleCategories from preset when not explicitly provided
     const effectiveType = listType || 'grocery';
-    const effectiveVisibleCategories = visibleCategories !== undefined
-      ? visibleCategories
-      : getPresetsForListType(effectiveType);
+    const effectiveVisibleCategories =
+      visibleCategories !== undefined ? visibleCategories : getPresetsForListType(effectiveType);
 
     // Insert the list
     const [newList] = await db
@@ -189,22 +197,22 @@ export async function POST(request: NextRequest) {
       .returning();
 
     if (!newList) {
-      return NextResponse.json(
-        { error: 'Failed to create shopping list' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to create shopping list' }, { status: 500 });
     }
 
-    return NextResponse.json({
-      id: newList.id,
-      name: newList.name,
-      icon: newList.icon,
-      color: newList.color,
-      listType: newList.listType,
-      sortOrder: newList.sortOrder,
-      visibleCategories: newList.visibleCategories,
-      createdAt: newList.createdAt.toISOString(),
-    }, { status: 201 });
+    return NextResponse.json(
+      {
+        id: newList.id,
+        name: newList.name,
+        icon: newList.icon,
+        color: newList.color,
+        listType: newList.listType,
+        sortOrder: newList.sortOrder,
+        visibleCategories: newList.visibleCategories,
+        createdAt: newList.createdAt.toISOString(),
+      },
+      { status: 201 }
+    );
   } catch (error) {
     logError('Error creating shopping list:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';

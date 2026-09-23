@@ -6,14 +6,16 @@ const NOW = new Date('2026-02-16T18:00:00Z'); // a Monday
 const THIS_WEEK_MON = new Date('2026-02-16T15:00:00Z');
 const LAST_WEEK_MON = new Date('2026-02-09T15:00:00Z');
 
-function makeGoal(overrides: Partial<{
-  id: string;
-  pointCost: number;
-  priority: number;
-  recurring: boolean;
-  recurrencePeriod: 'weekly' | 'monthly' | 'yearly' | null;
-  lastResetAt: Date;
-}> = {}) {
+function makeGoal(
+  overrides: Partial<{
+    id: string;
+    pointCost: number;
+    priority: number;
+    recurring: boolean;
+    recurrencePeriod: 'weekly' | 'monthly' | 'yearly' | null;
+    lastResetAt: Date;
+  }> = {}
+) {
   return {
     id: overrides.id ?? 'goal-1',
     pointCost: overrides.pointCost ?? 10,
@@ -32,16 +34,16 @@ describe('computeWaterfall', () => {
   describe('earned counters', () => {
     it('counts weekly/monthly/yearly earned points from completions', () => {
       const completions = [
-        makeCompletion(5, new Date('2026-02-16T10:00:00Z')),  // this week + month + year
-        makeCompletion(3, new Date('2026-02-10T10:00:00Z')),  // last week but this month + year
-        makeCompletion(7, new Date('2026-01-15T10:00:00Z')),  // last month but this year
+        makeCompletion(5, new Date('2026-02-16T10:00:00Z')), // this week + month + year
+        makeCompletion(3, new Date('2026-02-10T10:00:00Z')), // last week but this month + year
+        makeCompletion(7, new Date('2026-01-15T10:00:00Z')), // last month but this year
       ];
 
       const result = computeWaterfall([makeGoal()], completions, NOW);
 
       expect(result.weeklyEarned).toBe(5);
-      expect(result.monthlyEarned).toBe(8);   // 5 + 3
-      expect(result.yearlyEarned).toBe(15);   // 5 + 3 + 7
+      expect(result.monthlyEarned).toBe(8); // 5 + 3
+      expect(result.yearlyEarned).toBe(15); // 5 + 3 + 7
     });
 
     it('treats null pointsAwarded as 0', () => {
@@ -66,8 +68,8 @@ describe('computeWaterfall', () => {
     it('accumulates points across weeks toward a non-recurring goal', () => {
       const goal = makeGoal({ pointCost: 20, priority: 1, recurring: false });
       const completions = [
-        makeCompletion(8, LAST_WEEK_MON),      // week 1: 8 pts
-        makeCompletion(7, THIS_WEEK_MON),       // week 2: 7 pts → total 15
+        makeCompletion(8, LAST_WEEK_MON), // week 1: 8 pts
+        makeCompletion(7, THIS_WEEK_MON), // week 2: 7 pts → total 15
       ];
 
       const result = computeWaterfall([goal], completions, NOW);
@@ -77,10 +79,7 @@ describe('computeWaterfall', () => {
 
     it('marks goal as achieved when accumulated points >= cost', () => {
       const goal = makeGoal({ pointCost: 10, priority: 1, recurring: false });
-      const completions = [
-        makeCompletion(6, LAST_WEEK_MON),
-        makeCompletion(5, THIS_WEEK_MON),
-      ];
+      const completions = [makeCompletion(6, LAST_WEEK_MON), makeCompletion(5, THIS_WEEK_MON)];
 
       const result = computeWaterfall([goal], completions, NOW);
       expect(result.goals[0]!.allocated).toBe(10);
@@ -98,9 +97,14 @@ describe('computeWaterfall', () => {
 
   describe('recurring goals', () => {
     it('only uses current week points for recurring weekly goal progress', () => {
-      const goal = makeGoal({ pointCost: 10, priority: 1, recurring: true, recurrencePeriod: 'weekly' });
+      const goal = makeGoal({
+        pointCost: 10,
+        priority: 1,
+        recurring: true,
+        recurrencePeriod: 'weekly',
+      });
       const completions = [
-        makeCompletion(100, LAST_WEEK_MON),  // old week, doesn't count for progress display
+        makeCompletion(100, LAST_WEEK_MON), // old week, doesn't count for progress display
         makeCompletion(7, THIS_WEEK_MON),
       ];
 
@@ -110,7 +114,12 @@ describe('computeWaterfall', () => {
     });
 
     it('marks recurring goal achieved when current week points >= cost', () => {
-      const goal = makeGoal({ pointCost: 5, priority: 1, recurring: true, recurrencePeriod: 'weekly' });
+      const goal = makeGoal({
+        pointCost: 5,
+        priority: 1,
+        recurring: true,
+        recurrencePeriod: 'weekly',
+      });
       const completions = [makeCompletion(5, THIS_WEEK_MON)];
 
       const result = computeWaterfall([goal], completions, NOW);
@@ -127,8 +136,8 @@ describe('computeWaterfall', () => {
       const completions = [makeCompletion(12, THIS_WEEK_MON)];
 
       const result = computeWaterfall(goals, completions, NOW);
-      const high = result.goals.find(g => g.goalId === 'high')!;
-      const low = result.goals.find(g => g.goalId === 'low')!;
+      const high = result.goals.find((g) => g.goalId === 'high')!;
+      const low = result.goals.find((g) => g.goalId === 'low')!;
 
       expect(high.allocated).toBe(10);
       expect(high.achieved).toBe(true);
@@ -144,8 +153,8 @@ describe('computeWaterfall', () => {
       const completions = [makeCompletion(7, THIS_WEEK_MON)];
 
       const result = computeWaterfall(goals, completions, NOW);
-      expect(result.goals.find(g => g.goalId === 'first')!.allocated).toBe(3);
-      expect(result.goals.find(g => g.goalId === 'second')!.allocated).toBe(4);
+      expect(result.goals.find((g) => g.goalId === 'first')!.allocated).toBe(3);
+      expect(result.goals.find((g) => g.goalId === 'second')!.allocated).toBe(4);
     });
   });
 
@@ -160,9 +169,9 @@ describe('computeWaterfall', () => {
       const completions = [makeCompletion(7, THIS_WEEK_MON)];
 
       const result = computeWaterfall(goals, completions, NOW);
-      const a = result.goals.find(g => g.goalId === 'a')!;
-      const b = result.goals.find(g => g.goalId === 'b')!;
-      const c = result.goals.find(g => g.goalId === 'c')!;
+      const a = result.goals.find((g) => g.goalId === 'a')!;
+      const b = result.goals.find((g) => g.goalId === 'b')!;
+      const c = result.goals.find((g) => g.goalId === 'c')!;
 
       expect(a.allocated).toBe(5);
       expect(a.achieved).toBe(true);
@@ -176,15 +185,21 @@ describe('computeWaterfall', () => {
   describe('recurring before non-recurring waterfall', () => {
     it('recurring goals consume points first, overflow goes to non-recurring', () => {
       const goals = [
-        makeGoal({ id: 'recurring', pointCost: 6, priority: 1, recurring: true, recurrencePeriod: 'weekly' }),
+        makeGoal({
+          id: 'recurring',
+          pointCost: 6,
+          priority: 1,
+          recurring: true,
+          recurrencePeriod: 'weekly',
+        }),
         makeGoal({ id: 'savings', pointCost: 20, priority: 2, recurring: false }),
       ];
       // 10 points this week: recurring takes 6, 4 overflows to savings
       const completions = [makeCompletion(10, THIS_WEEK_MON)];
 
       const result = computeWaterfall(goals, completions, NOW);
-      const recurring = result.goals.find(g => g.goalId === 'recurring')!;
-      const savings = result.goals.find(g => g.goalId === 'savings')!;
+      const recurring = result.goals.find((g) => g.goalId === 'recurring')!;
+      const savings = result.goals.find((g) => g.goalId === 'savings')!;
 
       expect(recurring.allocated).toBe(6);
       expect(recurring.achieved).toBe(true);
@@ -194,18 +209,21 @@ describe('computeWaterfall', () => {
 
     it('non-recurring goals accumulate overflow across multiple weeks', () => {
       const goals = [
-        makeGoal({ id: 'weekly-chore', pointCost: 5, priority: 1, recurring: true, recurrencePeriod: 'weekly' }),
+        makeGoal({
+          id: 'weekly-chore',
+          pointCost: 5,
+          priority: 1,
+          recurring: true,
+          recurrencePeriod: 'weekly',
+        }),
         makeGoal({ id: 'bike', pointCost: 10, priority: 2, recurring: false }),
       ];
       // Week 1: 8 pts (5 to recurring, 3 overflow to bike)
       // Week 2: 8 pts (5 to recurring, 3 overflow to bike → bike total = 6)
-      const completions = [
-        makeCompletion(8, LAST_WEEK_MON),
-        makeCompletion(8, THIS_WEEK_MON),
-      ];
+      const completions = [makeCompletion(8, LAST_WEEK_MON), makeCompletion(8, THIS_WEEK_MON)];
 
       const result = computeWaterfall(goals, completions, NOW);
-      const bike = result.goals.find(g => g.goalId === 'bike')!;
+      const bike = result.goals.find((g) => g.goalId === 'bike')!;
 
       expect(bike.allocated).toBe(6); // 3 + 3
       expect(bike.achieved).toBe(false);
@@ -215,10 +233,7 @@ describe('computeWaterfall', () => {
   describe('zero and edge point values', () => {
     it('skips completions with 0 points in week buckets', () => {
       const goal = makeGoal({ pointCost: 10, recurring: false });
-      const completions = [
-        makeCompletion(0, THIS_WEEK_MON),
-        makeCompletion(5, THIS_WEEK_MON),
-      ];
+      const completions = [makeCompletion(0, THIS_WEEK_MON), makeCompletion(5, THIS_WEEK_MON)];
 
       const result = computeWaterfall([goal], completions, NOW);
       expect(result.goals[0]!.allocated).toBe(5);
@@ -228,10 +243,7 @@ describe('computeWaterfall', () => {
 
     it('skips completions with negative points in week buckets', () => {
       const goal = makeGoal({ pointCost: 10, recurring: false });
-      const completions = [
-        makeCompletion(-3, THIS_WEEK_MON),
-        makeCompletion(5, THIS_WEEK_MON),
-      ];
+      const completions = [makeCompletion(-3, THIS_WEEK_MON), makeCompletion(5, THIS_WEEK_MON)];
 
       const result = computeWaterfall([goal], completions, NOW);
       // weekBuckets skips pts <= 0, so only 5 goes into waterfall
@@ -261,11 +273,11 @@ describe('computeWaterfall', () => {
 
       const result = computeWaterfall(goals, completions, NOW);
 
-      expect(result.goals.find(g => g.goalId === 'goal-1')!.achieved).toBe(true);
-      expect(result.goals.find(g => g.goalId === 'goal-2')!.achieved).toBe(true);
-      expect(result.goals.find(g => g.goalId === 'goal-3')!.achieved).toBe(true);
-      expect(result.goals.find(g => g.goalId === 'goal-4')!.allocated).toBe(1);
-      expect(result.goals.find(g => g.goalId === 'goal-5')!.allocated).toBe(0);
+      expect(result.goals.find((g) => g.goalId === 'goal-1')!.achieved).toBe(true);
+      expect(result.goals.find((g) => g.goalId === 'goal-2')!.achieved).toBe(true);
+      expect(result.goals.find((g) => g.goalId === 'goal-3')!.achieved).toBe(true);
+      expect(result.goals.find((g) => g.goalId === 'goal-4')!.allocated).toBe(1);
+      expect(result.goals.find((g) => g.goalId === 'goal-5')!.allocated).toBe(0);
     });
   });
 
@@ -321,10 +333,7 @@ describe('computeWaterfall', () => {
       const satFeb14 = new Date('2026-02-14T12:00:00Z'); // Saturday
       const sunFeb15 = new Date('2026-02-15T12:00:00Z'); // Sunday
 
-      const completions = [
-        makeCompletion(3, satFeb14),
-        makeCompletion(7, sunFeb15),
-      ];
+      const completions = [makeCompletion(3, satFeb14), makeCompletion(7, sunFeb15)];
       const goal = makeGoal({ pointCost: 20, recurring: false });
 
       const result = computeWaterfall([goal], completions, NOW, 0);
@@ -352,10 +361,7 @@ describe('computeWaterfall', () => {
       });
 
       // weekStartsOn=0: Both Sunday and Monday are in the same current week (starting Sun Feb 15)
-      const completions = [
-        makeCompletion(3, sunFeb15),
-        makeCompletion(3, monFeb16),
-      ];
+      const completions = [makeCompletion(3, sunFeb15), makeCompletion(3, monFeb16)];
       const result0 = computeWaterfall([goal], completions, NOW, 0);
       // Both completions fall in the same week bucket (Sun Feb 15), total 6 pts, capped at 5
       expect(result0.goals[0]!.allocated).toBe(5);

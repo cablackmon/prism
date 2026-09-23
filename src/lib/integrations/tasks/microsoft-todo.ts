@@ -66,19 +66,28 @@ async function graphFetch<T>(
 
 function mapImportance(importance: MsGraphTask['importance']): 'high' | 'medium' | 'low' | null {
   switch (importance) {
-    case 'high': return 'high';
-    case 'low': return 'low';
-    case 'normal': return 'medium';
-    default: return null;
+    case 'high':
+      return 'high';
+    case 'low':
+      return 'low';
+    case 'normal':
+      return 'medium';
+    default:
+      return null;
   }
 }
 
-function mapPriorityToImportance(priority: 'high' | 'medium' | 'low' | null | undefined): MsGraphTask['importance'] {
+function mapPriorityToImportance(
+  priority: 'high' | 'medium' | 'low' | null | undefined
+): MsGraphTask['importance'] {
   switch (priority) {
-    case 'high': return 'high';
-    case 'low': return 'low';
+    case 'high':
+      return 'high';
+    case 'low':
+      return 'low';
     case 'medium':
-    default: return 'normal';
+    default:
+      return 'normal';
   }
 }
 
@@ -102,10 +111,7 @@ export const microsoftTodoProvider: TaskProvider = {
   displayName: 'Microsoft To-Do',
 
   async fetchLists(tokens: TaskProviderTokens): Promise<ExternalTaskList[]> {
-    const response = await graphFetch<{ value: MsGraphTaskList[] }>(
-      '/me/todo/lists',
-      tokens
-    );
+    const response = await graphFetch<{ value: MsGraphTaskList[] }>('/me/todo/lists', tokens);
 
     return response.value.map((list) => ({
       id: list.id,
@@ -147,14 +153,10 @@ export const microsoftTodoProvider: TaskProvider = {
       body.importance = mapPriorityToImportance(task.priority);
     }
 
-    const response = await graphFetch<MsGraphTask>(
-      `/me/todo/lists/${task.listId}/tasks`,
-      tokens,
-      {
-        method: 'POST',
-        body: JSON.stringify(body),
-      }
-    );
+    const response = await graphFetch<MsGraphTask>(`/me/todo/lists/${task.listId}/tasks`, tokens, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
 
     return parseGraphTask(response, task.listId);
   },
@@ -168,9 +170,7 @@ export const microsoftTodoProvider: TaskProvider = {
     // The taskId format in Graph API doesn't include the listId
     // So we need to find which list contains this task
     // For now, we'll require the listId to be encoded in the taskId as "listId:taskId"
-    const [listId, actualTaskId] = taskId.includes(':')
-      ? taskId.split(':')
-      : [null, taskId];
+    const [listId, actualTaskId] = taskId.includes(':') ? taskId.split(':') : [null, taskId];
 
     if (!listId) {
       throw new Error('Task ID must include list ID (format: listId:taskId)');
@@ -215,19 +215,15 @@ export const microsoftTodoProvider: TaskProvider = {
   },
 
   async deleteTask(tokens: TaskProviderTokens, taskId: string): Promise<void> {
-    const [listId, actualTaskId] = taskId.includes(':')
-      ? taskId.split(':')
-      : [null, taskId];
+    const [listId, actualTaskId] = taskId.includes(':') ? taskId.split(':') : [null, taskId];
 
     if (!listId) {
       throw new Error('Task ID must include list ID (format: listId:taskId)');
     }
 
-    await graphFetch(
-      `/me/todo/lists/${listId}/tasks/${actualTaskId}`,
-      tokens,
-      { method: 'DELETE' }
-    );
+    await graphFetch(`/me/todo/lists/${listId}/tasks/${actualTaskId}`, tokens, {
+      method: 'DELETE',
+    });
   },
 
   async refreshTokens(tokens: TaskProviderTokens): Promise<TaskProviderTokens | null> {
@@ -244,19 +240,22 @@ export const microsoftTodoProvider: TaskProvider = {
     }
 
     try {
-      const response = await fetch('https://login.microsoftonline.com/consumers/oauth2/v2.0/token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          client_id: clientId,
-          client_secret: clientSecret,
-          refresh_token: tokens.refreshToken,
-          grant_type: 'refresh_token',
-          scope: 'Tasks.ReadWrite offline_access',
-        }),
-      });
+      const response = await fetch(
+        'https://login.microsoftonline.com/consumers/oauth2/v2.0/token',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({
+            client_id: clientId,
+            client_secret: clientSecret,
+            refresh_token: tokens.refreshToken,
+            grant_type: 'refresh_token',
+            scope: 'Tasks.ReadWrite offline_access',
+          }),
+        }
+      );
 
       if (!response.ok) {
         console.error('Failed to refresh Microsoft tokens:', await response.text());

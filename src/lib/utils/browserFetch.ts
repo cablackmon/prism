@@ -67,7 +67,9 @@ export async function browserFetch(url: string): Promise<string | null> {
       // If no JSON-LD appeared, wait a bit more and try networkidle
       try {
         await page.waitForNetworkIdle({ idleTime: 2000, timeout: 10000 });
-      } catch { /* proceed with whatever we have */ }
+      } catch {
+        /* proceed with whatever we have */
+      }
     }
 
     const html = await page.content();
@@ -77,7 +79,11 @@ export async function browserFetch(url: string): Promise<string | null> {
     return null;
   } finally {
     if (browser) {
-      try { await browser.close(); } catch { /* ignore */ }
+      try {
+        await browser.close();
+      } catch {
+        /* ignore */
+      }
     }
   }
 }

@@ -39,7 +39,9 @@ export function useWeekStartsOn(): {
             localStorage.setItem(STORAGE_KEY, '0');
           }
         }
-      } catch { /* use cached/default */ }
+      } catch {
+        /* use cached/default */
+      }
       setLoading(false);
     }
     load();
@@ -54,7 +56,9 @@ export function useWeekStartsOn(): {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key: 'weekStartsOn', value: String(newValue) }),
       });
-    } catch { /* silent */ }
+    } catch {
+      /* silent */
+    }
   }, []);
 
   return { weekStartsOn: value, setWeekStartsOn, loading };

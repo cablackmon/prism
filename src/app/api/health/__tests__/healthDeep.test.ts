@@ -124,9 +124,7 @@ describe('GET /api/health/deep', () => {
   // --- Test 2: OAuth expiring soon (calendar) ---
   it('returns oauth warn when a calendar token is expiring soon', async () => {
     // First call (calendarSources) returns a row; second (photoSources) returns none
-    mockLimit
-      .mockResolvedValueOnce([{ id: 'cal-1' }])
-      .mockResolvedValueOnce([]);
+    mockLimit.mockResolvedValueOnce([{ id: 'cal-1' }]).mockResolvedValueOnce([]);
 
     const res = await GET();
     const data = await res.json();
@@ -140,9 +138,7 @@ describe('GET /api/health/deep', () => {
   // --- Test 3: OAuth expiring soon (photos) ---
   it('returns oauth warn when a photo source token is expiring soon', async () => {
     // First call (calendarSources) returns none; second (photoSources) returns a row
-    mockLimit
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([{ id: 'photo-1' }]);
+    mockLimit.mockResolvedValueOnce([]).mockResolvedValueOnce([{ id: 'photo-1' }]);
 
     const res = await GET();
     const data = await res.json();
@@ -232,9 +228,7 @@ describe('GET /api/health/deep', () => {
 
   // --- Test 9: Non-parent / insufficient permission ---
   it('returns 403 when the user lacks canModifySettings permission', async () => {
-    mockRequireRole.mockReturnValue(
-      NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    );
+    mockRequireRole.mockReturnValue(NextResponse.json({ error: 'Forbidden' }, { status: 403 }));
 
     const res = await GET();
 

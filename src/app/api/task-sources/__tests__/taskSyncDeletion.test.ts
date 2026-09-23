@@ -49,7 +49,10 @@ jest.mock('@/lib/db/client', () => ({
     insert: () => ({
       values: (payload: unknown) => {
         writes.push({ op: 'insert', payload });
-        return { onConflictDoNothing: () => Promise.resolve(), then: (r: (v: unknown) => void) => r(undefined) };
+        return {
+          onConflictDoNothing: () => Promise.resolve(),
+          then: (r: (v: unknown) => void) => r(undefined),
+        };
       },
     }),
     delete: (table: { __name?: string }) => ({
@@ -64,11 +67,24 @@ jest.mock('@/lib/db/client', () => ({
 }));
 jest.mock('@/lib/db/schema', () => ({
   taskSources: { id: 'id' },
-  tasks: { __name: 'tasks', id: 'id', taskSourceId: 'tsid', listId: 'lid', externalId: 'eid', syncExempt: 'se', pendingDeletion: 'pd' },
+  tasks: {
+    __name: 'tasks',
+    id: 'id',
+    taskSourceId: 'tsid',
+    listId: 'lid',
+    externalId: 'eid',
+    syncExempt: 'se',
+    pendingDeletion: 'pd',
+  },
   dismissedTasks: { __name: 'dismissed_tasks', taskSourceId: 'tsid', externalTaskId: 'etid' },
 }));
 jest.mock('drizzle-orm', () => ({
-  eq: jest.fn(), and: jest.fn(), or: jest.fn(), isNull: jest.fn(), isNotNull: jest.fn(), inArray: jest.fn(),
+  eq: jest.fn(),
+  and: jest.fn(),
+  or: jest.fn(),
+  isNull: jest.fn(),
+  isNotNull: jest.fn(),
+  inArray: jest.fn(),
 }));
 jest.mock('@/lib/auth', () => ({
   requireAuth: (...a: unknown[]) => mockRequireAuth(...a),
@@ -106,10 +122,9 @@ function syncedRow(over: Record<string, unknown> = {}) {
 }
 
 function run() {
-  return POST(
-    new NextRequest('http://localhost/api/task-sources/src-1/sync', { method: 'POST' }),
-    { params: Promise.resolve({ id: 'src-1' }) },
-  );
+  return POST(new NextRequest('http://localhost/api/task-sources/src-1/sync', { method: 'POST' }), {
+    params: Promise.resolve({ id: 'src-1' }),
+  });
 }
 
 beforeEach(() => {
@@ -119,8 +134,14 @@ beforeEach(() => {
   mockRequireAuth.mockResolvedValue({ userId: 'p1', role: 'parent' });
   mockRequireRole.mockReturnValue(undefined);
   sourceRow = {
-    id: 'src-1', provider: 'google_tasks', externalListId: 'list-1', taskListId: 'tl-1',
-    syncEnabled: true, accessToken: 'at', refreshToken: 'rt', tokenExpiresAt: new Date(Date.now() + 3_600_000),
+    id: 'src-1',
+    provider: 'google_tasks',
+    externalListId: 'list-1',
+    taskListId: 'tl-1',
+    syncEnabled: true,
+    accessToken: 'at',
+    refreshToken: 'rt',
+    tokenExpiresAt: new Date(Date.now() + 3_600_000),
   };
   localRows = [];
   mockFetchTasks.mockResolvedValue([]);
@@ -135,7 +156,10 @@ describe('a task that vanished from the provider', () => {
 
     expect(deletedTasks()).toBe(false);
     expect(writes).toContainEqual(
-      expect.objectContaining({ op: 'update', payload: expect.objectContaining({ pendingDeletion: expect.any(Date) }) }),
+      expect.objectContaining({
+        op: 'update',
+        payload: expect.objectContaining({ pendingDeletion: expect.any(Date) }),
+      })
     );
   });
 
@@ -149,7 +173,8 @@ describe('a task that vanished from the provider', () => {
 
     expect(deletedTasks()).toBe(false);
     const flagged = writes.filter(
-      (w) => w.op === 'update' && (w.payload as Record<string, unknown>)?.pendingDeletion instanceof Date,
+      (w) =>
+        w.op === 'update' && (w.payload as Record<string, unknown>)?.pendingDeletion instanceof Date
     );
     expect(flagged).toHaveLength(0);
   });
@@ -157,7 +182,9 @@ describe('a task that vanished from the provider', () => {
   it('is left alone entirely when the whole list disappears', async () => {
     // The failure this feature exists for. Nothing is flagged and nothing is
     // deleted; the run reports the problem instead.
-    localRows = Array.from({ length: 30 }, (_, i) => syncedRow({ externalId: `r${i}`, id: `local-${i}` }));
+    localRows = Array.from({ length: 30 }, (_, i) =>
+      syncedRow({ externalId: `r${i}`, id: `local-${i}` })
+    );
     mockFetchTasks.mockResolvedValue([]);
 
     const res = await run();
@@ -165,7 +192,8 @@ describe('a task that vanished from the provider', () => {
 
     expect(deletedTasks()).toBe(false);
     const flagged = writes.filter(
-      (w) => w.op === 'update' && (w.payload as Record<string, unknown>)?.pendingDeletion instanceof Date,
+      (w) =>
+        w.op === 'update' && (w.payload as Record<string, unknown>)?.pendingDeletion instanceof Date
     );
     expect(flagged).toHaveLength(0);
     expect(JSON.stringify(body)).toMatch(/missing from the provider/i);
@@ -184,7 +212,8 @@ describe('a task belonging to something else', () => {
 
     expect(deletedTasks()).toBe(false);
     const flagged = writes.filter(
-      (w) => w.op === 'update' && (w.payload as Record<string, unknown>)?.pendingDeletion instanceof Date,
+      (w) =>
+        w.op === 'update' && (w.payload as Record<string, unknown>)?.pendingDeletion instanceof Date
     );
     expect(flagged).toHaveLength(0);
   });
@@ -194,13 +223,25 @@ describe('a task the provider is listing again', () => {
   it('has its flag cleared, so one bad response heals itself', async () => {
     localRows = [syncedRow({ pendingDeletion: LONG_AGO })];
     mockFetchTasks.mockResolvedValue([
-      { id: 'r1', title: 'A task', completed: false, updatedAt: LONG_AGO, dueDate: null, description: null, priority: null, completedAt: null },
+      {
+        id: 'r1',
+        title: 'A task',
+        completed: false,
+        updatedAt: LONG_AGO,
+        dueDate: null,
+        description: null,
+        priority: null,
+        completedAt: null,
+      },
     ]);
 
     await run();
 
     expect(writes).toContainEqual(
-      expect.objectContaining({ op: 'update', payload: expect.objectContaining({ pendingDeletion: null }) }),
+      expect.objectContaining({
+        op: 'update',
+        payload: expect.objectContaining({ pendingDeletion: null }),
+      })
     );
   });
 });

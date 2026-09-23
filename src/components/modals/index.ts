@@ -17,7 +17,11 @@ export { AddChoreModal } from './AddChoreModal';
 export type { AddChoreModalProps, CreatedChore, ChoreToEdit } from './AddChoreModal';
 
 export { AddShoppingItemModal } from './AddShoppingItemModal';
-export type { AddShoppingItemModalProps, CreatedShoppingItem, ShoppingItemToEdit } from './AddShoppingItemModal';
+export type {
+  AddShoppingItemModalProps,
+  CreatedShoppingItem,
+  ShoppingItemToEdit,
+} from './AddShoppingItemModal';
 
 export { AddEventModal } from './AddEventModal';
 export type { AddEventModalProps, CreatedEvent, EventToEdit } from './AddEventModal';

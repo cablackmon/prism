@@ -44,18 +44,44 @@ const mockTxUpdateWhere = jest.fn().mockResolvedValue(undefined);
 const mockTransaction = jest.fn();
 
 jest.mock('@/lib/db/client', () => ({
-  db: new Proxy({}, {
-    get: (_target, prop) => {
-      if (prop === 'transaction') return (...a: unknown[]) => mockTransaction(...a);
-      // select, insert, update all return the chainable proxy
-      return () => makeChain();
-    },
-  }),
+  db: new Proxy(
+    {},
+    {
+      get: (_target, prop) => {
+        if (prop === 'transaction') return (...a: unknown[]) => mockTransaction(...a);
+        // select, insert, update all return the chainable proxy
+        return () => makeChain();
+      },
+    }
+  ),
 }));
 
 jest.mock('@/lib/db/schema', () => ({
-  chores: { id: 'id', title: 'title', pointValue: 'pointValue', requiresApproval: 'requiresApproval', enabled: 'enabled', frequency: 'frequency', customIntervalDays: 'customIntervalDays', startDay: 'startDay', assignedTo: 'assignedTo', lastCompleted: 'lastCompleted', nextDue: 'nextDue', updatedAt: 'updatedAt' },
-  choreCompletions: { id: 'id', choreId: 'choreId', completedBy: 'completedBy', completedAt: 'completedAt', pointsAwarded: 'pointsAwarded', approvedBy: 'approvedBy', approvedAt: 'approvedAt', photoUrl: 'photoUrl', notes: 'notes' },
+  chores: {
+    id: 'id',
+    title: 'title',
+    pointValue: 'pointValue',
+    requiresApproval: 'requiresApproval',
+    enabled: 'enabled',
+    frequency: 'frequency',
+    customIntervalDays: 'customIntervalDays',
+    startDay: 'startDay',
+    assignedTo: 'assignedTo',
+    lastCompleted: 'lastCompleted',
+    nextDue: 'nextDue',
+    updatedAt: 'updatedAt',
+  },
+  choreCompletions: {
+    id: 'id',
+    choreId: 'choreId',
+    completedBy: 'completedBy',
+    completedAt: 'completedAt',
+    pointsAwarded: 'pointsAwarded',
+    approvedBy: 'approvedBy',
+    approvedAt: 'approvedAt',
+    photoUrl: 'photoUrl',
+    notes: 'notes',
+  },
   users: { id: 'id', name: 'name', role: 'role', color: 'color' },
 }));
 
@@ -101,9 +127,14 @@ const parentAuth = { userId: 'parent-1', role: 'parent' };
 const childAuth = { userId: 'child-1', role: 'child' };
 
 const sampleChore = {
-  id: 'chore-1', title: 'Take out trash', pointValue: 5,
-  requiresApproval: true, enabled: true, frequency: 'weekly',
-  customIntervalDays: null, startDay: null,
+  id: 'chore-1',
+  title: 'Take out trash',
+  pointValue: 5,
+  requiresApproval: true,
+  enabled: true,
+  frequency: 'weekly',
+  customIntervalDays: null,
+  startDay: null,
 };
 
 function makeRequest(body: Record<string, unknown>) {
@@ -142,13 +173,21 @@ describe('POST /api/chores/[id]/complete', () => {
     ];
 
     const completion = {
-      id: 'comp-1', choreId: 'chore-1', completedBy: 'parent-1',
-      completedAt: new Date(), photoUrl: null, notes: null,
-      pointsAwarded: 5, approvedBy: 'parent-1', approvedAt: new Date(),
+      id: 'comp-1',
+      choreId: 'chore-1',
+      completedBy: 'parent-1',
+      completedAt: new Date(),
+      photoUrl: null,
+      notes: null,
+      pointsAwarded: 5,
+      approvedBy: 'parent-1',
+      approvedAt: new Date(),
     };
     mockTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
       return fn({
-        insert: () => ({ values: () => ({ returning: jest.fn().mockResolvedValue([completion]) }) }),
+        insert: () => ({
+          values: () => ({ returning: jest.fn().mockResolvedValue([completion]) }),
+        }),
         update: () => ({ set: () => ({ where: jest.fn().mockResolvedValue(undefined) }) }),
       });
     });
@@ -173,13 +212,21 @@ describe('POST /api/chores/[id]/complete', () => {
     ];
 
     const completion = {
-      id: 'comp-2', choreId: 'chore-1', completedBy: 'child-1',
-      completedAt: new Date(), photoUrl: null, notes: null,
-      pointsAwarded: 5, approvedBy: null, approvedAt: null,
+      id: 'comp-2',
+      choreId: 'chore-1',
+      completedBy: 'child-1',
+      completedAt: new Date(),
+      photoUrl: null,
+      notes: null,
+      pointsAwarded: 5,
+      approvedBy: null,
+      approvedAt: null,
     };
     mockTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
       return fn({
-        insert: () => ({ values: () => ({ returning: jest.fn().mockResolvedValue([completion]) }) }),
+        insert: () => ({
+          values: () => ({ returning: jest.fn().mockResolvedValue([completion]) }),
+        }),
       });
     });
 
@@ -194,9 +241,7 @@ describe('POST /api/chores/[id]/complete', () => {
   });
 
   it('rejects completion of disabled chore', async () => {
-    queryResults = [
-      [{ ...sampleChore, enabled: false }],
-    ];
+    queryResults = [[{ ...sampleChore, enabled: false }]];
 
     const res = await completeChore(makeRequest({ completedBy: 'parent-1' }), routeParams);
     const data = await res.json();
@@ -268,7 +313,15 @@ describe('POST /api/chores/[id]/approve', () => {
   it('parent approves pending completion successfully', async () => {
     queryResults = [
       [sampleChore], // chore lookup
-      [{ id: 'comp-1', choreId: 'chore-1', completedBy: 'child-1', completedAt: new Date('2026-02-15T10:00:00Z'), pointsAwarded: 5 }], // pending completion
+      [
+        {
+          id: 'comp-1',
+          choreId: 'chore-1',
+          completedBy: 'child-1',
+          completedAt: new Date('2026-02-15T10:00:00Z'),
+          pointsAwarded: 5,
+        },
+      ], // pending completion
       [{ name: 'Timmy', color: '#FF0000' }], // completing user
       [{ name: 'Dad' }], // approving user
     ];
@@ -290,9 +343,7 @@ describe('POST /api/chores/[id]/approve', () => {
   });
 
   it('returns 403 when non-parent tries to approve', async () => {
-    mockRequireRole.mockReturnValue(
-      NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    );
+    mockRequireRole.mockReturnValue(NextResponse.json({ error: 'Forbidden' }, { status: 403 }));
 
     const res = await approveChore(makeApproveRequest(), routeParams);
     expect(res.status).toBe(403);
@@ -321,7 +372,15 @@ describe('POST /api/chores/[id]/approve', () => {
   it('falls back to "Unknown" when completing user was deleted', async () => {
     queryResults = [
       [sampleChore],
-      [{ id: 'comp-1', choreId: 'chore-1', completedBy: 'deleted-user', completedAt: new Date(), pointsAwarded: 5 }],
+      [
+        {
+          id: 'comp-1',
+          choreId: 'chore-1',
+          completedBy: 'deleted-user',
+          completedAt: new Date(),
+          pointsAwarded: 5,
+        },
+      ],
       [], // deleted user → empty
       [{ name: 'Dad' }],
     ];

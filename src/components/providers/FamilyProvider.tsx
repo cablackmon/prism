@@ -35,25 +35,27 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
       const response = await fetch('/api/family');
       if (response.ok) {
         const data = await response.json();
-        const mapped: FamilyMember[] = data.members.map((m: {
-          id: string;
-          loginIndex?: number;
-          name: string;
-          role?: string;
-          color: string;
-          avatarUrl?: string | null;
-          hasPin: boolean;
-          pinLength?: number;
-        }) => ({
-          id: m.id,
-          loginIndex: m.loginIndex,
-          name: m.name,
-          role: m.role as 'parent' | 'child' | 'guest' | undefined,
-          color: m.color,
-          avatarUrl: m.avatarUrl,
-          hasPin: m.hasPin,
-          pinLength: m.pinLength,
-        }));
+        const mapped: FamilyMember[] = data.members.map(
+          (m: {
+            id: string;
+            loginIndex?: number;
+            name: string;
+            role?: string;
+            color: string;
+            avatarUrl?: string | null;
+            hasPin: boolean;
+            pinLength?: number;
+          }) => ({
+            id: m.id,
+            loginIndex: m.loginIndex,
+            name: m.name,
+            role: m.role as 'parent' | 'child' | 'guest' | undefined,
+            color: m.color,
+            avatarUrl: m.avatarUrl,
+            hasPin: m.hasPin,
+            pinLength: m.pinLength,
+          })
+        );
         // Defensive de-dup by id — a repeated id in the API response would
         // otherwise render the same member twice in every member list/pill
         // row (e.g. Chores' person filter), with both entries entangled

@@ -2,7 +2,11 @@
 
 import { useState, useRef, useEffect } from 'react';
 
-export function useShoppingCelebration(activeListId: string, checkedItems: number, totalItems: number) {
+export function useShoppingCelebration(
+  activeListId: string,
+  checkedItems: number,
+  totalItems: number
+) {
   const [showCelebration, setShowCelebration] = useState(false);
   const [lastCheckedCount, setLastCheckedCount] = useState<number | null>(null);
   const isInitialLoadRef = useRef(true);

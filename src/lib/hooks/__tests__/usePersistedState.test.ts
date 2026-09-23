@@ -107,7 +107,9 @@ describe('useSessionScopedState', () => {
     window.localStorage.setItem('prism-last-activity', String(Date.now()));
     window.localStorage.setItem('f', JSON.stringify('list-1'));
 
-    const { result } = renderHook(() => useSessionScopedState<string | null>('f', null, isListFilter));
+    const { result } = renderHook(() =>
+      useSessionScopedState<string | null>('f', null, isListFilter)
+    );
     expect(result.current[0]).toBe('list-1');
   });
 
@@ -117,7 +119,9 @@ describe('useSessionScopedState', () => {
     window.localStorage.setItem('prism-last-activity', String(Date.now() - IDLE_FORGET_MS - 1000));
     window.localStorage.setItem('f', JSON.stringify('list-1'));
 
-    const { result } = renderHook(() => useSessionScopedState<string | null>('f', null, isListFilter));
+    const { result } = renderHook(() =>
+      useSessionScopedState<string | null>('f', null, isListFilter)
+    );
     expect(result.current[0]).toBeNull();
   });
 

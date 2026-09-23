@@ -8,7 +8,12 @@
 
 export {};
 
-import { validatePublicUrl, safeFetch, parseAllowedInternalHosts, UnsafeUrlError } from '../safeFetch';
+import {
+  validatePublicUrl,
+  safeFetch,
+  parseAllowedInternalHosts,
+  UnsafeUrlError,
+} from '../safeFetch';
 
 describe('validatePublicUrl', () => {
   it('accepts a public https URL', () => {
@@ -31,15 +36,21 @@ describe('validatePublicUrl', () => {
   });
 
   it('rejects javascript: protocol', () => {
-    expect(() => validatePublicUrl('javascript:alert(1)', { isProduction: true })).toThrow(/protocol/i);
+    expect(() => validatePublicUrl('javascript:alert(1)', { isProduction: true })).toThrow(
+      /protocol/i
+    );
   });
 
   it('rejects file: protocol', () => {
-    expect(() => validatePublicUrl('file:///etc/passwd', { isProduction: true })).toThrow(/protocol/i);
+    expect(() => validatePublicUrl('file:///etc/passwd', { isProduction: true })).toThrow(
+      /protocol/i
+    );
   });
 
   it('rejects ftp: protocol', () => {
-    expect(() => validatePublicUrl('ftp://example.com/foo', { isProduction: true })).toThrow(/protocol/i);
+    expect(() => validatePublicUrl('ftp://example.com/foo', { isProduction: true })).toThrow(
+      /protocol/i
+    );
   });
 
   describe('IPv4 private ranges (in production)', () => {
@@ -59,8 +70,9 @@ describe('validatePublicUrl', () => {
     ];
     for (const [host, label] of cases) {
       it(`rejects ${host} (${label})`, () => {
-        expect(() => validatePublicUrl(`http://${host}/`, { isProduction: true }))
-          .toThrow(UnsafeUrlError);
+        expect(() => validatePublicUrl(`http://${host}/`, { isProduction: true })).toThrow(
+          UnsafeUrlError
+        );
       });
     }
   });
@@ -69,11 +81,11 @@ describe('validatePublicUrl', () => {
     const cases = [
       '8.8.8.8',
       '1.1.1.1',
-      '172.15.0.1',  // just below 172.16
-      '172.32.0.1',  // just above 172.31
+      '172.15.0.1', // just below 172.16
+      '172.32.0.1', // just above 172.31
       '192.169.0.1', // just past 192.168
       '169.255.0.1', // just past 169.254
-      '100.63.0.1',  // just below CGNAT
+      '100.63.0.1', // just below CGNAT
       '100.128.0.1', // just past CGNAT
     ];
     for (const host of cases) {
@@ -96,8 +108,9 @@ describe('validatePublicUrl', () => {
     ];
     for (const [host, label] of cases) {
       it(`rejects ${host} (${label})`, () => {
-        expect(() => validatePublicUrl(`http://${host}/`, { isProduction: true }))
-          .toThrow(UnsafeUrlError);
+        expect(() => validatePublicUrl(`http://${host}/`, { isProduction: true })).toThrow(
+          UnsafeUrlError
+        );
       });
     }
   });
@@ -111,12 +124,14 @@ describe('validatePublicUrl', () => {
 
   describe('localhost handling', () => {
     it('rejects localhost in production', () => {
-      expect(() => validatePublicUrl('http://localhost/', { isProduction: true }))
-        .toThrow(UnsafeUrlError);
+      expect(() => validatePublicUrl('http://localhost/', { isProduction: true })).toThrow(
+        UnsafeUrlError
+      );
     });
     it('rejects subdomain.localhost in production', () => {
-      expect(() => validatePublicUrl('http://api.localhost/', { isProduction: true }))
-        .toThrow(UnsafeUrlError);
+      expect(() => validatePublicUrl('http://api.localhost/', { isProduction: true })).toThrow(
+        UnsafeUrlError
+      );
     });
     it('accepts localhost in non-production', () => {
       const url = validatePublicUrl('http://localhost:3000/', { isProduction: false });
@@ -127,8 +142,9 @@ describe('validatePublicUrl', () => {
       expect(url.hostname).toBe('127.0.0.1');
     });
     it('still rejects non-loopback private IPs in non-production', () => {
-      expect(() => validatePublicUrl('http://10.0.0.1/', { isProduction: false }))
-        .toThrow(UnsafeUrlError);
+      expect(() => validatePublicUrl('http://10.0.0.1/', { isProduction: false })).toThrow(
+        UnsafeUrlError
+      );
     });
   });
 });
@@ -171,7 +187,7 @@ describe('validatePublicUrl — PRISM_ALLOWED_INTERNAL_HOSTS allowlist', () => {
       validatePublicUrl('http://192.168.1.99/', {
         isProduction: true,
         allowedInternalHosts: ['192.168.50.60'],
-      }),
+      })
     ).toThrow(UnsafeUrlError);
   });
 
@@ -180,7 +196,7 @@ describe('validatePublicUrl — PRISM_ALLOWED_INTERNAL_HOSTS allowlist', () => {
       validatePublicUrl('http://172.16.5.5/', {
         isProduction: true,
         allowedInternalHosts: ['192.168.0.0/16'],
-      }),
+      })
     ).toThrow(UnsafeUrlError);
   });
 
@@ -198,7 +214,7 @@ describe('validatePublicUrl — PRISM_ALLOWED_INTERNAL_HOSTS allowlist', () => {
 
   it('empty allowlist preserves strict behavior', () => {
     expect(() =>
-      validatePublicUrl('http://10.0.0.1/', { isProduction: true, allowedInternalHosts: [] }),
+      validatePublicUrl('http://10.0.0.1/', { isProduction: true, allowedInternalHosts: [] })
     ).toThrow(UnsafeUrlError);
   });
 });
@@ -240,7 +256,11 @@ describe('safeFetch (redirect re-validation)', () => {
     const fetchMock = jest.fn().mockResolvedValue(ok());
     global.fetch = fetchMock as unknown as typeof fetch;
 
-    const res = await safeFetch('https://example.com/api', { headers: { X: '1' } }, { isProduction: true });
+    const res = await safeFetch(
+      'https://example.com/api',
+      { headers: { X: '1' } },
+      { isProduction: true }
+    );
 
     expect(res.status).toBe(200);
     const [url, init] = fetchMock.mock.calls[0];
@@ -254,7 +274,7 @@ describe('safeFetch (redirect re-validation)', () => {
     global.fetch = fetchMock as unknown as typeof fetch;
 
     await expect(
-      safeFetch('http://169.254.169.254/latest/meta-data', {}, { isProduction: true }),
+      safeFetch('http://169.254.169.254/latest/meta-data', {}, { isProduction: true })
     ).rejects.toBeInstanceOf(UnsafeUrlError);
     expect(fetchMock).not.toHaveBeenCalled();
   });
@@ -280,7 +300,7 @@ describe('safeFetch (redirect re-validation)', () => {
     global.fetch = fetchMock as unknown as typeof fetch;
 
     await expect(
-      safeFetch('https://public-decoy.example.com/img', {}, { isProduction: true }),
+      safeFetch('https://public-decoy.example.com/img', {}, { isProduction: true })
     ).rejects.toBeInstanceOf(UnsafeUrlError);
     // The internal target is never fetched — only the first (public) hop ran.
     expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -293,7 +313,7 @@ describe('safeFetch (redirect re-validation)', () => {
     global.fetch = fetchMock as unknown as typeof fetch;
 
     await expect(
-      safeFetch('https://public.example.com/x', {}, { isProduction: true }),
+      safeFetch('https://public.example.com/x', {}, { isProduction: true })
     ).rejects.toBeInstanceOf(UnsafeUrlError);
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
@@ -320,7 +340,7 @@ describe('safeFetch (redirect re-validation)', () => {
     await safeFetch(
       'https://example.com/submit',
       { method: 'POST', body: JSON.stringify({ a: 1 }) },
-      { isProduction: true },
+      { isProduction: true }
     );
 
     const secondInit = fetchMock.mock.calls[1][1];
@@ -338,7 +358,7 @@ describe('safeFetch (redirect re-validation)', () => {
     await safeFetch(
       'https://example.com/submit',
       { method: 'POST', body: 'payload' },
-      { isProduction: true },
+      { isProduction: true }
     );
 
     const secondInit = fetchMock.mock.calls[1][1];
@@ -351,7 +371,7 @@ describe('safeFetch (redirect re-validation)', () => {
     global.fetch = fetchMock as unknown as typeof fetch;
 
     await expect(
-      safeFetch('https://example.com/loop', {}, { isProduction: true, maxRedirects: 3 }),
+      safeFetch('https://example.com/loop', {}, { isProduction: true, maxRedirects: 3 })
     ).rejects.toThrow(/Too many redirects/);
     // Initial hop + 3 followed redirects = 4 fetch calls, then it gives up.
     expect(fetchMock).toHaveBeenCalledTimes(4);

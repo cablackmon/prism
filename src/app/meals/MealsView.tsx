@@ -48,26 +48,47 @@ import { DAYS_OF_WEEK as ALL_DAYS } from '@/lib/constants/days';
 
 function getMealTypeEmoji(mealType: string): string {
   switch (mealType) {
-    case 'breakfast': return '\u{1F305}';
-    case 'lunch': return '\u{1F32E}';
-    case 'dinner': return '\u{1F37D}\uFE0F';
-    case 'snack': return '\u{1F37F}';
-    default: return '\u{1F374}';
+    case 'breakfast':
+      return '\u{1F305}';
+    case 'lunch':
+      return '\u{1F32E}';
+    case 'dinner':
+      return '\u{1F37D}\uFE0F';
+    case 'snack':
+      return '\u{1F37F}';
+    default:
+      return '\u{1F374}';
   }
 }
 
 export function MealsView() {
   const { requireAuth } = useAuth();
   const {
-    weekStartsOn, today, currentWeek, weekOfString, loading,
-    showAddModal, setShowAddModal,
-    selectedDay, setSelectedDay,
-    editingMeal, setEditingMeal,
-    goToPreviousWeek, goToNextWeek, goToThisWeek, isCurrentWeek,
+    weekStartsOn,
+    today,
+    currentWeek,
+    weekOfString,
+    loading,
+    showAddModal,
+    setShowAddModal,
+    selectedDay,
+    setSelectedDay,
+    editingMeal,
+    setEditingMeal,
+    goToPreviousWeek,
+    goToNextWeek,
+    goToThisWeek,
+    isCurrentWeek,
     mealsByDay,
-    markCooked, unmarkCooked, deleteMeal, addMeal, editMeal, handleDropMeal,
+    markCooked,
+    unmarkCooked,
+    deleteMeal,
+    addMeal,
+    editMeal,
+    handleDropMeal,
     refresh,
-    totalMeals, cookedMeals,
+    totalMeals,
+    cookedMeals,
     confirmDialogProps,
   } = useMealsViewData();
 
@@ -93,25 +114,31 @@ export function MealsView() {
 
   return (
     <PageWrapper>
-      <div className="h-screen flex flex-col">
+      <div className="flex h-screen flex-col">
         <SubpageHeader
           icon={<UtensilsCrossed className="h-5 w-5 text-primary" />}
           title="Meal Planner"
-          badge={<Badge variant="secondary">{cookedMeals}/{totalMeals}</Badge>}
+          badge={
+            <Badge variant="secondary">
+              {cookedMeals}/{totalMeals}
+            </Badge>
+          }
           actions={
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button size="sm">
-                  <Plus className="h-4 w-4 mr-1" />Add<ChevronDown className="h-3 w-3 ml-1 opacity-70" />
+                  <Plus className="mr-1 h-4 w-4" />
+                  Add
+                  <ChevronDown className="ml-1 h-3 w-3 opacity-70" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuItem onClick={() => handleAddWithAuth()}>
-                  <Plus className="h-4 w-4 mr-2 text-muted-foreground" />
+                  <Plus className="mr-2 h-4 w-4 text-muted-foreground" />
                   Add meal
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleSyncWithAuth}>
-                  <Soup className="h-4 w-4 mr-2 text-muted-foreground" />
+                  <Soup className="mr-2 h-4 w-4 text-muted-foreground" />
                   Sync meal plan (Tandoor / Mealie)…
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -120,21 +147,40 @@ export function MealsView() {
         />
 
         <FilterBar>
-          <Button variant="ghost" size="icon" onClick={goToPreviousWeek} aria-label="Previous week" className="shrink-0 h-8 w-8">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={goToPreviousWeek}
+            aria-label="Previous week"
+            className="h-8 w-8 shrink-0"
+          >
             <ChevronLeft className="h-5 w-5" />
           </Button>
-          <div className="text-center shrink-0">
+          <div className="shrink-0 text-center">
             <span className="text-sm font-semibold">
               {format(currentWeek, 'MMM d')} - {format(addDays(currentWeek, 6), 'MMM d, yyyy')}
             </span>
             {!isCurrentWeek && (
-              <Button variant="link" size="sm" onClick={goToThisWeek} className="h-auto p-0 text-xs ml-2">This week</Button>
+              <Button
+                variant="link"
+                size="sm"
+                onClick={goToThisWeek}
+                className="ml-2 h-auto p-0 text-xs"
+              >
+                This week
+              </Button>
             )}
           </div>
-          <Button variant="ghost" size="icon" onClick={goToNextWeek} aria-label="Next week" className="shrink-0 h-8 w-8">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={goToNextWeek}
+            aria-label="Next week"
+            className="h-8 w-8 shrink-0"
+          >
             <ChevronRight className="h-5 w-5" />
           </Button>
-          <div className="w-px h-5 bg-border shrink-0" />
+          <div className="h-5 w-px shrink-0 bg-border" />
           {(['breakfast', 'lunch', 'dinner', 'snack'] as const).map((type) => {
             const isActive = filterMealTypes.has(type);
             return (
@@ -143,14 +189,14 @@ export function MealsView() {
                 variant={isActive ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => {
-                  setFilterMealTypes(prev => {
+                  setFilterMealTypes((prev) => {
                     const next = new Set(prev);
                     if (next.has(type)) next.delete(type);
                     else next.add(type);
                     return next;
                   });
                 }}
-                className="text-xs h-7 shrink-0"
+                className="h-7 shrink-0 text-xs"
               >
                 <Emoji e={getMealTypeEmoji(type)} /> {type.charAt(0).toUpperCase() + type.slice(1)}
               </Button>
@@ -162,18 +208,31 @@ export function MealsView() {
           {loading ? (
             <PageLoader />
           ) : (
-            <div className="max-w-6xl mx-auto space-y-3">
+            <div className="mx-auto max-w-6xl space-y-3">
               {orderedDays.map((day, offset) => {
                 const dayDate = addDays(currentWeek, offset);
                 const allDayMeals = mealsByDay[day] || [];
-                const dayMeals = filterMealTypes.size > 0 ? allDayMeals.filter(m => filterMealTypes.has(m.mealType)) : allDayMeals;
+                const dayMeals =
+                  filterMealTypes.size > 0
+                    ? allDayMeals.filter((m) => filterMealTypes.has(m.mealType))
+                    : allDayMeals;
                 const isDayToday = format(dayDate, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd');
                 const isPast = isBefore(dayDate, startOfDay(new Date())) && !isDayToday;
                 return (
-                  <DayRow key={day} day={day} date={dayDate} meals={dayMeals} isToday={isDayToday} isPast={isPast}
+                  <DayRow
+                    key={day}
+                    day={day}
+                    date={dayDate}
+                    meals={dayMeals}
+                    isToday={isDayToday}
+                    isPast={isPast}
                     onAddMeal={() => handleAddWithAuth(day)}
-                    onMarkCooked={markCooked} onUnmarkCooked={unmarkCooked}
-                    onEdit={setEditingMeal} onDelete={deleteMeal} onDropMeal={handleDropMeal} />
+                    onMarkCooked={markCooked}
+                    onUnmarkCooked={unmarkCooked}
+                    onEdit={setEditingMeal}
+                    onDelete={deleteMeal}
+                    onDropMeal={handleDropMeal}
+                  />
                 );
               })}
             </div>
@@ -186,8 +245,15 @@ export function MealsView() {
             defaultDay={selectedDay || orderedDays[0]}
             dayOptions={orderedDays}
             recipes={recipes}
-            onClose={() => { setShowAddModal(false); setSelectedDay(null); }}
-            onSave={(meal) => { addMeal(meal); setShowAddModal(false); setSelectedDay(null); }}
+            onClose={() => {
+              setShowAddModal(false);
+              setSelectedDay(null);
+            }}
+            onSave={(meal) => {
+              addMeal(meal);
+              setShowAddModal(false);
+              setSelectedDay(null);
+            }}
           />
         )}
         {editingMeal && (
@@ -197,11 +263,18 @@ export function MealsView() {
             dayOptions={orderedDays}
             recipes={recipes}
             onClose={() => setEditingMeal(null)}
-            onSave={(updates) => { editMeal(editingMeal.id, updates); setEditingMeal(null); }}
+            onSave={(updates) => {
+              editMeal(editingMeal.id, updates);
+              setEditingMeal(null);
+            }}
           />
         )}
         {showSyncModal && (
-          <RecipeSyncModal entity="meals" onClose={() => setShowSyncModal(false)} onSynced={refresh} />
+          <RecipeSyncModal
+            entity="meals"
+            onClose={() => setShowSyncModal(false)}
+            onSynced={refresh}
+          />
         )}
       </div>
       <ConfirmDialog {...confirmDialogProps} />
@@ -209,42 +282,83 @@ export function MealsView() {
   );
 }
 
-
-function DayRow({ day, date, meals, isToday, isPast, onAddMeal, onMarkCooked, onUnmarkCooked, onEdit, onDelete, onDropMeal }: {
-  day: Meal['dayOfWeek']; date: Date; meals: Meal[]; isToday: boolean; isPast: boolean;
-  onAddMeal: () => void; onMarkCooked: (id: string) => void; onUnmarkCooked: (id: string) => void;
-  onEdit: (meal: Meal) => void; onDelete: (id: string) => void; onDropMeal: (id: string, day: Meal['dayOfWeek']) => void;
+function DayRow({
+  day,
+  date,
+  meals,
+  isToday,
+  isPast,
+  onAddMeal,
+  onMarkCooked,
+  onUnmarkCooked,
+  onEdit,
+  onDelete,
+  onDropMeal,
+}: {
+  day: Meal['dayOfWeek'];
+  date: Date;
+  meals: Meal[];
+  isToday: boolean;
+  isPast: boolean;
+  onAddMeal: () => void;
+  onMarkCooked: (id: string) => void;
+  onUnmarkCooked: (id: string) => void;
+  onEdit: (meal: Meal) => void;
+  onDelete: (id: string) => void;
+  onDropMeal: (id: string, day: Meal['dayOfWeek']) => void;
 }) {
   const [dragOver, setDragOver] = React.useState(false);
   return (
     <div
       data-meal-day={day}
       className={cn(
-        'border border-border rounded-lg p-4 bg-card/85 backdrop-blur-sm transition-colors',
-        isToday && 'bg-accent/80 dark:bg-accent/50 border-primary',
+        'rounded-lg border border-border bg-card/85 p-4 backdrop-blur-sm transition-colors',
+        isToday && 'border-primary bg-accent/80 dark:bg-accent/50',
         isPast && !isToday && 'bg-muted/70 dark:bg-muted/55',
-        dragOver && 'border-primary border-2',
+        dragOver && 'border-2 border-primary'
       )}
-      onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+      onDragOver={(e) => {
+        e.preventDefault();
+        setDragOver(true);
+      }}
       onDragLeave={() => setDragOver(false)}
-      onDrop={(e) => { e.preventDefault(); setDragOver(false); const id = e.dataTransfer.getData('text/meal-id'); if (id) onDropMeal(id, day); }}
+      onDrop={(e) => {
+        e.preventDefault();
+        setDragOver(false);
+        const id = e.dataTransfer.getData('text/meal-id');
+        if (id) onDropMeal(id, day);
+      }}
     >
-      <div className="flex items-center justify-between mb-3">
+      <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h3 className={cn('text-sm font-semibold capitalize', isToday && 'text-primary')}>{day}</h3>
+          <h3 className={cn('text-sm font-semibold capitalize', isToday && 'text-primary')}>
+            {day}
+          </h3>
           <span className="text-xs text-muted-foreground">{format(date, 'MMM d')}</span>
-          {isToday && <Badge variant="default" className="text-xs px-2 py-0">Today</Badge>}
+          {isToday && (
+            <Badge variant="default" className="px-2 py-0 text-xs">
+              Today
+            </Badge>
+          )}
         </div>
-        <Button variant="ghost" size="sm" onClick={onAddMeal} className="h-7 text-xs"><Plus className="h-3 w-3 mr-1" /> Add</Button>
+        <Button variant="ghost" size="sm" onClick={onAddMeal} className="h-7 text-xs">
+          <Plus className="mr-1 h-3 w-3" /> Add
+        </Button>
       </div>
       {meals.length === 0 ? (
-        <p className="text-sm text-muted-foreground italic">No meals planned</p>
+        <p className="text-sm italic text-muted-foreground">No meals planned</p>
       ) : (
         <div className="space-y-2">
           {meals.map((meal) => (
-            <MealCard key={meal.id} meal={meal}
-              onMarkCooked={() => onMarkCooked(meal.id)} onUnmarkCooked={() => onUnmarkCooked(meal.id)}
-              onEdit={() => onEdit(meal)} onDelete={() => onDelete(meal.id)} onDropMeal={onDropMeal} />
+            <MealCard
+              key={meal.id}
+              meal={meal}
+              onMarkCooked={() => onMarkCooked(meal.id)}
+              onUnmarkCooked={() => onUnmarkCooked(meal.id)}
+              onEdit={() => onEdit(meal)}
+              onDelete={() => onDelete(meal.id)}
+              onDropMeal={onDropMeal}
+            />
           ))}
         </div>
       )}
@@ -252,9 +366,19 @@ function DayRow({ day, date, meals, isToday, isPast, onAddMeal, onMarkCooked, on
   );
 }
 
-
-function MealCard({ meal, onMarkCooked, onUnmarkCooked, onEdit, onDelete, onDropMeal }: {
-  meal: Meal; onMarkCooked: () => void; onUnmarkCooked: () => void; onEdit: () => void; onDelete: () => void;
+function MealCard({
+  meal,
+  onMarkCooked,
+  onUnmarkCooked,
+  onEdit,
+  onDelete,
+  onDropMeal,
+}: {
+  meal: Meal;
+  onMarkCooked: () => void;
+  onUnmarkCooked: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
   onDropMeal?: (id: string, day: Meal['dayOfWeek']) => void;
 }) {
   const isCooked = !!meal.cookedAt;
@@ -276,81 +400,160 @@ function MealCard({ meal, onMarkCooked, onUnmarkCooked, onEdit, onDelete, onDrop
     if (touchDragging) {
       // Highlight the DayRow under the touch point
       const els = document.elementsFromPoint(t.clientX, t.clientY);
-      document.querySelectorAll('[data-meal-day]').forEach(el => el.classList.remove('ring-2', 'ring-primary'));
-      const dayEl = els.find(el => el.hasAttribute('data-meal-day'));
+      document
+        .querySelectorAll('[data-meal-day]')
+        .forEach((el) => el.classList.remove('ring-2', 'ring-primary'));
+      const dayEl = els.find((el) => el.hasAttribute('data-meal-day'));
       if (dayEl) dayEl.classList.add('ring-2', 'ring-primary');
     }
   };
   const handleTouchEnd = (e: React.TouchEvent) => {
     if (touchDragging && touchRef.current && onDropMeal) {
       const touch = e.changedTouches[0];
-      if (!touch) { setTouchDragging(false); touchRef.current = null; return; }
+      if (!touch) {
+        setTouchDragging(false);
+        touchRef.current = null;
+        return;
+      }
       const els = document.elementsFromPoint(touch.clientX, touch.clientY);
-      const dayEl = els.find(el => el.hasAttribute('data-meal-day'));
+      const dayEl = els.find((el) => el.hasAttribute('data-meal-day'));
       if (dayEl) {
         const targetDay = dayEl.getAttribute('data-meal-day') as Meal['dayOfWeek'];
         onDropMeal(touchRef.current.mealId, targetDay);
       }
     }
-    document.querySelectorAll('[data-meal-day]').forEach(el => el.classList.remove('ring-2', 'ring-primary'));
+    document
+      .querySelectorAll('[data-meal-day]')
+      .forEach((el) => el.classList.remove('ring-2', 'ring-primary'));
     setTouchDragging(false);
     touchRef.current = null;
   };
 
   return (
     <div
-      draggable onDragStart={(e) => { e.dataTransfer.setData('text/meal-id', meal.id); e.dataTransfer.effectAllowed = 'move'; }}
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData('text/meal-id', meal.id);
+        e.dataTransfer.effectAllowed = 'move';
+      }}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       className={cn(
-        'flex items-start gap-3 p-3 rounded-md border border-border/50 bg-card/85 backdrop-blur-sm',
-        'hover:border-seasonal-accent hover:ring-2 hover:ring-seasonal-accent/50 transition-all group cursor-grab active:cursor-grabbing',
+        'flex items-start gap-3 rounded-md border border-border/50 bg-card/85 p-3 backdrop-blur-sm',
+        'group cursor-grab transition-all hover:border-seasonal-accent hover:ring-2 hover:ring-seasonal-accent/50 active:cursor-grabbing',
         isCooked && 'opacity-60',
-        touchDragging && 'opacity-50 scale-95'
+        touchDragging && 'scale-95 opacity-50'
       )}
     >
-      <span className="text-lg shrink-0"><Emoji e={getMealTypeEmoji(meal.mealType)} /></span>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className={cn('text-sm font-medium', isCooked && 'line-through text-muted-foreground')}>{meal.name}</span>
-          <Badge variant="outline" className="text-xs capitalize">{meal.mealType}</Badge>
-          {totalTime > 0 && <div className="flex items-center gap-1 text-xs text-muted-foreground"><Clock className="h-3 w-3" /><span>{totalTime}m</span></div>}
+      <span className="shrink-0 text-lg">
+        <Emoji e={getMealTypeEmoji(meal.mealType)} />
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <span
+            className={cn('text-sm font-medium', isCooked && 'text-muted-foreground line-through')}
+          >
+            {meal.name}
+          </span>
+          <Badge variant="outline" className="text-xs capitalize">
+            {meal.mealType}
+          </Badge>
+          {totalTime > 0 && (
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <Clock className="h-3 w-3" />
+              <span>{totalTime}m</span>
+            </div>
+          )}
           {meal.recipeId && (
-            <Link href={`/recipes?recipe=${meal.recipeId}`} className="text-primary hover:underline text-xs flex items-center gap-1">
+            <Link
+              href={`/recipes?recipe=${meal.recipeId}`}
+              className="flex items-center gap-1 text-xs text-primary hover:underline"
+            >
               Recipe <BookOpen className="h-3 w-3" />
             </Link>
           )}
           {meal.recipeUrl && !meal.recipeId && (
-            <a href={meal.recipeUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-xs flex items-center gap-1">
+            <a
+              href={meal.recipeUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 text-xs text-primary hover:underline"
+            >
               Recipe <ExternalLink className="h-3 w-3" />
             </a>
           )}
         </div>
-        {meal.description && <p className="text-xs text-muted-foreground mt-0.5">{meal.description}</p>}
+        {meal.description && (
+          <p className="mt-0.5 text-xs text-muted-foreground">{meal.description}</p>
+        )}
         {isCooked && meal.cookedBy && (
-          <div className="flex items-center gap-1 mt-1">
+          <div className="mt-1 flex items-center gap-1">
             <CheckCircle2 className="h-3 w-3 text-green-600" />
-            <UserAvatar name={meal.cookedBy.name} color={meal.cookedBy.color} size="sm" className="h-4 w-4 text-[8px]" />
+            <UserAvatar
+              name={meal.cookedBy.name}
+              color={meal.cookedBy.color}
+              size="sm"
+              className="h-4 w-4 text-[8px]"
+            />
             <span className="text-xs text-muted-foreground">{meal.cookedBy.name} cooked this</span>
           </div>
         )}
       </div>
       <div className="flex items-center gap-1">
         {isCooked ? (
-          <Button variant="ghost" size="icon" onClick={onUnmarkCooked} className="h-7 w-7 opacity-0 group-hover:opacity-100 max-md:opacity-60 transition-opacity" title="Undo cooked"><Undo2 className="h-4 w-4" /></Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onUnmarkCooked}
+            className="h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100 max-md:opacity-60"
+            title="Undo cooked"
+          >
+            <Undo2 className="h-4 w-4" />
+          </Button>
         ) : (
-          <Button variant="ghost" size="icon" onClick={onMarkCooked} className="h-7 w-7 opacity-0 group-hover:opacity-100 max-md:opacity-60 transition-opacity" title="Mark as cooked"><CheckCircle2 className="h-4 w-4" /></Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onMarkCooked}
+            className="h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100 max-md:opacity-60"
+            title="Mark as cooked"
+          >
+            <CheckCircle2 className="h-4 w-4" />
+          </Button>
         )}
-        <Button variant="ghost" size="icon" onClick={onEdit} className="h-7 w-7 opacity-0 group-hover:opacity-100 max-md:opacity-60 transition-opacity" aria-label="Edit meal"><Edit2 className="h-3 w-3" /></Button>
-        <Button variant="ghost" size="icon" onClick={onDelete} className="h-7 w-7 text-destructive opacity-0 group-hover:opacity-100 max-md:opacity-60 transition-opacity" aria-label="Delete meal"><Trash2 className="h-3 w-3" /></Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onEdit}
+          className="h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100 max-md:opacity-60"
+          aria-label="Edit meal"
+        >
+          <Edit2 className="h-3 w-3" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onDelete}
+          className="h-7 w-7 text-destructive opacity-0 transition-opacity group-hover:opacity-100 max-md:opacity-60"
+          aria-label="Delete meal"
+        >
+          <Trash2 className="h-3 w-3" />
+        </Button>
       </div>
     </div>
   );
 }
 
-
-export function MealModal({ weekOf, meal, defaultDay, dayOptions, recipes, onClose, onSave }: {
+export function MealModal({
+  weekOf,
+  meal,
+  defaultDay,
+  dayOptions,
+  recipes,
+  onClose,
+  onSave,
+}: {
   weekOf: string;
   meal?: Meal;
   defaultDay?: Meal['dayOfWeek'];
@@ -375,11 +578,14 @@ export function MealModal({ weekOf, meal, defaultDay, dayOptions, recipes, onClo
   const filteredRecipes = React.useMemo(() => {
     if (!recipeSearch.trim()) return recipes.slice(0, 20);
     const search = recipeSearch.toLowerCase();
-    return recipes.filter(r =>
-      r.name.toLowerCase().includes(search) ||
-      r.cuisine?.toLowerCase().includes(search) ||
-      r.category?.toLowerCase().includes(search)
-    ).slice(0, 20);
+    return recipes
+      .filter(
+        (r) =>
+          r.name.toLowerCase().includes(search) ||
+          r.cuisine?.toLowerCase().includes(search) ||
+          r.category?.toLowerCase().includes(search)
+      )
+      .slice(0, 20);
   }, [recipes, recipeSearch]);
 
   const selectRecipe = (recipe: Recipe) => {
@@ -397,38 +603,52 @@ export function MealModal({ weekOf, meal, defaultDay, dayOptions, recipes, onClo
     e.preventDefault();
     if (!name.trim()) return;
     onSave({
-      name: name.trim(), description: description.trim() || undefined, weekOf, dayOfWeek, mealType,
+      name: name.trim(),
+      description: description.trim() || undefined,
+      weekOf,
+      dayOfWeek,
+      mealType,
       mealTime: mealTime || null,
-      prepTime: prepTime ? parseInt(prepTime) : undefined, cookTime: cookTime ? parseInt(cookTime) : undefined,
-      recipeUrl: recipeUrl.trim() || undefined, recipeId: selectedRecipeId || undefined,
+      prepTime: prepTime ? parseInt(prepTime) : undefined,
+      cookTime: cookTime ? parseInt(cookTime) : undefined,
+      recipeUrl: recipeUrl.trim() || undefined,
+      recipeId: selectedRecipeId || undefined,
     });
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 pb-20 md:pb-0" onClick={onClose}>
-      <div className="bg-card rounded-lg p-6 max-w-md w-full mx-4 shadow-lg border border-border max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-4">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 pb-20 md:pb-0"
+      onClick={onClose}
+    >
+      <div
+        className="mx-4 max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg border border-border bg-card p-6 shadow-lg"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold">{meal ? 'Edit Meal' : 'Add Meal'}</h2>
-          <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close"><X className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close">
+            <X className="h-4 w-4" />
+          </Button>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Recipe Picker */}
           {recipes.length > 0 && (
             <div>
-              <label className="text-sm font-medium flex items-center gap-2">
+              <label className="flex items-center gap-2 text-sm font-medium">
                 <ChefHat className="h-4 w-4" />
                 From Recipe (optional)
               </label>
               {showRecipePicker ? (
-                <div className="mt-1 border border-border rounded-md bg-background">
-                  <div className="p-2 border-b border-border">
+                <div className="mt-1 rounded-md border border-border bg-background">
+                  <div className="border-b border-border p-2">
                     <div className="relative">
-                      <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         value={recipeSearch}
                         onChange={(e) => setRecipeSearch(e.target.value)}
                         placeholder="Search recipes..."
-                        className="pl-8 h-8"
+                        className="h-8 pl-8"
                         autoFocus
                       />
                     </div>
@@ -443,18 +663,18 @@ export function MealModal({ weekOf, meal, defaultDay, dayOptions, recipes, onClo
                             key={recipe.id}
                             type="button"
                             onClick={() => selectRecipe(recipe)}
-                            className="w-full text-left px-3 py-2 rounded-md hover:bg-accent text-sm flex items-center gap-2"
+                            className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent"
                           >
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium truncate">{recipe.name}</div>
+                            <div className="min-w-0 flex-1">
+                              <div className="truncate font-medium">{recipe.name}</div>
                               {(recipe.cuisine || recipe.category) && (
-                                <div className="text-xs text-muted-foreground truncate">
+                                <div className="truncate text-xs text-muted-foreground">
                                   {[recipe.cuisine, recipe.category].filter(Boolean).join(' • ')}
                                 </div>
                               )}
                             </div>
                             {(recipe.prepTime || recipe.cookTime) && (
-                              <div className="text-xs text-muted-foreground flex items-center gap-1 shrink-0">
+                              <div className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
                                 <Clock className="h-3 w-3" />
                                 {(recipe.prepTime || 0) + (recipe.cookTime || 0)}m
                               </div>
@@ -464,8 +684,14 @@ export function MealModal({ weekOf, meal, defaultDay, dayOptions, recipes, onClo
                       )}
                     </div>
                   </ScrollArea>
-                  <div className="p-2 border-t border-border">
-                    <Button type="button" variant="ghost" size="sm" className="w-full" onClick={() => setShowRecipePicker(false)}>
+                  <div className="border-t border-border p-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => setShowRecipePicker(false)}
+                    >
                       Cancel
                     </Button>
                   </div>
@@ -474,13 +700,13 @@ export function MealModal({ weekOf, meal, defaultDay, dayOptions, recipes, onClo
                 <Button
                   type="button"
                   variant="outline"
-                  className="w-full mt-1 justify-start"
+                  className="mt-1 w-full justify-start"
                   onClick={() => setShowRecipePicker(true)}
                 >
                   {selectedRecipeId ? (
                     <span className="flex items-center gap-2">
                       <ChefHat className="h-4 w-4 text-primary" />
-                      {recipes.find(r => r.id === selectedRecipeId)?.name || 'Selected recipe'}
+                      {recipes.find((r) => r.id === selectedRecipeId)?.name || 'Selected recipe'}
                     </span>
                   ) : (
                     <span className="text-muted-foreground">Choose a recipe...</span>
@@ -489,21 +715,52 @@ export function MealModal({ weekOf, meal, defaultDay, dayOptions, recipes, onClo
               )}
             </div>
           )}
-          <div><label className="text-sm font-medium">Name</label><Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Meal name..." autoFocus={recipes.length === 0} /></div>
-          <div><label className="text-sm font-medium">Description (optional)</label><Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Any details..." /></div>
+          <div>
+            <label className="text-sm font-medium">Name</label>
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Meal name..."
+              autoFocus={recipes.length === 0}
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium">Description (optional)</label>
+            <Input
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Any details..."
+            />
+          </div>
           <div>
             <label className="text-sm font-medium">Day</label>
-            <div className="grid grid-cols-4 gap-2 mt-1">
+            <div className="mt-1 grid grid-cols-4 gap-2">
               {dayOptions.map((option) => (
-                <Button key={option} type="button" variant={dayOfWeek === option ? 'default' : 'outline'} size="sm" onClick={() => setDayOfWeek(option)} className="capitalize text-xs">{option.slice(0, 3)}</Button>
+                <Button
+                  key={option}
+                  type="button"
+                  variant={dayOfWeek === option ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setDayOfWeek(option)}
+                  className="text-xs capitalize"
+                >
+                  {option.slice(0, 3)}
+                </Button>
               ))}
             </div>
           </div>
           <div>
             <label className="text-sm font-medium">Meal Type</label>
-            <div className="flex gap-2 mt-1 flex-wrap">
+            <div className="mt-1 flex flex-wrap gap-2">
               {(['breakfast', 'lunch', 'dinner', 'snack'] as const).map((type) => (
-                <Button key={type} type="button" variant={mealType === type ? 'default' : 'outline'} size="sm" onClick={() => setMealType(type)} className="capitalize">
+                <Button
+                  key={type}
+                  type="button"
+                  variant={mealType === type ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setMealType(type)}
+                  className="capitalize"
+                >
                   <Emoji e={getMealTypeEmoji(type)} /> {type}
                 </Button>
               ))}
@@ -517,18 +774,48 @@ export function MealModal({ weekOf, meal, defaultDay, dayOptions, recipes, onClo
               onChange={(e) => setMealTime(e.target.value)}
               className="mt-1"
             />
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="mt-1 text-xs text-muted-foreground">
               Defaults: breakfast 7am, lunch 12pm, snack 3pm, dinner 6pm.
             </p>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <div><label className="text-sm font-medium">Prep Time (min)</label><Input type="number" value={prepTime} onChange={(e) => setPrepTime(e.target.value)} placeholder="15" min="0" /></div>
-            <div><label className="text-sm font-medium">Cook Time (min)</label><Input type="number" value={cookTime} onChange={(e) => setCookTime(e.target.value)} placeholder="30" min="0" /></div>
+            <div>
+              <label className="text-sm font-medium">Prep Time (min)</label>
+              <Input
+                type="number"
+                value={prepTime}
+                onChange={(e) => setPrepTime(e.target.value)}
+                placeholder="15"
+                min="0"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Cook Time (min)</label>
+              <Input
+                type="number"
+                value={cookTime}
+                onChange={(e) => setCookTime(e.target.value)}
+                placeholder="30"
+                min="0"
+              />
+            </div>
           </div>
-          <div><label className="text-sm font-medium">Recipe URL (optional)</label><Input type="url" value={recipeUrl} onChange={(e) => setRecipeUrl(e.target.value)} placeholder="https://..." /></div>
+          <div>
+            <label className="text-sm font-medium">Recipe URL (optional)</label>
+            <Input
+              type="url"
+              value={recipeUrl}
+              onChange={(e) => setRecipeUrl(e.target.value)}
+              placeholder="https://..."
+            />
+          </div>
           <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-            <Button type="submit" disabled={!name.trim()}>{meal ? 'Save Changes' : 'Add Meal'}</Button>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={!name.trim()}>
+              {meal ? 'Save Changes' : 'Add Meal'}
+            </Button>
           </div>
         </form>
       </div>

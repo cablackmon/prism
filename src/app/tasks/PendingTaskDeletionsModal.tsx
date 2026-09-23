@@ -61,7 +61,7 @@ export function PendingTaskDeletionsModal({
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-lg max-h-[85vh] flex flex-col">
+      <DialogContent className="flex max-h-[85vh] max-w-lg flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-amber-500" />
@@ -69,18 +69,19 @@ export function PendingTaskDeletionsModal({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-3 py-1 flex-1 min-h-0 flex flex-col">
+        <div className="flex min-h-0 flex-1 flex-col space-y-3 py-1">
           <p className="text-sm text-muted-foreground">
             These tasks were removed from the app they sync with, and held for review.{' '}
             <span className="font-medium text-foreground">Delete</span> removes them from KYST too.{' '}
             <span className="font-medium text-foreground">Keep</span> turns each one into a{' '}
             <span className="inline-flex items-center gap-1 font-medium text-foreground">
-              <Home className="h-3 w-3" />local task
+              <Home className="h-3 w-3" />
+              local task
             </span>{' '}
             — it stops syncing and will not be added back to the other app.
           </p>
 
-          <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground px-1">
+          <label className="flex items-center gap-2 px-1 text-xs font-medium text-muted-foreground">
             <Checkbox
               checked={allSelected}
               onCheckedChange={() =>
@@ -92,15 +93,19 @@ export function PendingTaskDeletionsModal({
 
           {/* Native scroll, matching the calendar modal: drag-scrolls on touch
               wall displays and cannot clip a long list. */}
-          <div className="flex-1 min-h-0 overflow-y-auto pr-3 -mr-1">
+          <div className="-mr-1 min-h-0 flex-1 overflow-y-auto pr-3">
             <div className="space-y-1">
               {pending.map((p) => (
                 <label
                   key={p.id}
-                  className="flex items-start gap-2 rounded px-1 py-1 hover:bg-muted/50 cursor-pointer"
+                  className="flex cursor-pointer items-start gap-2 rounded px-1 py-1 hover:bg-muted/50"
                 >
-                  <Checkbox checked={selected.has(p.id)} onCheckedChange={() => toggle(p.id)} className="mt-0.5" />
-                  <span className="text-sm flex-1 min-w-0">
+                  <Checkbox
+                    checked={selected.has(p.id)}
+                    onCheckedChange={() => toggle(p.id)}
+                    className="mt-0.5"
+                  />
+                  <span className="min-w-0 flex-1 text-sm">
                     <span className={`font-medium ${p.completed ? 'line-through opacity-70' : ''}`}>
                       {p.title}
                     </span>
@@ -109,11 +114,12 @@ export function PendingTaskDeletionsModal({
                         Due {format(parseISO(p.dueDate), 'EEE, MMM d')}
                       </span>
                     )}
-                    <span className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap">
-                      <span className="truncate min-w-0">{p.source}</span>
-                      <ArrowRight className="h-3 w-3 opacity-60 shrink-0" />
-                      <span className="inline-flex items-center gap-1 shrink-0">
-                        <Home className="h-3 w-3" />Local (if kept)
+                    <span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                      <span className="min-w-0 truncate">{p.source}</span>
+                      <ArrowRight className="h-3 w-3 shrink-0 opacity-60" />
+                      <span className="inline-flex shrink-0 items-center gap-1">
+                        <Home className="h-3 w-3" />
+                        Local (if kept)
                       </span>
                     </span>
                   </span>
@@ -127,11 +133,19 @@ export function PendingTaskDeletionsModal({
           <Button variant="outline" onClick={onClose} disabled={busy}>
             Cancel
           </Button>
-          <Button variant="outline" onClick={() => act('keep')} disabled={busy || selected.size === 0}>
-            <Home className="h-4 w-4 mr-1.5" />
+          <Button
+            variant="outline"
+            onClick={() => act('keep')}
+            disabled={busy || selected.size === 0}
+          >
+            <Home className="mr-1.5 h-4 w-4" />
             Keep {selected.size} in KYST
           </Button>
-          <Button variant="destructive" onClick={() => act('delete')} disabled={busy || selected.size === 0}>
+          <Button
+            variant="destructive"
+            onClick={() => act('delete')}
+            disabled={busy || selected.size === 0}
+          >
             Delete {selected.size}
           </Button>
         </DialogFooter>

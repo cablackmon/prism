@@ -27,18 +27,23 @@ export function CssGridDisplay({
   containMode = false,
   className,
 }: CssGridDisplayProps) {
-  const { containerRef, cellSize: widthCellSize, width, top, remeasure } = useSquareCells(cols, containerPadding, margin, fillHeight);
+  const {
+    containerRef,
+    cellSize: widthCellSize,
+    width,
+    top,
+    remeasure,
+  } = useSquareCells(cols, containerPadding, margin, fillHeight);
   const { width: viewportWidth, height: viewportHeight } = useViewportSize();
 
   // Re-read the grid's real top whenever the chrome offset changes (a toolbar
   // show/hide is a position change the ResizeObserver never sees), so the fill
   // math tracks the actual header height instead of a stale value.
-  useEffect(() => { remeasure(); }, [headerOffset, bottomOffset, remeasure]);
+  useEffect(() => {
+    remeasure();
+  }, [headerOffset, bottomOffset, remeasure]);
 
-  const visibleWidgets = useMemo(
-    () => layout.filter(w => w.visible !== false),
-    [layout],
-  );
+  const visibleWidgets = useMemo(() => layout.filter((w) => w.visible !== false), [layout]);
 
   // --- Fit-to-screen (targetRows set) --------------------------------------
   // The design is a fixed `cols × targetRows` canvas. How it maps onto the real
@@ -58,7 +63,8 @@ export function CssGridDisplay({
   // become an awkward gap. Top/left margins the design left ARE preserved
   // (anchored at origin) and scale proportionally.
   const { fitCols, fitRows } = useMemo(() => {
-    let maxCol = 1, maxRow = 1;
+    let maxCol = 1,
+      maxRow = 1;
     for (const w of visibleWidgets) {
       if (w.x + w.w > maxCol) maxCol = w.x + w.w;
       if (w.y + w.h > maxRow) maxRow = w.y + w.h;
@@ -74,9 +80,12 @@ export function CssGridDisplay({
   // design on a tall screen or vice-versa) would be a ~2× skew, so it letterboxes
   // to preserve proportions. `designOrientation` is kept only as a fallback for
   // an empty/degenerate layout.
-  const designWide = fitCols !== fitRows
-    ? fitCols > fitRows
-    : (designOrientation ? designOrientation === 'landscape' : true);
+  const designWide =
+    fitCols !== fitRows
+      ? fitCols > fitRows
+      : designOrientation
+        ? designOrientation === 'landscape'
+        : true;
   const screenWide = viewportWidth >= viewportHeight;
   const sameOrientation = designWide === screenWide;
   // containMode always scales-to-fit (screensaver — sparse ambient layout that
@@ -104,9 +113,10 @@ export function CssGridDisplay({
   // area (a device/browser bottom bar), which let the bottom row clip on a real
   // touch display even when the math looked right. Prefer the visual-viewport
   // height whenever it's smaller.
-  const visualH = (typeof window !== 'undefined' && window.visualViewport)
-    ? Math.min(viewportHeight, window.visualViewport.height)
-    : viewportHeight;
+  const visualH =
+    typeof window !== 'undefined' && window.visualViewport
+      ? Math.min(viewportHeight, window.visualViewport.height)
+      : viewportHeight;
   const bottomSafety = chromeTop > 0 ? Math.round(margin * 1.5) : 0;
   const availH = Math.max(120, visualH - chromeTop - bottomOffset - bottomSafety);
 
@@ -125,7 +135,15 @@ export function CssGridDisplay({
     if (viewportHeight <= 0) return 24;
     const available = viewportHeight - headerOffset - bottomOffset;
     return Math.max(minVisibleRows, Math.floor((available + margin) / (widthCellSize + margin)));
-  }, [fillHeight, viewportHeight, headerOffset, bottomOffset, minVisibleRows, widthCellSize, margin]);
+  }, [
+    fillHeight,
+    viewportHeight,
+    headerOffset,
+    bottomOffset,
+    minVisibleRows,
+    widthCellSize,
+    margin,
+  ]);
 
   // A little breathing room on the left in landscape, where the side nav rail
   // lives, so the first column isn't flush against it (and the rail's
@@ -190,11 +208,13 @@ export function CssGridDisplay({
       data-fit={stretch ? 'stretch' : contain ? 'contain' : 'legacy'}
       style={{
         height: containerHeight,
-        ...(centerContain ? { display: 'flex', alignItems: 'center', justifyContent: 'center' } : {}),
+        ...(centerContain
+          ? { display: 'flex', alignItems: 'center', justifyContent: 'center' }
+          : {}),
       }}
     >
       <div style={gridStyle}>
-        {visibleWidgets.map(w => {
+        {visibleWidgets.map((w) => {
           const widgetStyle = getWidgetStyle(w);
           const contentStyle = getWidgetContentStyle(w);
           const textClass = getTextColorClass(w);
@@ -211,7 +231,16 @@ export function CssGridDisplay({
                 ...widgetStyle,
               }}
             >
-              <WidgetBgOverrideProvider value={{ hasCustomBg, textColor: w.textColor, textOpacity: w.textOpacity, gridLineOpacity: w.gridLineOpacity, cellBackgroundColor: w.cellBackgroundColor, cellBackgroundOpacity: w.cellBackgroundOpacity }}>
+              <WidgetBgOverrideProvider
+                value={{
+                  hasCustomBg,
+                  textColor: w.textColor,
+                  textOpacity: w.textOpacity,
+                  gridLineOpacity: w.gridLineOpacity,
+                  cellBackgroundColor: w.cellBackgroundColor,
+                  cellBackgroundOpacity: w.cellBackgroundOpacity,
+                }}
+              >
                 <div className="h-full w-full overflow-hidden" style={contentStyle}>
                   {renderWidget(w)}
                 </div>

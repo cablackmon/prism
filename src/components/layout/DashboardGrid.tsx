@@ -38,7 +38,6 @@ import { PerformanceModeBadge } from '@/components/layout/PerformanceModeBadge';
 import { useAutoHideUI } from '@/lib/hooks/useAutoHideUI';
 import { RefreshCw } from 'lucide-react';
 
-
 /**
  * DASHBOARD GRID PROPS
  */
@@ -52,7 +51,6 @@ export interface DashboardGridProps {
   /** Additional CSS classes */
   className?: string;
 }
-
 
 /**
  * DASHBOARD GRID COMPONENT
@@ -80,12 +78,7 @@ export interface DashboardGridProps {
  *   {widgets}
  * </DashboardGrid>
  */
-export function DashboardGrid({
-  children,
-  columns = 4,
-  gap = 16,
-  className,
-}: DashboardGridProps) {
+export function DashboardGrid({ children, columns = 4, gap = 16, className }: DashboardGridProps) {
   // Column configuration based on prop
   const columnClasses = {
     2: 'grid-cols-1 md:grid-cols-2',
@@ -113,7 +106,6 @@ export function DashboardGrid({
     </div>
   );
 }
-
 
 /**
  * DASHBOARD LAYOUT
@@ -157,13 +149,10 @@ export function DashboardLayout({
       )}
     >
       {/* Main content area */}
-      <main className="kyst-dashboard-content flex-1 overflow-hidden">
-        {children}
-      </main>
+      <main className="kyst-dashboard-content flex-1 overflow-hidden">{children}</main>
     </div>
   );
 }
-
 
 /**
  * DASHBOARD HEADER PROPS
@@ -174,7 +163,6 @@ export interface DashboardHeaderProps {
   /** Callback when screensaver button is clicked */
   onScreensaverClick?: () => void;
 }
-
 
 /**
  * DASHBOARD HEADER
@@ -194,10 +182,7 @@ export interface DashboardHeaderProps {
  *   onUserClick={() => logout()}
  * />
  */
-export function DashboardHeader({
-  onEditClick,
-  onScreensaverClick,
-}: DashboardHeaderProps) {
+export function DashboardHeader({ onEditClick, onScreensaverClick }: DashboardHeaderProps) {
   const nox = useBoardTheme() === 'nox';
   const { uiHidden } = useAutoHideUI();
   const [measureHideChrome, setMeasureHideChrome] = React.useState(false);
@@ -214,19 +199,21 @@ export function DashboardHeader({
 
   const hidden = uiHidden || measureHideChrome;
   return (
-    <header className={cn(
-      // 'relative z-10' is load-bearing: WallpaperBackground is fixed at z-0,
-      // and without our own stacking context the toolbar would paint underneath
-      // it whenever backdrop-blur is disabled (e.g. perf mode).
-      'relative z-10 flex-shrink-0 bg-card/95 backdrop-blur-sm px-4 transition-all duration-500 ease-in-out overflow-hidden',
-      hidden ? 'opacity-0 max-h-0 py-0' : 'max-h-20 py-2 delay-200'
-    )}>
+    <header
+      className={cn(
+        // 'relative z-10' is load-bearing: WallpaperBackground is fixed at z-0,
+        // and without our own stacking context the toolbar would paint underneath
+        // it whenever backdrop-blur is disabled (e.g. perf mode).
+        'relative z-10 flex-shrink-0 overflow-hidden bg-card/95 px-4 backdrop-blur-sm transition-all duration-500 ease-in-out',
+        hidden ? 'max-h-0 py-0 opacity-0' : 'max-h-20 py-2 delay-200'
+      )}
+    >
       <div className="flex items-center justify-end gap-2">
         {nox && <BoardWordmark />}
         {onEditClick && (
           <button
             onClick={onEditClick}
-            className="p-2 rounded-md hover:bg-accent transition-colors"
+            className="rounded-md p-2 transition-colors hover:bg-accent"
             aria-label="Edit layout"
           >
             <GridEditIcon />
@@ -235,7 +222,7 @@ export function DashboardHeader({
 
         <button
           onClick={() => window.location.reload()}
-          className="p-2 rounded-md hover:bg-accent transition-colors"
+          className="rounded-md p-2 transition-colors hover:bg-accent"
           aria-label="Refresh page"
         >
           <RefreshCw className="h-5 w-5" />
@@ -247,9 +234,14 @@ export function DashboardHeader({
 
         {onScreensaverClick && (
           <button
-            onMouseDown={(e) => { e.stopPropagation(); }}
-            onClick={(e) => { e.stopPropagation(); onScreensaverClick(); }}
-            className="p-2 rounded-md hover:bg-accent transition-colors"
+            onMouseDown={(e) => {
+              e.stopPropagation();
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onScreensaverClick();
+            }}
+            className="rounded-md p-2 transition-colors hover:bg-accent"
             aria-label="Start screensaver"
           >
             <ScreensaverIcon />
@@ -306,4 +298,3 @@ function ScreensaverIcon() {
     </svg>
   );
 }
-

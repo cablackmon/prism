@@ -33,7 +33,7 @@ interface TokenBundle {
  * the source. Writing the same key means both of those work untouched.
  */
 export async function stashGoogleTasksTokens(
-  opts: TokenBundle & { userId: string },
+  opts: TokenBundle & { userId: string }
 ): Promise<void> {
   const redis = await getRedisClient();
   if (!redis) throw new Error('redis_unavailable');
@@ -47,7 +47,7 @@ export async function stashGoogleTasksTokens(
       tokenExpiresAt: new Date(Date.now() + opts.expiresIn * 1000).toISOString(),
       rawAccessToken: opts.accessToken,
       accountEmail: opts.accountEmail ?? null,
-    }),
+    })
   );
 }
 

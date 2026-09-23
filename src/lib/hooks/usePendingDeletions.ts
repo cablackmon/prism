@@ -50,7 +50,7 @@ export function usePendingDeletions() {
       await refresh();
       return res.ok;
     },
-    [refresh],
+    [refresh]
   );
 
   return { pending, count: pending.length, loading, refresh, apply };

@@ -23,14 +23,18 @@ describe('buildSecurityHeaders', () => {
 
     it('sets frame-ancestors to self only', () => {
       const headers = buildSecurityHeaders();
-      const csp = headers.find((h: { key: string; value: string }) => h.key === 'Content-Security-Policy');
+      const csp = headers.find(
+        (h: { key: string; value: string }) => h.key === 'Content-Security-Policy'
+      );
       expect(csp).toBeDefined();
       expect(csp!.value).toContain("frame-ancestors 'self'");
     });
 
     it('allows same-origin child frames without widening frame ancestors', () => {
       const headers = buildSecurityHeaders();
-      const csp = headers.find((h: { key: string; value: string }) => h.key === 'Content-Security-Policy');
+      const csp = headers.find(
+        (h: { key: string; value: string }) => h.key === 'Content-Security-Policy'
+      );
       expect(csp!.value).toContain("frame-src 'self'");
       expect(csp!.value).not.toContain('frame-src https:');
       expect(csp!.value).toContain("frame-ancestors 'self'");
@@ -38,14 +42,18 @@ describe('buildSecurityHeaders', () => {
 
     it('always includes X-Content-Type-Options', () => {
       const headers = buildSecurityHeaders();
-      const header = headers.find((h: { key: string; value: string }) => h.key === 'X-Content-Type-Options');
+      const header = headers.find(
+        (h: { key: string; value: string }) => h.key === 'X-Content-Type-Options'
+      );
       expect(header).toBeDefined();
       expect(header!.value).toBe('nosniff');
     });
 
     it('always includes Referrer-Policy', () => {
       const headers = buildSecurityHeaders();
-      const header = headers.find((h: { key: string; value: string }) => h.key === 'Referrer-Policy');
+      const header = headers.find(
+        (h: { key: string; value: string }) => h.key === 'Referrer-Policy'
+      );
       expect(header).toBeDefined();
       expect(header!.value).toBe('strict-origin-when-cross-origin');
     });
@@ -55,15 +63,21 @@ describe('buildSecurityHeaders', () => {
     it('allows a single origin', () => {
       process.env.ALLOWED_FRAME_ANCESTORS = 'http://homeassistant.local:8123';
       const headers = buildSecurityHeaders();
-      const csp = headers.find((h: { key: string; value: string }) => h.key === 'Content-Security-Policy');
+      const csp = headers.find(
+        (h: { key: string; value: string }) => h.key === 'Content-Security-Policy'
+      );
       expect(csp!.value).toContain("frame-ancestors 'self' http://homeassistant.local:8123");
     });
 
     it('allows multiple comma-separated origins', () => {
       process.env.ALLOWED_FRAME_ANCESTORS = 'http://ha.local:8123, https://my-ha.example.com';
       const headers = buildSecurityHeaders();
-      const csp = headers.find((h: { key: string; value: string }) => h.key === 'Content-Security-Policy');
-      expect(csp!.value).toContain("frame-ancestors 'self' http://ha.local:8123 https://my-ha.example.com");
+      const csp = headers.find(
+        (h: { key: string; value: string }) => h.key === 'Content-Security-Policy'
+      );
+      expect(csp!.value).toContain(
+        "frame-ancestors 'self' http://ha.local:8123 https://my-ha.example.com"
+      );
     });
 
     it('removes X-Frame-Options when custom origins are set', () => {
@@ -76,21 +90,27 @@ describe('buildSecurityHeaders', () => {
     it('trims whitespace from origins', () => {
       process.env.ALLOWED_FRAME_ANCESTORS = '  http://ha.local:8123  ,  https://other.com  ';
       const headers = buildSecurityHeaders();
-      const csp = headers.find((h: { key: string; value: string }) => h.key === 'Content-Security-Policy');
+      const csp = headers.find(
+        (h: { key: string; value: string }) => h.key === 'Content-Security-Policy'
+      );
       expect(csp!.value).toContain("frame-ancestors 'self' http://ha.local:8123 https://other.com");
     });
 
     it('ignores empty entries from extra commas', () => {
       process.env.ALLOWED_FRAME_ANCESTORS = 'http://ha.local:8123,,, ,';
       const headers = buildSecurityHeaders();
-      const csp = headers.find((h: { key: string; value: string }) => h.key === 'Content-Security-Policy');
+      const csp = headers.find(
+        (h: { key: string; value: string }) => h.key === 'Content-Security-Policy'
+      );
       expect(csp!.value).toContain("frame-ancestors 'self' http://ha.local:8123");
     });
 
     it('handles wildcard * for fully open embedding', () => {
       process.env.ALLOWED_FRAME_ANCESTORS = '*';
       const headers = buildSecurityHeaders();
-      const csp = headers.find((h: { key: string; value: string }) => h.key === 'Content-Security-Policy');
+      const csp = headers.find(
+        (h: { key: string; value: string }) => h.key === 'Content-Security-Policy'
+      );
       expect(csp!.value).toContain('frame-ancestors *');
       const xfo = headers.find((h: { key: string; value: string }) => h.key === 'X-Frame-Options');
       expect(xfo).toBeUndefined();

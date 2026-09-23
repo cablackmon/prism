@@ -53,7 +53,10 @@ interface UseChoresResult {
   loading: boolean;
   error: string | null;
   refresh: () => Promise<void>;
-  completeChore: (choreId: string, data?: { completedBy?: string; notes?: string }) => Promise<ChoreCompletion>;
+  completeChore: (
+    choreId: string,
+    data?: { completedBy?: string; notes?: string }
+  ) => Promise<ChoreCompletion>;
   approveChore: (choreId: string, completionId?: string) => Promise<void>;
 }
 

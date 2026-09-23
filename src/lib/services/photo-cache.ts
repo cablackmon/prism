@@ -47,7 +47,7 @@ export interface CachedPhoto {
 export async function readPhotoCache(
   sourceId: string,
   externalId: string,
-  thumb: boolean,
+  thumb: boolean
 ): Promise<CachedPhoto | null> {
   const file = cachePath(sourceId, externalId, thumb);
   try {
@@ -67,7 +67,7 @@ export async function writePhotoCache(
   externalId: string,
   thumb: boolean,
   buffer: Uint8Array<ArrayBuffer>,
-  contentType: string,
+  contentType: string
 ): Promise<void> {
   const file = cachePath(sourceId, externalId, thumb);
   try {

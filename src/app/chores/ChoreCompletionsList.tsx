@@ -26,19 +26,19 @@ export function ChoreCompletionsList({
     // space BELOW the heading, matching every other page's toolbar-then-
     // content layout — instead of sitting stuck right under the heading,
     // which is what a plain block flow (no stretch) previously did.
-    <div className="max-w-4xl mx-auto space-y-3 min-h-full flex flex-col">
-      <h2 className="text-lg font-semibold flex items-center gap-2 flex-shrink-0">
+    <div className="mx-auto flex min-h-full max-w-4xl flex-col space-y-3">
+      <h2 className="flex flex-shrink-0 items-center gap-2 text-lg font-semibold">
         <History className="h-5 w-5" />
         Recent Completions (Last 14 Days)
       </h2>
       {completionsLoading ? (
         <div className="space-y-2">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-16 bg-muted/50 rounded-lg animate-pulse" />
+            <div key={i} className="h-16 animate-pulse rounded-lg bg-muted/50" />
           ))}
         </div>
       ) : completions.length === 0 ? (
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex flex-1 items-center justify-center">
           <EmptyState icon={<CheckCircle2 />} title="No completed chores in the last 14 days." />
         </div>
       ) : (
@@ -47,15 +47,15 @@ export function ChoreCompletionsList({
             <div
               key={c.id}
               className={cn(
-                'flex items-center gap-3 p-3 rounded-lg border bg-card/85 backdrop-blur-sm',
+                'flex items-center gap-3 rounded-lg border bg-card/85 p-3 backdrop-blur-sm',
                 c.approvedBy
                   ? 'border-border'
                   : 'border-amber-500/30 bg-amber-50/50 dark:bg-amber-950/30'
               )}
             >
-              <span className="text-lg shrink-0">{getCategoryEmoji(c.choreCategory)}</span>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
+              <span className="shrink-0 text-lg">{getCategoryEmoji(c.choreCategory)}</span>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
                   <span className="font-medium">{c.choreTitle}</span>
                   {c.pointsAwarded > 0 && (
                     <Badge variant="secondary" className="text-xs">
@@ -63,16 +63,17 @@ export function ChoreCompletionsList({
                     </Badge>
                   )}
                   {c.approvedBy ? (
-                    <Badge variant="outline" className="text-xs text-green-600 border-green-500/30">
-                      <ShieldCheck className="h-3 w-3 mr-0.5" />Approved
+                    <Badge variant="outline" className="border-green-500/30 text-xs text-green-600">
+                      <ShieldCheck className="mr-0.5 h-3 w-3" />
+                      Approved
                     </Badge>
                   ) : (
-                    <Badge variant="default" className="text-xs bg-amber-500 hover:bg-amber-500">
+                    <Badge variant="default" className="bg-amber-500 text-xs hover:bg-amber-500">
                       Pending Approval
                     </Badge>
                   )}
                 </div>
-                <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
+                <div className="mt-1 flex items-center gap-3 text-sm text-muted-foreground">
                   <div className="flex items-center gap-1">
                     <UserAvatar
                       name={c.completedBy.name}

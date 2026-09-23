@@ -29,7 +29,6 @@ import { Slot } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
-
 /**
  * BUTTON VARIANTS
  * Uses class-variance-authority (cva) to manage variant styles.
@@ -83,12 +82,10 @@ const buttonVariants = cva(
           'border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground active:bg-accent/80',
 
         // Ghost button - minimal, for toolbars and icon buttons
-        ghost:
-          'hover:bg-accent hover:text-accent-foreground active:bg-accent/80',
+        ghost: 'hover:bg-accent hover:text-accent-foreground active:bg-accent/80',
 
         // Link button - looks like a text link
-        link:
-          'text-primary underline-offset-4 hover:underline',
+        link: 'text-primary underline-offset-4 hover:underline',
       },
 
       /**
@@ -121,7 +118,6 @@ const buttonVariants = cva(
   }
 );
 
-
 /**
  * BUTTON PROPS
  * Combines:
@@ -130,8 +126,7 @@ const buttonVariants = cva(
  * - asChild prop for composition
  */
 export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
   /**
    * When true, the button renders its child as the root element.
    * Useful for wrapping other components (like Link) with button styles.
@@ -143,7 +138,6 @@ export interface ButtonProps
    */
   asChild?: boolean;
 }
-
 
 /**
  * BUTTON COMPONENT
@@ -181,11 +175,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     const Comp = asChild ? Slot : 'button';
 
     return (
-      <Comp
-        className={cn(buttonVariants({ variant, size, className }))}
-        ref={ref}
-        {...props}
-      />
+      <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />
     );
   }
 );

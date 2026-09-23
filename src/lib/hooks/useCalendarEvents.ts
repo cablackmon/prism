@@ -45,10 +45,17 @@ interface UseCalendarEventsResult {
 /**
  * Hook for fetching calendar events from the API
  */
-export function useCalendarEvents(
-  options: UseCalendarEventsOptions = {}
-): UseCalendarEventsResult {
-  const { daysToShow = 7, rangeStart, rangeEnd, limit = 500, refreshInterval = 5 * 60 * 1000, useDemoFallback = true, autoSyncMinutes = 10, enabled = true } = options;
+export function useCalendarEvents(options: UseCalendarEventsOptions = {}): UseCalendarEventsResult {
+  const {
+    daysToShow = 7,
+    rangeStart,
+    rangeEnd,
+    limit = 500,
+    refreshInterval = 5 * 60 * 1000,
+    useDemoFallback = true,
+    autoSyncMinutes = 10,
+    enabled = true,
+  } = options;
 
   // The request URL doubles as the cache key. When an explicit range is given
   // it wins; otherwise fall back to the today-anchored daysToShow window.
@@ -186,7 +193,9 @@ export function useCalendarEvents(
   // matter which page fired it. Mirrors the existing prism:auth-* events.
   useEffect(() => {
     if (!enabled) return;
-    const handler = () => { fetchEvents(); };
+    const handler = () => {
+      fetchEvents();
+    };
     window.addEventListener('prism:calendar-synced', handler);
     return () => window.removeEventListener('prism:calendar-synced', handler);
   }, [enabled, fetchEvents]);
@@ -225,7 +234,10 @@ export function useCalendarEvents(
   }, [checkAndSync, enabled, autoSyncMinutes]);
 
   // Periodic sync check — pauses when tab is hidden
-  useVisibilityPolling(checkAndSync, enabled && autoSyncMinutes > 0 ? autoSyncMinutes * 60 * 1000 : 0);
+  useVisibilityPolling(
+    checkAndSync,
+    enabled && autoSyncMinutes > 0 ? autoSyncMinutes * 60 * 1000 : 0
+  );
 
   return {
     events,
@@ -254,7 +266,12 @@ export function useCalendarSources() {
       groupName: string | null;
       groupColor: string | null;
       lastSynced: string | null;
-      syncErrors: { needsReauth?: boolean; removedAtSource?: boolean; lastError?: string; timestamp?: string } | null;
+      syncErrors: {
+        needsReauth?: boolean;
+        removedAtSource?: boolean;
+        lastError?: string;
+        timestamp?: string;
+      } | null;
       providerConfig: Record<string, unknown> | null;
       user: { id: string; name: string; color: string } | null;
     }>

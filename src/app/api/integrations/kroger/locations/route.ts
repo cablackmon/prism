@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
   if (!tokens) {
     return NextResponse.json(
       { error: 'Not connected to Kroger', code: 'KROGER_NOT_CONNECTED' },
-      { status: 401 },
+      { status: 401 }
     );
   }
 
@@ -51,7 +51,7 @@ export async function PATCH(request: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
-    const body = await request.json() as { locationId?: string | null; name?: string | null };
+    const body = (await request.json()) as { locationId?: string | null; name?: string | null };
     const locationId = body.locationId ?? null;
     const name = body.name?.trim() || null;
 

@@ -24,10 +24,7 @@ interface RouteParams {
  * PATCH /api/wish-items/[id]
  * Updates a wish item (name, url, notes, sortOrder).
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -41,10 +38,7 @@ export async function PATCH(
       .where(eq(wishItems.id, id));
 
     if (!existing) {
-      return NextResponse.json(
-        { error: 'Wish item not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Wish item not found' }, { status: 404 });
     }
 
     const validation = validateRequest(updateWishItemSchema, body);
@@ -60,21 +54,12 @@ export async function PATCH(
     if ('url' in validation.data) updateData.url = validation.data.url || null;
     if ('notes' in validation.data) updateData.notes = validation.data.notes || null;
 
-    await db
-      .update(wishItems)
-      .set(updateData)
-      .where(eq(wishItems.id, id));
+    await db.update(wishItems).set(updateData).where(eq(wishItems.id, id));
 
-    const [updated] = await db
-      .select()
-      .from(wishItems)
-      .where(eq(wishItems.id, id));
+    const [updated] = await db.select().from(wishItems).where(eq(wishItems.id, id));
 
     if (!updated) {
-      return NextResponse.json(
-        { error: 'Wish item not found after update' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Wish item not found after update' }, { status: 404 });
     }
 
     await invalidateEntity('wish-items');
@@ -100,10 +85,7 @@ export async function PATCH(
     });
   } catch (error) {
     logError('Error updating wish item:', error);
-    return NextResponse.json(
-      { error: 'Failed to update wish item' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to update wish item' }, { status: 500 });
   }
 }
 
@@ -111,10 +93,7 @@ export async function PATCH(
  * DELETE /api/wish-items/[id]
  * Deletes a wish item. Only the list owner or parents can delete.
  */
-export async function DELETE(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -127,20 +106,14 @@ export async function DELETE(
       .where(eq(wishItems.id, id));
 
     if (!existing) {
-      return NextResponse.json(
-        { error: 'Wish item not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Wish item not found' }, { status: 404 });
     }
 
     // Only the list owner or parents can delete
     const isOwner = existing.memberId === auth.userId;
     const isParent = auth.role === 'parent';
     if (!isOwner && !isParent) {
-      return NextResponse.json(
-        { error: 'Not authorized to delete this item' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Not authorized to delete this item' }, { status: 403 });
     }
 
     await db.delete(wishItems).where(eq(wishItems.id, id));
@@ -161,9 +134,6 @@ export async function DELETE(
     });
   } catch (error) {
     logError('Error deleting wish item:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete wish item' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to delete wish item' }, { status: 500 });
   }
 }

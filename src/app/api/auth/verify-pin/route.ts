@@ -4,7 +4,12 @@ import { db } from '@/lib/db/client';
 import { users } from '@/lib/db/schema';
 import { asc, eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
-import { createSession, isLoginLockedOut, recordFailedLogin, clearLoginAttempts } from '@/lib/auth/session';
+import {
+  createSession,
+  isLoginLockedOut,
+  recordFailedLogin,
+  clearLoginAttempts,
+} from '@/lib/auth/session';
 import { setSettingsVerified } from '@/lib/auth/settingsAuth';
 import { logActivity } from '@/lib/services/auditLog';
 import { logError } from '@/lib/utils/logError';
@@ -31,24 +36,51 @@ export async function POST(request: NextRequest) {
     }
 
     // Resolve user — either by UUID (authenticated) or ordinal index (unauthenticated kiosk)
-    let user: { id: string; name: string; role: string; color: string; avatarUrl: string | null; pin: string | null } | undefined;
+    let user:
+      | {
+          id: string;
+          name: string;
+          role: string;
+          color: string;
+          avatarUrl: string | null;
+          pin: string | null;
+        }
+      | undefined;
 
     if (userId) {
       const lockoutStatus = await isLoginLockedOut(userId);
       if (lockoutStatus.lockedOut) {
         return NextResponse.json(
-          { error: 'Too many failed attempts. Please try again later.', lockedOut: true, retryAfter: lockoutStatus.retryAfter },
+          {
+            error: 'Too many failed attempts. Please try again later.',
+            lockedOut: true,
+            retryAfter: lockoutStatus.retryAfter,
+          },
           { status: 403 }
         );
       }
       [user] = await db
-        .select({ id: users.id, name: users.name, role: users.role, color: users.color, avatarUrl: users.avatarUrl, pin: users.pin })
+        .select({
+          id: users.id,
+          name: users.name,
+          role: users.role,
+          color: users.color,
+          avatarUrl: users.avatarUrl,
+          pin: users.pin,
+        })
         .from(users)
         .where(eq(users.id, userId));
     } else {
       const index = Math.floor(memberIndex as number);
       const allUsers = await db
-        .select({ id: users.id, name: users.name, role: users.role, color: users.color, avatarUrl: users.avatarUrl, pin: users.pin })
+        .select({
+          id: users.id,
+          name: users.name,
+          role: users.role,
+          color: users.color,
+          avatarUrl: users.avatarUrl,
+          pin: users.pin,
+        })
         .from(users)
         .orderBy(asc(users.sortOrder), asc(users.createdAt));
       user = allUsers[index];
@@ -56,7 +88,11 @@ export async function POST(request: NextRequest) {
         const lockoutStatus = await isLoginLockedOut(user.id);
         if (lockoutStatus.lockedOut) {
           return NextResponse.json(
-            { error: 'Too many failed attempts. Please try again later.', lockedOut: true, retryAfter: lockoutStatus.retryAfter },
+            {
+              error: 'Too many failed attempts. Please try again later.',
+              lockedOut: true,
+              retryAfter: lockoutStatus.retryAfter,
+            },
             { status: 403 }
           );
         }
@@ -79,10 +115,7 @@ export async function POST(request: NextRequest) {
 
     if (!isValidPin) {
       const { remainingAttempts } = await recordFailedLogin(user.id);
-      return NextResponse.json(
-        { error: 'Invalid PIN', remainingAttempts },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Invalid PIN', remainingAttempts }, { status: 401 });
     }
 
     // Clear failed attempts on success
@@ -95,7 +128,8 @@ export async function POST(request: NextRequest) {
     if (!sessionToken) {
       const session = await createSession(user.id, user.role as 'parent', {
         userAgent: request.headers.get('user-agent') || undefined,
-        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+        ipAddress:
+          request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
       });
 
       if (session) {
@@ -145,9 +179,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     logError('Error verifying PIN:', error);
-    return NextResponse.json(
-      { error: 'Failed to verify PIN' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to verify PIN' }, { status: 500 });
   }
 }

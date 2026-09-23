@@ -33,7 +33,7 @@ export function UndoButton() {
     >
       <Undo2 className="h-4 w-4" />
       {count > 1 && (
-        <span className="text-xs tabular-nums bg-muted rounded-full h-4 min-w-4 flex items-center justify-center">
+        <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-muted text-xs tabular-nums">
           {count}
         </span>
       )}

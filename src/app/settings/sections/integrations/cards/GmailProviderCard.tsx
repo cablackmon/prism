@@ -19,13 +19,10 @@ interface Props {
   forceSubSectionOpen?: string;
 }
 
-const GmailIcon = () => (
-  <Mail className="h-6 w-6 text-red-500" aria-hidden="true" />
-);
+const GmailIcon = () => <Mail className="h-6 w-6 text-red-500" aria-hidden="true" />;
 
 const handleConnect = () => {
-  window.location.href =
-    '/api/auth/google-bus?returnSection=integrations';
+  window.location.href = '/api/auth/google-bus?returnSection=integrations';
 };
 
 /**
@@ -36,24 +33,18 @@ const handleConnect = () => {
  * uses Gmail OAuth under the hood, "Bus tracking" is what users came
  * here for, so that's the brand on the card.
  */
-export function GmailProviderCard({
-  status,
-  onChange,
-  forceSubSectionOpen,
-}: Props) {
+export function GmailProviderCard({ status, onChange, forceSubSectionOpen }: Props) {
   const { confirm, dialogProps } = useConfirmDialog();
   const [disconnecting, setDisconnecting] = React.useState(false);
 
   const connected = !!status?.gmail.connected;
-  const connectionStatus: ConnectionStatus = connected
-    ? 'connected'
-    : 'disconnected';
+  const connectionStatus: ConnectionStatus = connected ? 'connected' : 'disconnected';
   const connectedAs = connectedAsLabel(status?.gmail.accountEmail ?? null);
 
   const handleDisconnect = async () => {
     const ok = await confirm(
       'Disconnect Gmail?',
-      'Bus arrival data will no longer sync. You can reconnect any time.',
+      'Bus arrival data will no longer sync. You can reconnect any time.'
     );
     if (!ok) return;
     setDisconnecting(true);
@@ -76,12 +67,12 @@ export function GmailProviderCard({
 
   const primaryAction = connected ? (
     <Button variant="outline" size="sm" onClick={handleConnect}>
-      <RefreshCw className="h-4 w-4 mr-2" />
+      <RefreshCw className="mr-2 h-4 w-4" />
       Re-authenticate
     </Button>
   ) : (
     <Button size="sm" onClick={handleConnect}>
-      <Mail className="h-4 w-4 mr-2" />
+      <Mail className="mr-2 h-4 w-4" />
       Connect
     </Button>
   );
@@ -114,7 +105,7 @@ export function GmailProviderCard({
               size="sm"
               onClick={handleDisconnect}
               disabled={disconnecting}
-              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
             >
               {disconnecting ? 'Disconnecting…' : 'Disconnect Gmail'}
             </Button>
@@ -134,12 +125,8 @@ export function GmailProviderCard({
         >
           <div className="text-sm text-muted-foreground">
             <p>
-              Bus arrival times come from FirstView emails sent to your Gmail
-              inbox.{' '}
-              <Link
-                href="/settings?section=bus"
-                className="text-primary hover:underline"
-              >
+              Bus arrival times come from FirstView emails sent to your Gmail inbox.{' '}
+              <Link href="/settings?section=bus" className="text-primary hover:underline">
                 Open Bus Tracking settings →
               </Link>
             </p>

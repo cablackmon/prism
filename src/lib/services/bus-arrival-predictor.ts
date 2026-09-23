@@ -8,12 +8,12 @@ import { busGeofenceLog, busRoutes } from '@/lib/db/schema';
 import { eq, and, gte, desc } from 'drizzle-orm';
 
 export type BusStatus =
-  | 'no_data'        // No checkpoint data today
-  | 'cold_start'     // < 5 data points per segment, can't predict
-  | 'in_transit'     // Bus is between checkpoints
-  | 'at_stop'        // Bus arrived at stop
-  | 'at_school'      // Bus arrived at school
-  | 'overdue';       // Past scheduled time with no recent updates
+  | 'no_data' // No checkpoint data today
+  | 'cold_start' // < 5 data points per segment, can't predict
+  | 'in_transit' // Bus is between checkpoints
+  | 'at_stop' // Bus arrived at stop
+  | 'at_school' // Bus arrived at school
+  | 'overdue'; // Past scheduled time with no recent updates
 
 export interface ArrivalPrediction {
   status: BusStatus;
@@ -23,7 +23,7 @@ export interface ArrivalPrediction {
   lastCheckpointName: string | null;
   lastCheckpointTime: Date | null;
   lastCheckpointIndex: number;
-  totalCheckpoints: number;  // includes stop + school
+  totalCheckpoints: number; // includes stop + school
   minutesSinceLastCheckpoint: number | null;
 }
 
@@ -56,16 +56,13 @@ export async function predictArrival(routeId: string): Promise<ArrivalPrediction
   // ETA target: find the stopName checkpoint within the named list.
   // stopName is now selected from checkpoint names (e.g. "Home"), so ETA
   // targets that index rather than the implicit school terminal.
-  const stopIdx = route.stopName
-    ? checkpoints.findIndex(cp => cp.name === route.stopName)
-    : -1;
+  const stopIdx = route.stopName ? checkpoints.findIndex((cp) => cp.name === route.stopName) : -1;
   // Upper bound for ETA segment calculation
-  const etaTargetCount = stopIdx >= 0
-    ? stopIdx + 1
-    : checkpoints.length + (route.stopName ? 1 : 0);  // fallback: implicit stop after named checkpoints
+  const etaTargetCount = stopIdx >= 0 ? stopIdx + 1 : checkpoints.length + (route.stopName ? 1 : 0); // fallback: implicit stop after named checkpoints
 
   // Full display count (includes school for AM — used by widget progress display)
-  const totalCheckpoints = checkpoints.length + (route.stopName && stopIdx < 0 ? 1 : 0) + (route.schoolName ? 1 : 0);
+  const totalCheckpoints =
+    checkpoints.length + (route.stopName && stopIdx < 0 ? 1 : 0) + (route.schoolName ? 1 : 0);
 
   // Check if today is an active day for this route (default weekdays [1-5])
   const activeDays = (route.activeDays as number[]) || [1, 2, 3, 4, 5];
@@ -77,12 +74,10 @@ export async function predictArrival(routeId: string): Promise<ArrivalPrediction
   // Get today's events for this route
   const today = new Date();
   const todayStr = formatDateStr(today);
-  const todayEvents = await db.select()
+  const todayEvents = await db
+    .select()
     .from(busGeofenceLog)
-    .where(and(
-      eq(busGeofenceLog.routeId, routeId),
-      eq(busGeofenceLog.tripDate, todayStr),
-    ))
+    .where(and(eq(busGeofenceLog.routeId, routeId), eq(busGeofenceLog.tripDate, todayStr)))
     .orderBy(desc(busGeofenceLog.eventTime));
 
   if (todayEvents.length === 0) {
@@ -156,7 +151,7 @@ export async function predictArrival(routeId: string): Promise<ArrivalPrediction
   const segments = await getSegmentStats(routeId, lastCheckpointIndex, etaTargetCount);
 
   // Check if we have enough data for prediction
-  const hasEnoughData = segments.every(s => s.sampleCount >= MIN_SAMPLES_FOR_PREDICTION);
+  const hasEnoughData = segments.every((s) => s.sampleCount >= MIN_SAMPLES_FOR_PREDICTION);
 
   if (!hasEnoughData) {
     return {
@@ -213,12 +208,10 @@ async function getSegmentStats(
   cutoff.setDate(cutoff.getDate() - HISTORY_DAYS);
 
   // Fetch all historical events for this route
-  const events = await db.select()
+  const events = await db
+    .select()
     .from(busGeofenceLog)
-    .where(and(
-      eq(busGeofenceLog.routeId, routeId),
-      gte(busGeofenceLog.eventTime, cutoff),
-    ))
+    .where(and(eq(busGeofenceLog.routeId, routeId), gte(busGeofenceLog.eventTime, cutoff)))
     .orderBy(busGeofenceLog.tripDate, busGeofenceLog.checkpointIndex);
 
   // Group events by trip date
@@ -303,12 +296,12 @@ async function getSegmentStats(
 function collectTransitTimes(
   byDate: Map<string, { checkpointIndex: number; eventTime: Date }[]>,
   fromIndex: number,
-  toIndex: number,
+  toIndex: number
 ): number[] {
   const times: number[] = [];
   for (const [, dayEvents] of byDate) {
-    const from = dayEvents.find(e => e.checkpointIndex === fromIndex);
-    const to = dayEvents.find(e => e.checkpointIndex === toIndex);
+    const from = dayEvents.find((e) => e.checkpointIndex === fromIndex);
+    const to = dayEvents.find((e) => e.checkpointIndex === toIndex);
     if (from && to) {
       const minutes = (to.eventTime.getTime() - from.eventTime.getTime()) / 60000;
       if (minutes > 0 && minutes < 120) {

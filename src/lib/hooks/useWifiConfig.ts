@@ -48,32 +48,35 @@ export function useWifiConfig(options: { enabled?: boolean } = {}) {
     }
   }, [fetchConfig, enabled]);
 
-  const saveConfig = useCallback(async (newConfig: WifiConfig): Promise<{ success: boolean; error?: string }> => {
-    try {
-      setSaving(true);
-      setError(null);
+  const saveConfig = useCallback(
+    async (newConfig: WifiConfig): Promise<{ success: boolean; error?: string }> => {
+      try {
+        setSaving(true);
+        setError(null);
 
-      const res = await fetch('/api/settings/wifi', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newConfig),
-      });
+        const res = await fetch('/api/settings/wifi', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newConfig),
+        });
 
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Failed to save WiFi config');
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error || 'Failed to save WiFi config');
+        }
+
+        setConfig(newConfig);
+        return { success: true };
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : 'Failed to save';
+        setError(errorMsg);
+        return { success: false, error: errorMsg };
+      } finally {
+        setSaving(false);
       }
-
-      setConfig(newConfig);
-      return { success: true };
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Failed to save';
-      setError(errorMsg);
-      return { success: false, error: errorMsg };
-    } finally {
-      setSaving(false);
-    }
-  }, []);
+    },
+    []
+  );
 
   // Generate WiFi QR code string
   const qrString = config.ssid

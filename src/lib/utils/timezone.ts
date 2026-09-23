@@ -61,7 +61,8 @@ export function isValidTimezone(tz: string): boolean {
  * browsers), else a curated common set. Used to populate the settings dropdown.
  */
 export function listTimezones(): string[] {
-  const sof = (Intl as unknown as { supportedValuesOf?: (k: string) => string[] }).supportedValuesOf;
+  const sof = (Intl as unknown as { supportedValuesOf?: (k: string) => string[] })
+    .supportedValuesOf;
   if (typeof sof === 'function') {
     try {
       return sof('timeZone');

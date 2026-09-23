@@ -24,7 +24,12 @@ export function useBirthdays(options: UseBirthdaysOptions = {}) {
   const { limit = 10, refreshInterval = 60 * 60 * 1000, enabled } = options;
   const [syncError, setSyncError] = useState<string | null>(null);
 
-  const { data: birthdays, loading, error: fetchError, refresh } = useFetch<Birthday[]>({
+  const {
+    data: birthdays,
+    loading,
+    error: fetchError,
+    refresh,
+  } = useFetch<Birthday[]>({
     url: `/api/birthdays?limit=${limit}`,
     initialData: [],
     transform: (json) => (json as { birthdays?: Birthday[] }).birthdays || [],

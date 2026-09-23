@@ -26,7 +26,16 @@ jest.mock('@/lib/db/client', () => ({
 }));
 
 jest.mock('@/lib/db/schema', () => ({
-  users: { id: 'id', name: 'name', role: 'role', color: 'color', avatarUrl: 'avatarUrl', pin: 'pin', sortOrder: 'sort_order', createdAt: 'created_at' },
+  users: {
+    id: 'id',
+    name: 'name',
+    role: 'role',
+    color: 'color',
+    avatarUrl: 'avatarUrl',
+    pin: 'pin',
+    sortOrder: 'sort_order',
+    createdAt: 'created_at',
+  },
   auditLogs: {},
 }));
 
@@ -64,7 +73,14 @@ import { POST } from '../route';
 
 const SESSION_MOCK = { token: 'tok123', expiresAt: new Date(Date.now() + 3600_000) };
 // pin is string | null — guest users have no PIN
-const PARENT_USER = { id: 'parent-1', name: 'Alice', role: 'parent', color: '#3B82F6', avatarUrl: null, pin: '$2a$hash' as string | null };
+const PARENT_USER = {
+  id: 'parent-1',
+  name: 'Alice',
+  role: 'parent',
+  color: '#3B82F6',
+  avatarUrl: null,
+  pin: '$2a$hash' as string | null,
+};
 
 function makeRequest(body: object) {
   return new NextRequest('http://localhost:3000/api/auth/login', {

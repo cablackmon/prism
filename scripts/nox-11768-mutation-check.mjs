@@ -44,19 +44,11 @@ const MUTATIONS = [
     id: 'P2-zero-readback',
     finding: 'Treat known all-zero readbacks as unavailable',
     file: BENCH,
-    // Deleted outright rather than disabled with `false &&`: TypeScript rejects
-    // the always-falsy form, and a mutant that will not compile fails every
-    // test for a reason that has nothing to do with the guard.
-    from: `  if (flatColor.r === 0 && flatColor.g === 0 && flatColor.b === 0) {
-    return {
-      status: 'unavailable',
-      note:
-        'readback returned uniform zeroes, which the configured non-black clear colour ' +
-        'cannot produce — the canvas could not be read back rather than being empty',
-    };
-  }
-`,
-    to: ``,
+    // Re-anchored after round 2 restructured `classifyReadback`. Removing the
+    // all-zero branch now means a black frame is `blank` unconditionally, which
+    // is the original defect: a healthy backend vetoed by a broken readback.
+    from: `    if (control === 'broken') {`,
+    to: `    if (false as boolean) {`,
     note: 'calls a SwiftShader all-zero readback a genuinely blank canvas',
   },
   {
@@ -68,6 +60,34 @@ const MUTATIONS = [
       : null,`,
     to: `    sampleInvalidReason: null,`,
     note: 'feeds a run measured behind a hidden tab into the gate',
+  },
+  // --- round 2 (review at 4fef46a) ---------------------------------------
+  {
+    id: 'P1-credit-unproven-black',
+    finding: 'Reject all-zero frames unless readback failure is independently proven',
+    file: BENCH,
+    from: `    if (control === 'broken') {`,
+    to: `    if (control === 'broken' || control === 'untested') {`,
+    note: 'restores crediting every all-zero frame, proven or not',
+  },
+  {
+    id: 'P1-control-defaults-permissive',
+    finding: 'Reject all-zero frames unless readback failure is independently proven',
+    file: BENCH,
+    // The fail-closed default is a separate guard from the branch above: with
+    // the branch intact, a permissive default still credits every backend whose
+    // control never ran.
+    from: `  control: ReadbackControl = 'untested'`,
+    to: `  control: ReadbackControl = 'broken'`,
+    note: 'makes an unprobed backend credit its own black frames',
+  },
+  {
+    id: 'P1-control-assumes-working',
+    finding: 'Reject all-zero frames unless readback failure is independently proven',
+    file: BENCH,
+    from: `  if (uniqueColors === 0 || flatColor === null) return 'broken';`,
+    to: `  if (uniqueColors === 0 || flatColor === null) return 'working';`,
+    note: 'treats a control that returned no pixels as proof readback works',
   },
 ];
 

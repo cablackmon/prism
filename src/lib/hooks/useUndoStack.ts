@@ -25,7 +25,7 @@ function emitChange() {
 function cleanup() {
   const now = Date.now();
   const before = stack.length;
-  stack = stack.filter(e => now - e.timestamp < UNDO_EXPIRY_MS);
+  stack = stack.filter((e) => now - e.timestamp < UNDO_EXPIRY_MS);
   if (stack.length !== before) emitChange();
 }
 
@@ -72,7 +72,9 @@ export function clearUndo() {
 
 function subscribe(cb: () => void) {
   listeners.push(cb);
-  return () => { listeners = listeners.filter(l => l !== cb); };
+  return () => {
+    listeners = listeners.filter((l) => l !== cb);
+  };
 }
 
 function getSnapshot() {

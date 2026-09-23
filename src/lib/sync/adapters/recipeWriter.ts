@@ -47,7 +47,7 @@ export async function writeRecipeRow(
   sourceId: string,
   p: NormalizedRecipe,
   token: string,
-  localId: string | null,
+  localId: string | null
 ): Promise<string> {
   const values = {
     name: p.name,
@@ -111,7 +111,7 @@ export async function loadLocalRecipes(sourceId: string): Promise<LocalItem[]> {
       externalId: row.externalId,
       updatedAt: row.updatedAt,
       label: row.name,
-    }),
+    })
   );
 }
 
@@ -125,7 +125,7 @@ export async function ensureRecipeImported(
   sourceId: string,
   externalId: string,
   token: string,
-  fetchOne: (externalId: string) => Promise<NormalizedRecipe | null>,
+  fetchOne: (externalId: string) => Promise<NormalizedRecipe | null>
 ): Promise<{ recipeId: string; imported: boolean } | null> {
   const [existing] = await db
     .select({ id: recipes.id })
@@ -147,7 +147,7 @@ export async function deleteRecipeRow(localId: string): Promise<void> {
 /** Of the given remote recipe ids, which are already imported for this source. */
 export async function importedRecipeExternalIds(
   sourceId: string,
-  externalIds: string[],
+  externalIds: string[]
 ): Promise<Set<string>> {
   if (externalIds.length === 0) return new Set();
   const rows = await db

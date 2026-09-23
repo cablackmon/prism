@@ -48,7 +48,9 @@ jest.mock('@/lib/cache/cacheKeys', () => ({
 
 // --- Other mocks ---
 const mockLogActivity = jest.fn();
-jest.mock('@/lib/services/auditLog', () => ({ logActivity: (...a: unknown[]) => mockLogActivity(...a) }));
+jest.mock('@/lib/services/auditLog', () => ({
+  logActivity: (...a: unknown[]) => mockLogActivity(...a),
+}));
 jest.mock('@/lib/utils/logError', () => ({ logError: jest.fn() }));
 jest.mock('drizzle-orm', () => ({ eq: jest.fn() }));
 jest.mock('@/lib/setup', () => ({ isSetupComplete: jest.fn() }));
@@ -115,7 +117,9 @@ describe('PATCH /api/settings', () => {
   });
 
   it('returns 401 when not authenticated', async () => {
-    mockRequireAuth.mockResolvedValue(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }));
+    mockRequireAuth.mockResolvedValue(
+      NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    );
     const res = await PATCH(makePatchRequest({ key: 'theme', value: 'light' }));
     expect(res.status).toBe(401);
   });

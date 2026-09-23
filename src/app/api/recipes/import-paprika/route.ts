@@ -17,28 +17,19 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     if (!body.html || typeof body.html !== 'string') {
-      return NextResponse.json(
-        { error: 'HTML content is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'HTML content is required' }, { status: 400 });
     }
 
     const MAX_HTML_BYTES = 5 * 1024 * 1024; // 5 MB
     if (Buffer.byteLength(body.html, 'utf8') > MAX_HTML_BYTES) {
-      return NextResponse.json(
-        { error: 'HTML content exceeds 5 MB limit' },
-        { status: 413 }
-      );
+      return NextResponse.json({ error: 'HTML content exceeds 5 MB limit' }, { status: 413 });
     }
 
     // Parse recipes from HTML
     const parsedRecipes = parsePaprikaHtml(body.html);
 
     if (parsedRecipes.length === 0) {
-      return NextResponse.json(
-        { error: 'No recipes found in the HTML content' },
-        { status: 422 }
-      );
+      return NextResponse.json({ error: 'No recipes found in the HTML content' }, { status: 422 });
     }
 
     // Option to just preview without saving
@@ -54,7 +45,7 @@ export async function POST(request: NextRequest) {
     const insertedRecipes = await db
       .insert(recipes)
       .values(
-        parsedRecipes.map(recipe => ({
+        parsedRecipes.map((recipe) => ({
           name: recipe.name,
           description: recipe.description || null,
           url: recipe.sourceUrl || null,
@@ -77,15 +68,15 @@ export async function POST(request: NextRequest) {
 
     await invalidateEntity('recipes');
 
-    return NextResponse.json({
-      imported: insertedRecipes.length,
-      recipes: insertedRecipes,
-    }, { status: 201 });
+    return NextResponse.json(
+      {
+        imported: insertedRecipes.length,
+        recipes: insertedRecipes,
+      },
+      { status: 201 }
+    );
   } catch (error) {
     logError('Error importing Paprika recipes:', error);
-    return NextResponse.json(
-      { error: 'Failed to import Paprika recipes' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to import Paprika recipes' }, { status: 500 });
   }
 }

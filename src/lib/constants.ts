@@ -7,8 +7,8 @@ export const APP_DESCRIPTION = "Your family's digital home";
 /** Session duration in seconds, keyed by uppercase role */
 export const SESSION_DURATION = {
   PARENT: 7 * 24 * 60 * 60, // 7 days — family dashboard stays logged in
-  CHILD: 24 * 60 * 60,      // 1 day
-  GUEST: 10 * 60,           // 10 minutes
+  CHILD: 24 * 60 * 60, // 1 day
+  GUEST: 10 * 60, // 10 minutes
 } as const;
 
 /**
@@ -20,8 +20,8 @@ export const SESSION_DURATION = {
  */
 export const SESSION_ABSOLUTE_LIFETIME = {
   PARENT: 30 * 24 * 60 * 60, // 30 days
-  CHILD: 7 * 24 * 60 * 60,   // 7 days
-  GUEST: 60 * 60,            // 1 hour
+  CHILD: 7 * 24 * 60 * 60, // 7 days
+  GUEST: 60 * 60, // 1 hour
 } as const;
 
 export const MIN_PIN_LENGTH = 4;
@@ -59,14 +59,14 @@ export const ANIMATION_DURATION = {
 } as const;
 
 export const CALENDAR_VIEWS = ['day', 'week', 'multiWeek', 'month'] as const;
-export type CalendarView = typeof CALENDAR_VIEWS[number];
+export type CalendarView = (typeof CALENDAR_VIEWS)[number];
 export const DEFAULT_CALENDAR_VIEW: CalendarView = 'multiWeek';
 export const CALENDAR_SYNC_INTERVAL = 10 * 60 * 1000;
 export const CALENDAR_PAST_MONTHS = 6;
 export const CALENDAR_FUTURE_MONTHS = 12;
 
 export const TASK_PRIORITIES = ['high', 'medium', 'low'] as const;
-export type TaskPriority = typeof TASK_PRIORITIES[number];
+export type TaskPriority = (typeof TASK_PRIORITIES)[number];
 
 export const TASK_CATEGORIES = [
   'Work',
@@ -80,7 +80,7 @@ export const TASK_CATEGORIES = [
 ] as const;
 
 export const CHORE_SCHEDULES = ['daily', 'weekly', 'monthly', 'custom'] as const;
-export type ChoreSchedule = typeof CHORE_SCHEDULES[number];
+export type ChoreSchedule = (typeof CHORE_SCHEDULES)[number];
 
 export const SHOPPING_CATEGORIES = [
   { id: 'produce', name: 'Produce', emoji: '🥬' },
@@ -102,11 +102,11 @@ export const WEATHER_REFRESH_INTERVAL = 30 * 60 * 1000;
 export const WEATHER_FORECAST_DAYS = 5;
 
 export const MAINTENANCE_CATEGORIES = ['car', 'home', 'appliance', 'yard', 'other'] as const;
-export type MaintenanceCategory = typeof MAINTENANCE_CATEGORIES[number];
+export type MaintenanceCategory = (typeof MAINTENANCE_CATEGORIES)[number];
 export const MAINTENANCE_SCHEDULES = ['monthly', 'quarterly', 'annually', 'custom'] as const;
 
 export const THEME_MODES = ['light', 'dark', 'system'] as const;
-export type ThemeMode = typeof THEME_MODES[number];
+export type ThemeMode = (typeof THEME_MODES)[number];
 
 export const SEASONAL_THEMES = {
   1: { name: 'January', theme: 'winter' },
@@ -139,4 +139,4 @@ export const PHOTO_MAX_SIZE_MB = 20;
 export const PHOTO_ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
 export const PHOTO_SLIDESHOW_INTERVAL_DEFAULT = 15;
 export const PHOTO_TRANSITION_TYPES = ['fade', 'slide', 'zoom'] as const;
-export type PhotoTransitionType = typeof PHOTO_TRANSITION_TYPES[number];
+export type PhotoTransitionType = (typeof PHOTO_TRANSITION_TYPES)[number];

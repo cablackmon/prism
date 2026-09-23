@@ -48,7 +48,10 @@ async function readRaw(key: string): Promise<TombstoneEntry[]> {
 async function writeRaw(key: string, entries: TombstoneEntry[]): Promise<void> {
   const [existing] = await db.select().from(settings).where(eq(settings.key, key));
   if (existing) {
-    await db.update(settings).set({ value: entries, updatedAt: new Date() }).where(eq(settings.key, key));
+    await db
+      .update(settings)
+      .set({ value: entries, updatedAt: new Date() })
+      .where(eq(settings.key, key));
   } else {
     await db.insert(settings).values({ key, value: entries });
   }

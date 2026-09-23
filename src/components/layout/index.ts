@@ -7,16 +7,9 @@
  *
  */
 
-export {
-  DashboardGrid,
-  DashboardLayout,
-  DashboardHeader,
-} from './DashboardGrid';
+export { DashboardGrid, DashboardLayout, DashboardHeader } from './DashboardGrid';
 
-export type {
-  DashboardGridProps,
-  DashboardHeaderProps,
-} from './DashboardGrid';
+export type { DashboardGridProps, DashboardHeaderProps } from './DashboardGrid';
 
 export { SideNav } from './SideNav';
 export type { SideNavProps } from './SideNav';

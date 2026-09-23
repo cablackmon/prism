@@ -127,22 +127,26 @@ export function formatMealRow(row: {
     mealType: row.mealType,
     mealTime: row.mealTime ?? null,
     cookedAt: row.cookedAt?.toISOString() || null,
-    cookedBy: row.cookedByUserId ? {
-      id: row.cookedByUserId,
-      name: row.cookedByUserName,
-      color: row.cookedByUserColor,
-    } : null,
+    cookedBy: row.cookedByUserId
+      ? {
+          id: row.cookedByUserId,
+          name: row.cookedByUserName,
+          color: row.cookedByUserColor,
+        }
+      : null,
     weekOf: row.weekOf,
     ...(row.date ? { date: row.date } : {}),
     source: row.source,
     sourceId: row.sourceId,
     createdAt: row.createdAt.toISOString(),
     ...(row.updatedAt ? { updatedAt: row.updatedAt.toISOString() } : {}),
-    createdBy: row.createdById ? {
-      id: row.createdById,
-      name: row.createdByName,
-      color: row.createdByColor,
-    } : null,
+    createdBy: row.createdById
+      ? {
+          id: row.createdById,
+          name: row.createdByName,
+          color: row.createdByColor,
+        }
+      : null,
   };
 }
 
@@ -206,19 +210,22 @@ export function formatEventRow(row: {
 /**
  * Format a goal database row into an API response object.
  */
-export function formatGoalRow(row: {
-  id: string;
-  name: string;
-  description: string | null;
-  pointCost: number;
-  emoji: string | null;
-  priority: number;
-  recurring: boolean;
-  recurrencePeriod: string | null;
-  active: boolean;
-  lastResetAt: Date;
-  createdAt: Date;
-}, fullyAchieved: boolean) {
+export function formatGoalRow(
+  row: {
+    id: string;
+    name: string;
+    description: string | null;
+    pointCost: number;
+    emoji: string | null;
+    priority: number;
+    recurring: boolean;
+    recurrencePeriod: string | null;
+    active: boolean;
+    lastResetAt: Date;
+    createdAt: Date;
+  },
+  fullyAchieved: boolean
+) {
   return {
     id: row.id,
     name: row.name,
@@ -238,30 +245,33 @@ export function formatGoalRow(row: {
 /**
  * Format a chore database row (with joined assignment data) into an API response object.
  */
-export function formatChoreRow(row: {
-  id: string;
-  title: string;
-  description: string | null;
-  category: string;
-  frequency: string;
-  customIntervalDays: number | null;
-  startDay: string | null;
-  lastCompleted: Date | null;
-  nextDue: string | null;
-  nextDueTime?: string | null;
-  pointValue: number;
-  requiresApproval: boolean;
-  enabled: boolean;
-  createdAt: Date;
-  assignedToId: string | null;
-  assignedToName: string | null;
-  assignedToColor: string | null;
-  assignedToAvatar?: string | null;
-}, pendingCompletion?: {
-  completionId: string;
-  completedAt: string;
-  completedBy: { id: string; name: string; color: string };
-} | null) {
+export function formatChoreRow(
+  row: {
+    id: string;
+    title: string;
+    description: string | null;
+    category: string;
+    frequency: string;
+    customIntervalDays: number | null;
+    startDay: string | null;
+    lastCompleted: Date | null;
+    nextDue: string | null;
+    nextDueTime?: string | null;
+    pointValue: number;
+    requiresApproval: boolean;
+    enabled: boolean;
+    createdAt: Date;
+    assignedToId: string | null;
+    assignedToName: string | null;
+    assignedToColor: string | null;
+    assignedToAvatar?: string | null;
+  },
+  pendingCompletion?: {
+    completionId: string;
+    completedAt: string;
+    completedBy: { id: string; name: string; color: string };
+  } | null
+) {
   return {
     id: row.id,
     title: row.title,
@@ -277,12 +287,14 @@ export function formatChoreRow(row: {
     requiresApproval: row.requiresApproval,
     enabled: row.enabled,
     createdAt: row.createdAt.toISOString(),
-    assignedTo: row.assignedToId ? {
-      id: row.assignedToId,
-      name: row.assignedToName,
-      color: row.assignedToColor,
-      avatarUrl: row.assignedToAvatar ?? null,
-    } : null,
+    assignedTo: row.assignedToId
+      ? {
+          id: row.assignedToId,
+          name: row.assignedToName,
+          color: row.assignedToColor,
+          avatarUrl: row.assignedToAvatar ?? null,
+        }
+      : null,
     pendingApproval: pendingCompletion || null,
   };
 }
@@ -291,23 +303,26 @@ export function formatChoreRow(row: {
  * Format a wish item database row into an API response object.
  * Hides claim info when the owner is viewing their own list.
  */
-export function formatWishItemRow(item: {
-  id: string;
-  memberId: string;
-  name: string;
-  url: string | null;
-  notes: string | null;
-  sortOrder: number;
-  claimed: boolean;
-  claimedById: string | null;
-  claimedByName: string | null;
-  claimedByColor: string | null;
-  claimedAt: Date | null;
-  addedById: string | null;
-  addedByName: string | null;
-  addedByColor: string | null;
-  createdAt: Date;
-}, isOwnerViewing: boolean) {
+export function formatWishItemRow(
+  item: {
+    id: string;
+    memberId: string;
+    name: string;
+    url: string | null;
+    notes: string | null;
+    sortOrder: number;
+    claimed: boolean;
+    claimedById: string | null;
+    claimedByName: string | null;
+    claimedByColor: string | null;
+    claimedAt: Date | null;
+    addedById: string | null;
+    addedByName: string | null;
+    addedByColor: string | null;
+    createdAt: Date;
+  },
+  isOwnerViewing: boolean
+) {
   return {
     id: item.id,
     memberId: item.memberId,
@@ -318,12 +333,16 @@ export function formatWishItemRow(item: {
     ...(isOwnerViewing
       ? // Owner viewing: show self-claims, hide others' claims (keep gifts secret)
         item.claimed && item.claimedById === item.memberId
-          ? {
-              claimed: true,
-              claimedBy: { id: item.claimedById, name: item.claimedByName, color: item.claimedByColor },
-              claimedAt: item.claimedAt?.toISOString() || null,
-            }
-          : { claimed: false, claimedBy: null, claimedAt: null }
+        ? {
+            claimed: true,
+            claimedBy: {
+              id: item.claimedById,
+              name: item.claimedByName,
+              color: item.claimedByColor,
+            },
+            claimedAt: item.claimedAt?.toISOString() || null,
+          }
+        : { claimed: false, claimedBy: null, claimedAt: null }
       : {
           claimed: item.claimed,
           claimedBy: item.claimedById
@@ -369,11 +388,13 @@ export function formatShoppingItemRow(item: {
     notes: item.notes,
     listId: item.listId,
     createdAt: item.createdAt.toISOString(),
-    addedBy: item.addedById ? {
-      id: item.addedById,
-      name: item.addedByName,
-      color: item.addedByColor,
-    } : null,
+    addedBy: item.addedById
+      ? {
+          id: item.addedById,
+          name: item.addedByName,
+          color: item.addedByColor,
+        }
+      : null,
   };
 }
 
@@ -425,9 +446,7 @@ export function formatRecipeRow(row: {
     timesMade: row.timesMade,
     lastMadeAt: row.lastMadeAt?.toISOString() || null,
     isFavorite: row.isFavorite,
-    createdBy: row.createdBy
-      ? { id: row.createdBy, name: row.createdByName }
-      : null,
+    createdBy: row.createdBy ? { id: row.createdBy, name: row.createdByName } : null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };

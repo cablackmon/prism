@@ -35,7 +35,16 @@ jest.mock('@/lib/db/client', () => ({
 }));
 
 jest.mock('@/lib/db/schema', () => ({
-  users: { id: 'id', name: 'name', role: 'role', color: 'color', email: 'email', avatarUrl: 'avatarUrl', pin: 'pin', createdAt: 'createdAt' },
+  users: {
+    id: 'id',
+    name: 'name',
+    role: 'role',
+    color: 'color',
+    email: 'email',
+    avatarUrl: 'avatarUrl',
+    pin: 'pin',
+    createdAt: 'createdAt',
+  },
   calendarGroups: { userId: 'userId', color: 'color' },
   settings: { key: 'key', value: 'value' },
 }));
@@ -89,9 +98,13 @@ describe('DELETE /api/family/[id]', () => {
 
   it('deletes a child member successfully', async () => {
     // Lookup: member exists and is a child
-    mockWhere.mockResolvedValueOnce([{
-      id: 'child-1', name: 'Timmy', role: 'child',
-    }]);
+    mockWhere.mockResolvedValueOnce([
+      {
+        id: 'child-1',
+        name: 'Timmy',
+        role: 'child',
+      },
+    ]);
 
     mockTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
       return fn({
@@ -110,16 +123,21 @@ describe('DELETE /api/family/[id]', () => {
   it('deletes a parent when other parents remain', async () => {
     const params = { params: Promise.resolve({ id: 'parent-2' }) };
     // Lookup: member is a parent
-    mockWhere.mockResolvedValueOnce([{
-      id: 'parent-2', name: 'Mom', role: 'parent',
-    }]);
+    mockWhere.mockResolvedValueOnce([
+      {
+        id: 'parent-2',
+        name: 'Mom',
+        role: 'parent',
+      },
+    ]);
 
     mockTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
       const txMock = {
-        select: () => ({ from: () => ({ where: jest.fn().mockResolvedValue([
-          { count: 'parent-1' },
-          { count: 'parent-2' },
-        ]) }) }),
+        select: () => ({
+          from: () => ({
+            where: jest.fn().mockResolvedValue([{ count: 'parent-1' }, { count: 'parent-2' }]),
+          }),
+        }),
         delete: () => ({ where: jest.fn().mockResolvedValue(undefined) }),
       };
       return fn(txMock);
@@ -136,15 +154,23 @@ describe('DELETE /api/family/[id]', () => {
   it('prevents deletion of the last parent', async () => {
     const params = { params: Promise.resolve({ id: 'parent-1' }) };
     // Lookup: member is a parent
-    mockWhere.mockResolvedValueOnce([{
-      id: 'parent-1', name: 'Dad', role: 'parent',
-    }]);
+    mockWhere.mockResolvedValueOnce([
+      {
+        id: 'parent-1',
+        name: 'Dad',
+        role: 'parent',
+      },
+    ]);
 
     mockTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
       const txMock = {
-        select: () => ({ from: () => ({ where: jest.fn().mockResolvedValue([
-          { count: 'parent-1' }, // only one parent
-        ]) }) }),
+        select: () => ({
+          from: () => ({
+            where: jest.fn().mockResolvedValue([
+              { count: 'parent-1' }, // only one parent
+            ]),
+          }),
+        }),
         delete: () => ({ where: jest.fn().mockResolvedValue(undefined) }),
       };
       return fn(txMock);
@@ -161,16 +187,16 @@ describe('DELETE /api/family/[id]', () => {
   it('returns 404 when member does not exist', async () => {
     mockWhere.mockResolvedValueOnce([]); // no member found
 
-    const req = new NextRequest('http://localhost:3000/api/family/nonexistent', { method: 'DELETE' });
+    const req = new NextRequest('http://localhost:3000/api/family/nonexistent', {
+      method: 'DELETE',
+    });
     const res = await DELETE(req, { params: Promise.resolve({ id: 'nonexistent' }) });
 
     expect(res.status).toBe(404);
   });
 
   it('returns 403 when non-parent tries to delete', async () => {
-    mockRequireRole.mockReturnValue(
-      NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    );
+    mockRequireRole.mockReturnValue(NextResponse.json({ error: 'Forbidden' }, { status: 403 }));
 
     const req = new NextRequest('http://localhost:3000/api/family/child-1', { method: 'DELETE' });
     const res = await DELETE(req, routeParams);

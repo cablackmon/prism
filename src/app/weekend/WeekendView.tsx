@@ -54,7 +54,7 @@ export function WeekendView() {
   }, [places, filterStatus, filterFavorites, filterTags, search]);
 
   const toggleFilterTag = (tag: string) =>
-    setFilterTags((prev) => prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]);
+    setFilterTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
 
   const handleAdd = async () => {
     const user = await requireAuth('Add Place', 'Log in to add a place');
@@ -69,7 +69,8 @@ export function WeekendView() {
       setOverlayMode('detail');
       toast({ title: `"${place.name}" added!` });
     } catch (err) {
-      if (err instanceof WeekendAuthError) toast({ title: 'Please log in', variant: 'destructive' });
+      if (err instanceof WeekendAuthError)
+        toast({ title: 'Please log in', variant: 'destructive' });
       else toast({ title: 'Failed to add place', variant: 'destructive' });
     }
   };
@@ -88,7 +89,10 @@ export function WeekendView() {
 
   const handleDelete = async () => {
     if (!freshSelected) return;
-    const ok = await confirm(`Remove "${freshSelected.name}"?`, 'This will permanently delete this place.');
+    const ok = await confirm(
+      `Remove "${freshSelected.name}"?`,
+      'This will permanently delete this place.'
+    );
     if (!ok) return;
     try {
       await deletePlace(freshSelected.id);
@@ -102,7 +106,9 @@ export function WeekendView() {
   const handleToggleFavorite = async () => {
     if (!freshSelected) return;
     try {
-      const updated = await updatePlace(freshSelected.id, { isFavorite: !freshSelected.isFavorite });
+      const updated = await updatePlace(freshSelected.id, {
+        isFavorite: !freshSelected.isFavorite,
+      });
       setSelectedPlace(updated);
     } catch {
       toast({ title: 'Failed to update', variant: 'destructive' });
@@ -128,127 +134,146 @@ export function WeekendView() {
 
   return (
     <PageWrapper>
-    <div className="h-screen flex flex-col">
-      {/* Toolbar */}
-      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border bg-background/80 backdrop-blur shrink-0 flex-wrap">
-        {/* Status tabs */}
-        <div className="flex items-center gap-1 bg-muted rounded-lg p-0.5">
-          {(['all', 'backlog', 'visited'] as const).map((s) => (
-            <button
-              key={s}
-              onClick={() => setFilterStatus(s)}
-              className={cn(
-                'px-2.5 py-1 rounded-md text-xs font-medium transition-colors capitalize',
-                filterStatus === s ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              {s === 'backlog' ? 'Want to Try' : s === 'visited' ? 'Been There' : 'All'}
-            </button>
-          ))}
-        </div>
+      <div className="flex h-screen flex-col">
+        {/* Toolbar */}
+        <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-border bg-background/80 px-4 py-2.5 backdrop-blur">
+          {/* Status tabs */}
+          <div className="flex items-center gap-1 rounded-lg bg-muted p-0.5">
+            {(['all', 'backlog', 'visited'] as const).map((s) => (
+              <button
+                key={s}
+                onClick={() => setFilterStatus(s)}
+                className={cn(
+                  'rounded-md px-2.5 py-1 text-xs font-medium capitalize transition-colors',
+                  filterStatus === s
+                    ? 'bg-background text-foreground shadow'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                {s === 'backlog' ? 'Want to Try' : s === 'visited' ? 'Been There' : 'All'}
+              </button>
+            ))}
+          </div>
 
-        {/* Favorites toggle */}
-        <button
-          onClick={() => setFilterFavorites((v) => !v)}
-          className={cn(
-            'flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors',
-            filterFavorites
-              ? 'bg-amber-50 dark:bg-amber-950 border-amber-400 text-amber-600'
-              : 'border-transparent bg-muted text-muted-foreground hover:bg-accent'
-          )}
-        >
-          <Star className={cn('h-3.5 w-3.5', filterFavorites && 'fill-amber-400 text-amber-400')} />
-          Favorites
-        </button>
-
-        {/* Search */}
-        <div className="relative flex-1 min-w-[140px] max-w-xs">
-          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search places…"
-            className="pl-7 h-7 text-xs"
-          />
-          {search && (
-            <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-              <X className="h-3 w-3" />
-            </button>
-          )}
-        </div>
-
-        <Button onClick={handleAdd} size="sm" className="ml-auto shrink-0">
-          <Plus className="h-4 w-4 mr-1" />
-          Add Place
-        </Button>
-      </div>
-
-      {/* Tag filter row */}
-      <div className="flex items-center gap-1.5 px-4 py-1.5 border-b border-border bg-background/50 shrink-0 overflow-x-auto">
-        {TAG_PRESETS.map((t) => (
-          <TagChip
-            key={t.value}
-            tag={t.value}
-            active={filterTags.includes(t.value)}
-            onClick={() => toggleFilterTag(t.value)}
-          />
-        ))}
-        {filterTags.length > 0 && (
-          <button onClick={() => setFilterTags([])} className="text-xs text-muted-foreground hover:text-foreground whitespace-nowrap ml-1">
-            Clear
+          {/* Favorites toggle */}
+          <button
+            onClick={() => setFilterFavorites((v) => !v)}
+            className={cn(
+              'flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors',
+              filterFavorites
+                ? 'border-amber-400 bg-amber-50 text-amber-600 dark:bg-amber-950'
+                : 'border-transparent bg-muted text-muted-foreground hover:bg-accent'
+            )}
+          >
+            <Star
+              className={cn('h-3.5 w-3.5', filterFavorites && 'fill-amber-400 text-amber-400')}
+            />
+            Favorites
           </button>
-        )}
-      </div>
 
-      {/* Main content + panel */}
-      <div className="flex flex-1 overflow-hidden relative">
-        {/* Grid */}
-        <div className={cn('flex-1 overflow-y-auto p-3 transition-all', panelOpen && 'md:mr-96')}>
-          {loading ? (
-            <div className="flex items-center justify-center h-full text-muted-foreground text-sm">Loading…</div>
-          ) : error ? (
-            <div className="flex items-center justify-center h-full text-destructive text-sm">{error}</div>
-          ) : (
-            <WeekendPlaceGrid
-              places={filteredPlaces}
-              selectedId={freshSelected?.id ?? null}
-              onSelect={(p) => { setSelectedPlace(p); setOverlayMode('detail'); }}
-              hasUnfilteredPlaces={places.length > 0}
-              onAdd={handleAdd}
+          {/* Search */}
+          <div className="relative min-w-[140px] max-w-xs flex-1">
+            <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search places…"
+              className="h-7 pl-7 text-xs"
             />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            )}
+          </div>
+
+          <Button onClick={handleAdd} size="sm" className="ml-auto shrink-0">
+            <Plus className="mr-1 h-4 w-4" />
+            Add Place
+          </Button>
+        </div>
+
+        {/* Tag filter row */}
+        <div className="flex shrink-0 items-center gap-1.5 overflow-x-auto border-b border-border bg-background/50 px-4 py-1.5">
+          {TAG_PRESETS.map((t) => (
+            <TagChip
+              key={t.value}
+              tag={t.value}
+              active={filterTags.includes(t.value)}
+              onClick={() => toggleFilterTag(t.value)}
+            />
+          ))}
+          {filterTags.length > 0 && (
+            <button
+              onClick={() => setFilterTags([])}
+              className="ml-1 whitespace-nowrap text-xs text-muted-foreground hover:text-foreground"
+            >
+              Clear
+            </button>
           )}
         </div>
 
-        {/* Side panel */}
-        <div className={cn(
-          'absolute top-0 right-0 bottom-0 w-96 bg-card border-l border-border flex flex-col transition-transform duration-200 z-10',
-          panelOpen ? 'translate-x-0' : 'translate-x-full'
-        )}>
-          {overlayMode === 'add' && (
-            <WeekendPlaceForm onSave={handleSaveNew} onCancel={closeOverlay} />
-          )}
-          {overlayMode === 'edit' && freshSelected && (
-            <WeekendPlaceForm
-              initial={freshSelected}
-              onSave={handleSaveEdit}
-              onCancel={() => setOverlayMode('detail')}
-            />
-          )}
-          {overlayMode === 'detail' && freshSelected && (
-            <WeekendPlaceDetail
-              place={freshSelected}
-              onClose={closeOverlay}
-              onEdit={() => setOverlayMode('edit')}
-              onDelete={handleDelete}
-              onToggleFavorite={handleToggleFavorite}
-              onMarkVisited={handleMarkVisited}
-            />
-          )}
-        </div>
-      </div>
+        {/* Main content + panel */}
+        <div className="relative flex flex-1 overflow-hidden">
+          {/* Grid */}
+          <div className={cn('flex-1 overflow-y-auto p-3 transition-all', panelOpen && 'md:mr-96')}>
+            {loading ? (
+              <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                Loading…
+              </div>
+            ) : error ? (
+              <div className="flex h-full items-center justify-center text-sm text-destructive">
+                {error}
+              </div>
+            ) : (
+              <WeekendPlaceGrid
+                places={filteredPlaces}
+                selectedId={freshSelected?.id ?? null}
+                onSelect={(p) => {
+                  setSelectedPlace(p);
+                  setOverlayMode('detail');
+                }}
+                hasUnfilteredPlaces={places.length > 0}
+                onAdd={handleAdd}
+              />
+            )}
+          </div>
 
-      <ConfirmDialog {...dialogProps} />
-    </div>
+          {/* Side panel */}
+          <div
+            className={cn(
+              'absolute bottom-0 right-0 top-0 z-10 flex w-96 flex-col border-l border-border bg-card transition-transform duration-200',
+              panelOpen ? 'translate-x-0' : 'translate-x-full'
+            )}
+          >
+            {overlayMode === 'add' && (
+              <WeekendPlaceForm onSave={handleSaveNew} onCancel={closeOverlay} />
+            )}
+            {overlayMode === 'edit' && freshSelected && (
+              <WeekendPlaceForm
+                initial={freshSelected}
+                onSave={handleSaveEdit}
+                onCancel={() => setOverlayMode('detail')}
+              />
+            )}
+            {overlayMode === 'detail' && freshSelected && (
+              <WeekendPlaceDetail
+                place={freshSelected}
+                onClose={closeOverlay}
+                onEdit={() => setOverlayMode('edit')}
+                onDelete={handleDelete}
+                onToggleFavorite={handleToggleFavorite}
+                onMarkVisited={handleMarkVisited}
+              />
+            )}
+          </div>
+        </div>
+
+        <ConfirmDialog {...dialogProps} />
+      </div>
     </PageWrapper>
   );
 }

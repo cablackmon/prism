@@ -26,26 +26,17 @@ interface RouteParams {
  * GET /api/shopping-lists/[id]
  * Retrieves a single shopping list by its ID.
  */
-export async function GET(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function GET(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
   try {
     const { id } = await params;
 
-    const [list] = await db
-      .select()
-      .from(shoppingLists)
-      .where(eq(shoppingLists.id, id));
+    const [list] = await db.select().from(shoppingLists).where(eq(shoppingLists.id, id));
 
     if (!list) {
-      return NextResponse.json(
-        { error: 'Shopping list not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Shopping list not found' }, { status: 404 });
     }
 
     return NextResponse.json({
@@ -61,10 +52,7 @@ export async function GET(
     });
   } catch (error) {
     logError('Error fetching shopping list:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch shopping list' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch shopping list' }, { status: 500 });
   }
 }
 
@@ -72,10 +60,7 @@ export async function GET(
  * PATCH /api/shopping-lists/[id]
  * Updates a specific shopping list.
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -90,10 +75,7 @@ export async function PATCH(
       .where(eq(shoppingLists.id, id));
 
     if (!existingList) {
-      return NextResponse.json(
-        { error: 'Shopping list not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Shopping list not found' }, { status: 404 });
     }
 
     // Validate with partial schema
@@ -108,31 +90,24 @@ export async function PATCH(
     // Build update object
     const updateData: Record<string, unknown> = {};
     if ('name' in validation.data) updateData.name = validation.data.name;
-    if ('description' in validation.data) updateData.description = validation.data.description || null;
+    if ('description' in validation.data)
+      updateData.description = validation.data.description || null;
     if ('icon' in validation.data) updateData.icon = validation.data.icon || null;
     if ('color' in validation.data) updateData.color = validation.data.color || null;
     if ('listType' in validation.data) updateData.listType = validation.data.listType || 'grocery';
     if ('sortOrder' in validation.data) updateData.sortOrder = validation.data.sortOrder || null;
-    if ('visibleCategories' in validation.data) updateData.visibleCategories = validation.data.visibleCategories;
+    if ('visibleCategories' in validation.data)
+      updateData.visibleCategories = validation.data.visibleCategories;
     if ('assignedTo' in validation.data) updateData.assignedTo = validation.data.assignedTo || null;
 
     // Execute update
-    await db
-      .update(shoppingLists)
-      .set(updateData)
-      .where(eq(shoppingLists.id, id));
+    await db.update(shoppingLists).set(updateData).where(eq(shoppingLists.id, id));
 
     // Fetch and return updated list
-    const [updatedList] = await db
-      .select()
-      .from(shoppingLists)
-      .where(eq(shoppingLists.id, id));
+    const [updatedList] = await db.select().from(shoppingLists).where(eq(shoppingLists.id, id));
 
     if (!updatedList) {
-      return NextResponse.json(
-        { error: 'Shopping list not found after update' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Shopping list not found after update' }, { status: 404 });
     }
 
     return NextResponse.json({
@@ -148,10 +123,7 @@ export async function PATCH(
     });
   } catch (error) {
     logError('Error updating shopping list:', error);
-    return NextResponse.json(
-      { error: 'Failed to update shopping list' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to update shopping list' }, { status: 500 });
   }
 }
 
@@ -159,10 +131,7 @@ export async function PATCH(
  * DELETE /api/shopping-lists/[id]
  * Deletes a specific shopping list and all its items (CASCADE).
  */
-export async function DELETE(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -176,16 +145,11 @@ export async function DELETE(
       .where(eq(shoppingLists.id, id));
 
     if (!existingList) {
-      return NextResponse.json(
-        { error: 'Shopping list not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Shopping list not found' }, { status: 404 });
     }
 
     // Delete the list (CASCADE will delete related items)
-    await db
-      .delete(shoppingLists)
-      .where(eq(shoppingLists.id, id));
+    await db.delete(shoppingLists).where(eq(shoppingLists.id, id));
 
     return NextResponse.json({
       message: 'Shopping list deleted successfully',
@@ -196,9 +160,6 @@ export async function DELETE(
     });
   } catch (error) {
     logError('Error deleting shopping list:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete shopping list' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to delete shopping list' }, { status: 500 });
   }
 }

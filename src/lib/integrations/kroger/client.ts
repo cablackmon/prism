@@ -137,7 +137,7 @@ function normalizeProduct(raw: KrogerProductRaw): KrogerProductCandidate {
 export async function searchProducts(
   query: string,
   tokens: KrogerTokens,
-  options: { locationId?: string | null; limit?: number } = {},
+  options: { locationId?: string | null; limit?: number } = {}
 ): Promise<KrogerProductCandidate[]> {
   const { locationId, limit = 5 } = options;
 
@@ -170,7 +170,7 @@ export async function searchProducts(
 export async function searchLocations(
   zipCode: string,
   tokens: KrogerTokens,
-  options: { chain?: string; radiusInMiles?: number; limit?: number } = {},
+  options: { chain?: string; radiusInMiles?: number; limit?: number } = {}
 ): Promise<KrogerLocation[]> {
   const { chain, radiusInMiles = 10, limit = 10 } = options;
 
@@ -209,7 +209,7 @@ export async function searchLocations(
  */
 export async function addToCart(
   items: Array<{ upc: string; quantity?: number }>,
-  tokens: KrogerTokens,
+  tokens: KrogerTokens
 ): Promise<void> {
   if (items.length === 0) return;
 
@@ -277,7 +277,7 @@ export async function refreshTokens(refreshToken: string): Promise<KrogerTokens 
  */
 export async function exchangeCodeForTokens(
   code: string,
-  redirectUri: string,
+  redirectUri: string
 ): Promise<KrogerTokens> {
   const creds = await getKrogerCredentials();
   if (!creds) throw new Error('Kroger OAuth not configured');
@@ -319,7 +319,7 @@ export async function exchangeCodeForTokens(
  */
 export async function buildAuthorizeUrl(
   state: string,
-  redirectUri: string,
+  redirectUri: string
 ): Promise<string | null> {
   const creds = await getKrogerCredentials();
   if (!creds) return null;

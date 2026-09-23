@@ -42,7 +42,7 @@ const DAY_MS = 86_400_000;
 export function eventsOverlappingRange<T extends { startTime: Date; endTime: Date }>(
   events: T[],
   from: Date,
-  to: Date,
+  to: Date
 ): T[] {
   const start = from.getTime() - DAY_MS;
   const end = to.getTime() + 2 * DAY_MS;

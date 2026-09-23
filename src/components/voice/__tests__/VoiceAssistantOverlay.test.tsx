@@ -340,9 +340,7 @@ describe('VoiceAssistantOverlay accessibility and turn controls', () => {
       .spyOn(globalThis.crypto, 'randomUUID')
       .mockReturnValue('6f9619ff-8b86-d011-b42d-00cf4fc964ff');
     installCaptureMocks();
-    jest
-      .spyOn(PcmPlaybackQueue.prototype, 'push')
-      .mockRejectedValue(new Error('playback failed'));
+    jest.spyOn(PcmPlaybackQueue.prototype, 'push').mockRejectedValue(new Error('playback failed'));
 
     render(<VoiceAssistantOverlay />);
     fireEvent.click(screen.getByRole('button', { name: 'Ask NOX by voice' }));

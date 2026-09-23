@@ -118,7 +118,10 @@ export function RecipeFormModal({ recipe, onClose, onSave }: RecipeFormModalProp
       setImageUrl('');
     } catch (err) {
       toast({
-        title: err instanceof Error ? `Failed to remove photo: ${err.message}` : 'Failed to remove photo',
+        title:
+          err instanceof Error
+            ? `Failed to remove photo: ${err.message}`
+            : 'Failed to remove photo',
         variant: 'destructive',
       });
     } finally {
@@ -169,7 +172,7 @@ export function RecipeFormModal({ recipe, onClose, onSave }: RecipeFormModalProp
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{recipe?.id ? 'Edit Recipe' : 'Add Recipe'}</DialogTitle>
         </DialogHeader>
@@ -254,7 +257,9 @@ export function RecipeFormModal({ recipe, onClose, onSave }: RecipeFormModalProp
               id="ingredients"
               value={ingredientsText}
               onChange={(e) => setIngredientsText(e.target.value)}
-              placeholder={'Fries:\n4 potatoes\n2 tbsp olive oil\n\nMeatballs:\n1 lb ground beef\n1 egg'}
+              placeholder={
+                'Fries:\n4 potatoes\n2 tbsp olive oil\n\nMeatballs:\n1 lb ground beef\n1 egg'
+              }
               rows={8}
             />
           </div>
@@ -278,7 +283,7 @@ export function RecipeFormModal({ recipe, onClose, onSave }: RecipeFormModalProp
                 <img
                   src={imageUrl}
                   alt="Recipe"
-                  className="w-full h-40 object-cover rounded border border-border"
+                  className="h-40 w-full rounded border border-border object-cover"
                 />
               </div>
             )}
@@ -297,7 +302,7 @@ export function RecipeFormModal({ recipe, onClose, onSave }: RecipeFormModalProp
                 disabled={!recipeId || uploading}
                 onClick={() => fileInputRef.current?.click()}
               >
-                <Camera className="h-4 w-4 mr-1" />
+                <Camera className="mr-1 h-4 w-4" />
                 {uploading ? 'Uploading...' : imageUrl ? 'Replace photo' : 'Upload photo'}
               </Button>
               {imageUrl && (
@@ -308,7 +313,7 @@ export function RecipeFormModal({ recipe, onClose, onSave }: RecipeFormModalProp
                   disabled={uploading}
                   onClick={handleRemovePhoto}
                 >
-                  <Trash2 className="h-4 w-4 mr-1" />
+                  <Trash2 className="mr-1 h-4 w-4" />
                   Remove
                 </Button>
               )}

@@ -14,80 +14,106 @@ export function renderScreensaverPreview(widget: WidgetConfig) {
   switch (widget.i) {
     case 'clock':
       return (
-        <div className={`h-full flex flex-col justify-end text-right p-3 rounded-lg ${textClass} ${bgClass}`}>
-          <div className="text-4xl font-light tabular-nums">12:00 <span className="text-lg opacity-70">PM</span></div>
-          <div className="text-sm mt-1 opacity-60">Saturday, February 1</div>
+        <div
+          className={`flex h-full flex-col justify-end rounded-lg p-3 text-right ${textClass} ${bgClass}`}
+        >
+          <div className="text-4xl font-light tabular-nums">
+            12:00 <span className="text-lg opacity-70">PM</span>
+          </div>
+          <div className="mt-1 text-sm opacity-60">Saturday, February 1</div>
         </div>
       );
     case 'weather':
       return (
-        <div className={`h-full flex items-center justify-end p-3 rounded-lg ${textClass} ${bgClass}`}>
+        <div
+          className={`flex h-full items-center justify-end rounded-lg p-3 ${textClass} ${bgClass}`}
+        >
           <div className="text-2xl font-light">72°F</div>
-          <div className="text-sm opacity-60 ml-2">Sunny</div>
+          <div className="ml-2 text-sm opacity-60">Sunny</div>
         </div>
       );
     case 'messages':
       return (
-        <div className={`h-full flex flex-col justify-end text-right p-3 rounded-lg ${textClass} ${bgClass}`}>
-          <div className="text-[10px] uppercase tracking-wider opacity-60 mb-1">Family Messages</div>
+        <div
+          className={`flex h-full flex-col justify-end rounded-lg p-3 text-right ${textClass} ${bgClass}`}
+        >
+          <div className="mb-1 text-[10px] uppercase tracking-wider opacity-60">
+            Family Messages
+          </div>
           <p className="text-sm opacity-90">Sample message text...</p>
-          <p className="text-xs opacity-50 mt-0.5">&mdash; Family</p>
+          <p className="mt-0.5 text-xs opacity-50">&mdash; Family</p>
         </div>
       );
     case 'calendar':
       return (
-        <div className={`h-full flex flex-col justify-end text-right p-3 rounded-lg ${textClass} ${bgClass}`}>
-          <div className="text-[10px] uppercase tracking-wider opacity-60 mb-1">Upcoming</div>
+        <div
+          className={`flex h-full flex-col justify-end rounded-lg p-3 text-right ${textClass} ${bgClass}`}
+        >
+          <div className="mb-1 text-[10px] uppercase tracking-wider opacity-60">Upcoming</div>
           <p className="text-sm opacity-90">Doctor appt @ 2pm</p>
-          <p className="text-xs opacity-50 mt-0.5">Tomorrow</p>
+          <p className="mt-0.5 text-xs opacity-50">Tomorrow</p>
         </div>
       );
     case 'birthdays':
       return (
-        <div className={`h-full flex flex-col justify-end text-right p-3 rounded-lg ${textClass} ${bgClass}`}>
-          <div className="text-[10px] uppercase tracking-wider opacity-60 mb-1">Birthdays</div>
+        <div
+          className={`flex h-full flex-col justify-end rounded-lg p-3 text-right ${textClass} ${bgClass}`}
+        >
+          <div className="mb-1 text-[10px] uppercase tracking-wider opacity-60">Birthdays</div>
           <p className="text-sm opacity-90">Mom in 3 days</p>
         </div>
       );
     case 'tasks':
       return (
-        <div className={`h-full flex flex-col justify-end text-right p-3 rounded-lg ${textClass} ${bgClass}`}>
-          <div className="text-[10px] uppercase tracking-wider opacity-60 mb-1">Tasks</div>
+        <div
+          className={`flex h-full flex-col justify-end rounded-lg p-3 text-right ${textClass} ${bgClass}`}
+        >
+          <div className="mb-1 text-[10px] uppercase tracking-wider opacity-60">Tasks</div>
           <p className="text-sm opacity-90">Buy groceries</p>
-          <p className="text-xs opacity-50 mt-0.5">3 more tasks</p>
+          <p className="mt-0.5 text-xs opacity-50">3 more tasks</p>
         </div>
       );
     case 'chores':
       return (
-        <div className={`h-full flex flex-col justify-end text-right p-3 rounded-lg ${textClass} ${bgClass}`}>
-          <div className="text-[10px] uppercase tracking-wider opacity-60 mb-1">Chores</div>
+        <div
+          className={`flex h-full flex-col justify-end rounded-lg p-3 text-right ${textClass} ${bgClass}`}
+        >
+          <div className="mb-1 text-[10px] uppercase tracking-wider opacity-60">Chores</div>
           <p className="text-sm opacity-90">Vacuum living room</p>
-          <p className="text-xs opacity-50 mt-0.5">Due today</p>
+          <p className="mt-0.5 text-xs opacity-50">Due today</p>
         </div>
       );
     case 'shopping':
       return (
-        <div className={`h-full flex flex-col justify-end text-right p-3 rounded-lg ${textClass} ${bgClass}`}>
-          <div className="text-[10px] uppercase tracking-wider opacity-60 mb-1">Shopping</div>
+        <div
+          className={`flex h-full flex-col justify-end rounded-lg p-3 text-right ${textClass} ${bgClass}`}
+        >
+          <div className="mb-1 text-[10px] uppercase tracking-wider opacity-60">Shopping</div>
           <p className="text-sm opacity-90">Milk, Eggs, Bread</p>
-          <p className="text-xs opacity-50 mt-0.5">5 items</p>
+          <p className="mt-0.5 text-xs opacity-50">5 items</p>
         </div>
       );
     case 'meals':
       return (
-        <div className={`h-full flex flex-col justify-end text-right p-3 rounded-lg ${textClass} ${bgClass}`}>
-          <div className="text-[10px] uppercase tracking-wider opacity-60 mb-1">Tonight&apos;s Dinner</div>
+        <div
+          className={`flex h-full flex-col justify-end rounded-lg p-3 text-right ${textClass} ${bgClass}`}
+        >
+          <div className="mb-1 text-[10px] uppercase tracking-wider opacity-60">
+            Tonight&apos;s Dinner
+          </div>
           <p className="text-sm opacity-90">Pasta Primavera</p>
         </div>
       );
     case 'photos':
       return (
-        <div className={`h-full flex flex-col justify-end text-right p-3 rounded-lg ${textClass} ${bgClass}`}>
-          <div className="text-[10px] uppercase tracking-wider opacity-60 mb-1">Photos</div>
+        <div
+          className={`flex h-full flex-col justify-end rounded-lg p-3 text-right ${textClass} ${bgClass}`}
+        >
+          <div className="mb-1 text-[10px] uppercase tracking-wider opacity-60">Photos</div>
           <p className="text-sm opacity-90">Family slideshow</p>
         </div>
       );
     default:
-      return <div className={`text-white p-3 text-sm rounded-lg ${bgClass}`}>{widget.i}</div>;
+      return <div className={`rounded-lg p-3 text-sm text-white ${bgClass}`}>{widget.i}</div>;
   }
 }

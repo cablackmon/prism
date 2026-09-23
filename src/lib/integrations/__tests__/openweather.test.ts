@@ -46,15 +46,17 @@ afterEach(() => {
 
 const SEC = (ms: number) => Math.floor(ms / 1000);
 
-function currentResponse(overrides: Partial<{
-  temp: number;
-  feelsLike: number;
-  humidity: number;
-  windSpeed: number;
-  weatherId: number;
-  description: string;
-  name: string;
-}> = {}) {
+function currentResponse(
+  overrides: Partial<{
+    temp: number;
+    feelsLike: number;
+    humidity: number;
+    windSpeed: number;
+    weatherId: number;
+    description: string;
+    name: string;
+  }> = {}
+) {
   return {
     main: {
       temp: overrides.temp ?? 300,
@@ -62,12 +64,14 @@ function currentResponse(overrides: Partial<{
       humidity: overrides.humidity ?? 65,
     },
     wind: { speed: overrides.windSpeed ?? 5 },
-    weather: [{
-      id: overrides.weatherId ?? 800,
-      main: 'Clear',
-      description: overrides.description ?? 'clear sky',
-      icon: '01d',
-    }],
+    weather: [
+      {
+        id: overrides.weatherId ?? 800,
+        main: 'Clear',
+        description: overrides.description ?? 'clear sky',
+        icon: '01d',
+      },
+    ],
     name: overrides.name ?? 'TestCity',
     sys: { sunrise: 1_700_000_000, sunset: 1_700_050_000 },
   };
@@ -84,7 +88,7 @@ function forecastItem(dt: number, temp: number, weatherId = 800) {
 function forecastResponse(
   items: ReturnType<typeof forecastItem>[],
   tzOffsetSec = CDT_OFFSET,
-  cityName = 'TestCity',
+  cityName = 'TestCity'
 ) {
   return {
     list: items,
@@ -148,22 +152,22 @@ describe('fetchCurrentWeather — unit conversions', () => {
 
 describe('fetchCurrentWeather — condition code mapping', () => {
   const cases: [number, string, string][] = [
-    [200,  'stormy',        'thunderstorm (200)'],
-    [299,  'stormy',        'thunderstorm (299)'],
-    [300,  'rainy',         'drizzle (300)'],
-    [399,  'rainy',         'drizzle (399)'],
-    [500,  'rainy',         'rain (500)'],
-    [599,  'rainy',         'rain (599)'],
-    [600,  'snowy',         'snow (600)'],
-    [699,  'snowy',         'snow (699)'],
-    [700,  'cloudy',        'atmosphere/mist (700)'],
-    [741,  'cloudy',        'fog (741)'],
-    [799,  'cloudy',        'atmosphere (799)'],
-    [800,  'sunny',         'clear sky (800)'],
-    [801,  'partly-cloudy', 'few clouds (801)'],
-    [802,  'partly-cloudy', 'scattered clouds (802)'],
-    [803,  'cloudy',        'broken clouds (803)'],
-    [804,  'cloudy',        'overcast (804)'],
+    [200, 'stormy', 'thunderstorm (200)'],
+    [299, 'stormy', 'thunderstorm (299)'],
+    [300, 'rainy', 'drizzle (300)'],
+    [399, 'rainy', 'drizzle (399)'],
+    [500, 'rainy', 'rain (500)'],
+    [599, 'rainy', 'rain (599)'],
+    [600, 'snowy', 'snow (600)'],
+    [699, 'snowy', 'snow (699)'],
+    [700, 'cloudy', 'atmosphere/mist (700)'],
+    [741, 'cloudy', 'fog (741)'],
+    [799, 'cloudy', 'atmosphere (799)'],
+    [800, 'sunny', 'clear sky (800)'],
+    [801, 'partly-cloudy', 'few clouds (801)'],
+    [802, 'partly-cloudy', 'scattered clouds (802)'],
+    [803, 'cloudy', 'broken clouds (803)'],
+    [804, 'cloudy', 'overcast (804)'],
   ];
 
   it.each(cases)('code %i → "%s" (%s)', async (code, expected) => {
@@ -199,13 +203,10 @@ describe('fetchForecast — timezone-aware daily grouping', () => {
     // 3am UTC May 1 = 10pm CDT April 30 (Thursday) → dateKey "2026-04-30"
     // Today (mocked) = 2026-05-01 in CDT, so April 30 is in the past and excluded.
     // Separately, 6am UTC May 1 = 1am CDT May 1 → dateKey "2026-05-01" → included.
-    const thu3amUtc = SEC(Date.UTC(2026, 4, 1, 3, 0, 0));  // CDT: Thu Apr 30 10pm
-    const fri6amUtc = SEC(Date.UTC(2026, 4, 1, 6, 0, 0));  // CDT: Fri May 1  1am
+    const thu3amUtc = SEC(Date.UTC(2026, 4, 1, 3, 0, 0)); // CDT: Thu Apr 30 10pm
+    const fri6amUtc = SEC(Date.UTC(2026, 4, 1, 6, 0, 0)); // CDT: Fri May 1  1am
 
-    mockFetch(forecastResponse([
-      forecastItem(thu3amUtc, 290),
-      forecastItem(fri6amUtc, 295),
-    ]));
+    mockFetch(forecastResponse([forecastItem(thu3amUtc, 290), forecastItem(fri6amUtc, 295)]));
     const { fetchForecast } = await import('../openweather');
     const result = await fetchForecast();
 
@@ -218,14 +219,16 @@ describe('fetchForecast — timezone-aware daily grouping', () => {
     // Build one item each for: Thu Apr 30, Fri May 1, Sat May 2 (all CDT).
     // Thu is yesterday → must be excluded. Fri and Sat → included.
     const thuItem = SEC(Date.UTC(2026, 3, 30, 12, 0, 0)); // Thu Apr 30 7am CDT
-    const friItem = SEC(Date.UTC(2026, 4, 1,  12, 0, 0)); // Fri May 1  7am CDT
-    const satItem = SEC(Date.UTC(2026, 4, 2,  12, 0, 0)); // Sat May 2  7am CDT
+    const friItem = SEC(Date.UTC(2026, 4, 1, 12, 0, 0)); // Fri May 1  7am CDT
+    const satItem = SEC(Date.UTC(2026, 4, 2, 12, 0, 0)); // Sat May 2  7am CDT
 
-    mockFetch(forecastResponse([
-      forecastItem(thuItem, 280),
-      forecastItem(friItem, 285),
-      forecastItem(satItem, 290),
-    ]));
+    mockFetch(
+      forecastResponse([
+        forecastItem(thuItem, 280),
+        forecastItem(friItem, 285),
+        forecastItem(satItem, 290),
+      ])
+    );
     const { fetchForecast } = await import('../openweather');
     const result = await fetchForecast();
 
@@ -276,12 +279,14 @@ describe('fetchForecast — timezone-aware daily grouping', () => {
   it('uses the most common condition code for the day', async () => {
     const base = SEC(Date.UTC(2026, 4, 1, 6, 0, 0)); // CDT: Fri 1am (today)
 
-    mockFetch(forecastResponse([
-      forecastItem(base,          290, 800), // sunny  ×1
-      forecastItem(base + 10800,  290, 500), // rainy  ×3
-      forecastItem(base + 21600,  290, 500),
-      forecastItem(base + 32400,  290, 500),
-    ]));
+    mockFetch(
+      forecastResponse([
+        forecastItem(base, 290, 800), // sunny  ×1
+        forecastItem(base + 10800, 290, 500), // rainy  ×3
+        forecastItem(base + 21600, 290, 500),
+        forecastItem(base + 32400, 290, 500),
+      ])
+    );
     const { fetchForecast } = await import('../openweather');
     const result = await fetchForecast();
 
@@ -291,11 +296,13 @@ describe('fetchForecast — timezone-aware daily grouping', () => {
   it('reports the max as high and min as low for the day', async () => {
     const base = SEC(Date.UTC(2026, 4, 1, 6, 0, 0));
 
-    mockFetch(forecastResponse([
-      forecastItem(base,         273.15, 800), // 32°F
-      forecastItem(base + 10800, 300,    800), // 80°F
-      forecastItem(base + 21600, 295,    800), // 71°F
-    ]));
+    mockFetch(
+      forecastResponse([
+        forecastItem(base, 273.15, 800), // 32°F
+        forecastItem(base + 10800, 300, 800), // 80°F
+        forecastItem(base + 21600, 295, 800), // 71°F
+      ])
+    );
     const { fetchForecast } = await import('../openweather');
     const result = await fetchForecast();
 
@@ -304,11 +311,9 @@ describe('fetchForecast — timezone-aware daily grouping', () => {
   });
 
   it('includes the city name and country in locationName', async () => {
-    mockFetch(forecastResponse(
-      [forecastItem(SEC(Date.UTC(2026, 4, 1, 12, 0, 0)), 290)],
-      0,
-      'Springfield',
-    ));
+    mockFetch(
+      forecastResponse([forecastItem(SEC(Date.UTC(2026, 4, 1, 12, 0, 0)), 290)], 0, 'Springfield')
+    );
     const { fetchForecast } = await import('../openweather');
     const result = await fetchForecast();
 
@@ -334,12 +339,14 @@ describe('fetchForecast — day boundary precision', () => {
   it('item 1 second before CDT midnight goes into the prior day and is excluded', async () => {
     // 2026-05-01 04:59:59 UTC = 2026-04-30 23:59:59 CDT → Thursday bucket (past)
     const justBeforeMidnight = SEC(Date.UTC(2026, 4, 1, 4, 59, 59));
-    const fridayNoon         = SEC(Date.UTC(2026, 4, 1, 12,  0,  0));
+    const fridayNoon = SEC(Date.UTC(2026, 4, 1, 12, 0, 0));
 
-    mockFetch(forecastResponse([
-      forecastItem(justBeforeMidnight, 400), // Thu — excluded
-      forecastItem(fridayNoon,         290), // Fri — included
-    ]));
+    mockFetch(
+      forecastResponse([
+        forecastItem(justBeforeMidnight, 400), // Thu — excluded
+        forecastItem(fridayNoon, 290), // Fri — included
+      ])
+    );
     const { fetchForecast } = await import('../openweather');
     const result = await fetchForecast();
 
@@ -352,12 +359,14 @@ describe('fetchForecast — day boundary precision', () => {
 
   it('past-day temperatures do not pollute the current day high/low', async () => {
     const thuItem = SEC(Date.UTC(2026, 3, 30, 12, 0, 0)); // Thu Apr 30 (past)
-    const friItem = SEC(Date.UTC(2026, 4,  1, 12, 0, 0)); // Fri May 1  (today)
+    const friItem = SEC(Date.UTC(2026, 4, 1, 12, 0, 0)); // Fri May 1  (today)
 
-    mockFetch(forecastResponse([
-      forecastItem(thuItem, 320), // 320 K → 116 °F — excluded
-      forecastItem(friItem, 280), // 280 K →  44 °F — today only
-    ]));
+    mockFetch(
+      forecastResponse([
+        forecastItem(thuItem, 320), // 320 K → 116 °F — excluded
+        forecastItem(friItem, 280), // 280 K →  44 °F — today only
+      ])
+    );
     const { fetchForecast } = await import('../openweather');
     const result = await fetchForecast();
 
@@ -370,15 +379,17 @@ describe('fetchForecast — day boundary precision', () => {
     // 04:59 UTC May 1 = 23:59 CDT Apr 30 (Thu) → excluded
     // 05:01 UTC May 1 = 00:01 CDT May 1  (Fri) → Fri, rainy
     // 06:00 UTC May 2 = 01:00 CDT May 2  (Sat) → Sat, partly-cloudy
-    const thuEnd   = SEC(Date.UTC(2026, 4, 1, 4, 59, 0));
-    const friStart = SEC(Date.UTC(2026, 4, 1, 5,  1, 0));
-    const satItem  = SEC(Date.UTC(2026, 4, 2, 6,  0, 0));
+    const thuEnd = SEC(Date.UTC(2026, 4, 1, 4, 59, 0));
+    const friStart = SEC(Date.UTC(2026, 4, 1, 5, 1, 0));
+    const satItem = SEC(Date.UTC(2026, 4, 2, 6, 0, 0));
 
-    mockFetch(forecastResponse([
-      forecastItem(thuEnd,   283, 800), // ~50 °F  Thu — excluded
-      forecastItem(friStart, 293, 500), // ~68 °F  Fri — rainy
-      forecastItem(satItem,  298, 801), // ~77 °F  Sat — partly-cloudy
-    ]));
+    mockFetch(
+      forecastResponse([
+        forecastItem(thuEnd, 283, 800), // ~50 °F  Thu — excluded
+        forecastItem(friStart, 293, 500), // ~68 °F  Fri — rainy
+        forecastItem(satItem, 298, 801), // ~77 °F  Sat — partly-cloudy
+      ])
+    );
     const { fetchForecast } = await import('../openweather');
     const result = await fetchForecast();
 
@@ -414,14 +425,12 @@ describe('fetchForecast — hourly slice', () => {
     // justIn: 2h before now → included (active interval lookback = 3h)
     // future24: exactly 24h after now → included
     // tooFar: 25h after now → excluded
-    const tooOld  = SEC(MOCK_NOW - 4 * 3_600_000);
-    const justIn  = SEC(MOCK_NOW - 2 * 3_600_000);
+    const tooOld = SEC(MOCK_NOW - 4 * 3_600_000);
+    const justIn = SEC(MOCK_NOW - 2 * 3_600_000);
     const future24 = SEC(MOCK_NOW + 24 * 3_600_000);
-    const tooFar  = SEC(MOCK_NOW + 25 * 3_600_000);
+    const tooFar = SEC(MOCK_NOW + 25 * 3_600_000);
 
-    const allItems = [tooOld, justIn, future24, tooFar].map((dt) =>
-      forecastItem(dt, 290)
-    );
+    const allItems = [tooOld, justIn, future24, tooFar].map((dt) => forecastItem(dt, 290));
 
     mockFetch(forecastResponse(allItems));
     const { fetchForecast } = await import('../openweather');
@@ -432,7 +441,8 @@ describe('fetchForecast — hourly slice', () => {
     // Re-mock since fetchWeatherData makes two fetch calls
     jest.restoreAllMocks();
     jest.spyOn(Date, 'now').mockReturnValue(MOCK_NOW);
-    jest.spyOn(global, 'fetch' as never)
+    jest
+      .spyOn(global, 'fetch' as never)
       .mockResolvedValueOnce({ ok: true, json: async () => currentResponse() } as never) // current
       .mockResolvedValueOnce({ ok: true, json: async () => forecastResponse(allItems) } as never); // forecast
 

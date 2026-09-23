@@ -19,12 +19,12 @@ export function apiError(message: string, status: number, details?: unknown): Ne
 }
 
 // Convenience shorthands for common status codes
-export const badRequest  = (msg: string, details?: unknown) => apiError(msg, 400, details);
-export const unauthorized = (msg = 'Authentication required')  => apiError(msg, 401);
-export const forbidden   = (msg = 'Forbidden')                 => apiError(msg, 403);
-export const notFound    = (msg: string)                       => apiError(msg, 404);
-export const conflict    = (msg: string)                       => apiError(msg, 409);
-export const serverError = (msg = 'Internal server error')     => apiError(msg, 500);
+export const badRequest = (msg: string, details?: unknown) => apiError(msg, 400, details);
+export const unauthorized = (msg = 'Authentication required') => apiError(msg, 401);
+export const forbidden = (msg = 'Forbidden') => apiError(msg, 403);
+export const notFound = (msg: string) => apiError(msg, 404);
+export const conflict = (msg: string) => apiError(msg, 409);
+export const serverError = (msg = 'Internal server error') => apiError(msg, 500);
 
 /**
  * Standard validation error — always uses ZodError.flatten() for consistent shape:

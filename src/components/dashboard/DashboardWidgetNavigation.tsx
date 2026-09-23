@@ -67,7 +67,11 @@ function isInteractiveTarget(target: EventTarget | null) {
  * Adds mouse double-click and touch double-tap navigation without delaying or
  * cancelling a widget's own single-tap controls.
  */
-export function DashboardWidgetNavigation({ widgetId, slug, children }: DashboardWidgetNavigationProps) {
+export function DashboardWidgetNavigation({
+  widgetId,
+  slug,
+  children,
+}: DashboardWidgetNavigationProps) {
   const router = useRouter();
   const widgetRoute = getWidgetRoute(widgetId);
   const route = widgetRoute && slug ? `/d/${encodeURIComponent(slug)}${widgetRoute}` : widgetRoute;
@@ -152,12 +156,15 @@ export function DashboardWidgetNavigation({ widgetId, slug, children }: Dashboar
     lastTap.current = null;
   }, []);
 
-  const handleDoubleClick = React.useCallback((event: React.MouseEvent<HTMLDivElement>) => {
-    if (isInteractiveTarget(event.target)) return;
-    // Edge may emit a synthetic dblclick after the touch pointer sequence.
-    if (Date.now() - touchNavigationAt.current <= DOUBLE_TAP_MS) return;
-    navigate();
-  }, [navigate]);
+  const handleDoubleClick = React.useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      if (isInteractiveTarget(event.target)) return;
+      // Edge may emit a synthetic dblclick after the touch pointer sequence.
+      if (Date.now() - touchNavigationAt.current <= DOUBLE_TAP_MS) return;
+      navigate();
+    },
+    [navigate]
+  );
 
   return (
     <div

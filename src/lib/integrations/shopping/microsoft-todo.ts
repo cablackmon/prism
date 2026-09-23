@@ -78,10 +78,7 @@ export const microsoftTodoShoppingProvider: ShoppingProvider = {
   displayName: 'Microsoft To-Do',
 
   async fetchLists(tokens: ShoppingProviderTokens): Promise<ExternalShoppingList[]> {
-    const response = await graphFetch<{ value: MsGraphTaskList[] }>(
-      '/me/todo/lists',
-      tokens
-    );
+    const response = await graphFetch<{ value: MsGraphTaskList[] }>('/me/todo/lists', tokens);
 
     return response.value.map((list) => ({
       id: list.id,
@@ -90,7 +87,10 @@ export const microsoftTodoShoppingProvider: ShoppingProvider = {
     }));
   },
 
-  async fetchItems(tokens: ShoppingProviderTokens, listId: string): Promise<ExternalShoppingItem[]> {
+  async fetchItems(
+    tokens: ShoppingProviderTokens,
+    listId: string
+  ): Promise<ExternalShoppingItem[]> {
     const response = await graphFetch<{ value: MsGraphTask[] }>(
       `/me/todo/lists/${listId}/tasks`,
       tokens
@@ -99,7 +99,10 @@ export const microsoftTodoShoppingProvider: ShoppingProvider = {
     return response.value.map((task) => parseGraphTask(task, listId));
   },
 
-  async createItem(tokens: ShoppingProviderTokens, item: CreateShoppingItemInput): Promise<ExternalShoppingItem> {
+  async createItem(
+    tokens: ShoppingProviderTokens,
+    item: CreateShoppingItemInput
+  ): Promise<ExternalShoppingItem> {
     const body: Record<string, unknown> = {
       title: item.name,
     };
@@ -111,14 +114,10 @@ export const microsoftTodoShoppingProvider: ShoppingProvider = {
       };
     }
 
-    const response = await graphFetch<MsGraphTask>(
-      `/me/todo/lists/${item.listId}/tasks`,
-      tokens,
-      {
-        method: 'POST',
-        body: JSON.stringify(body),
-      }
-    );
+    const response = await graphFetch<MsGraphTask>(`/me/todo/lists/${item.listId}/tasks`, tokens, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
 
     return parseGraphTask(response, item.listId);
   },
@@ -136,9 +135,7 @@ export const microsoftTodoShoppingProvider: ShoppingProvider = {
     }
 
     if (updates.notes !== undefined) {
-      body.body = updates.notes
-        ? { content: updates.notes, contentType: 'text' }
-        : null;
+      body.body = updates.notes ? { content: updates.notes, contentType: 'text' } : null;
     }
 
     if (updates.checked !== undefined) {
@@ -158,11 +155,7 @@ export const microsoftTodoShoppingProvider: ShoppingProvider = {
   },
 
   async deleteItem(tokens: ShoppingProviderTokens, itemId: string, listId: string): Promise<void> {
-    await graphFetch(
-      `/me/todo/lists/${listId}/tasks/${itemId}`,
-      tokens,
-      { method: 'DELETE' }
-    );
+    await graphFetch(`/me/todo/lists/${listId}/tasks/${itemId}`, tokens, { method: 'DELETE' });
   },
 
   async refreshTokens(tokens: ShoppingProviderTokens): Promise<ShoppingProviderTokens | null> {
@@ -179,19 +172,22 @@ export const microsoftTodoShoppingProvider: ShoppingProvider = {
     }
 
     try {
-      const response = await fetch('https://login.microsoftonline.com/consumers/oauth2/v2.0/token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          client_id: clientId,
-          client_secret: clientSecret,
-          refresh_token: tokens.refreshToken,
-          grant_type: 'refresh_token',
-          scope: 'Tasks.ReadWrite offline_access',
-        }),
-      });
+      const response = await fetch(
+        'https://login.microsoftonline.com/consumers/oauth2/v2.0/token',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({
+            client_id: clientId,
+            client_secret: clientSecret,
+            refresh_token: tokens.refreshToken,
+            grant_type: 'refresh_token',
+            scope: 'Tasks.ReadWrite offline_access',
+          }),
+        }
+      );
 
       if (!response.ok) {
         console.error('Failed to refresh Microsoft tokens:', await response.text());

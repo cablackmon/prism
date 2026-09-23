@@ -41,8 +41,8 @@ const OUT_DIR = 'proof/nox-11768';
 // exported into the page instead, so the artifact reports what governed.
 const ENTRY = `
 import { runBackend, WEBGL2_BACKEND, WEBGPU_BACKEND, collectWebgl2Info, collectWebgpuInfo, inspectCanvasPixels } from './src/lib/diagnostics/gpuRenderers.ts';
-import { createSphereMesh, backendEvidenceAt, decideRenderPath, classifyReadback, TARGET_VERTEX_COUNT, BENCHMARK_DURATION_MS, WARMUP_FRAMES } from './src/lib/diagnostics/gpuBenchmark.ts';
-window.__nox = { runBackend, WEBGL2_BACKEND, WEBGPU_BACKEND, collectWebgl2Info, collectWebgpuInfo, inspectCanvasPixels, createSphereMesh, backendEvidenceAt, decideRenderPath, classifyReadback, TARGET_VERTEX_COUNT, BENCHMARK_DURATION_MS, WARMUP_FRAMES };
+import { createSphereMesh, backendEvidenceAt, decideRenderPath, classifyReadback, classifyReadbackControl, TARGET_VERTEX_COUNT, BENCHMARK_DURATION_MS, WARMUP_FRAMES } from './src/lib/diagnostics/gpuBenchmark.ts';
+window.__nox = { runBackend, WEBGL2_BACKEND, WEBGPU_BACKEND, collectWebgl2Info, collectWebgpuInfo, inspectCanvasPixels, createSphereMesh, backendEvidenceAt, decideRenderPath, classifyReadback, classifyReadbackControl, TARGET_VERTEX_COUNT, BENCHMARK_DURATION_MS, WARMUP_FRAMES };
 `;
 
 const work = mkdtempSync(join(tmpdir(), 'nox-11768-'));
@@ -138,6 +138,7 @@ const result = await page.evaluate(async () => {
         error: webgpuInfo.error,
         runs: [],
         benchmarkedAdapter: null,
+        readbackControl: 'untested',
       };
   mark('webgpu backend complete');
   const wallMs = performance.now() - started;
@@ -250,6 +251,29 @@ for (const run of webgl2.runs) {
     run.wallElapsedMs >= result.benchmarkDurationMs,
     `wall=${run.wallElapsedMs.toFixed(1)}ms budget=${result.benchmarkDurationMs}ms`
   );
+}
+
+// The readback control is the sole reason an all-zero benchmark frame is ever
+// credited, so the artifact must state which verdict each backend got rather
+// than leaving a reader to infer it from the pixel status.
+for (const backend of result.backends) {
+  if (!backend.available) continue;
+  check(
+    `${backend.backend} recorded a readback-control verdict`,
+    ['working', 'broken', 'untested'].includes(backend.readbackControl),
+    String(backend.readbackControl)
+  );
+  for (const run of backend.runs) {
+    // The P1 from the round-2 review: a black frame may only be credited when
+    // the control independently proved readback is broken.
+    check(
+      `${backend.backend} ${run.resolution.key} all-zero frame credited only on a broken control`,
+      run.pixelCheck.status !== 'unavailable' ||
+        run.pixelCheck.uniqueColors === null ||
+        backend.readbackControl === 'broken',
+      `pixels=${run.pixelCheck.status} control=${backend.readbackControl}`
+    );
+  }
 }
 
 check(

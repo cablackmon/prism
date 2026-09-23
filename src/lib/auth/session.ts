@@ -1,5 +1,11 @@
 import { getRedisClient } from '@/lib/cache/getRedisClient';
-import { SESSION_DURATION, SESSION_ABSOLUTE_LIFETIME, MAX_LOGIN_ATTEMPTS, LOCKOUT_TIERS, LOCKOUT_TIER_TTL } from '@/lib/constants';
+import {
+  SESSION_DURATION,
+  SESSION_ABSOLUTE_LIFETIME,
+  MAX_LOGIN_ATTEMPTS,
+  LOCKOUT_TIERS,
+  LOCKOUT_TIER_TTL,
+} from '@/lib/constants';
 
 export interface SessionData {
   userId: string;
@@ -58,7 +64,10 @@ export async function createSession(
 
     return { token, expiresAt };
   } catch (error) {
-    console.error('Failed to create session:', error instanceof Error ? error.message : 'Unknown error');
+    console.error(
+      'Failed to create session:',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
     return null;
   }
 }
@@ -110,7 +119,10 @@ export async function validateSession(token: string): Promise<ValidateSessionRes
 
     return { ok: true, session: sessionData };
   } catch (error) {
-    console.error('Failed to validate session:', error instanceof Error ? error.message : 'Unknown error');
+    console.error(
+      'Failed to validate session:',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
     return { ok: false, reason: 'unavailable' };
   }
 }
@@ -125,7 +137,10 @@ export async function invalidateSession(token: string, userId?: string): Promise
       await client.sRem(`user_sessions:${userId}`, token);
     }
   } catch (error) {
-    console.error('Failed to invalidate session:', error instanceof Error ? error.message : 'Unknown error');
+    console.error(
+      'Failed to invalidate session:',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
   }
 }
 
@@ -142,11 +157,16 @@ export async function invalidateAllUserSessions(userId: string): Promise<void> {
     }
     await client.del(userSessionsKey);
   } catch (error) {
-    console.error('Failed to invalidate user sessions:', error instanceof Error ? error.message : 'Unknown error');
+    console.error(
+      'Failed to invalidate user sessions:',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
   }
 }
 
-export async function isLoginLockedOut(userId: string): Promise<{ lockedOut: boolean; retryAfter?: number }> {
+export async function isLoginLockedOut(
+  userId: string
+): Promise<{ lockedOut: boolean; retryAfter?: number }> {
   const client = await getRedisClient();
   if (!client) return { lockedOut: false };
 
@@ -163,7 +183,10 @@ export async function isLoginLockedOut(userId: string): Promise<{ lockedOut: boo
 
     return { lockedOut: false };
   } catch (error) {
-    console.error('Failed to check login lockout:', error instanceof Error ? error.message : 'Unknown error');
+    console.error(
+      'Failed to check login lockout:',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
     return { lockedOut: false };
   }
 }
@@ -196,7 +219,10 @@ export async function recordFailedLogin(userId: string): Promise<{ remainingAtte
 
     return { remainingAttempts: Math.max(0, MAX_LOGIN_ATTEMPTS - newCount) };
   } catch (error) {
-    console.error('Failed to record failed login:', error instanceof Error ? error.message : 'Unknown error');
+    console.error(
+      'Failed to record failed login:',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
     return { remainingAttempts: MAX_LOGIN_ATTEMPTS };
   }
 }
@@ -210,7 +236,10 @@ export async function clearLoginAttempts(userId: string): Promise<void> {
     await client.del(`login_attempts:${userId}`);
     await client.del(`login_lockout_tier:${userId}`);
   } catch (error) {
-    console.error('Failed to clear login attempts:', error instanceof Error ? error.message : 'Unknown error');
+    console.error(
+      'Failed to clear login attempts:',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
   }
 }
 

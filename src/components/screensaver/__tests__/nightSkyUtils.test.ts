@@ -23,21 +23,27 @@ describe('Night Sky schedule model', () => {
   const now = new Date('2026-08-29T12:00:00-05:00');
 
   it('keeps the next fourteen days and orders them', () => {
-    const result = nightSkyEvents([
-      event('later', '2026-09-03T10:00:00-05:00'),
-      event('past', '2026-08-28T10:00:00-05:00'),
-      event('next', '2026-08-29T13:00:00-05:00'),
-      event('far', '2026-09-20T10:00:00-05:00'),
-    ], now);
+    const result = nightSkyEvents(
+      [
+        event('later', '2026-09-03T10:00:00-05:00'),
+        event('past', '2026-08-28T10:00:00-05:00'),
+        event('next', '2026-08-29T13:00:00-05:00'),
+        event('far', '2026-09-20T10:00:00-05:00'),
+      ],
+      now
+    );
     expect(result.map(({ id }) => id)).toEqual(['next', 'later']);
   });
 
   it('finds tomorrow in local calendar time', () => {
-    const result = tomorrowEvents([
-      event('today', '2026-08-29T18:00:00-05:00'),
-      event('second', '2026-08-30T12:00:00-05:00'),
-      event('first', '2026-08-30T08:00:00-05:00'),
-    ], now);
+    const result = tomorrowEvents(
+      [
+        event('today', '2026-08-29T18:00:00-05:00'),
+        event('second', '2026-08-30T12:00:00-05:00'),
+        event('first', '2026-08-30T08:00:00-05:00'),
+      ],
+      now
+    );
     expect(result.map(({ id }) => id)).toEqual(['first', 'second']);
   });
 
@@ -57,23 +63,35 @@ describe('Night Sky static asset probe', () => {
   const expectedUrl = 'https://kyst-board.fly.dev/screensaver/nightsky.html';
 
   it('accepts a successful response from the exact asset URL', () => {
-    expect(isExpectedNightSkyResponse({ ok: true, redirected: false, url: expectedUrl }, expectedUrl)).toBe(true);
+    expect(
+      isExpectedNightSkyResponse({ ok: true, redirected: false, url: expectedUrl }, expectedUrl)
+    ).toBe(true);
   });
 
   it('rejects a followed redirect even when its final response is successful', () => {
-    expect(isExpectedNightSkyResponse({
-      ok: true,
-      redirected: true,
-      url: 'https://kyst-board.fly.dev/auth/household?next=%2Fscreensaver%2Fnightsky.html',
-    }, expectedUrl)).toBe(false);
+    expect(
+      isExpectedNightSkyResponse(
+        {
+          ok: true,
+          redirected: true,
+          url: 'https://kyst-board.fly.dev/auth/household?next=%2Fscreensaver%2Fnightsky.html',
+        },
+        expectedUrl
+      )
+    ).toBe(false);
   });
 
   it('rejects a successful response from an unexpected final URL', () => {
-    expect(isExpectedNightSkyResponse({
-      ok: true,
-      redirected: false,
-      url: 'https://kyst-board.fly.dev/auth/household',
-    }, expectedUrl)).toBe(false);
+    expect(
+      isExpectedNightSkyResponse(
+        {
+          ok: true,
+          redirected: false,
+          url: 'https://kyst-board.fly.dev/auth/household',
+        },
+        expectedUrl
+      )
+    ).toBe(false);
   });
 
   it('accepts an iframe that finished on the exact Night Sky asset URL', () => {
@@ -81,9 +99,11 @@ describe('Night Sky static asset probe', () => {
   });
 
   it('rejects an iframe redirected to the household login after the probe', () => {
-    expect(isExpectedNightSkyFrameUrl(
-      'https://kyst-board.fly.dev/auth/household?next=%2Fscreensaver%2Fnightsky.html',
-      expectedUrl,
-    )).toBe(false);
+    expect(
+      isExpectedNightSkyFrameUrl(
+        'https://kyst-board.fly.dev/auth/household?next=%2Fscreensaver%2Fnightsky.html',
+        expectedUrl
+      )
+    ).toBe(false);
   });
 });

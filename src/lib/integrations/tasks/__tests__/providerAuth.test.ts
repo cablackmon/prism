@@ -14,7 +14,12 @@ const mockRefreshTokens = jest.fn();
 jest.mock('@/lib/db/client', () => ({
   db: {
     select: () => ({ from: () => ({ where: (...a: unknown[]) => mockSelect(...a) }) }),
-    update: () => ({ set: (v: unknown) => { mockUpdateSet(v); return { where: () => Promise.resolve() }; } }),
+    update: () => ({
+      set: (v: unknown) => {
+        mockUpdateSet(v);
+        return { where: () => Promise.resolve() };
+      },
+    }),
   },
 }));
 jest.mock('@/lib/db/schema', () => ({ taskSources: { id: 'id' } }));
@@ -23,7 +28,9 @@ jest.mock('@/lib/utils/crypto', () => ({
   decrypt: (v: string) => v.replace(/^enc\(|\)$/g, ''),
   encrypt: (v: string) => `enc(${v})`,
 }));
-jest.mock('@/lib/integrations/tasks', () => ({ getTaskProvider: (...a: unknown[]) => mockGetProvider(...a) }));
+jest.mock('@/lib/integrations/tasks', () => ({
+  getTaskProvider: (...a: unknown[]) => mockGetProvider(...a),
+}));
 
 import { resolveTaskProviderAuth } from '../providerAuth';
 
@@ -65,14 +72,18 @@ describe('resolveTaskProviderAuth', () => {
 
   it('refreshes an expired token and persists the rotated pair encrypted', async () => {
     mockSelect.mockResolvedValue([source({ tokenExpiresAt: PAST })]);
-    mockRefreshTokens.mockResolvedValue({ accessToken: 'at2', refreshToken: 'rt2', expiresAt: FUTURE });
+    mockRefreshTokens.mockResolvedValue({
+      accessToken: 'at2',
+      refreshToken: 'rt2',
+      expiresAt: FUTURE,
+    });
 
     const res = await resolveTaskProviderAuth('s1');
     expect(res.ok).toBe(true);
     if (!res.ok) return;
     expect(res.tokens.accessToken).toBe('at2');
     expect(mockUpdateSet).toHaveBeenCalledWith(
-      expect.objectContaining({ accessToken: 'enc(at2)', refreshToken: 'enc(rt2)' }),
+      expect.objectContaining({ accessToken: 'enc(at2)', refreshToken: 'enc(rt2)' })
     );
   });
 

@@ -72,32 +72,36 @@ export function ActivityLogSection() {
   const [entityTypeFilter, setEntityTypeFilter] = useState('');
   const [userFilter, setUserFilter] = useState('');
 
-  const fetchLogs = useCallback(async (pageNum: number, append: boolean) => {
-    if (append) setLoadingMore(true); else setLoading(true);
+  const fetchLogs = useCallback(
+    async (pageNum: number, append: boolean) => {
+      if (append) setLoadingMore(true);
+      else setLoading(true);
 
-    try {
-      const params = new URLSearchParams({ page: String(pageNum), limit: '50' });
-      if (entityTypeFilter) params.set('entityType', entityTypeFilter);
-      if (userFilter) params.set('userId', userFilter);
+      try {
+        const params = new URLSearchParams({ page: String(pageNum), limit: '50' });
+        if (entityTypeFilter) params.set('entityType', entityTypeFilter);
+        if (userFilter) params.set('userId', userFilter);
 
-      const res = await fetch(`/api/audit-logs?${params}`);
-      if (!res.ok) throw new Error('Failed to fetch');
+        const res = await fetch(`/api/audit-logs?${params}`);
+        if (!res.ok) throw new Error('Failed to fetch');
 
-      const data = await res.json();
-      setTotal(data.total);
+        const data = await res.json();
+        setTotal(data.total);
 
-      if (append) {
-        setLogs((prev) => [...prev, ...data.logs]);
-      } else {
-        setLogs(data.logs);
+        if (append) {
+          setLogs((prev) => [...prev, ...data.logs]);
+        } else {
+          setLogs(data.logs);
+        }
+      } catch (err) {
+        console.error('Failed to load activity logs:', err);
+      } finally {
+        setLoading(false);
+        setLoadingMore(false);
       }
-    } catch (err) {
-      console.error('Failed to load activity logs:', err);
-    } finally {
-      setLoading(false);
-      setLoadingMore(false);
-    }
-  }, [entityTypeFilter, userFilter]);
+    },
+    [entityTypeFilter, userFilter]
+  );
 
   // Reset and fetch when filters change
   useEffect(() => {
@@ -116,11 +120,11 @@ export function ActivityLogSection() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold flex items-center gap-2">
+        <h2 className="flex items-center gap-2 text-2xl font-bold">
           <ClipboardList className="h-6 w-6" />
           Activity Log
         </h2>
-        <p className="text-sm text-muted-foreground mt-1">
+        <p className="mt-1 text-sm text-muted-foreground">
           30-day history of all actions taken in KYST
         </p>
       </div>
@@ -128,12 +132,12 @@ export function ActivityLogSection() {
       {/* Filters */}
       <Card>
         <CardContent className="p-4">
-          <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex flex-wrap items-center gap-3">
             <Filter className="h-4 w-4 text-muted-foreground" />
             <select
               value={entityTypeFilter}
               onChange={(e) => setEntityTypeFilter(e.target.value)}
-              className="bg-background border border-border rounded-md px-3 py-1.5 text-sm"
+              className="rounded-md border border-border bg-background px-3 py-1.5 text-sm"
             >
               {ENTITY_TYPE_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -144,7 +148,7 @@ export function ActivityLogSection() {
             <select
               value={userFilter}
               onChange={(e) => setUserFilter(e.target.value)}
-              className="bg-background border border-border rounded-md px-3 py-1.5 text-sm"
+              className="rounded-md border border-border bg-background px-3 py-1.5 text-sm"
             >
               <option value="">All members</option>
               {members.map((m) => (
@@ -165,8 +169,8 @@ export function ActivityLogSection() {
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : logs.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <ClipboardList className="h-10 w-10 mx-auto mb-2 opacity-50" />
+            <div className="py-12 text-center text-muted-foreground">
+              <ClipboardList className="mx-auto mb-2 h-10 w-10 opacity-50" />
               <p>No activity recorded yet</p>
             </div>
           ) : (
@@ -178,27 +182,23 @@ export function ActivityLogSection() {
                     color={log.userColor || '#888'}
                     imageUrl={log.userAvatarUrl ?? undefined}
                     size="sm"
-                    className="h-8 w-8 flex-shrink-0 mt-0.5"
+                    className="mt-0.5 h-8 w-8 flex-shrink-0"
                   />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-medium text-sm">
-                        {log.userName || 'System'}
-                      </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-sm font-medium">{log.userName || 'System'}</span>
                       <span
                         className={cn(
-                          'px-1.5 py-0.5 rounded text-xs font-medium',
+                          'rounded px-1.5 py-0.5 text-xs font-medium',
                           ACTION_COLORS[log.action] || 'bg-muted text-muted-foreground'
                         )}
                       >
                         {log.action}
                       </span>
                     </div>
-                    <p className="text-sm text-muted-foreground mt-0.5 truncate">
-                      {log.summary}
-                    </p>
+                    <p className="mt-0.5 truncate text-sm text-muted-foreground">{log.summary}</p>
                   </div>
-                  <span className="text-xs text-muted-foreground whitespace-nowrap flex-shrink-0">
+                  <span className="flex-shrink-0 whitespace-nowrap text-xs text-muted-foreground">
                     {relativeTime(log.createdAt)}
                   </span>
                 </div>
@@ -211,14 +211,10 @@ export function ActivityLogSection() {
       {/* Load more */}
       {hasMore && !loading && (
         <div className="flex justify-center">
-          <Button
-            variant="outline"
-            onClick={loadMore}
-            disabled={loadingMore}
-          >
+          <Button variant="outline" onClick={loadMore} disabled={loadingMore}>
             {loadingMore ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Loading...
               </>
             ) : (

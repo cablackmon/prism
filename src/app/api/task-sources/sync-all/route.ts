@@ -25,21 +25,19 @@ export async function POST(request: NextRequest) {
     const staleMinutes = parseInt(searchParams.get('staleMinutes') || '0');
 
     // Get all enabled sources
-    const allSources = await db
-      .select()
-      .from(taskSources)
-      .where(eq(taskSources.syncEnabled, true));
+    const allSources = await db.select().from(taskSources).where(eq(taskSources.syncEnabled, true));
 
     // Filter to stale sources if requested
     const now = new Date();
-    const sourcesToSync = staleMinutes > 0
-      ? allSources.filter(s => {
-          if (!s.lastSyncAt) return true;
-          const lastSync = new Date(s.lastSyncAt);
-          const minutesSinceSync = (now.getTime() - lastSync.getTime()) / (1000 * 60);
-          return minutesSinceSync >= staleMinutes;
-        })
-      : allSources;
+    const sourcesToSync =
+      staleMinutes > 0
+        ? allSources.filter((s) => {
+            if (!s.lastSyncAt) return true;
+            const lastSync = new Date(s.lastSyncAt);
+            const minutesSinceSync = (now.getTime() - lastSync.getTime()) / (1000 * 60);
+            return minutesSinceSync >= staleMinutes;
+          })
+        : allSources;
 
     if (sourcesToSync.length === 0) {
       return NextResponse.json({
@@ -112,9 +110,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     logError('Sync all error:', error);
-    return NextResponse.json(
-      { error: 'Failed to sync sources' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to sync sources' }, { status: 500 });
   }
 }

@@ -9,9 +9,14 @@ describe('ConfirmDialog', () => {
     const onCancel = jest.fn();
     const onConfirm = jest.fn();
     render(
-      <ConfirmDialog open title="Disable “Clean Dog Pads”?"
+      <ConfirmDialog
+        open
+        title="Disable “Clean Dog Pads”?"
         description="Assigned to: Cameron. This chore cannot be completed while disabled."
-        confirmLabel="Disable chore" onCancel={onCancel} onConfirm={onConfirm} />
+        confirmLabel="Disable chore"
+        onCancel={onCancel}
+        onConfirm={onConfirm}
+      />
     );
 
     const cancel = screen.getByRole('button', { name: 'Cancel' });

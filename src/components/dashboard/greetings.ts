@@ -3,7 +3,7 @@ const morningGreetings = [
   'Top of the morning',
   'Wakey wakey',
   'Hello sunshine',
-  'Look who\'s up',
+  "Look who's up",
   'Morning, superstar',
   'Ready to conquer today',
   'Coffee time',
@@ -11,7 +11,7 @@ const morningGreetings = [
   'Good morrow',
   'The early bird catches',
   'Carpe diem',
-  'You\'re up before the sun',
+  "You're up before the sun",
   'Morning glory',
   'Another day, another adventure',
 ];
@@ -21,7 +21,7 @@ const afternoonGreetings = [
   'Afternoon delight',
   'Halfway through',
   'Still crushing it',
-  'Keep on keepin\' on',
+  "Keep on keepin' on",
   'How goes the day',
   'Afternoon vibes',
   'Making things happen',
@@ -76,7 +76,7 @@ export function getGreeting(): string {
     if (arr.length === 0) return 'Hello';
     let hash = 0;
     for (let i = 0; i < daySeed.length; i++) {
-      hash = ((hash << 5) - hash) + daySeed.charCodeAt(i);
+      hash = (hash << 5) - hash + daySeed.charCodeAt(i);
       hash = hash & hash;
     }
     return arr[Math.abs(hash) % arr.length]!;

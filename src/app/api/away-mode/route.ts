@@ -17,10 +17,7 @@ interface AwayModeState {
 
 export async function GET() {
   try {
-    const [row] = await db
-      .select()
-      .from(settings)
-      .where(eq(settings.key, AWAY_MODE_KEY));
+    const [row] = await db.select().from(settings).where(eq(settings.key, AWAY_MODE_KEY));
 
     if (!row) {
       return NextResponse.json({
@@ -34,10 +31,7 @@ export async function GET() {
     return NextResponse.json(state);
   } catch (error) {
     logError('Error fetching away mode state:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch away mode state' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch away mode state' }, { status: 500 });
   }
 }
 
@@ -101,10 +95,7 @@ export async function POST(request: NextRequest) {
           enabledBy: null,
         };
 
-    const [existing] = await db
-      .select()
-      .from(settings)
-      .where(eq(settings.key, AWAY_MODE_KEY));
+    const [existing] = await db.select().from(settings).where(eq(settings.key, AWAY_MODE_KEY));
 
     if (existing) {
       await db
@@ -126,9 +117,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(newState);
   } catch (error) {
     logError('Error toggling away mode:', error);
-    return NextResponse.json(
-      { error: 'Failed to toggle away mode' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to toggle away mode' }, { status: 500 });
   }
 }

@@ -28,26 +28,17 @@ export async function POST(request: NextRequest) {
     const { memberId, externalListId, externalListName } = body;
 
     if (!externalListId) {
-      return NextResponse.json(
-        { error: 'externalListId is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'externalListId is required' }, { status: 400 });
     }
 
     if (!memberId) {
-      return NextResponse.json(
-        { error: 'memberId is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'memberId is required' }, { status: 400 });
     }
 
     // Get temp tokens from Redis
     const redis = await getRedisClient();
     if (!redis) {
-      return NextResponse.json(
-        { error: 'Redis unavailable' },
-        { status: 503 }
-      );
+      return NextResponse.json({ error: 'Redis unavailable' }, { status: 503 });
     }
 
     const tempKey = `ms-todo-temp:${auth.userId}:wish:${memberId}`;
@@ -63,16 +54,10 @@ export async function POST(request: NextRequest) {
     const { accessToken, refreshToken, tokenExpiresAt, accountEmail } = JSON.parse(stored);
 
     // Verify the member exists
-    const [member] = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, memberId));
+    const [member] = await db.select().from(users).where(eq(users.id, memberId));
 
     if (!member) {
-      return NextResponse.json(
-        { error: 'Member not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Member not found' }, { status: 404 });
     }
 
     // Check if source already exists for this member
@@ -80,10 +65,7 @@ export async function POST(request: NextRequest) {
       .select()
       .from(wishItemSources)
       .where(
-        and(
-          eq(wishItemSources.provider, 'microsoft_todo'),
-          eq(wishItemSources.memberId, memberId)
-        )
+        and(eq(wishItemSources.provider, 'microsoft_todo'), eq(wishItemSources.memberId, memberId))
       );
 
     if (existing) {

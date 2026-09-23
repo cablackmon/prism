@@ -2,7 +2,9 @@ import { speak, type AlexaResponse } from '../responses';
 import { voiceClient, VoiceApiError } from '../client';
 import { logError } from '@/lib/utils/logError';
 
-interface AlexaSlot { value?: string }
+interface AlexaSlot {
+  value?: string;
+}
 interface IntentArgs {
   slots?: Record<string, AlexaSlot | undefined>;
 }
@@ -17,7 +19,7 @@ export async function handlePostFamilyMessage(args: IntentArgs = {}): Promise<Al
   const message = args.slots?.Message?.value?.trim();
 
   if (!message) {
-    return speak("What message should I post?");
+    return speak('What message should I post?');
   }
 
   try {

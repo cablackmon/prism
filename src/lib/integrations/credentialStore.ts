@@ -16,8 +16,18 @@ import { settings } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { decrypt } from '@/lib/utils/crypto';
 
-type GoogleCredentials = { clientId: string; clientSecret: string; redirectUri: string; gmailRedirectUri: string };
-type MicrosoftCredentials = { clientId: string; clientSecret: string; redirectUri: string; tasksRedirectUri: string };
+type GoogleCredentials = {
+  clientId: string;
+  clientSecret: string;
+  redirectUri: string;
+  gmailRedirectUri: string;
+};
+type MicrosoftCredentials = {
+  clientId: string;
+  clientSecret: string;
+  redirectUri: string;
+  tasksRedirectUri: string;
+};
 type WeatherCredentials = { apiKey: string };
 type KrogerCredentials = { clientId: string; clientSecret: string; redirectUri: string };
 
@@ -27,13 +37,19 @@ async function getSetting(key: string): Promise<Record<string, string> | null> {
     if (row?.value && typeof row.value === 'object') {
       return row.value as Record<string, string>;
     }
-  } catch { /* fall through to env */ }
+  } catch {
+    /* fall through to env */
+  }
   return null;
 }
 
 function safeDecrypt(value: string | undefined): string | undefined {
   if (!value) return undefined;
-  try { return decrypt(value); } catch { return value; }
+  try {
+    return decrypt(value);
+  } catch {
+    return value;
+  }
 }
 
 export async function getGoogleCredentials(): Promise<GoogleCredentials | null> {
@@ -63,7 +79,11 @@ export async function getMicrosoftCredentials(): Promise<MicrosoftCredentials | 
       clientId: safeDecrypt(stored.clientId) ?? stored.clientId ?? '',
       clientSecret: safeDecrypt(stored.clientSecret) ?? stored.clientSecret ?? '',
       redirectUri: stored.redirectUri ?? process.env.MICROSOFT_REDIRECT_URI ?? '',
-      tasksRedirectUri: stored.tasksRedirectUri ?? process.env.MICROSOFT_TASKS_REDIRECT_URI ?? stored.redirectUri ?? '',
+      tasksRedirectUri:
+        stored.tasksRedirectUri ??
+        process.env.MICROSOFT_TASKS_REDIRECT_URI ??
+        stored.redirectUri ??
+        '',
     };
   }
   const clientId = process.env.MICROSOFT_CLIENT_ID;

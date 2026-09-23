@@ -31,11 +31,20 @@ interface CrudDeps {
 
 export function useShoppingCrudHandlers(deps: CrudDeps) {
   const {
-    requireAuth, refreshLists,
-    setShowAddItemModal, setDefaultCategory, setEditingItem,
-    setShowListModal, setEditingList, setActiveListId,
-    deleteItem, apiAddItem,
-    activeList, editingItem, editingList, lists,
+    requireAuth,
+    refreshLists,
+    setShowAddItemModal,
+    setDefaultCategory,
+    setEditingItem,
+    setShowListModal,
+    setEditingList,
+    setActiveListId,
+    deleteItem,
+    apiAddItem,
+    activeList,
+    editingItem,
+    editingList,
+    lists,
   } = deps;
 
   const handleAddItem = async (category?: string) => {
@@ -47,7 +56,10 @@ export function useShoppingCrudHandlers(deps: CrudDeps) {
 
   const handleNewList = async () => {
     const user = await requireAuth("Who's creating a list?");
-    if (user) { setEditingList(null); setShowListModal(true); }
+    if (user) {
+      setEditingList(null);
+      setShowListModal(true);
+    }
   };
 
   const handleEditItem = async (item: ShoppingItem) => {
@@ -62,11 +74,17 @@ export function useShoppingCrudHandlers(deps: CrudDeps) {
 
   const handleSaveNewItem = async (item: Omit<ShoppingItem, 'id' | 'createdAt'>) => {
     const user = await requireAuth("Who's adding an item?");
-    if (!user) { setShowAddItemModal(false); setDefaultCategory(null); return; }
+    if (!user) {
+      setShowAddItemModal(false);
+      setDefaultCategory(null);
+      return;
+    }
     try {
       await apiAddItem(item.listId, {
-        name: item.name, quantity: item.quantity ?? undefined,
-        unit: item.unit ?? undefined, category: item.category ?? undefined,
+        name: item.name,
+        quantity: item.quantity ?? undefined,
+        unit: item.unit ?? undefined,
+        category: item.category ?? undefined,
         notes: item.notes ?? undefined,
       });
       setShowAddItemModal(false);
@@ -81,10 +99,14 @@ export function useShoppingCrudHandlers(deps: CrudDeps) {
     if (!editingItem) return;
     try {
       const response = await fetch(`/api/shopping-items/${editingItem.id}`, {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: updatedItem.name, quantity: updatedItem.quantity,
-          unit: updatedItem.unit, category: updatedItem.category, notes: updatedItem.notes,
+          name: updatedItem.name,
+          quantity: updatedItem.quantity,
+          unit: updatedItem.unit,
+          category: updatedItem.category,
+          notes: updatedItem.notes,
         }),
       });
       if (!response.ok) throw new Error('Failed to update item');
@@ -95,20 +117,34 @@ export function useShoppingCrudHandlers(deps: CrudDeps) {
     }
   };
 
-  const handleSaveList = async (listData: { name: string; description?: string; assignedTo?: string; listType?: string; visibleCategories?: string[] | null }) => {
+  const handleSaveList = async (listData: {
+    name: string;
+    description?: string;
+    assignedTo?: string;
+    listType?: string;
+    visibleCategories?: string[] | null;
+  }) => {
     try {
       if (editingList) {
         const response = await fetch(`/api/shopping-lists/${editingList.id}`, {
-          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(listData),
         });
-        if (!response.ok) { const data = await response.json().catch(() => ({})); throw new Error(data.error || 'Failed to update list'); }
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data.error || 'Failed to update list');
+        }
       } else {
         const response = await fetch('/api/shopping-lists', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(listData),
         });
-        if (!response.ok) { const data = await response.json().catch(() => ({})); throw new Error(data.error || 'Failed to create list'); }
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data.error || 'Failed to create list');
+        }
         const newList = await response.json();
         setActiveListId(newList.id);
       }
@@ -116,23 +152,45 @@ export function useShoppingCrudHandlers(deps: CrudDeps) {
       setEditingList(null);
       refreshLists();
     } catch (err) {
-      toast({ title: err instanceof Error ? err.message : 'Failed to save list. Please try again.', variant: 'destructive' });
+      toast({
+        title: err instanceof Error ? err.message : 'Failed to save list. Please try again.',
+        variant: 'destructive',
+      });
     }
   };
 
-  const handleDeleteList = editingList ? async () => {
-    try {
-      const response = await fetch(`/api/shopping-lists/${editingList.id}`, { method: 'DELETE' });
-      if (!response.ok) { const data = await response.json().catch(() => ({})); throw new Error(data.error || 'Failed to delete list'); }
-      setShowListModal(false);
-      setEditingList(null);
-      const remainingLists = lists.filter(l => l.id !== editingList.id);
-      setActiveListId(remainingLists[0]?.id || '');
-      refreshLists();
-    } catch (err) {
-      toast({ title: err instanceof Error ? err.message : 'Failed to delete list. Please try again.', variant: 'destructive' });
-    }
-  } : undefined;
+  const handleDeleteList = editingList
+    ? async () => {
+        try {
+          const response = await fetch(`/api/shopping-lists/${editingList.id}`, {
+            method: 'DELETE',
+          });
+          if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.error || 'Failed to delete list');
+          }
+          setShowListModal(false);
+          setEditingList(null);
+          const remainingLists = lists.filter((l) => l.id !== editingList.id);
+          setActiveListId(remainingLists[0]?.id || '');
+          refreshLists();
+        } catch (err) {
+          toast({
+            title: err instanceof Error ? err.message : 'Failed to delete list. Please try again.',
+            variant: 'destructive',
+          });
+        }
+      }
+    : undefined;
 
-  return { handleAddItem, handleNewList, handleEditItem, handleDeleteItem, handleSaveNewItem, handleUpdateItem, handleSaveList, handleDeleteList };
+  return {
+    handleAddItem,
+    handleNewList,
+    handleEditItem,
+    handleDeleteItem,
+    handleSaveNewItem,
+    handleUpdateItem,
+    handleSaveList,
+    handleDeleteList,
+  };
 }

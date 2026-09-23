@@ -24,22 +24,29 @@ function isPrivateUrl(urlString: string): boolean {
   if (!['http:', 'https:'].includes(parsed.protocol)) return true;
 
   // Block localhost variants
-  if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1' || hostname === '[::1]') return true;
+  if (
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname === '::1' ||
+    hostname === '[::1]'
+  )
+    return true;
 
   // Block private IPv4 ranges
   const ipv4Match = hostname.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
   if (ipv4Match) {
     const [, a, b] = ipv4Match.map(Number);
-    if (a === 10) return true;                          // 10.0.0.0/8
+    if (a === 10) return true; // 10.0.0.0/8
     if (a === 172 && b! >= 16 && b! <= 31) return true; // 172.16.0.0/12
-    if (a === 192 && b === 168) return true;             // 192.168.0.0/16
-    if (a === 169 && b === 254) return true;             // 169.254.0.0/16 (link-local)
-    if (a === 0) return true;                            // 0.0.0.0/8
-    if (a! >= 224) return true;                          // multicast + reserved
+    if (a === 192 && b === 168) return true; // 192.168.0.0/16
+    if (a === 169 && b === 254) return true; // 169.254.0.0/16 (link-local)
+    if (a === 0) return true; // 0.0.0.0/8
+    if (a! >= 224) return true; // multicast + reserved
   }
 
   // Block common internal hostnames
-  if (hostname.endsWith('.local') || hostname.endsWith('.internal') || hostname.endsWith('.lan')) return true;
+  if (hostname.endsWith('.local') || hostname.endsWith('.internal') || hostname.endsWith('.lan'))
+    return true;
 
   return false;
 }
@@ -59,10 +66,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     if (!body.url || typeof body.url !== 'string') {
-      return NextResponse.json(
-        { error: 'URL is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'URL is required' }, { status: 400 });
     }
 
     // SSRF protection: block private/internal URLs
@@ -78,7 +82,10 @@ export async function POST(request: NextRequest) {
 
     if (!parsedRecipe) {
       return NextResponse.json(
-        { error: 'Could not find recipe data on this page. The site may not use schema.org markup, or may be blocking automated access.' },
+        {
+          error:
+            'Could not find recipe data on this page. The site may not use schema.org markup, or may be blocking automated access.',
+        },
         { status: 422 }
       );
     }
@@ -120,34 +127,25 @@ export async function POST(request: NextRequest) {
 
     if (error instanceof Error) {
       if (error.message === 'Invalid URL') {
-        return NextResponse.json(
-          { error: 'Invalid URL format' },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: 'Invalid URL format' }, { status: 400 });
       }
       if (error.message === 'Only HTTP/HTTPS URLs are supported') {
-        return NextResponse.json(
-          { error: 'Only HTTP/HTTPS URLs are supported' },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: 'Only HTTP/HTTPS URLs are supported' }, { status: 400 });
       }
       if (error.message.includes('403')) {
         return NextResponse.json(
-          { error: 'This site blocks automated requests (Cloudflare). The headless browser fallback could not load the page. Try a different recipe site, or add the recipe manually.' },
+          {
+            error:
+              'This site blocks automated requests (Cloudflare). The headless browser fallback could not load the page. Try a different recipe site, or add the recipe manually.',
+          },
           { status: 502 }
         );
       }
       if (error.message.startsWith('Failed to fetch URL:')) {
-        return NextResponse.json(
-          { error: error.message },
-          { status: 502 }
-        );
+        return NextResponse.json({ error: error.message }, { status: 502 });
       }
     }
 
-    return NextResponse.json(
-      { error: 'Failed to import recipe from URL' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to import recipe from URL' }, { status: 500 });
   }
 }

@@ -6,7 +6,9 @@ import { APP_VERSION } from '@/lib/constants';
 export async function GET() {
   const [dbOk, redisOk] = await Promise.all([
     checkDatabaseConnection().catch(() => false),
-    getRedisClient().then(c => c !== null).catch(() => false),
+    getRedisClient()
+      .then((c) => c !== null)
+      .catch(() => false),
   ]);
 
   const healthy = dbOk && redisOk;
@@ -25,7 +27,7 @@ export async function GET() {
     {
       status: healthy ? 200 : 503,
       headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' },
-    },
+    }
   );
 }
 

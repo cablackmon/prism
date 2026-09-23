@@ -50,7 +50,6 @@ function requestIsSecure(req: NextRequest): boolean {
   return req.url.startsWith('https://');
 }
 
-
 /**
  * POST /api/auth/login
  * Authenticates a user with their PIN.
@@ -103,7 +102,14 @@ export async function POST(request: NextRequest) {
       pin: users.pin,
     };
 
-    let user: { id: string; name: string; role: string; color: string; avatarUrl: string | null; pin: string | null };
+    let user: {
+      id: string;
+      name: string;
+      role: string;
+      color: string;
+      avatarUrl: string | null;
+      pin: string | null;
+    };
 
     if (hasMemberIndex) {
       const index = Math.floor(body.memberIndex as number);
@@ -178,14 +184,12 @@ export async function POST(request: NextRequest) {
       // Guest login (no PIN required)
       const session = await createSession(user.id, role, {
         userAgent: request.headers.get('user-agent') || undefined,
-        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+        ipAddress:
+          request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
       });
 
       if (!session) {
-        return NextResponse.json(
-          { error: 'Failed to create session' },
-          { status: 500 }
-        );
+        return NextResponse.json({ error: 'Failed to create session' }, { status: 500 });
       }
 
       // Set cookies
@@ -229,10 +233,7 @@ export async function POST(request: NextRequest) {
 
     // PIN is required for non-guests
     if (!body.pin || typeof body.pin !== 'string') {
-      return NextResponse.json(
-        { error: 'PIN is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'PIN is required' }, { status: 400 });
     }
 
     // Verify PIN using bcrypt
@@ -256,14 +257,12 @@ export async function POST(request: NextRequest) {
     // Create session in Redis
     const session = await createSession(user.id, role, {
       userAgent: request.headers.get('user-agent') || undefined,
-      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+      ipAddress:
+        request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
     });
 
     if (!session) {
-      return NextResponse.json(
-        { error: 'Failed to create session' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to create session' }, { status: 500 });
     }
 
     // Set session cookies
@@ -307,9 +306,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     logError('Login error:', error);
-    return NextResponse.json(
-      { error: 'Login failed' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Login failed' }, { status: 500 });
   }
 }

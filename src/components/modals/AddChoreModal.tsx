@@ -41,7 +41,15 @@ export interface CreatedChore {
   title: string;
   description: string | null;
   category: 'cleaning' | 'laundry' | 'dishes' | 'yard' | 'pets' | 'trash' | 'other';
-  frequency: 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'quarterly' | 'semi-annually' | 'annually' | 'custom';
+  frequency:
+    | 'daily'
+    | 'weekly'
+    | 'biweekly'
+    | 'monthly'
+    | 'quarterly'
+    | 'semi-annually'
+    | 'annually'
+    | 'custom';
   customIntervalDays?: number | null;
   pointValue: number;
   requiresApproval: boolean;
@@ -60,7 +68,15 @@ export interface ChoreToEdit {
   title: string;
   description?: string;
   category: 'cleaning' | 'laundry' | 'dishes' | 'yard' | 'pets' | 'trash' | 'other';
-  frequency: 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'quarterly' | 'semi-annually' | 'annually' | 'custom';
+  frequency:
+    | 'daily'
+    | 'weekly'
+    | 'biweekly'
+    | 'monthly'
+    | 'quarterly'
+    | 'semi-annually'
+    | 'annually'
+    | 'custom';
   customIntervalDays?: number;
   startDay?: string | null;
   pointValue: number;
@@ -91,32 +107,45 @@ export interface AddChoreModalProps {
  */
 function getCategoryEmoji(category: string): string {
   switch (category) {
-    case 'cleaning': return '🧹';
-    case 'laundry': return '🧺';
-    case 'dishes': return '🍽️';
-    case 'yard': return '🌿';
-    case 'pets': return '🐾';
-    case 'trash': return '🗑️';
-    default: return '✨';
+    case 'cleaning':
+      return '🧹';
+    case 'laundry':
+      return '🧺';
+    case 'dishes':
+      return '🍽️';
+    case 'yard':
+      return '🌿';
+    case 'pets':
+      return '🐾';
+    case 'trash':
+      return '🗑️';
+    default:
+      return '✨';
   }
 }
 
 /**
  * ADD CHORE MODAL COMPONENT
  */
-export function AddChoreModal({
-  open,
-  onOpenChange,
-  onChoreCreated,
-  chore,
-}: AddChoreModalProps) {
+export function AddChoreModal({ open, onOpenChange, onChoreCreated, chore }: AddChoreModalProps) {
   const isEditMode = !!chore;
 
   // Form state
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState<'cleaning' | 'laundry' | 'dishes' | 'yard' | 'pets' | 'trash' | 'other'>('cleaning');
-  const [frequency, setFrequency] = useState<'daily' | 'weekly' | 'biweekly' | 'monthly' | 'quarterly' | 'semi-annually' | 'annually' | 'custom'>('weekly');
+  const [category, setCategory] = useState<
+    'cleaning' | 'laundry' | 'dishes' | 'yard' | 'pets' | 'trash' | 'other'
+  >('cleaning');
+  const [frequency, setFrequency] = useState<
+    | 'daily'
+    | 'weekly'
+    | 'biweekly'
+    | 'monthly'
+    | 'quarterly'
+    | 'semi-annually'
+    | 'annually'
+    | 'custom'
+  >('weekly');
   const [customIntervalDays, setCustomIntervalDays] = useState<number>(7);
   const [startDay, setStartDay] = useState<string>('');
   const [pointValue, setPointValue] = useState(5);
@@ -220,11 +249,13 @@ export function AddChoreModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-md overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEditMode ? 'Edit Chore' : 'Add Chore'}</DialogTitle>
           <DialogDescription>
-            {isEditMode ? 'Update chore details and assignment.' : 'Create a new household chore with category and frequency.'}
+            {isEditMode
+              ? 'Update chore details and assignment.'
+              : 'Create a new household chore with category and frequency.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -256,27 +287,39 @@ export function AddChoreModal({
           {/* Category */}
           <div className="space-y-2">
             <Label>Category</Label>
-            <div className="flex gap-2 flex-wrap">
-              {(['cleaning', 'laundry', 'dishes', 'yard', 'pets', 'trash', 'other'] as const).map((cat) => (
-                <Button
-                  key={cat}
-                  type="button"
-                  variant={category === cat ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setCategory(cat)}
-                  className="capitalize"
-                >
-                  <Emoji e={getCategoryEmoji(cat)} /> {cat}
-                </Button>
-              ))}
+            <div className="flex flex-wrap gap-2">
+              {(['cleaning', 'laundry', 'dishes', 'yard', 'pets', 'trash', 'other'] as const).map(
+                (cat) => (
+                  <Button
+                    key={cat}
+                    type="button"
+                    variant={category === cat ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setCategory(cat)}
+                    className="capitalize"
+                  >
+                    <Emoji e={getCategoryEmoji(cat)} /> {cat}
+                  </Button>
+                )
+              )}
             </div>
           </div>
 
           {/* Frequency */}
           <div className="space-y-2">
             <Label>Frequency</Label>
-            <div className="flex gap-2 flex-wrap">
-              {(['daily', 'weekly', 'biweekly', 'monthly', 'quarterly', 'semi-annually', 'annually'] as const).map((freq) => (
+            <div className="flex flex-wrap gap-2">
+              {(
+                [
+                  'daily',
+                  'weekly',
+                  'biweekly',
+                  'monthly',
+                  'quarterly',
+                  'semi-annually',
+                  'annually',
+                ] as const
+              ).map((freq) => (
                 <Button
                   key={freq}
                   type="button"
@@ -307,10 +350,10 @@ export function AddChoreModal({
           )}
 
           {/* Start Day / Reset Day */}
-          {(['weekly', 'biweekly'].includes(frequency)) && (
+          {['weekly', 'biweekly'].includes(frequency) && (
             <div className="space-y-2">
               <Label>Reset Day</Label>
-              <div className="flex gap-2 flex-wrap">
+              <div className="flex flex-wrap gap-2">
                 {DAYS_SHORT_ARRAY.map((day, idx) => (
                   <Button
                     key={day}
@@ -324,12 +367,14 @@ export function AddChoreModal({
                 ))}
               </div>
               <p className="text-xs text-muted-foreground">
-                {startDay ? `Resets every ${DAYS_LONG_ARRAY[parseInt(startDay)]}` : 'Defaults to Sunday'}
+                {startDay
+                  ? `Resets every ${DAYS_LONG_ARRAY[parseInt(startDay)]}`
+                  : 'Defaults to Sunday'}
               </p>
             </div>
           )}
 
-          {(['monthly', 'quarterly', 'semi-annually'].includes(frequency)) && (
+          {['monthly', 'quarterly', 'semi-annually'].includes(frequency) && (
             <div className="space-y-2">
               <Label htmlFor="start-day-month">Reset Day of Month</Label>
               <Input
@@ -340,7 +385,9 @@ export function AddChoreModal({
                 min="1"
                 max="28"
               />
-              <p className="text-xs text-muted-foreground">Day of the month the chore resets (1-28)</p>
+              <p className="text-xs text-muted-foreground">
+                Day of the month the chore resets (1-28)
+              </p>
             </div>
           )}
 
@@ -354,7 +401,9 @@ export function AddChoreModal({
                 placeholder="03-15"
                 pattern="\d{2}-\d{2}"
               />
-              <p className="text-xs text-muted-foreground">Month and day the chore resets (e.g., 03-15 for March 15)</p>
+              <p className="text-xs text-muted-foreground">
+                Month and day the chore resets (e.g., 03-15 for March 15)
+              </p>
             </div>
           )}
 
@@ -392,7 +441,7 @@ export function AddChoreModal({
                 Loading family members...
               </div>
             ) : (
-              <div className="flex gap-2 flex-wrap">
+              <div className="flex flex-wrap gap-2">
                 <Button
                   type="button"
                   variant={!assignedTo ? 'default' : 'outline'}
@@ -411,7 +460,7 @@ export function AddChoreModal({
                     className="gap-1"
                   >
                     <div
-                      className="w-3 h-3 rounded-full"
+                      className="h-3 w-3 rounded-full"
                       style={{ backgroundColor: member.color }}
                     />
                     {member.name}
@@ -423,9 +472,7 @@ export function AddChoreModal({
 
           {/* Error message */}
           {error && (
-            <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-lg">
-              {error}
-            </div>
+            <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
           )}
 
           {/* Footer */}
@@ -441,11 +488,13 @@ export function AddChoreModal({
             <Button type="submit" disabled={!title.trim() || isSubmitting}>
               {isSubmitting ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   {isEditMode ? 'Saving...' : 'Creating...'}
                 </>
+              ) : isEditMode ? (
+                'Save Changes'
               ) : (
-                isEditMode ? 'Save Changes' : 'Add Chore'
+                'Add Chore'
               )}
             </Button>
           </DialogFooter>

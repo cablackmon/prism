@@ -11,7 +11,7 @@ import * as path from 'path';
 
 const BACKUP_DIR = path.join(process.cwd(), 'backups');
 const BACKUP_STALE_HOURS = 26; // alert if no backup in 26h (daily backups)
-const OAUTH_WARN_DAYS = 7;     // warn if OAuth token expires within 7 days
+const OAUTH_WARN_DAYS = 7; // warn if OAuth token expires within 7 days
 
 interface CheckResult {
   status: 'ok' | 'warn' | 'error';
@@ -23,7 +23,8 @@ async function checkLastBackup(): Promise<CheckResult> {
     if (!fs.existsSync(BACKUP_DIR)) {
       return { status: 'warn', detail: 'Backup directory not found' };
     }
-    const files = fs.readdirSync(BACKUP_DIR)
+    const files = fs
+      .readdirSync(BACKUP_DIR)
       .filter((f) => f.endsWith('.sql.gz') || f.endsWith('.sql'))
       .map((f) => ({
         name: f,
@@ -56,11 +57,13 @@ async function checkOAuthTokens(): Promise<CheckResult> {
     const warnBefore = new Date(Date.now() + OAUTH_WARN_DAYS * 24 * 60 * 60 * 1000);
 
     const [expiredCalendar, expiredPhotos] = await Promise.all([
-      db.select({ id: calendarSources.id })
+      db
+        .select({ id: calendarSources.id })
         .from(calendarSources)
         .where(lt(calendarSources.tokenExpiresAt, warnBefore))
         .limit(1),
-      db.select({ id: photoSources.id })
+      db
+        .select({ id: photoSources.id })
         .from(photoSources)
         .where(lt(photoSources.tokenExpiresAt, warnBefore))
         .limit(1),
@@ -88,7 +91,9 @@ export async function GET() {
 
   const [dbOk, redisOk, backupCheck, oauthCheck] = await Promise.all([
     checkDatabaseConnection().catch(() => false),
-    getRedisClient().then((c) => c !== null).catch(() => false),
+    getRedisClient()
+      .then((c) => c !== null)
+      .catch(() => false),
     checkLastBackup(),
     checkOAuthTokens(),
   ]);
@@ -97,8 +102,8 @@ export async function GET() {
     !dbOk || !redisOk || backupCheck.status === 'error' || oauthCheck.status === 'error'
       ? 'degraded'
       : backupCheck.status === 'warn' || oauthCheck.status === 'warn'
-      ? 'warn'
-      : 'ok';
+        ? 'warn'
+        : 'ok';
 
   // Optional webhook notification on degradation
   const webhookUrl = process.env.ALERT_WEBHOOK_URL;
@@ -130,6 +135,6 @@ export async function GET() {
     {
       status: overall === 'degraded' ? 503 : 200,
       headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' },
-    },
+    }
   );
 }

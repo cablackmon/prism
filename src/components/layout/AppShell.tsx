@@ -21,7 +21,12 @@
  */
 
 'use client';
-import { BoardStarfield, BoardWordmark, BoardThemeContext, useKystTheme } from '@/components/theme/KystTheme';
+import {
+  BoardStarfield,
+  BoardWordmark,
+  BoardThemeContext,
+  useKystTheme,
+} from '@/components/theme/KystTheme';
 
 import * as React from 'react';
 import { SideNav } from './SideNav';
@@ -129,42 +134,68 @@ export function AppShell({
   const nox = board && configuredTheme === 'nox';
   return (
     <BoardThemeContext.Provider value={nox ? 'nox' : 'classic'}>
-    <div data-kyst-theme={board ? configuredTheme : undefined} className={cn('relative min-h-screen', nox && 'kyst-board', !showWallpaper && 'bg-background')}>
-      {/* WALLPAPER BACKGROUND (only on dashboard/screensaver) */}
-      {nox ? <BoardStarfield /> : showWallpaper && <WallpaperBackground />}
-
-      {/* SIDE NAVIGATION - landscape mode on larger screens */}
-      {!hideNav && showSideNav && (
-        <SideNav user={user} onLogout={onLogout} onLogin={onLogin} uiHidden={uiHidden || measureHideNav} />
-      )}
-
-      {/* MAIN CONTENT AREA */}
-      <main
+      <div
+        data-kyst-theme={board ? configuredTheme : undefined}
         className={cn(
-          'min-h-screen',
-          // Snap margin/padding when nav hides — animating layout properties causes
-          // layout reflow on every frame, which is expensive on weak CPUs (Atom).
-          // The nav itself slides smoothly via GPU-composited transform; the content
-          // just needs to reflow once when the class changes.
-          !hideNav && showSideNav && !measureHideNav && !uiHidden && 'ml-16',
-          !hideNav && showPortraitNav && !measureHideNav && !uiHidden && 'pb-24',
-          className
+          'relative min-h-screen',
+          nox && 'kyst-board',
+          !showWallpaper && 'bg-background'
         )}
       >
-        {nox && isMobile && !uiHidden && <div className="kyst-mobile-brand"><BoardWordmark /></div>}
-        {children}
-      </main>
+        {/* WALLPAPER BACKGROUND (only on dashboard/screensaver) */}
+        {nox ? <BoardStarfield /> : showWallpaper && <WallpaperBackground />}
 
-      {/* PORTRAIT BOTTOM NAVIGATION - portrait mode on larger screens */}
-      {!hideNav && showPortraitNav && (
-        <PortraitNav user={user} onLogin={onLogin} onLogout={onLogout} uiHidden={uiHidden || measureHideNav} />
-      )}
+        {/* SIDE NAVIGATION - landscape mode on larger screens */}
+        {!hideNav && showSideNav && (
+          <SideNav
+            user={user}
+            onLogout={onLogout}
+            onLogin={onLogin}
+            uiHidden={uiHidden || measureHideNav}
+          />
+        )}
 
-      {/* MOBILE FAB - small screens only */}
-      {!hideNav && showMobileNav && (
-        <MobileFab user={user} onLogin={onLogin} onLogout={onLogout} uiHidden={uiHidden || measureHideNav} />
-      )}
-    </div>
+        {/* MAIN CONTENT AREA */}
+        <main
+          className={cn(
+            'min-h-screen',
+            // Snap margin/padding when nav hides — animating layout properties causes
+            // layout reflow on every frame, which is expensive on weak CPUs (Atom).
+            // The nav itself slides smoothly via GPU-composited transform; the content
+            // just needs to reflow once when the class changes.
+            !hideNav && showSideNav && !measureHideNav && !uiHidden && 'ml-16',
+            !hideNav && showPortraitNav && !measureHideNav && !uiHidden && 'pb-24',
+            className
+          )}
+        >
+          {nox && isMobile && !uiHidden && (
+            <div className="kyst-mobile-brand">
+              <BoardWordmark />
+            </div>
+          )}
+          {children}
+        </main>
+
+        {/* PORTRAIT BOTTOM NAVIGATION - portrait mode on larger screens */}
+        {!hideNav && showPortraitNav && (
+          <PortraitNav
+            user={user}
+            onLogin={onLogin}
+            onLogout={onLogout}
+            uiHidden={uiHidden || measureHideNav}
+          />
+        )}
+
+        {/* MOBILE FAB - small screens only */}
+        {!hideNav && showMobileNav && (
+          <MobileFab
+            user={user}
+            onLogin={onLogin}
+            onLogout={onLogout}
+            uiHidden={uiHidden || measureHideNav}
+          />
+        )}
+      </div>
     </BoardThemeContext.Provider>
   );
 }

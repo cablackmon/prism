@@ -79,9 +79,15 @@ export function hexToHslValues(hex: string): string {
 
   let h: number;
   switch (max) {
-    case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
-    case g: h = ((b - r) / d + 2) / 6; break;
-    default: h = ((r - g) / d + 4) / 6; break;
+    case r:
+      h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+      break;
+    case g:
+      h = ((b - r) / d + 2) / 6;
+      break;
+    default:
+      h = ((r - g) / d + 4) / 6;
+      break;
   }
 
   return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;

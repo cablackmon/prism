@@ -30,7 +30,7 @@ const eventBaseSchema = z.object({
 });
 
 export const createEventSchema = eventBaseSchema.refine(
-  data => new Date(data.endTime) >= new Date(data.startTime),
+  (data) => new Date(data.endTime) >= new Date(data.startTime),
   {
     message: 'End time must be after start time',
     path: ['endTime'],
@@ -63,7 +63,16 @@ export const createChoreSchema = z.object({
   description: z.string().max(5000).optional(),
   category: z.enum(['cleaning', 'laundry', 'dishes', 'yard', 'pets', 'trash', 'other']),
   assignedTo: uuidSchema.optional(),
-  frequency: z.enum(['daily', 'weekly', 'biweekly', 'monthly', 'quarterly', 'semi-annually', 'annually', 'custom']),
+  frequency: z.enum([
+    'daily',
+    'weekly',
+    'biweekly',
+    'monthly',
+    'quarterly',
+    'semi-annually',
+    'annually',
+    'custom',
+  ]),
   customIntervalDays: z.number().int().min(1).max(365).optional(),
   startDay: z.string().max(10).optional().nullable(),
   pointValue: z.number().int().min(0).max(1000).optional().default(0),
@@ -71,8 +80,16 @@ export const createChoreSchema = z.object({
   createdBy: uuidSchema.optional(),
   // Optional initial due date/time. When omitted, server computes nextDue
   // from frequency.
-  nextDue: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)').nullable().optional(),
-  nextDueTime: z.string().regex(/^\d{2}:\d{2}$/, 'Invalid time format (HH:mm)').nullable().optional(),
+  nextDue: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)')
+    .nullable()
+    .optional(),
+  nextDueTime: z
+    .string()
+    .regex(/^\d{2}:\d{2}$/, 'Invalid time format (HH:mm)')
+    .nullable()
+    .optional(),
 });
 
 export const updateChoreSchema = createChoreSchema.partial().extend({
@@ -133,7 +150,11 @@ export const createMealSchema = z.object({
   dayOfWeek: z.enum(DAYS_OF_WEEK),
   mealType: z.enum(['breakfast', 'lunch', 'dinner', 'snack']),
   // HH:mm time-of-day for time-grid placement; nullable to allow clearing.
-  mealTime: z.string().regex(/^\d{2}:\d{2}$/, 'Invalid time format (HH:mm)').nullable().optional(),
+  mealTime: z
+    .string()
+    .regex(/^\d{2}:\d{2}$/, 'Invalid time format (HH:mm)')
+    .nullable()
+    .optional(),
   source: z.enum(['internal', 'external']).optional().default('internal'),
   sourceId: z.string().max(255).optional(),
   createdBy: uuidSchema.optional(),
@@ -261,10 +282,15 @@ export const createBusRouteSchema = z.object({
   label: z.string().min(1, 'Label is required').max(255),
   scheduledTime: z.string().regex(/^\d{2}:\d{2}$/, 'Must be HH:mm format'),
   activeDays: z.array(z.number().int().min(0).max(6)).optional().default([1, 2, 3, 4, 5]),
-  checkpoints: z.array(z.object({
-    name: z.string().min(1).max(255),
-    sortOrder: z.number().int().min(0),
-  })).optional().default([]),
+  checkpoints: z
+    .array(
+      z.object({
+        name: z.string().min(1).max(255),
+        sortOrder: z.number().int().min(0),
+      })
+    )
+    .optional()
+    .default([]),
   stopName: z.string().max(255).optional(),
   schoolName: z.string().max(255).optional(),
   enabled: z.boolean().optional().default(true),
@@ -347,7 +373,11 @@ const widgetConfigSchema = z.object({
 
 export const createLayoutSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100),
-  slug: z.string().max(100).regex(/^[a-z0-9-]+$/).optional(),
+  slug: z
+    .string()
+    .max(100)
+    .regex(/^[a-z0-9-]+$/)
+    .optional(),
   isDefault: z.boolean().optional().default(false),
   widgets: z.array(widgetConfigSchema).min(1, 'At least one widget is required'),
   screensaverWidgets: z.array(widgetConfigSchema).nullable().optional(),

@@ -20,7 +20,12 @@ function loadSetting(): SeasonalThemeKey {
 
 function applySeasonalVars(month: number | null, isDark: boolean) {
   const root = document.documentElement;
-  const vars = ['--seasonal-accent', '--seasonal-accent-foreground', '--seasonal-highlight', '--seasonal-subtle'];
+  const vars = [
+    '--seasonal-accent',
+    '--seasonal-accent-foreground',
+    '--seasonal-highlight',
+    '--seasonal-subtle',
+  ];
 
   if (month === null) {
     // Remove seasonal vars (revert to defaults in CSS)
@@ -42,9 +47,7 @@ export function useSeasonalTheme() {
   const [setting, setSetting] = useState<SeasonalThemeKey>(loadSetting);
 
   const activeMonth: number | null =
-    setting === 'none' ? null :
-    setting === 'auto' ? getCurrentMonth() :
-    setting;
+    setting === 'none' ? null : setting === 'auto' ? getCurrentMonth() : setting;
 
   const setSeasonalTheme = useCallback((value: SeasonalThemeKey) => {
     setSetting(value);

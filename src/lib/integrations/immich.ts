@@ -139,9 +139,7 @@ export function parseImmichShareUrl(url: string): { serverUrl: string; shareKey:
     throw new Error('Immich share URL must contain /share/<key>');
   }
   const basePath = segments.slice(0, shareIdx).join('/');
-  const serverUrl = basePath
-    ? `${parsed.origin}/${basePath}`
-    : parsed.origin;
+  const serverUrl = basePath ? `${parsed.origin}/${basePath}` : parsed.origin;
 
   return { serverUrl, shareKey };
 }
@@ -195,7 +193,7 @@ async function fetchAlbumAssets(
   serverUrl: string,
   shareKey: string,
   albumId: string,
-  cookie: string | null,
+  cookie: string | null
 ): Promise<RawAsset[]> {
   assertSafeServerUrl(serverUrl);
   // Immich v3 serves a shared album's assets through the search API, not
@@ -222,9 +220,7 @@ async function fetchAlbumAssets(
       body: JSON.stringify({ albumIds: [albumId], page, size: 1000, withExif: true }),
     });
     if (!res.ok) {
-      throw new Error(
-        `Failed to fetch Immich album ${albumId}: ${res.status} ${res.statusText}`,
-      );
+      throw new Error(`Failed to fetch Immich album ${albumId}: ${res.status} ${res.statusText}`);
     }
 
     const data = (await res.json()) as {
@@ -255,16 +251,14 @@ function extractCookies(headers: Headers): string | null {
       cookies = single.split(/,(?=\s*[A-Za-z0-9_-]+=)/);
     }
   }
-  const pairs = cookies
-    .map((c) => c.split(';')[0]?.trim())
-    .filter((p): p is string => !!p);
+  const pairs = cookies.map((c) => c.split(';')[0]?.trim()).filter((p): p is string => !!p);
   return pairs.length ? pairs.join('; ') : null;
 }
 
 async function loginShare(
   serverUrl: string,
   shareKey: string,
-  password: string,
+  password: string
 ): Promise<{ raw: RawSharedLinkResponse; cookie: string | null }> {
   assertSafeServerUrl(serverUrl);
   const url = `${serverUrl}/api/shared-links/login?key=${encodeURIComponent(shareKey)}`;
@@ -289,7 +283,7 @@ async function loginShare(
 }
 
 async function fetchSharedLinkRaw(
-  creds: ImmichShareCredentials,
+  creds: ImmichShareCredentials
 ): Promise<{ raw: RawSharedLinkResponse; cookie: string | null }> {
   assertSafeServerUrl(creds.serverUrl);
 
@@ -324,9 +318,7 @@ async function fetchSharedLinkRaw(
  * get the photos. For INDIVIDUAL-type shares, the asset list is returned
  * inline on the share response itself.
  */
-export async function fetchSharedLink(
-  creds: ImmichShareCredentials,
-): Promise<ImmichSharedLink> {
+export async function fetchSharedLink(creds: ImmichShareCredentials): Promise<ImmichSharedLink> {
   const { raw, cookie } = await fetchSharedLinkRaw(creds);
 
   let assetsRaw: RawAsset[];
@@ -351,7 +343,7 @@ export async function fetchSharedLink(
 export async function downloadImmichAsset(
   creds: ImmichShareCredentials,
   assetId: string,
-  opts: { thumb?: boolean } = {},
+  opts: { thumb?: boolean } = {}
 ): Promise<{ buffer: Uint8Array<ArrayBuffer>; contentType: string }> {
   assertSafeServerUrl(creds.serverUrl);
 
@@ -383,9 +375,7 @@ export async function downloadImmichAsset(
     if (creds.sourceId && (res.status === 401 || res.status === 403)) {
       cookieCache.delete(creds.sourceId);
     }
-    throw new Error(
-      `Failed to download Immich asset ${assetId}: ${res.status} ${res.statusText}`,
-    );
+    throw new Error(`Failed to download Immich asset ${assetId}: ${res.status} ${res.statusText}`);
   }
 
   const arrayBuffer = await res.arrayBuffer();

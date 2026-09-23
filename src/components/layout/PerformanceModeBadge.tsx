@@ -10,7 +10,7 @@ export function PerformanceModeBadge() {
   return (
     <button
       onClick={() => setEnabled(false)}
-      className="p-2 rounded-md hover:bg-accent transition-colors text-muted-foreground"
+      className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent"
       aria-label="Performance Mode active — click to turn off"
       title="Performance Mode active — click to turn off"
     >

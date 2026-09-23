@@ -17,8 +17,18 @@ export const TAG_PRESETS = [
 ] as const;
 
 export const STATUS_CONFIG = {
-  backlog: { label: 'Want to Try', color: '#6B7280', bgClass: 'bg-muted', textClass: 'text-muted-foreground' },
-  visited: { label: 'Been There', color: '#10B981', bgClass: 'bg-emerald-50 dark:bg-emerald-950', textClass: 'text-emerald-700 dark:text-emerald-300' },
+  backlog: {
+    label: 'Want to Try',
+    color: '#6B7280',
+    bgClass: 'bg-muted',
+    textClass: 'text-muted-foreground',
+  },
+  visited: {
+    label: 'Been There',
+    color: '#10B981',
+    bgClass: 'bg-emerald-50 dark:bg-emerald-950',
+    textClass: 'text-emerald-700 dark:text-emerald-300',
+  },
 } as const;
 
 // Max visits shown as individual pips before collapsing to a number

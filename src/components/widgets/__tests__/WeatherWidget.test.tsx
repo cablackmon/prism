@@ -20,7 +20,7 @@ const render = (ui: React.ReactElement, options?: RenderOptions) =>
 // DEFAULT_TIME_FORMAT / UTC, which is what these assertions expect).
 beforeAll(() => {
   global.fetch = jest.fn(() =>
-    Promise.resolve({ ok: true, json: () => Promise.resolve({ settings: {} }) }),
+    Promise.resolve({ ok: true, json: () => Promise.resolve({ settings: {} }) })
   ) as unknown as typeof fetch;
 });
 afterAll(() => {
@@ -43,7 +43,7 @@ jest.mock('../WidgetContainer', () => ({
     error?: string | null;
   }) {
     if (loading) return <div data-testid="loading-state">Loading</div>;
-    if (error)   return <div data-testid="error-state">{error}</div>;
+    if (error) return <div data-testid="error-state">{error}</div>;
     return (
       <div data-testid="widget-container">
         {title && <div data-testid="widget-title">{title}</div>}
@@ -85,7 +85,7 @@ function makeForecastDay(overrides: Partial<ForecastDay> = {}): ForecastDay {
  */
 function makeHourlyForecast(
   conditionOrList: WeatherCondition | WeatherCondition[] = 'sunny',
-  temp = 70,
+  temp = 70
 ): HourlyForecast[] {
   const conditions: WeatherCondition[] = Array.isArray(conditionOrList)
     ? conditionOrList
@@ -96,13 +96,17 @@ function makeHourlyForecast(
   base.setMinutes(0, 0, 0);
 
   return Array.from({ length: 24 }, (_, i) => ({
-    time:      new Date(base.getTime() + i * 60 * 60_000),
+    time: new Date(base.getTime() + i * 60 * 60_000),
     condition: conditions[i] ?? 'sunny',
     temp,
   }));
 }
 
-const DEFAULT_UNITS = { temperature: 'F' as const, windSpeed: 'mph' as const, precipitation: 'in' as const };
+const DEFAULT_UNITS = {
+  temperature: 'F' as const,
+  windSpeed: 'mph' as const,
+  precipitation: 'in' as const,
+};
 
 /** Build a full WeatherData object. */
 function makeWeatherData(overrides: Partial<WeatherData> = {}): WeatherData {
@@ -114,7 +118,7 @@ function makeWeatherData(overrides: Partial<WeatherData> = {}): WeatherData {
     date: new Date(NOON_MS + (1 + i) * DAY_MS),
     dayName,
     high: 70 + i,
-    low:  50 + i,
+    low: 50 + i,
     condition: 'sunny' as WeatherCondition,
   }));
 
@@ -123,10 +127,10 @@ function makeWeatherData(overrides: Partial<WeatherData> = {}): WeatherData {
     units: DEFAULT_UNITS,
     current: {
       temperature: 68,
-      feelsLike:   65,
-      condition:   'sunny',
-      humidity:    45,
-      windSpeed:   10,
+      feelsLike: 65,
+      condition: 'sunny',
+      humidity: 45,
+      windSpeed: 10,
       description: 'Clear sky',
     },
     forecast,
@@ -135,7 +139,6 @@ function makeWeatherData(overrides: Partial<WeatherData> = {}): WeatherData {
     ...overrides,
   };
 }
-
 
 // ===========================================================================
 // 1. Hourly forecast cards
@@ -186,7 +189,6 @@ describe('hourly forecast cards', () => {
     expect(screen.queryByText(/Next .* Hours/)).toBeNull();
   });
 });
-
 
 // ===========================================================================
 // 2. Day summary header (driven by forecastDays, not the hourly row)
@@ -254,7 +256,6 @@ describe('day summary header', () => {
   });
 });
 
-
 // ===========================================================================
 // 3. forecastDays prop — controls the day summary, not the hourly cards
 // ===========================================================================
@@ -301,7 +302,6 @@ describe('forecastDays prop', () => {
     expect(screen.queryByText('WED')).toBeNull();
   });
 });
-
 
 // ===========================================================================
 // 4. Current conditions display
@@ -367,7 +367,6 @@ describe('current conditions', () => {
   });
 });
 
-
 // ===========================================================================
 // 5. showForecast prop
 // ===========================================================================
@@ -390,7 +389,6 @@ describe('showForecast prop', () => {
   });
 });
 
-
 // ===========================================================================
 // 6. Loading and error states
 // ===========================================================================
@@ -411,7 +409,6 @@ describe('loading and error states', () => {
     expect(screen.queryByTestId('widget-container')).not.toBeNull();
   });
 });
-
 
 // ===========================================================================
 // 7. Demo data fallback

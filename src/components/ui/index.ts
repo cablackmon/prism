@@ -18,14 +18,7 @@ export { Button, buttonVariants } from './button';
 export type { ButtonProps } from './button';
 
 // Card
-export {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter,
-} from './card';
+export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from './card';
 
 // Input
 export { Input } from './input';
@@ -36,13 +29,7 @@ export { Badge, badgeVariants } from './badge';
 export type { BadgeProps } from './badge';
 
 // Avatar
-export {
-  Avatar,
-  AvatarImage,
-  AvatarFallback,
-  UserAvatar,
-  getInitials,
-} from './avatar';
+export { Avatar, AvatarImage, AvatarFallback, UserAvatar, getInitials } from './avatar';
 
 // Checkbox
 export { Checkbox } from './checkbox';

@@ -18,112 +18,116 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const data = await getCached('goals:progress', async () => {
-      const [wso] = await db.select().from(settings).where(eq(settings.key, 'weekStartsOn'));
-      const weekStartsOn: 0 | 1 = wso?.value === '1' ? 1 : 0;
+    const data = await getCached(
+      'goals:progress',
+      async () => {
+        const [wso] = await db.select().from(settings).where(eq(settings.key, 'weekStartsOn'));
+        const weekStartsOn: 0 | 1 = wso?.value === '1' ? 1 : 0;
 
-      // Fetch active goals sorted by priority
-      const goalRows = await db
-        .select()
-        .from(goals)
-        .where(eq(goals.active, true))
-        .orderBy(asc(goals.priority));
+        // Fetch active goals sorted by priority
+        const goalRows = await db
+          .select()
+          .from(goals)
+          .where(eq(goals.active, true))
+          .orderBy(asc(goals.priority));
 
-      // Fetch children
-      const children = await db
-        .select({ id: users.id, name: users.name, color: users.color })
-        .from(users)
-        .where(eq(users.role, 'child'));
+        // Fetch children
+        const children = await db
+          .select({ id: users.id, name: users.name, color: users.color })
+          .from(users)
+          .where(eq(users.role, 'child'));
 
-      // Fetch all approved chore completions
-      const allCompletions = await db
-        .select({
-          completedBy: choreCompletions.completedBy,
-          pointsAwarded: choreCompletions.pointsAwarded,
-          completedAt: choreCompletions.completedAt,
-        })
-        .from(choreCompletions)
-        .where(isNotNull(choreCompletions.approvedBy));
+        // Fetch all approved chore completions
+        const allCompletions = await db
+          .select({
+            completedBy: choreCompletions.completedBy,
+            pointsAwarded: choreCompletions.pointsAwarded,
+            completedAt: choreCompletions.completedAt,
+          })
+          .from(choreCompletions)
+          .where(isNotNull(choreCompletions.approvedBy));
 
-      // Fetch achievements
-      const achievements = await db
-        .select()
-        .from(goalAchievements);
+        // Fetch achievements
+        const achievements = await db.select().from(goalAchievements);
 
-      const now = new Date();
-      const goalDefs = goalRows.map((g) => ({
-        id: g.id,
-        pointCost: g.pointCost,
-        priority: g.priority,
-        recurring: g.recurring,
-        recurrencePeriod: g.recurrencePeriod,
-        lastResetAt: g.lastResetAt,
-      }));
+        const now = new Date();
+        const goalDefs = goalRows.map((g) => ({
+          id: g.id,
+          pointCost: g.pointCost,
+          priority: g.priority,
+          recurring: g.recurring,
+          recurrencePeriod: g.recurrencePeriod,
+          lastResetAt: g.lastResetAt,
+        }));
 
-      // Compute waterfall per child
-      const progress: Record<string, Record<string, { allocated: number; achieved: boolean }>> = {};
-      const childCounters: Record<string, { weekly: number; monthly: number; yearly: number }> = {};
+        // Compute waterfall per child
+        const progress: Record<
+          string,
+          Record<string, { allocated: number; achieved: boolean }>
+        > = {};
+        const childCounters: Record<string, { weekly: number; monthly: number; yearly: number }> =
+          {};
 
-      for (const child of children) {
-        // Filter completions after each goal's lastResetAt (for non-recurring)
-        const childCompletions = allCompletions
-          .filter((c) => c.completedBy === child.id)
-          .map((c) => ({
-            pointsAwarded: c.pointsAwarded,
-            completedAt: c.completedAt,
-          }));
+        for (const child of children) {
+          // Filter completions after each goal's lastResetAt (for non-recurring)
+          const childCompletions = allCompletions
+            .filter((c) => c.completedBy === child.id)
+            .map((c) => ({
+              pointsAwarded: c.pointsAwarded,
+              completedAt: c.completedAt,
+            }));
 
-        const result = computeWaterfall(goalDefs, childCompletions, now, weekStartsOn);
+          const result = computeWaterfall(goalDefs, childCompletions, now, weekStartsOn);
 
-        const childProgress: Record<string, { allocated: number; achieved: boolean }> = {};
-        for (const gp of result.goals) {
-          // Check if already achieved (from achievements table)
-          const periodKey = getGoalPeriodKey(
-            goalDefs.find((g) => g.id === gp.goalId)!,
-            now,
-            weekStartsOn
-          );
-          const hasAchievement = achievements.some(
-            (a) => a.goalId === gp.goalId && a.userId === child.id && a.periodStart === periodKey
-          );
+          const childProgress: Record<string, { allocated: number; achieved: boolean }> = {};
+          for (const gp of result.goals) {
+            // Check if already achieved (from achievements table)
+            const periodKey = getGoalPeriodKey(
+              goalDefs.find((g) => g.id === gp.goalId)!,
+              now,
+              weekStartsOn
+            );
+            const hasAchievement = achievements.some(
+              (a) => a.goalId === gp.goalId && a.userId === child.id && a.periodStart === periodKey
+            );
 
-          childProgress[gp.goalId] = {
-            allocated: gp.allocated,
-            achieved: gp.achieved || hasAchievement,
+            childProgress[gp.goalId] = {
+              allocated: gp.allocated,
+              achieved: gp.achieved || hasAchievement,
+            };
+          }
+          progress[child.id] = childProgress;
+
+          childCounters[child.id] = {
+            weekly: result.weeklyEarned,
+            monthly: result.monthlyEarned,
+            yearly: result.yearlyEarned,
           };
         }
-        progress[child.id] = childProgress;
 
-        childCounters[child.id] = {
-          weekly: result.weeklyEarned,
-          monthly: result.monthlyEarned,
-          yearly: result.yearlyEarned,
-        };
-      }
-
-      // Determine which goals are fully achieved (all children achieved)
-      const fullyAchieved: Record<string, boolean> = {};
-      for (const goal of goalRows) {
-        if (children.length === 0) {
-          fullyAchieved[goal.id] = false;
-          continue;
+        // Determine which goals are fully achieved (all children achieved)
+        const fullyAchieved: Record<string, boolean> = {};
+        for (const goal of goalRows) {
+          if (children.length === 0) {
+            fullyAchieved[goal.id] = false;
+            continue;
+          }
+          fullyAchieved[goal.id] = children.every((c) => progress[c.id]?.[goal.id]?.achieved);
         }
-        fullyAchieved[goal.id] = children.every(
-          (c) => progress[c.id]?.[goal.id]?.achieved
-        );
-      }
 
-      return {
-        goals: goalRows.map((g) => formatGoalRow(g, fullyAchieved[g.id] || false)),
-        progress,
-        children: children.map((c) => ({
-          userId: c.id,
-          name: c.name,
-          color: c.color,
-          counters: childCounters[c.id] || { weekly: 0, monthly: 0, yearly: 0 },
-        })),
-      };
-    }, 120);
+        return {
+          goals: goalRows.map((g) => formatGoalRow(g, fullyAchieved[g.id] || false)),
+          progress,
+          children: children.map((c) => ({
+            userId: c.id,
+            name: c.name,
+            color: c.color,
+            counters: childCounters[c.id] || { weekly: 0, monthly: 0, yearly: 0 },
+          })),
+        };
+      },
+      120
+    );
 
     return NextResponse.json(data);
   } catch (error) {
@@ -153,7 +157,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { name, description, pointCost, emoji, recurring, recurrencePeriod, active } = validation.data;
+    const { name, description, pointCost, emoji, recurring, recurrencePeriod, active } =
+      validation.data;
 
     // Auto-assign priority: next available
     let priority = validation.data.priority;
@@ -174,7 +179,7 @@ export async function POST(request: NextRequest) {
         emoji,
         priority,
         recurring: recurring || false,
-        recurrencePeriod: recurring ? (recurrencePeriod || 'weekly') : null,
+        recurrencePeriod: recurring ? recurrencePeriod || 'weekly' : null,
         active,
       })
       .returning();

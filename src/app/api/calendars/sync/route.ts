@@ -78,16 +78,14 @@ export async function POST(request: NextRequest) {
         columns: { id: true, provider: true },
       });
       if (!source) {
-        return NextResponse.json(
-          { error: 'Calendar source not found' },
-          { status: 404 }
-        );
+        return NextResponse.json({ error: 'Calendar source not found' }, { status: 404 });
       }
-      const syncResult = source.provider === 'ical'
-        ? await syncIcalCalendarSource(body.calendarId, options)
-        : source.provider === 'caldav'
-          ? await syncCalDAVCalendarSource(body.calendarId, options)
-          : await syncGoogleCalendarSource(body.calendarId, options);
+      const syncResult =
+        source.provider === 'ical'
+          ? await syncIcalCalendarSource(body.calendarId, options)
+          : source.provider === 'caldav'
+            ? await syncCalDAVCalendarSource(body.calendarId, options)
+            : await syncGoogleCalendarSource(body.calendarId, options);
       result = {
         synced: syncResult.synced,
         added: syncResult.added,
@@ -147,9 +145,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     logError('Calendar sync error:', error);
-    return NextResponse.json(
-      { error: 'Failed to sync calendars' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to sync calendars' }, { status: 500 });
   }
 }
