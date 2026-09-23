@@ -39,6 +39,7 @@ import {
   isBenchmarkCancelled,
   measureDisplayRefreshHz,
   runBackend,
+  throwIfBenchmarkCancelled,
   type BackendReport,
   type BackendRun,
   type DisplayInfo,
@@ -216,6 +217,19 @@ export function GpuCapabilityView() {
         backends,
         decision,
       };
+
+      // The view's own half of the invariant: nothing is published from a run
+      // that was cancelled. `measureRun` throwing after its closing readback is
+      // what shuts the hole upstream, but that check lives in another module and
+      // the harm landed here — a report assembled and written to localStorage
+      // from a page that had already unmounted. So the condition is re-asserted
+      // at the boundary that does the writing, where it costs one line and
+      // cannot be undone by a change to the measurement loop.
+      //
+      // Thrown rather than returned so it leaves through the same
+      // cancellation-aware catch as every other abort instead of stranding the
+      // phase on 'running'.
+      throwIfBenchmarkCancelled(signal);
 
       setReport(finished);
       setPhase('done');

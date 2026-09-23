@@ -254,24 +254,56 @@ for (const run of webgl2.runs) {
 }
 
 // The readback control is the sole reason an all-zero benchmark frame is ever
-// credited, so the artifact must state which verdict each backend got rather
-// than leaving a reader to infer it from the pixel status.
+// credited, so the artifact must state which verdict each run got rather than
+// leaving a reader to infer it from the pixel status.
 for (const backend of result.backends) {
   if (!backend.available) continue;
+  // The backend field is the gate-resolution summary shown on screen, not the
+  // control any particular run was credited against — so this asserts only that
+  // it is a real verdict and that it agrees with the run it claims to describe.
   check(
     `${backend.backend} recorded a readback-control verdict`,
     ['working', 'broken', 'untested'].includes(backend.readbackControl),
     String(backend.readbackControl)
   );
+  const gateRun = backend.runs.find((entry) => entry.resolution.key === '1440p');
+  if (gateRun) {
+    check(
+      `${backend.backend} backend-level control is the gate run's own verdict`,
+      backend.readbackControl === gateRun.readbackControl,
+      `backend=${backend.readbackControl} gateRun=${gateRun.readbackControl}`
+    );
+  }
   for (const run of backend.runs) {
     // The P1 from the round-2 review: a black frame may only be credited when
     // the control independently proved readback is broken.
+    //
+    // Against `run.readbackControl`, not `backend.readbackControl`. Once the
+    // control became per-resolution, the backend field stopped being the control
+    // for every run and became the gate-resolution (1440p) summary — so this was
+    // checking 2160p's pixels against 1440p's control, a comparand that is real
+    // and well-typed and simply belongs to a different run.
+    //
+    // Which direction that could actually break, measured rather than assumed:
+    // NOT the crediting direction. `measureRun` hands each run's own control to
+    // `inspectCanvasPixels`, and `classifyReadback` returns the creditable
+    // `unavailable` verdict for an all-zero frame only when that control is
+    // `broken` — so no run production refused could have been waved through
+    // here. The reachable failure is the opposite one: a 2160p run whose own
+    // control is `broken` (production credits it) while the gate run's control
+    // read `working` fails this check, and a correct result is reported as a
+    // violated invariant. Receipt on the issue thread.
     check(
-      `${backend.backend} ${run.resolution.key} all-zero frame credited only on a broken control`,
+      `${backend.backend} ${run.resolution.key} all-zero frame credited only on its own broken control`,
       run.pixelCheck.status !== 'unavailable' ||
         run.pixelCheck.uniqueColors === null ||
-        backend.readbackControl === 'broken',
-      `pixels=${run.pixelCheck.status} control=${backend.readbackControl}`
+        run.readbackControl === 'broken',
+      `pixels=${run.pixelCheck.status} control=${run.readbackControl}`
+    );
+    check(
+      `${backend.backend} ${run.resolution.key} recorded its own readback-control verdict`,
+      ['working', 'broken', 'untested'].includes(run.readbackControl),
+      String(run.readbackControl)
     );
   }
 }
@@ -321,7 +353,8 @@ for (const backend of result.backends) {
     console.log(
       `${backend.backend} ${run.resolution.key}: ${run.stats.meanFps.toFixed(2)} fps mean, ` +
         `${run.stats.minFps.toFixed(2)} min, ${run.stats.frames} frames, fenced=${run.gpuFenced}, ` +
-        `pixels=${run.pixelCheck.status}, buffer=${run.drawingBuffer.actualWidth}x${run.drawingBuffer.actualHeight}`
+        `pixels=${run.pixelCheck.status}, control=${run.readbackControl}, ` +
+        `buffer=${run.drawingBuffer.actualWidth}x${run.drawingBuffer.actualHeight}`
     );
   }
   if (backend.runs.length === 0) console.log(`${backend.backend}: no runs — ${backend.error}`);

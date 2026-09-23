@@ -18,7 +18,8 @@
 import { StrictMode } from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 
-import { GpuCapabilityView } from '../GpuCapabilityView';
+import { GpuCapabilityView, REPORT_STORAGE_KEY } from '../GpuCapabilityView';
+import * as renderers from '@/lib/diagnostics/gpuRenderers';
 
 // See gpuRenderers.test.ts: jsdom 30 does not expose MessageChannel, which the
 // measurement loop uses to yield between frames.
@@ -46,5 +47,66 @@ describe('GpuCapabilityView', () => {
     await waitFor(() => expect(screen.getByText('Benchmark complete')).toBeTruthy(), {
       timeout: 40_000,
     });
+  }, 60_000);
+
+  it('publishes nothing when the run was cancelled before the report was assembled', async () => {
+    // The round-4 P2, taken at the boundary it actually costs something: the
+    // publish. `measureRun` now throws after its closing readback, which is what
+    // closes the hole in practice — but that check lives one module away, and the
+    // view's own contract is that a cancelled run writes neither React state nor
+    // localStorage. Asserted here by making `runBackend` do the one thing the bug
+    // required: resolve a complete-looking report *after* the signal aborted.
+    //
+    // This is the scenario, not a contrivance: an abort landing during the final
+    // resolution's readback is precisely a `runBackend` that resolves normally
+    // after cancellation, and it was reachable because the view re-checked the
+    // signal nowhere between the backend loop and `setItem`.
+    window.localStorage.removeItem(REPORT_STORAGE_KEY);
+
+    // An object rather than a `let`: TypeScript cannot see the assignment inside
+    // the mock callback and narrows a reassigned local to `never` at the read.
+    const seen: { signal: AbortSignal | null } = { signal: null };
+    const spy = jest
+      .spyOn(renderers, 'runBackend')
+      .mockImplementation(async (factory, _mesh, _resolutions, _mountCanvas, _onRunComplete, signal) => {
+        seen.signal = signal ?? null;
+        // Resolves only once cancelled, so the view is guaranteed to be holding a
+        // finished-looking report from an abandoned run.
+        await new Promise<void>((resolve) => {
+          if (signal?.aborted) return resolve();
+          signal?.addEventListener('abort', () => resolve(), { once: true });
+        });
+        return {
+          backend: factory.backend,
+          available: true,
+          error: null,
+          runs: [],
+          benchmarkedAdapter: 'stub adapter',
+          readbackControl: 'untested',
+        };
+      });
+
+    try {
+      const { unmount } = render(<GpuCapabilityView />);
+      // Wait until the run is genuinely inside `runBackend`; unmounting earlier
+      // would exercise one of the pre-existing entry guards instead, and the test
+      // would pass without the publish path ever being reached.
+      await waitFor(() => expect(spy).toHaveBeenCalled(), { timeout: 40_000 });
+
+      unmount();
+      // Two macrotask turns: one for the abort listener to resolve, one for the
+      // view's continuation to reach the publish block.
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      // Guards the anchor: if the signal never aborted, the view was not in the
+      // state this test is about and the localStorage assertion below would pass
+      // for the wrong reason.
+      expect(seen.signal?.aborted).toBe(true);
+      expect(window.localStorage.getItem(REPORT_STORAGE_KEY)).toBeNull();
+    } finally {
+      spy.mockRestore();
+      window.localStorage.removeItem(REPORT_STORAGE_KEY);
+    }
   }, 60_000);
 });

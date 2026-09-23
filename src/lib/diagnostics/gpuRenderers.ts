@@ -1013,7 +1013,7 @@ async function measureRun(
       // detached canvases. Thrown rather than broken out of: a partial run must
       // not reach the gate, and `runBackend` records the abort as the reason
       // this backend has no numbers.
-      if (signal?.aborted) throw new BenchmarkCancelledError();
+      throwIfBenchmarkCancelled(signal);
     }
 
     // Verification frame, drawn at the resolution just measured and read back
@@ -1034,6 +1034,17 @@ async function measureRun(
     }
     const drawingBufferSize = renderer.drawingBufferSize();
     const pixelCheck = await inspectCanvasPixels(canvas, readbackControl);
+
+    // The last await of the run, and so the last chance to notice an abort. The
+    // per-frame check above cannot cover this one: it fires *before* the
+    // verification frame, and on the final resolution there is no next loop
+    // iteration and no next resolution, so nothing downstream would look again.
+    // An abort landing while this readback was in flight therefore returned an
+    // ordinary-looking run, `runBackend` returned an ordinary-looking report,
+    // and the caller published it — writing state and localStorage from a page
+    // that had already unmounted. The same holds for the sole backend when
+    // WebGPU is absent and skipped.
+    throwIfBenchmarkCancelled(signal);
 
     return {
       resolution,
@@ -1075,6 +1086,19 @@ export class BenchmarkCancelledError extends Error {
 
 export function isBenchmarkCancelled(error: unknown): error is BenchmarkCancelledError {
   return error instanceof BenchmarkCancelledError;
+}
+
+/**
+ * The single way this module acts on an abort.
+ *
+ * Named rather than written inline at each site because the sites are what went
+ * wrong: the checks were placed at the two loop heads, which reads as "every
+ * iteration is guarded" and is true — while saying nothing about the code that
+ * runs after the last iteration. One helper makes each boundary a one-line
+ * addition, so the cheap thing to do when adding an await is to guard it.
+ */
+export function throwIfBenchmarkCancelled(signal?: AbortSignal): void {
+  if (signal?.aborted) throw new BenchmarkCancelledError();
 }
 
 /**
@@ -1138,7 +1162,7 @@ export async function runBackend(
   try {
     benchmarkedAdapter = renderer.describeAdapter();
     for (const resolution of resolutions) {
-      if (signal?.aborted) throw new BenchmarkCancelledError();
+      throwIfBenchmarkCancelled(signal);
       const run = await measureRun(renderer, canvas, resolution, signal);
       runs.push(run);
       onRunComplete?.(run);

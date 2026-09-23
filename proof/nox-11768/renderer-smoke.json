@@ -41,13 +41,13 @@
             "height": 360
           },
           "stats": {
-            "frames": 12341,
-            "elapsedMs": 11656.199999213219,
-            "meanFps": 1058.7498499367723,
-            "minFps": 0.21494282520959604,
-            "longestFrameMs": 4652.399999976158
+            "frames": 12914,
+            "elapsedMs": 12901.399999141693,
+            "meanFps": 1000.9766382608976,
+            "minFps": 0.22271218903692347,
+            "longestFrameMs": 4490.100000023842
           },
-          "wallElapsedMs": 19613.200000047684,
+          "wallElapsedMs": 21176.099999904633,
           "interruptedByVisibilityChange": false,
           "gpuFenced": true,
           "fenceError": null,
@@ -57,6 +57,7 @@
             "meanLuma": 62.135127314814746,
             "error": null
           },
+          "readbackControl": "working",
           "drawingBuffer": {
             "requestedWidth": 640,
             "requestedHeight": 360,
@@ -72,13 +73,13 @@
             "height": 540
           },
           "stats": {
-            "frames": 10359,
-            "elapsedMs": 11413.800001382828,
-            "meanFps": 907.5855542190126,
-            "minFps": 0.11938445375711146,
-            "longestFrameMs": 8376.299999952316
+            "frames": 10478,
+            "elapsedMs": 12072.899999856949,
+            "meanFps": 867.89420935518,
+            "minFps": 0.11409013120365089,
+            "longestFrameMs": 8765
           },
-          "wallElapsedMs": 21732.700000047684,
+          "wallElapsedMs": 23528.300000071526,
           "interruptedByVisibilityChange": false,
           "gpuFenced": true,
           "fenceError": null,
@@ -88,6 +89,7 @@
             "meanLuma": 62.09302662037039,
             "error": null
           },
+          "readbackControl": "working",
           "drawingBuffer": {
             "requestedWidth": 960,
             "requestedHeight": 540,
@@ -112,13 +114,13 @@
             "height": 360
           },
           "stats": {
-            "frames": 2656,
-            "elapsedMs": 9893.49999821186,
-            "meanFps": 268.4590893495772,
-            "minFps": 80,
-            "longestFrameMs": 12.5
+            "frames": 2304,
+            "elapsedMs": 9864.899996757507,
+            "meanFps": 233.5553326194185,
+            "minFps": 67.11409406712247,
+            "longestFrameMs": 14.899999976158142
           },
-          "wallElapsedMs": 10201,
+          "wallElapsedMs": 10210.700000047684,
           "interruptedByVisibilityChange": false,
           "gpuFenced": true,
           "fenceError": null,
@@ -128,6 +130,7 @@
             "meanLuma": 0,
             "error": "readback returned uniform zeroes, and the clear-only control frame came back black too — readback is broken on this backend, so the canvas could not be read rather than being empty"
           },
+          "readbackControl": "broken",
           "drawingBuffer": {
             "requestedWidth": 640,
             "requestedHeight": 360,
@@ -143,13 +146,13 @@
             "height": 540
           },
           "stats": {
-            "frames": 1617,
-            "elapsedMs": 9920.499999284744,
-            "meanFps": 162.9958167548595,
-            "minFps": 102.04081558178287,
-            "longestFrameMs": 9.800000071525574
+            "frames": 1518,
+            "elapsedMs": 9900.19999909401,
+            "meanFps": 153.33023576684468,
+            "minFps": 102.04081682302912,
+            "longestFrameMs": 9.799999952316284
           },
-          "wallElapsedMs": 10206.799999952316,
+          "wallElapsedMs": 10225.800000071526,
           "interruptedByVisibilityChange": false,
           "gpuFenced": true,
           "fenceError": null,
@@ -159,6 +162,7 @@
             "meanLuma": 0,
             "error": "readback returned uniform zeroes, and the clear-only control frame came back black too — readback is broken on this backend, so the canvas could not be read rather than being empty"
           },
+          "readbackControl": "broken",
           "drawingBuffer": {
             "requestedWidth": 960,
             "requestedHeight": 540,
@@ -173,23 +177,23 @@
   ],
   "evidence": {
     "webgl2": {
-      "meanFps": 1058.7498499367723,
+      "meanFps": 1000.9766382608976,
       "measurementFenced": true,
-      "renderedBlank": false,
+      "contentCredit": "verified",
       "resolutionStatus": "matched",
       "sampleInvalidReason": null
     },
     "webgpu": {
-      "meanFps": 268.4590893495772,
+      "meanFps": 233.5553326194185,
       "measurementFenced": true,
-      "renderedBlank": false,
+      "contentCredit": "readbackBroken",
       "resolutionStatus": "matched",
       "sampleInvalidReason": null
     }
   },
   "decision": {
     "decision": "webgpu",
-    "reason": "WebGPU adapter present and the WebGPU run held 268.5 fps at 1440p (bar 45). Browser WebGPU path."
+    "reason": "WebGPU adapter present and the WebGPU run held 233.6 fps at 1440p (bar 45). Browser WebGPU path."
   },
   "blankControl": {
     "status": "blank",
@@ -197,7 +201,7 @@
     "meanLuma": 9.33333333333323,
     "error": "readback succeeded and found a single flat colour, so no fragments were drawn"
   },
-  "wallMs": 61861.59999990463,
+  "wallMs": 65313.200000047684,
   "benchmarkDurationMs": 10000,
   "warmupFrames": 30
 }

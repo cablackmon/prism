@@ -21,7 +21,12 @@ import {
   type BackendFactory,
   type BenchRenderer,
 } from '../gpuRenderers';
-import { BENCHMARK_RESOLUTIONS, createSphereMesh, type Mesh } from '../gpuBenchmark';
+import {
+  BENCHMARK_DURATION_MS,
+  BENCHMARK_RESOLUTIONS,
+  createSphereMesh,
+  type Mesh,
+} from '../gpuBenchmark';
 
 // jsdom 30 does not expose MessageChannel, which the measurement loop uses to
 // yield between frames. Node's is the same primitive — a real task round trip —
@@ -50,6 +55,25 @@ function fakeRenderer(overrides: Partial<BenchRenderer> = {}): BenchRenderer {
 
 const sampleOf = (uniqueColors: number, flatColor: { r: number; g: number; b: number } | null) =>
   async () => ({ uniqueColors, flatColor, meanLuma: 0 });
+
+/**
+ * Runs the measurement clock far faster than real time.
+ *
+ * `measureRun` breaks on the exported `BENCHMARK_DURATION_MS` (10 s), which is
+ * read from production on purpose — a test that passed its own shorter budget in
+ * would be measuring a knob nothing enforces. Advancing the clock instead lets
+ * the real constant expire while the loop still executes every stage in order.
+ * Returns its own restorer so a failing expectation cannot leak a stubbed clock
+ * into the next test.
+ */
+function fastClock(stepMs = BENCHMARK_DURATION_MS): () => void {
+  let elapsed = 0;
+  const spy = jest.spyOn(performance, 'now').mockImplementation(() => {
+    elapsed += stepMs;
+    return elapsed;
+  });
+  return () => spy.mockRestore();
+}
 
 describe('probeReadbackControl', () => {
   it('reports untested when the control could not be observed at all', async () => {
@@ -182,6 +206,81 @@ describe('runBackend cancellation', () => {
 
     // Control follows the resize, not the 16x9 canvas creation that precedes it.
     expect(calls).toEqual(['resize:2560x1440', 'control']);
+  });
+
+  it('rejects when the abort lands during the final run’s canvas readback', async () => {
+    // The round-4 P2. The per-frame guard fires *before* the verification frame,
+    // and the per-resolution guard fires before the next `measureRun` — so on
+    // the last resolution an abort arriving during the closing readback had
+    // nothing left to notice it. `measureRun` returned a complete-looking run,
+    // `runBackend` returned a complete-looking report, and the caller published
+    // it to state and localStorage from an unmounted page.
+    //
+    // A single resolution is passed so this run *is* the final one; the fast
+    // clock lets the 10 s budget expire without spending it.
+    const controller = new AbortController();
+    const completed: string[] = [];
+    const restoreClock = fastClock();
+
+    // Which readback the abort lands on is the whole test, so it is anchored to
+    // an observable stage rather than to a call count. `drawingBufferSize` is
+    // called exactly once per run, immediately before the verification readback
+    // and after the last timed frame — so this flag turns on precisely in the
+    // window under test.
+    //
+    // Written against a call count first, and it was vacuous: the abort landed
+    // on `probeReadbackControl`'s sampler at the *top* of `measureRun`, the
+    // existing per-frame guard caught it, and the test passed with the fix
+    // removed. It was asserting that some guard fires, not that this one does.
+    let inVerificationReadback = false;
+    const renderer = fakeRenderer({
+      drawingBufferSize: () => {
+        inVerificationReadback = true;
+        return { width: 2560, height: 1440 };
+      },
+    });
+
+    // Aborts while the readback is genuinely in flight: `inspectCanvasPixels` is
+    // already awaiting the production sampler when the signal fires. The throw
+    // afterwards is what jsdom's missing `createImageBitmap` produces anyway, so
+    // the readback still resolves to `unavailable` and the run reaches its
+    // return statement exactly as it did before — nothing is short-circuited.
+    const globals = globalThis as { createImageBitmap?: unknown };
+    const priorCreateImageBitmap = globals.createImageBitmap;
+    globals.createImageBitmap = async () => {
+      if (inVerificationReadback) controller.abort();
+      throw new Error('createImageBitmap is unavailable');
+    };
+
+    try {
+      const thrown = await runBackend(
+        factory(renderer),
+        mesh,
+        // One resolution, so this run is unambiguously the final one — the case
+        // where no later guard exists to catch the abort.
+        BENCHMARK_RESOLUTIONS.slice(0, 1),
+        () => {},
+        (run) => completed.push(run.resolution.key),
+        controller.signal
+      ).then(
+        (report) => report,
+        (error: unknown) => error
+      );
+
+      // Guards the anchor itself: had the abort fired before the timed frames
+      // the run would never have reached `drawingBufferSize`, and this test
+      // would be re-proving the per-frame guard instead.
+      expect(inVerificationReadback).toBe(true);
+
+      expect(isBenchmarkCancelled(thrown)).toBe(true);
+      // The run must not reach the progress callback either: that is a React
+      // state setter at the real call site, invoked after unmount.
+      expect(completed).toEqual([]);
+    } finally {
+      if (priorCreateImageBitmap === undefined) delete globals.createImageBitmap;
+      else globals.createImageBitmap = priorCreateImageBitmap;
+      restoreClock();
+    }
   });
 
   it('still reports an ordinary run failure as a report rather than a throw', async () => {
