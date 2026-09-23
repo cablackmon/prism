@@ -1,0 +1,46 @@
+[
+  {
+    "id": "P1-fallback-validity",
+    "finding": "Validate WebGL2 before selecting the fallback",
+    "file": "src/lib/diagnostics/gpuBenchmark.ts",
+    "from": "  const webgl2Verdict = evaluateBackend('WebGL2', webgl2);",
+    "to": "  const webgl2Verdict = evaluateBackend('WebGL2', { ...webgl2, measurementFenced: true, renderedBlank: false, resolutionStatus: 'matched', sampleInvalidReason: null });",
+    "note": "restores fps-only selection of the WebGL2 fallback",
+    "verdict": "KILLED",
+    "failed": 5,
+    "tests": []
+  },
+  {
+    "id": "P1-clamped-resolution",
+    "finding": "Verify rendering at the measured resolution",
+    "file": "src/lib/diagnostics/gpuBenchmark.ts",
+    "from": "  return actual.width >= requested.width && actual.height >= requested.height\n    ? 'matched'\n    : 'clamped';",
+    "to": "  return 'matched';",
+    "note": "stops noticing a drawing buffer the driver shrank",
+    "verdict": "KILLED",
+    "failed": 2,
+    "tests": []
+  },
+  {
+    "id": "P2-zero-readback",
+    "finding": "Treat known all-zero readbacks as unavailable",
+    "file": "src/lib/diagnostics/gpuBenchmark.ts",
+    "from": "  if (flatColor.r === 0 && flatColor.g === 0 && flatColor.b === 0) {\n    return {\n      status: 'unavailable',\n      note:\n        'readback returned uniform zeroes, which the configured non-black clear colour ' +\n        'cannot produce — the canvas could not be read back rather than being empty',\n    };\n  }\n",
+    "to": "",
+    "note": "calls a SwiftShader all-zero readback a genuinely blank canvas",
+    "verdict": "KILLED",
+    "failed": 1,
+    "tests": []
+  },
+  {
+    "id": "P2-hidden-tab",
+    "finding": "Exclude visibility-interrupted runs from the decision",
+    "file": "src/lib/diagnostics/gpuBenchmark.ts",
+    "from": "    sampleInvalidReason: match.interruptedByVisibilityChange\n      ? 'the tab was hidden during the run, which stalls the frame loop and invalidates the sample'\n      : null,",
+    "to": "    sampleInvalidReason: null,",
+    "note": "feeds a run measured behind a hidden tab into the gate",
+    "verdict": "KILLED",
+    "failed": 1,
+    "tests": []
+  }
+]

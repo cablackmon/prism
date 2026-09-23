@@ -1,11 +1,15 @@
 import {
   BENCHMARK_RESOLUTIONS,
   CAMERA_DISTANCE,
+  CLEAR_COLOR,
   FIELD_OF_VIEW,
   PASS_FPS,
   TARGET_VERTEX_COUNT,
   VERTEX_STRIDE_FLOATS,
+  backendEvidenceAt,
   chooseTessellation,
+  classifyReadback,
+  classifyResolution,
   createSphereMesh,
   decideRenderPath,
   isRenderedBlank,
@@ -13,7 +17,21 @@ import {
   modelViewMatrix,
   perspectiveZeroToOne,
   summarizeFrames,
+  type BackendEvidence,
+  type EvidenceRun,
 } from '../gpuBenchmark';
+
+/** A backend whose run is valid in every respect; each test spoils one thing. */
+const evidence = (overrides: Partial<BackendEvidence> = {}): BackendEvidence => ({
+  meanFps: 60,
+  measurementFenced: true,
+  renderedBlank: false,
+  resolutionStatus: 'matched',
+  sampleInvalidReason: null,
+  ...overrides,
+});
+
+const noRun = (): BackendEvidence => evidence({ meanFps: null, measurementFenced: false });
 
 describe('chooseTessellation', () => {
   it('produces a grid at least as large as the requested vertex count', () => {
@@ -212,10 +230,8 @@ describe('decideRenderPath', () => {
   it('chooses WebGPU when an adapter is present and its own 1440p run clears the bar', () => {
     const result = decideRenderPath({
       webgpuAdapterPresent: true,
-      webgpuMeanFps1440: PASS_FPS,
-      webgpuMeasurementFenced: true,
-      webgpuRenderedBlank: false,
-      webgl2MeanFps1440: 20,
+      webgpu: evidence({ meanFps: PASS_FPS }),
+      webgl2: evidence({ meanFps: 20 }),
     });
     expect(result.decision).toBe('webgpu');
     expect(result.reason).toContain('Browser WebGPU path');
@@ -226,10 +242,8 @@ describe('decideRenderPath', () => {
     // the WebGPU path holds 45 fps.
     const result = decideRenderPath({
       webgpuAdapterPresent: true,
-      webgpuMeanFps1440: null,
-      webgpuMeasurementFenced: false,
-      webgpuRenderedBlank: false,
-      webgl2MeanFps1440: 58,
+      webgpu: noRun(),
+      webgl2: evidence({ meanFps: 58 }),
     });
     expect(result.decision).toBe('webgl2');
     expect(result.reason).toContain('produced no numbers');
@@ -242,10 +256,8 @@ describe('decideRenderPath', () => {
     // not evidence about the GPU no matter how large it is.
     const result = decideRenderPath({
       webgpuAdapterPresent: true,
-      webgpuMeanFps1440: 240,
-      webgpuMeasurementFenced: false,
-      webgpuRenderedBlank: false,
-      webgl2MeanFps1440: PASS_FPS,
+      webgpu: evidence({ meanFps: 240, measurementFenced: false }),
+      webgl2: evidence({ meanFps: PASS_FPS }),
     });
     expect(result.decision).toBe('webgl2');
     expect(result.reason).toContain('counts submissions queued, not work done');
@@ -257,10 +269,8 @@ describe('decideRenderPath', () => {
     // sitting in the JSON beside it was discarded.
     const result = decideRenderPath({
       webgpuAdapterPresent: true,
-      webgpuMeanFps1440: 240,
-      webgpuMeasurementFenced: false,
-      webgpuRenderedBlank: false,
-      webgl2MeanFps1440: PASS_FPS - 0.1,
+      webgpu: evidence({ meanFps: 240, measurementFenced: false }),
+      webgl2: evidence({ meanFps: PASS_FPS - 0.1 }),
     });
     expect(result.decision).toBe('escalate');
     expect(result.reason).toContain('ESCALATE');
@@ -273,10 +283,8 @@ describe('decideRenderPath', () => {
     // input passes: real adapter, fenced measurement, way over the bar.
     const result = decideRenderPath({
       webgpuAdapterPresent: true,
-      webgpuMeanFps1440: 300,
-      webgpuMeasurementFenced: true,
-      webgpuRenderedBlank: true,
-      webgl2MeanFps1440: PASS_FPS,
+      webgpu: evidence({ meanFps: 300, renderedBlank: true }),
+      webgl2: evidence({ meanFps: PASS_FPS }),
     });
     expect(result.decision).toBe('webgl2');
     expect(result.reason).toContain('read back blank');
@@ -288,10 +296,8 @@ describe('decideRenderPath', () => {
     // that as blank would veto a healthy backend on measurement-tool grounds.
     const result = decideRenderPath({
       webgpuAdapterPresent: true,
-      webgpuMeanFps1440: 90,
-      webgpuMeasurementFenced: true,
-      webgpuRenderedBlank: false,
-      webgl2MeanFps1440: 50,
+      webgpu: evidence({ meanFps: 90 }),
+      webgl2: evidence({ meanFps: 50 }),
     });
     expect(result.decision).toBe('webgpu');
   });
@@ -299,10 +305,8 @@ describe('decideRenderPath', () => {
   it('falls back to WebGL2 when the WebGPU run is below the bar', () => {
     const result = decideRenderPath({
       webgpuAdapterPresent: true,
-      webgpuMeanFps1440: PASS_FPS - 0.1,
-      webgpuMeasurementFenced: true,
-      webgpuRenderedBlank: false,
-      webgl2MeanFps1440: PASS_FPS,
+      webgpu: evidence({ meanFps: PASS_FPS - 0.1 }),
+      webgl2: evidence({ meanFps: PASS_FPS }),
     });
     expect(result.decision).toBe('webgl2');
     expect(result.reason).toContain('44.9');
@@ -311,10 +315,8 @@ describe('decideRenderPath', () => {
   it('falls back to WebGL2 when there is no adapter at all', () => {
     const result = decideRenderPath({
       webgpuAdapterPresent: false,
-      webgpuMeanFps1440: null,
-      webgpuMeasurementFenced: false,
-      webgpuRenderedBlank: false,
-      webgl2MeanFps1440: 60,
+      webgpu: noRun(),
+      webgl2: evidence({ meanFps: 60 }),
     });
     expect(result.decision).toBe('webgl2');
     expect(result.reason).toContain('no WebGPU adapter');
@@ -323,10 +325,8 @@ describe('decideRenderPath', () => {
   it('escalates when WebGL2 is below the bar', () => {
     const result = decideRenderPath({
       webgpuAdapterPresent: false,
-      webgpuMeanFps1440: null,
-      webgpuMeasurementFenced: false,
-      webgpuRenderedBlank: false,
-      webgl2MeanFps1440: PASS_FPS - 0.1,
+      webgpu: noRun(),
+      webgl2: evidence({ meanFps: PASS_FPS - 0.1 }),
     });
     expect(result.decision).toBe('escalate');
     expect(result.reason).toContain('ESCALATE');
@@ -335,10 +335,8 @@ describe('decideRenderPath', () => {
   it('escalates when neither backend produced any numbers', () => {
     const result = decideRenderPath({
       webgpuAdapterPresent: true,
-      webgpuMeanFps1440: null,
-      webgpuMeasurementFenced: false,
-      webgpuRenderedBlank: false,
-      webgl2MeanFps1440: null,
+      webgpu: noRun(),
+      webgl2: noRun(),
     });
     expect(result.decision).toBe('escalate');
     expect(result.reason).toContain('no numbers');
@@ -349,12 +347,234 @@ describe('decideRenderPath', () => {
     // probe failed: adapter presence is the gate, not the number beside it.
     const result = decideRenderPath({
       webgpuAdapterPresent: false,
-      webgpuMeanFps1440: 120,
-      webgpuMeasurementFenced: true,
-      webgpuRenderedBlank: false,
-      webgl2MeanFps1440: 50,
+      webgpu: evidence({ meanFps: 120 }),
+      webgl2: evidence({ meanFps: 50 }),
     });
     expect(result.decision).toBe('webgl2');
+  });
+
+  // The fallback branch used to read `webgl2MeanFps >= PASS_FPS` and nothing
+  // else, while WebGPU was held to four separate validity checks. A broken
+  // backend is *more* likely to clear an fps bar than a working one — drawing
+  // nothing is the cheapest thing a GPU can do — so the asymmetry pointed the
+  // gate at exactly the runs it exists to reject. Every check below is one the
+  // WebGPU branch already applied; each of these cases used to select WebGL2.
+  describe('holds the WebGL2 fallback to the same validity checks as WebGPU', () => {
+    it('does not select an un-fenced WebGL2 run', () => {
+      const result = decideRenderPath({
+        webgpuAdapterPresent: false,
+        webgpu: noRun(),
+        webgl2: evidence({ meanFps: 240, measurementFenced: false }),
+      });
+      expect(result.decision).toBe('escalate');
+      expect(result.reason).toContain('the WebGL2 run could not wait on GPU completion');
+    });
+
+    it('does not select a WebGL2 run whose canvas read back blank', () => {
+      const result = decideRenderPath({
+        webgpuAdapterPresent: false,
+        webgpu: noRun(),
+        webgl2: evidence({ meanFps: 300, renderedBlank: true }),
+      });
+      expect(result.decision).toBe('escalate');
+      expect(result.reason).toContain('the WebGL2 run reported 300.0 fps but its canvas read back');
+    });
+
+    it('does not select a WebGL2 run measured on a clamped drawing buffer', () => {
+      const result = decideRenderPath({
+        webgpuAdapterPresent: false,
+        webgpu: noRun(),
+        webgl2: evidence({ meanFps: 120, resolutionStatus: 'clamped' }),
+      });
+      expect(result.decision).toBe('escalate');
+      expect(result.reason).toContain('smaller than the one it asked for');
+    });
+
+    it('does not select a WebGL2 run taken while the tab was hidden', () => {
+      const result = decideRenderPath({
+        webgpuAdapterPresent: false,
+        webgpu: noRun(),
+        webgl2: evidence({ meanFps: 120, sampleInvalidReason: 'the tab was hidden' }),
+      });
+      expect(result.decision).toBe('escalate');
+      expect(result.reason).toContain('not a valid sample');
+    });
+
+    it('still selects a WebGL2 run whose buffer size could not be read', () => {
+      // Same principle as the blank/unavailable split: a check that could not
+      // run is not a failed check, and must not veto a healthy backend.
+      const result = decideRenderPath({
+        webgpuAdapterPresent: false,
+        webgpu: noRun(),
+        webgl2: evidence({ meanFps: 60, resolutionStatus: 'unverified' }),
+      });
+      expect(result.decision).toBe('webgl2');
+    });
+  });
+
+  it('does not credit a WebGPU run taken while the tab was hidden', () => {
+    // A hidden tab stalls the frame loop, so the recorded frame costs stop
+    // describing the GPU. The report already labelled such a sample invalid;
+    // the decision used to consume its mean anyway.
+    const result = decideRenderPath({
+      webgpuAdapterPresent: true,
+      webgpu: evidence({ meanFps: 300, sampleInvalidReason: 'the tab was hidden' }),
+      webgl2: evidence({ meanFps: PASS_FPS }),
+    });
+    expect(result.decision).toBe('webgl2');
+    expect(result.reason).toContain('the WebGPU run is not a valid sample');
+  });
+
+  it('does not credit a WebGPU run measured on a clamped drawing buffer', () => {
+    const result = decideRenderPath({
+      webgpuAdapterPresent: true,
+      webgpu: evidence({ meanFps: 300, resolutionStatus: 'clamped' }),
+      webgl2: evidence({ meanFps: PASS_FPS }),
+    });
+    expect(result.decision).toBe('webgl2');
+    expect(result.reason).toContain('smaller than the one it asked for');
+  });
+});
+
+describe('classifyReadback', () => {
+  const black = { r: 0, g: 0, b: 0 };
+  // What a canvas that cleared and drew nothing actually reads back as.
+  const clearedOnly = {
+    r: Math.round(CLEAR_COLOR.r * 255),
+    g: Math.round(CLEAR_COLOR.g * 255),
+    b: Math.round(CLEAR_COLOR.b * 255),
+  };
+
+  it('reports content whenever more than one colour is present', () => {
+    expect(classifyReadback(118, clearedOnly).status).toBe('content');
+    expect(classifyReadback(2, black).status).toBe('content');
+  });
+
+  it('reports a flat frame of the clear colour as blank', () => {
+    // The clear ran and no fragments followed: a real empty frame.
+    expect(classifyReadback(1, clearedOnly).status).toBe('blank');
+  });
+
+  it('reports a flat frame of pure black as unavailable, not blank', () => {
+    // Headless Chromium on SwiftShader returns all-zero pixels for any WebGPU
+    // canvas — a bare clear-to-red with no shaders reads back black too. The
+    // configured clear colour is non-black, so a canvas that merely cleared
+    // cannot produce this; all-zero means the readback failed. Calling it
+    // `blank` vetoes a healthy fenced backend for a broken measuring tool.
+    expect(classifyReadback(1, black).status).toBe('unavailable');
+  });
+
+  it('proves the clear colour is what makes the two separable', () => {
+    // If CLEAR_COLOR were ever changed to black, `blank` and the known
+    // readback failure would collapse into the same pixels and this file's
+    // central distinction would quietly stop working.
+    expect([CLEAR_COLOR.r, CLEAR_COLOR.g, CLEAR_COLOR.b].some((channel) => channel > 0)).toBe(true);
+    expect(Math.max(clearedOnly.r, clearedOnly.g, clearedOnly.b)).toBeGreaterThan(0);
+  });
+
+  it('reports unavailable when there were no pixels to look at', () => {
+    // An empty readback is another way of failing to look, so it must not
+    // discredit the run either.
+    expect(classifyReadback(0, null).status).toBe('unavailable');
+    expect(classifyReadback(1, null).status).toBe('unavailable');
+    expect(isRenderedBlank(classifyReadback(0, null))).toBe(false);
+  });
+});
+
+describe('classifyResolution', () => {
+  const requested = { width: 2560, height: 1440 };
+
+  it('matches when the implementation allocated what was asked for', () => {
+    expect(classifyResolution(requested, { width: 2560, height: 1440 })).toBe('matched');
+  });
+
+  it('flags a buffer the implementation shrank in either dimension', () => {
+    // A clamped buffer rasterises fewer pixels than the label claims, so the
+    // fps is inflated for a resolution that was never measured.
+    expect(classifyResolution(requested, { width: 2048, height: 1440 })).toBe('clamped');
+    expect(classifyResolution(requested, { width: 2560, height: 1080 })).toBe('clamped');
+  });
+
+  it('reports unverified rather than clamped when the size could not be read', () => {
+    expect(classifyResolution(requested, { width: null, height: 1440 })).toBe('unverified');
+    expect(classifyResolution(requested, { width: 2560, height: null })).toBe('unverified');
+  });
+});
+
+describe('backendEvidenceAt', () => {
+  const run = (overrides: Partial<EvidenceRun> = {}): EvidenceRun => ({
+    resolution: { key: '1440p' },
+    stats: { meanFps: 60 },
+    interruptedByVisibilityChange: false,
+    gpuFenced: true,
+    pixelCheck: { status: 'content' },
+    drawingBuffer: {
+      requestedWidth: 2560,
+      requestedHeight: 1440,
+      actualWidth: 2560,
+      actualHeight: 1440,
+    },
+    ...overrides,
+  });
+
+  it('collects a healthy run into creditable evidence', () => {
+    expect(backendEvidenceAt([run()], '1440p')).toEqual({
+      meanFps: 60,
+      measurementFenced: true,
+      renderedBlank: false,
+      resolutionStatus: 'matched',
+      sampleInvalidReason: null,
+    });
+  });
+
+  it('marks a run interrupted by a hidden tab as an invalid sample', () => {
+    const result = backendEvidenceAt([run({ interruptedByVisibilityChange: true })], '1440p');
+    expect(result.sampleInvalidReason).toContain('hidden');
+    expect(
+      decideRenderPath({ webgpuAdapterPresent: false, webgpu: noRun(), webgl2: result }).decision
+    ).toBe('escalate');
+  });
+
+  it('carries the fence, blank and clamp findings through to the gate', () => {
+    expect(backendEvidenceAt([run({ gpuFenced: false })], '1440p').measurementFenced).toBe(false);
+    expect(
+      backendEvidenceAt([run({ pixelCheck: { status: 'blank' } })], '1440p').renderedBlank
+    ).toBe(true);
+    expect(
+      backendEvidenceAt([run({ pixelCheck: { status: 'unavailable' } })], '1440p').renderedBlank
+    ).toBe(false);
+    expect(
+      backendEvidenceAt(
+        [
+          run({
+            drawingBuffer: {
+              requestedWidth: 2560,
+              requestedHeight: 1440,
+              actualWidth: 1024,
+              actualHeight: 1440,
+            },
+          }),
+        ],
+        '1440p'
+      ).resolutionStatus
+    ).toBe('clamped');
+  });
+
+  it('reads the run for the requested resolution, not whichever came first', () => {
+    const runs = [
+      run({ resolution: { key: '1440p' }, stats: { meanFps: 60 } }),
+      run({ resolution: { key: '2160p' }, stats: { meanFps: 24 }, gpuFenced: false }),
+    ];
+    expect(backendEvidenceAt(runs, '2160p')).toMatchObject({
+      meanFps: 24,
+      measurementFenced: false,
+    });
+  });
+
+  it('is uncreditable when the resolution was never run', () => {
+    const result = backendEvidenceAt([], '1440p');
+    expect(result.meanFps).toBeNull();
+    expect(result.measurementFenced).toBe(false);
   });
 });
 

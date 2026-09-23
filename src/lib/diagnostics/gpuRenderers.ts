@@ -20,15 +20,18 @@
 import {
   BENCHMARK_DURATION_MS,
   CAMERA_DISTANCE,
+  CLEAR_COLOR,
   FIELD_OF_VIEW,
   MESH_ALPHA,
   WARMUP_FRAMES,
+  classifyReadback,
   modelViewMatrix,
   perspectiveZeroToOne,
   summarizeFrames,
   type BenchmarkResolution,
   type FrameStats,
   type Mesh,
+  type PixelCheckStatus,
   VERTEX_STRIDE_BYTES,
 } from './gpuBenchmark';
 
@@ -63,6 +66,16 @@ type BenchRenderer = {
    * work actually completed.
    */
   waitForGpuIdle(): Promise<void>;
+  /**
+   * The drawing buffer the GPU actually allocated, which is not necessarily the
+   * one `resize` asked for: a 3840x2160 request can be clamped by the
+   * implementation's maximum, and the run would then report the frame rate of a
+   * smaller surface under a 2160p label. `null` means the size could not be
+   * read — not evidence that it was clamped.
+   */
+  drawingBufferSize(): { width: number | null; height: number | null };
+  /** Adapter strings read from the context that is doing the drawing. */
+  describeAdapter(): string | null;
   dispose(): void;
 };
 
@@ -71,7 +84,9 @@ export type BackendKey = 'webgl2' | 'webgpu';
 export type BackendRun = {
   resolution: BenchmarkResolution;
   stats: FrameStats;
-  /** True when the document was hidden at any point during the run, which stalls rAF. */
+  /** Wall time the run occupied, as against `stats.elapsedMs`, which is GPU time. */
+  wallElapsedMs: number;
+  /** True when the document was hidden at any point during the run, which stalls the loop. */
   interruptedByVisibilityChange: boolean;
   /**
    * False when the GPU-completion wait rejected and the run continued without
@@ -81,6 +96,20 @@ export type BackendRun = {
   gpuFenced: boolean;
   /** Verbatim rejection from the first failed GPU wait, when `gpuFenced` is false. */
   fenceError: string | null;
+  /**
+   * Verification taken at *this* resolution, immediately after its timed
+   * frames. Per-run rather than once per backend: a single check at a small
+   * size cannot speak for a 2160p buffer the implementation may have clamped or
+   * failed to allocate, and that is precisely the case where the fps inflates.
+   */
+  pixelCheck: CanvasPixelCheck;
+  /** What was asked for against what the implementation actually allocated. */
+  drawingBuffer: {
+    requestedWidth: number;
+    requestedHeight: number;
+    actualWidth: number | null;
+    actualHeight: number | null;
+  };
 };
 
 /**
@@ -93,11 +122,11 @@ export type BackendRun = {
  * is not evidence that the canvas was empty, and must not be treated as such.
  */
 export type CanvasPixelCheck = {
-  /** `blank` only when the readback succeeded AND found a single flat colour. */
-  status: 'content' | 'blank' | 'unavailable';
+  /** `blank` only when the readback succeeded AND found a single non-black flat colour. */
+  status: PixelCheckStatus;
   uniqueColors: number | null;
   meanLuma: number | null;
-  /** Verbatim reason the readback could not run, when `status` is `unavailable`. */
+  /** Verbatim reason the readback could not run or could not be trusted. */
   error: string | null;
 };
 
@@ -107,8 +136,11 @@ export type BackendReport = {
   /** Populated when the backend could not be initialised or a run threw. */
   error: string | null;
   runs: BackendRun[];
-  /** Rendered-content verification, taken once after the timed runs. */
-  pixelCheck: CanvasPixelCheck;
+  /**
+   * The adapter as named by the context that actually drew, so the renderer
+   * string in this report cannot describe a different GPU from the fps.
+   */
+  benchmarkedAdapter: string | null;
 };
 
 export type Webgl2Info = {
@@ -173,42 +205,65 @@ export function collectDisplayInfo(refreshHz: number | null): DisplayInfo {
   };
 }
 
-export function collectWebgl2Info(): Webgl2Info {
-  const canvas = document.createElement('canvas');
-  canvas.width = 1;
-  canvas.height = 1;
-  const gl = canvas.getContext('webgl2');
-  if (!gl) {
-    return {
-      unmaskedRenderer: null,
-      unmaskedVendor: null,
-      renderer: null,
-      vendor: null,
-      version: null,
-      shadingLanguageVersion: null,
-      maxTextureSize: null,
-    };
-  }
+/**
+ * The one set of context attributes used for *both* the capability probe and
+ * the benchmark.
+ *
+ * Shared rather than duplicated because `powerPreference` participates in GPU
+ * selection: on a hybrid-GPU machine a default-preference probe context and a
+ * `high-performance` benchmark context can land on different adapters, and the
+ * report would then print the integrated GPU's renderer string above the
+ * discrete GPU's frame rate — a mismatch nothing on the page could reveal.
+ * `readWebgl2Info` is additionally called against the benchmark context itself
+ * so the reported adapter is the measured adapter by construction.
+ */
+export const WEBGL2_CONTEXT_ATTRIBUTES: WebGLContextAttributes = {
+  alpha: false,
+  antialias: false,
+  depth: false,
+  desynchronized: false,
+  powerPreference: 'high-performance',
+  preserveDrawingBuffer: false,
+};
 
+const EMPTY_WEBGL2_INFO: Webgl2Info = {
+  unmaskedRenderer: null,
+  unmaskedVendor: null,
+  renderer: null,
+  vendor: null,
+  version: null,
+  shadingLanguageVersion: null,
+  maxTextureSize: null,
+};
+
+/** Reads the adapter strings out of a live context — the one that did the drawing. */
+export function readWebgl2Info(gl: WebGL2RenderingContext): Webgl2Info {
   const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
   const readString = (parameter: number): string | null => {
     const value: unknown = gl.getParameter(parameter);
     return typeof value === 'string' ? value : null;
   };
+  const maxTextureSize: unknown = gl.getParameter(gl.MAX_TEXTURE_SIZE);
 
-  const info: Webgl2Info = {
+  return {
     unmaskedRenderer: debugInfo ? readString(debugInfo.UNMASKED_RENDERER_WEBGL) : null,
     unmaskedVendor: debugInfo ? readString(debugInfo.UNMASKED_VENDOR_WEBGL) : null,
     renderer: readString(gl.RENDERER),
     vendor: readString(gl.VENDOR),
     version: readString(gl.VERSION),
     shadingLanguageVersion: readString(gl.SHADING_LANGUAGE_VERSION),
-    maxTextureSize:
-      typeof gl.getParameter(gl.MAX_TEXTURE_SIZE) === 'number'
-        ? (gl.getParameter(gl.MAX_TEXTURE_SIZE) as number)
-        : null,
+    maxTextureSize: typeof maxTextureSize === 'number' ? maxTextureSize : null,
   };
+}
 
+export function collectWebgl2Info(): Webgl2Info {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1;
+  canvas.height = 1;
+  const gl = canvas.getContext('webgl2', WEBGL2_CONTEXT_ATTRIBUTES);
+  if (!gl) return EMPTY_WEBGL2_INFO;
+
+  const info = readWebgl2Info(gl);
   gl.getExtension('WEBGL_lose_context')?.loseContext();
   return info;
 }
@@ -345,14 +400,7 @@ function compileShader(gl: WebGL2RenderingContext, type: number, source: string)
 }
 
 function createWebgl2Renderer(canvas: HTMLCanvasElement, mesh: Mesh): BenchRenderer {
-  const gl = canvas.getContext('webgl2', {
-    alpha: false,
-    antialias: false,
-    depth: false,
-    desynchronized: false,
-    powerPreference: 'high-performance',
-    preserveDrawingBuffer: false,
-  });
+  const gl = canvas.getContext('webgl2', WEBGL2_CONTEXT_ATTRIBUTES);
   if (!gl) throw new Error('canvas.getContext("webgl2") returned null');
 
   const vertexShader = compileShader(gl, gl.VERTEX_SHADER, WEBGL2_VERTEX_SHADER);
@@ -393,7 +441,7 @@ function createWebgl2Renderer(canvas: HTMLCanvasElement, mesh: Mesh): BenchRende
   gl.disable(gl.CULL_FACE);
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-  gl.clearColor(0.02, 0.03, 0.06, 1);
+  gl.clearColor(CLEAR_COLOR.r, CLEAR_COLOR.g, CLEAR_COLOR.b, 1);
 
   let projection = perspectiveZeroToOne(FIELD_OF_VIEW, 1, 0.1, 100);
   const indexCount = mesh.triangleCount * 3;
@@ -424,6 +472,15 @@ function createWebgl2Renderer(canvas: HTMLCanvasElement, mesh: Mesh): BenchRende
       // poll would have to come back through setTimeout, whose nested clamp of
       // ~4 ms is a quarter of a 60 Hz frame and would depress the result.
       gl.finish();
+    },
+    drawingBufferSize() {
+      // Not canvas.width/height — those echo back whatever was assigned. These
+      // two are what the implementation actually allocated after any clamping.
+      return { width: gl.drawingBufferWidth, height: gl.drawingBufferHeight };
+    },
+    describeAdapter() {
+      const info = readWebgl2Info(gl);
+      return info.unmaskedRenderer ?? info.renderer;
     },
     dispose() {
       gl.deleteBuffer(vertexBuffer);
@@ -555,10 +612,21 @@ async function createWebgpuRenderer(canvas: HTMLCanvasElement, mesh: Mesh): Prom
   let projection = perspectiveZeroToOne(FIELD_OF_VIEW, 1, 0.1, 100);
   const indexCount = mesh.triangleCount * 3;
 
+  const adapterInfo =
+    adapter.info ?? (adapter.requestAdapterInfo ? await adapter.requestAdapterInfo() : undefined);
+
+  // Recorded from the texture actually rendered into, rather than from
+  // canvas.width: the swap-chain texture is what the implementation allocated,
+  // and a clamped one is how an inflated "2160p" number gets produced.
+  let renderedWidth: number | null = null;
+  let renderedHeight: number | null = null;
+
   return {
     resize(width, height) {
       canvas.width = width;
       canvas.height = height;
+      renderedWidth = null;
+      renderedHeight = null;
       projection = perspectiveZeroToOne(FIELD_OF_VIEW, width / height, 0.1, 100);
     },
     drawFrame(elapsedSeconds) {
@@ -574,11 +642,14 @@ async function createWebgpuRenderer(canvas: HTMLCanvasElement, mesh: Mesh): Prom
       device.queue.writeBuffer(uniformBuffer, 0, uniformData);
 
       const encoder = device.createCommandEncoder();
+      const texture = context.getCurrentTexture();
+      renderedWidth = typeof texture.width === 'number' ? texture.width : null;
+      renderedHeight = typeof texture.height === 'number' ? texture.height : null;
       const pass = encoder.beginRenderPass({
         colorAttachments: [
           {
-            view: context.getCurrentTexture().createView(),
-            clearValue: { r: 0.02, g: 0.03, b: 0.06, a: 1 },
+            view: texture.createView(),
+            clearValue: { ...CLEAR_COLOR, a: 1 },
             loadOp: 'clear',
             storeOp: 'store',
           },
@@ -594,6 +665,15 @@ async function createWebgpuRenderer(canvas: HTMLCanvasElement, mesh: Mesh): Prom
     },
     waitForGpuIdle() {
       return device.queue.onSubmittedWorkDone();
+    },
+    drawingBufferSize() {
+      return { width: renderedWidth, height: renderedHeight };
+    },
+    describeAdapter() {
+      const parts = [adapterInfo?.vendor, adapterInfo?.architecture, adapterInfo?.device]
+        .filter((part): part is string => typeof part === 'string' && part.length > 0)
+        .join(' / ');
+      return parts || (adapterInfo?.description ?? null);
     },
     dispose() {
       vertexBuffer.destroy();
@@ -661,67 +741,110 @@ export async function inspectCanvasPixels(canvas: HTMLCanvasElement): Promise<Ca
     const { data } = context.getImageData(0, 0, target.width, target.height);
     const seen = new Set<number>();
     let lumaSum = 0;
+    let firstR: number | null = null;
+    let firstG: number | null = null;
+    let firstB: number | null = null;
     for (let i = 0; i < data.length; i += 4) {
       const r = data[i] as number;
       const g = data[i + 1] as number;
       const b = data[i + 2] as number;
+      if (firstR === null) {
+        firstR = r;
+        firstG = g;
+        firstB = b;
+      }
       seen.add((r << 16) | (g << 8) | b);
       lumaSum += (r + g + b) / 3;
     }
     const pixels = data.length / 4;
+    // A correct frame carries the clear colour, the lit body and the rim, so
+    // even a downsampled readback has many distinct colours. One colour is
+    // ambiguous between "nothing was drawn" and "nothing could be read", and
+    // `classifyReadback` separates the two by whether that colour is the
+    // configured non-black clear.
+    const verdict = classifyReadback(
+      seen.size,
+      firstR === null ? null : { r: firstR, g: firstG as number, b: firstB as number }
+    );
     return {
-      // A correct frame carries the clear colour, the lit body and the rim, so
-      // even a downsampled readback has many distinct colours. One colour means
-      // the clear happened and nothing was drawn — or nothing happened at all.
-      status: seen.size > 1 ? 'content' : 'blank',
+      status: verdict.status,
       uniqueColors: seen.size,
       meanLuma: pixels > 0 ? lumaSum / pixels : null,
-      error: null,
+      error: verdict.note,
     };
   } catch (error) {
     return unavailable(error);
   }
 }
 
-function measureRun(renderer: BenchRenderer, resolution: BenchmarkResolution): Promise<BackendRun> {
+/**
+ * Hands control back to the event loop for one task.
+ *
+ * `setTimeout(0)` would be the obvious choice and is wrong here: nested
+ * timeouts are clamped to ~4 ms, a quarter of a 60 Hz frame, which would be
+ * paid between every pair of frames. A `MessageChannel` round trip is a real
+ * task with no clamp, so the compositor and React still get their turn while
+ * the run keeps the GPU busy.
+ */
+function yieldToEventLoop(port: MessagePort, target: MessagePort): Promise<void> {
+  return new Promise((resolve) => {
+    port.onmessage = () => resolve();
+    target.postMessage(null);
+  });
+}
+
+/**
+ * Measures one backend at one resolution, then verifies that it drew something
+ * *at that resolution* before the numbers are handed on.
+ *
+ * Two deliberate departures from the obvious requestAnimationFrame loop:
+ *
+ * 1. **The recorded cost is draw-to-fence, not rAF-to-rAF.** Because the next
+ *    frame can only be scheduled once the fence resolves, an rAF-paced loop
+ *    quantises every result to the display cadence: a frame genuinely costing
+ *    17 ms misses the next 60 Hz callback and lands on the one after, recording
+ *    33 ms. A GPU sustaining 58 fps would report 30, and the plan's 45 fps bar
+ *    would silently have become a 60 fps bar — the gate would fail hardware
+ *    that comfortably clears it.
+ * 2. **Frames run back to back rather than once per refresh.** Following from
+ *    the above, waiting for a vsync boundary between frames only adds idle time
+ *    that is excluded from the measurement anyway, and would stretch a 10 s
+ *    sample over a minute or more of wall clock on a fast GPU.
+ *
+ * The cost this reports is therefore the GPU's own frame time with the CPU/GPU
+ * overlap of a pipelined renderer deliberately removed — a real renderer that
+ * does not fence every frame has *more* headroom than these numbers, not less.
+ */
+async function measureRun(
+  renderer: BenchRenderer,
+  canvas: HTMLCanvasElement,
+  resolution: BenchmarkResolution
+): Promise<BackendRun> {
   renderer.resize(resolution.width, resolution.height);
 
-  return new Promise<BackendRun>((resolve, reject) => {
-    const intervals: number[] = [];
-    let warmupRemaining = WARMUP_FRAMES;
-    let previous: number | null = null;
-    let measuredMs = 0;
-    let hidden = document.visibilityState === 'hidden';
-    let gpuFenced = true;
-    let fenceError: string | null = null;
-    const start = performance.now();
+  const channel = new MessageChannel();
+  const intervals: number[] = [];
+  let warmupRemaining = WARMUP_FRAMES;
+  let hidden = document.visibilityState === 'hidden';
+  let gpuFenced = true;
+  let fenceError: string | null = null;
 
-    const onVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') hidden = true;
-    };
-    document.addEventListener('visibilitychange', onVisibilityChange);
+  const onVisibilityChange = () => {
+    if (document.visibilityState === 'hidden') hidden = true;
+  };
+  document.addEventListener('visibilitychange', onVisibilityChange);
 
-    const finish = (run: BackendRun) => {
-      document.removeEventListener('visibilitychange', onVisibilityChange);
-      resolve(run);
-    };
-    const fail = (error: unknown) => {
-      document.removeEventListener('visibilitychange', onVisibilityChange);
-      reject(error instanceof Error ? error : new Error(describeError(error)));
-    };
-
-    // The next frame is only scheduled once the GPU has drained, so the gap
-    // between consecutive rAF timestamps contains the previous frame's full
-    // draw-and-complete cost rather than just its submission cost.
-    const schedule = () => requestAnimationFrame((now) => void tick(now));
-
-    const tick = async (now: number) => {
-      try {
-        renderer.drawFrame((now - start) / 1000);
-      } catch (error) {
-        fail(error);
-        return;
-      }
+  const start = performance.now();
+  // Set once warm-up ends, so the 10 s budget is 10 s of *measurement*. Timing
+  // it from the first warm-up frame instead would let a slow backend — the one
+  // whose numbers matter most — spend its whole budget on shader compilation
+  // and the first 4K allocation, and return a run with no measured frames at
+  // all, which the gate reads as "produced no numbers".
+  let measureStart: number | null = null;
+  try {
+    for (;;) {
+      const frameStart = performance.now();
+      renderer.drawFrame((frameStart - start) / 1000);
 
       if (gpuFenced) {
         try {
@@ -729,48 +852,61 @@ function measureRun(renderer: BenchRenderer, resolution: BenchmarkResolution): P
         } catch (error) {
           // Degrade rather than abandon the run: an un-fenceable backend still
           // has a number worth showing, it just stops being creditable. The
-          // decision rule reads `gpuFenced`, so an un-fenced WebGPU result can
-          // never be mistaken for proof that the GPU held the frame rate.
+          // decision rule reads `gpuFenced`, so an un-fenced result can never be
+          // mistaken for proof that the GPU held the frame rate.
           gpuFenced = false;
           fenceError = describeError(error);
           intervals.length = 0;
-          measuredMs = 0;
-          previous = null;
           warmupRemaining = WARMUP_FRAMES;
+          measureStart = null;
         }
       }
+      const frameCostMs = performance.now() - frameStart;
 
       if (warmupRemaining > 0) {
         warmupRemaining -= 1;
-        // Keep `previous` unset so the first measured interval spans two
-        // steady-state frames rather than straddling the warm-up boundary.
-        previous = null;
-        schedule();
-        return;
+      } else {
+        if (measureStart === null) measureStart = frameStart;
+        intervals.push(frameCostMs);
+        if (performance.now() - measureStart >= BENCHMARK_DURATION_MS) break;
       }
 
-      if (previous !== null) {
-        const delta = now - previous;
-        intervals.push(delta);
-        measuredMs += delta;
-      }
-      previous = now;
+      await yieldToEventLoop(channel.port1, channel.port2);
+    }
 
-      if (measuredMs >= BENCHMARK_DURATION_MS) {
-        finish({
-          resolution,
-          stats: summarizeFrames(intervals),
-          interruptedByVisibilityChange: hidden,
-          gpuFenced,
-          fenceError,
-        });
-        return;
-      }
-      schedule();
+    // Verification frame, drawn at the resolution just measured and read back
+    // before anything else touches the canvas. Checking only a small frame
+    // after the fact — as this did originally — cannot see a 2560x1440 buffer
+    // the implementation clamped or failed to allocate, and that is exactly the
+    // case where the timed draws become cheap and the fps inflates.
+    renderer.drawFrame(1);
+    await renderer.waitForGpuIdle().catch(() => {
+      // Already recorded as un-fenced; the readback below still reports
+      // whatever reached the canvas.
+    });
+    const drawingBufferSize = renderer.drawingBufferSize();
+    const pixelCheck = await inspectCanvasPixels(canvas);
+
+    return {
+      resolution,
+      stats: summarizeFrames(intervals),
+      wallElapsedMs: performance.now() - start,
+      interruptedByVisibilityChange: hidden,
+      gpuFenced,
+      fenceError,
+      pixelCheck,
+      drawingBuffer: {
+        requestedWidth: resolution.width,
+        requestedHeight: resolution.height,
+        actualWidth: drawingBufferSize.width,
+        actualHeight: drawingBufferSize.height,
+      },
     };
-
-    schedule();
-  });
+  } finally {
+    document.removeEventListener('visibilitychange', onVisibilityChange);
+    channel.port1.close();
+    channel.port2.close();
+  }
 }
 
 export type BackendFactory = {
@@ -810,42 +946,20 @@ export async function runBackend(
       available: false,
       error: describeError(error),
       runs: [],
-      pixelCheck: {
-        status: 'unavailable',
-        uniqueColors: null,
-        meanLuma: null,
-        error: 'backend never initialised',
-      },
+      benchmarkedAdapter: null,
     };
   }
 
   const runs: BackendRun[] = [];
   let error: string | null = null;
-  let pixelCheck: CanvasPixelCheck = {
-    status: 'unavailable',
-    uniqueColors: null,
-    meanLuma: null,
-    error: 'verification frame never ran',
-  };
+  let benchmarkedAdapter: string | null = null;
   try {
+    benchmarkedAdapter = renderer.describeAdapter();
     for (const resolution of resolutions) {
-      const run = await measureRun(renderer, resolution);
+      const run = await measureRun(renderer, canvas, resolution);
       runs.push(run);
       onRunComplete?.(run);
     }
-
-    // Verification frame. Drawn at a small size — this checks that the pipeline
-    // produces fragments, which is resolution-independent, and a 4K readback
-    // would cost more than the thing it is checking. It must be its own draw
-    // rather than a look at the last timed frame, because the readback has to
-    // happen before the compositor takes the drawing buffer away.
-    renderer.resize(PIXEL_CHECK_WIDTH * 4, PIXEL_CHECK_HEIGHT * 4);
-    renderer.drawFrame(1);
-    await renderer.waitForGpuIdle().catch(() => {
-      // An un-fenceable backend is already recorded per-run; the readback below
-      // still reports whatever reached the canvas.
-    });
-    pixelCheck = await inspectCanvasPixels(canvas);
   } catch (runError) {
     error = describeError(runError);
   } finally {
@@ -857,5 +971,5 @@ export async function runBackend(
     canvas.remove();
   }
 
-  return { backend: factory.backend, available: true, error, runs, pixelCheck };
+  return { backend: factory.backend, available: true, error, runs, benchmarkedAdapter };
 }

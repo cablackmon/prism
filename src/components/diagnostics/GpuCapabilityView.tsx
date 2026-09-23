@@ -22,10 +22,10 @@ import {
   PASS_FPS,
   TARGET_VERTEX_COUNT,
   WARMUP_FRAMES,
+  backendEvidenceAt,
+  classifyResolution,
   createSphereMesh,
   decideRenderPath,
-  isRenderedBlank,
-  meanFpsAt,
   type DecisionResult,
 } from '@/lib/diagnostics/gpuBenchmark';
 import {
@@ -38,6 +38,7 @@ import {
   measureDisplayRefreshHz,
   runBackend,
   type BackendReport,
+  type BackendRun,
   type DisplayInfo,
   type Webgl2Info,
   type WebgpuInfo,
@@ -91,6 +92,25 @@ function formatFps(value: number | null | undefined): string {
   return typeof value === 'number' && Number.isFinite(value) ? value.toFixed(1) : '—';
 }
 
+/** Renders the requested-versus-allocated drawing buffer, and whether it held. */
+function describeDrawingBuffer(buffer: BackendRun['drawingBuffer']): {
+  ok: boolean;
+  text: string;
+} {
+  const status = classifyResolution(
+    { width: buffer.requestedWidth, height: buffer.requestedHeight },
+    { width: buffer.actualWidth, height: buffer.actualHeight }
+  );
+  if (status === 'unverified') return { ok: true, text: 'size not readable' };
+  const actual = `${buffer.actualWidth}x${buffer.actualHeight}`;
+  return status === 'matched'
+    ? { ok: true, text: `${actual} as asked` }
+    : {
+        ok: false,
+        text: `CLAMPED to ${actual} from ${buffer.requestedWidth}x${buffer.requestedHeight}`,
+      };
+}
+
 export function GpuCapabilityView() {
   const [phase, setPhase] = useState<Phase>('idle');
   const [status, setStatus] = useState('Preparing…');
@@ -136,12 +156,7 @@ export function GpuCapabilityView() {
             available: false,
             error: webgpu.error ?? 'no WebGPU adapter',
             runs: [],
-            pixelCheck: {
-              status: 'unavailable',
-              uniqueColors: null,
-              meanLuma: null,
-              error: 'no WebGPU adapter to render with',
-            },
+            benchmarkedAdapter: null,
           });
           continue;
         }
@@ -166,14 +181,13 @@ export function GpuCapabilityView() {
 
       const webgl2Runs = backends.find((entry) => entry.backend === 'webgl2')?.runs ?? [];
       const webgpuRuns = backends.find((entry) => entry.backend === 'webgpu')?.runs ?? [];
-      const webgpu1440 = webgpuRuns.find((entry) => entry.resolution.key === '1440p');
-      const webgpuPixelCheck = backends.find((entry) => entry.backend === 'webgpu')?.pixelCheck;
+      // Both backends go through the same collector. Assembling these fields by
+      // hand per backend is how the WebGL2 fallback came to be chosen on fps
+      // alone while WebGPU was held to four separate validity checks.
       const decision = decideRenderPath({
         webgpuAdapterPresent: webgpu.adapterPresent,
-        webgpuMeanFps1440: meanFpsAt(webgpuRuns, '1440p'),
-        webgpuMeasurementFenced: webgpu1440?.gpuFenced ?? false,
-        webgpuRenderedBlank: isRenderedBlank(webgpuPixelCheck),
-        webgl2MeanFps1440: meanFpsAt(webgl2Runs, '1440p'),
+        webgpu: backendEvidenceAt(webgpuRuns, '1440p'),
+        webgl2: backendEvidenceAt(webgl2Runs, '1440p'),
       });
 
       const finished: GpuReport = {
@@ -227,8 +241,13 @@ export function GpuCapabilityView() {
       <h1 className="text-5xl font-bold tracking-tight">GPU capability gate — /diag/gpu</h1>
       <p className="mt-2 text-2xl text-slate-300">
         NOX-11768 · hologram avatar Phase 0 · {BENCHMARK_DURATION_MS / 1000}s per run,{' '}
-        {WARMUP_FRAMES} warm-up frames discarded · every frame waits for GPU completion · bar{' '}
-        {PASS_FPS} fps mean at 1440p
+        {WARMUP_FRAMES} warm-up frames discarded · bar {PASS_FPS} fps mean at 1440p
+      </p>
+      <p className="mt-1 max-w-6xl text-xl text-slate-400">
+        fps is 1000 / (draw → GPU completion), measured frame by frame with the queue drained each
+        time. It is not a requestAnimationFrame cadence: an rAF-paced loop rounds every result to
+        the display refresh, so a 58 fps GPU would read as 30 and this bar would behave like a 60
+        fps one.
       </p>
 
       <p role="status" aria-live="polite" className="mt-6 text-3xl font-semibold text-sky-300">
@@ -361,30 +380,46 @@ export function GpuCapabilityView() {
           </table>
 
           {/* Frame rate is meaningless if the backend drew nothing, and a blank
-              canvas is the *fastest* result a GPU can produce. Show it next to
-              the numbers so the screenshot carries the caveat with the reading. */}
+              canvas is the *fastest* result a GPU can produce. Equally, an fps
+              taken from a buffer the driver quietly shrank is not a measurement
+              of the resolution it is filed under. Both are shown per run, next
+              to the numbers, so the screenshot carries the caveats with the
+              reading rather than leaving them in the JSON. */}
           <ul className="mt-6 max-w-6xl space-y-1 text-2xl">
             {[webgl2Report, webgpuReport].map((entry) =>
-              entry ? (
-                <li key={`${entry.backend}-pixels`}>
-                  <span className="font-semibold">{entry.backend}</span> rendered content:{' '}
-                  <span
-                    className={
-                      entry.pixelCheck.status === 'content'
-                        ? 'font-semibold text-emerald-300'
-                        : entry.pixelCheck.status === 'blank'
-                          ? 'font-semibold text-rose-300'
-                          : 'font-semibold text-amber-300'
-                    }
-                  >
-                    {entry.pixelCheck.status === 'content'
-                      ? `yes — ${entry.pixelCheck.uniqueColors} distinct colours`
-                      : entry.pixelCheck.status === 'blank'
-                        ? 'NO — canvas read back flat, the fps timed an empty frame'
-                        : `not verified — ${entry.pixelCheck.error ?? 'readback unavailable'}`}
-                  </span>
-                </li>
-              ) : null
+              entry
+                ? entry.runs.map((completed) => (
+                    <li key={`${entry.backend}-${completed.resolution.key}-pixels`}>
+                      <span className="font-semibold">{entry.backend}</span>{' '}
+                      {completed.resolution.label} — rendered content:{' '}
+                      <span
+                        className={
+                          completed.pixelCheck.status === 'content'
+                            ? 'font-semibold text-emerald-300'
+                            : completed.pixelCheck.status === 'blank'
+                              ? 'font-semibold text-rose-300'
+                              : 'font-semibold text-amber-300'
+                        }
+                      >
+                        {completed.pixelCheck.status === 'content'
+                          ? `yes — ${completed.pixelCheck.uniqueColors} distinct colours`
+                          : completed.pixelCheck.status === 'blank'
+                            ? 'NO — canvas read back flat, the fps timed an empty frame'
+                            : `not verified — ${completed.pixelCheck.error ?? 'readback unavailable'}`}
+                      </span>
+                      {'; buffer: '}
+                      <span
+                        className={
+                          describeDrawingBuffer(completed.drawingBuffer).ok
+                            ? 'font-semibold text-emerald-300'
+                            : 'font-semibold text-rose-300'
+                        }
+                      >
+                        {describeDrawingBuffer(completed.drawingBuffer).text}
+                      </span>
+                    </li>
+                  ))
+                : null
             )}
           </ul>
 

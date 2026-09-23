@@ -45,6 +45,14 @@ type WebGpuMinTextureView = { readonly __brand?: 'GPUTextureView' };
 
 type WebGpuMinTexture = {
   createView(): WebGpuMinTextureView;
+  /**
+   * The swap-chain texture's real size. Read rather than assumed: this is what
+   * the implementation actually allocated, which a clamped 3840x2160 request
+   * would not match, and an fps taken from a smaller surface is not a 2160p
+   * measurement of anything.
+   */
+  readonly width: number;
+  readonly height: number;
 };
 
 type WebGpuMinRenderPassEncoder = {

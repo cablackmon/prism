@@ -217,9 +217,18 @@ export type FrameStats = {
 };
 
 /**
- * Summarises a run from its inter-frame intervals.
+ * Summarises a run from its per-frame costs.
  *
- * `meanFps` is frames over wall time rather than the mean of per-frame rates:
+ * Each entry is one frame's draw-to-GPU-completion time, *not* the gap between
+ * two `requestAnimationFrame` timestamps. Timing rAF-to-rAF quantises every
+ * result to the display cadence: because the next frame is only scheduled once
+ * the fence resolves, a frame whose real cost is 17 ms misses the next 60 Hz
+ * callback and is recorded as 33 ms, so a GPU sustaining a genuine 58 fps
+ * reports 30 and the 45 fps bar silently becomes a 60 fps bar. Measuring the
+ * fence directly reports the GPU's cost with the idle wait for the next refresh
+ * boundary excluded.
+ *
+ * `meanFps` is frames over total cost rather than the mean of per-frame rates:
  * averaging rates over-weights the cheap frames and would report a stutter-prone
  * run as comfortably passing.
  */
@@ -261,51 +270,180 @@ export function meanFpsAt(
 }
 
 // ---------------------------------------------------------------------------
-// Decision rule
+// Readback classification
 // ---------------------------------------------------------------------------
+
+/**
+ * The colour both backends clear to before drawing. Deliberately dark but
+ * *not* black, which is what makes an all-zero readback diagnosable: see
+ * `classifyReadback`.
+ */
+export const CLEAR_COLOR = { r: 0.02, g: 0.03, b: 0.06 } as const;
 
 /** Three-valued because "could not look" and "looked and it was empty" differ. */
 export type PixelCheckStatus = 'content' | 'blank' | 'unavailable';
 
+export type ReadbackVerdict = { status: PixelCheckStatus; note: string | null };
+
 /**
- * Maps a canvas readback to the decision rule's `webgpuRenderedBlank` input.
+ * Turns a canvas readback into a three-valued verdict.
+ *
+ * More than one colour means the mesh reached the canvas. One colour is
+ * ambiguous, and the ambiguity is not cosmetic: headless Chromium on a
+ * SwiftShader adapter returns all-zero pixels for *any* WebGPU canvas — a bare
+ * clear-to-red with no shaders and no pipeline reads back black too. That is a
+ * broken readback, not an empty canvas.
+ *
+ * The two are separable because a canvas that merely cleared and drew nothing
+ * still carries `CLEAR_COLOR`, which is non-black by construction. So a flat
+ * frame holding pure black is the known readback failure and reports
+ * `unavailable`; any other flat colour is a real blank frame. Collapsing them
+ * would veto a healthy fenced backend on the strength of the measuring tool.
+ */
+export function classifyReadback(
+  uniqueColors: number,
+  flatColor: { r: number; g: number; b: number } | null
+): ReadbackVerdict {
+  if (uniqueColors > 1) return { status: 'content', note: null };
+  if (uniqueColors === 0 || flatColor === null) {
+    // No pixels came back at all, which is the readback failing rather than
+    // the canvas being empty.
+    return { status: 'unavailable', note: 'readback produced no pixels to inspect' };
+  }
+  if (flatColor.r === 0 && flatColor.g === 0 && flatColor.b === 0) {
+    return {
+      status: 'unavailable',
+      note:
+        'readback returned uniform zeroes, which the configured non-black clear colour ' +
+        'cannot produce — the canvas could not be read back rather than being empty',
+    };
+  }
+  return {
+    status: 'blank',
+    note: 'readback succeeded and found a single flat colour, so no fragments were drawn',
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Per-backend evidence
+// ---------------------------------------------------------------------------
+
+/** Three-valued for the same reason as the pixel check: an unread size is not a clamped one. */
+export type ResolutionStatus = 'matched' | 'clamped' | 'unverified';
+
+/**
+ * Compares the drawing buffer the GPU actually allocated against the one the
+ * run asked for.
+ *
+ * A browser that clamps a 3840x2160 request down to its maximum renders fewer
+ * pixels than the label claims and posts an inflated fps for a resolution it
+ * never measured. `null` dimensions mean the size could not be read, which is
+ * not evidence of clamping and must not veto the run.
+ */
+export function classifyResolution(
+  requested: { width: number; height: number },
+  actual: { width: number | null; height: number | null }
+): ResolutionStatus {
+  if (actual.width === null || actual.height === null) return 'unverified';
+  return actual.width >= requested.width && actual.height >= requested.height
+    ? 'matched'
+    : 'clamped';
+}
+
+/**
+ * Maps a canvas readback to the decision rule's `renderedBlank` input.
  *
  * A one-line predicate with its own test on purpose: the call site in
  * `GpuCapabilityView` is not unit tested, so writing the comparison inline let a
  * mutation to `status !== 'content'` typecheck and pass the whole suite. That
  * mutant vetoes every backend whose canvas simply cannot be read back — which
  * is exactly what headless SwiftShader does — and would have turned an
- * unreadable canvas into a fake "WebGPU renders nothing" verdict.
+ * unreadable canvas into a fake "renders nothing" verdict.
  */
 export function isRenderedBlank(pixelCheck?: { status: PixelCheckStatus } | null): boolean {
   return pixelCheck?.status === 'blank';
 }
+
+/** Everything the decision rule needs to know about one backend at one resolution. */
+export type BackendEvidence = {
+  /** Mean fps of this backend's run at the gate resolution, or null when it produced none. */
+  meanFps: number | null;
+  /**
+   * False when the run could not wait on GPU completion, which makes its fps a
+   * count of submissions queued rather than work finished.
+   */
+  measurementFenced: boolean;
+  /** True only when the canvas was read back successfully and held a single flat colour. */
+  renderedBlank: boolean;
+  /** `clamped` means the fps belongs to a smaller buffer than the one named. */
+  resolutionStatus: ResolutionStatus;
+  /**
+   * Set when the sample itself is invalid regardless of what it says — a hidden
+   * tab stalls the loop and the recorded frame costs stop describing the GPU.
+   */
+  sampleInvalidReason: string | null;
+};
+
+/** Structural view of a run carrying everything the gate reads. */
+export type EvidenceRun = MeasuredRun & {
+  interruptedByVisibilityChange: boolean;
+  gpuFenced: boolean;
+  pixelCheck: { status: PixelCheckStatus };
+  drawingBuffer: {
+    requestedWidth: number;
+    requestedHeight: number;
+    actualWidth: number | null;
+    actualHeight: number | null;
+  };
+};
+
+/**
+ * Collects one backend's evidence at one resolution.
+ *
+ * Pure and tested because the alternative — assembling these five fields inline
+ * at the single untested call site in `GpuCapabilityView` — is how the WebGL2
+ * fallback came to be selected on fps alone while WebGPU was held to four
+ * separate validity checks.
+ */
+export function backendEvidenceAt(
+  runs: readonly EvidenceRun[],
+  key: BenchmarkResolution['key']
+): BackendEvidence {
+  const match = runs.find((run) => run.resolution.key === key);
+  if (!match) {
+    return {
+      meanFps: null,
+      measurementFenced: false,
+      renderedBlank: false,
+      resolutionStatus: 'unverified',
+      sampleInvalidReason: null,
+    };
+  }
+  return {
+    meanFps: meanFpsAt(runs, key),
+    measurementFenced: match.gpuFenced,
+    renderedBlank: isRenderedBlank(match.pixelCheck),
+    resolutionStatus: classifyResolution(
+      { width: match.drawingBuffer.requestedWidth, height: match.drawingBuffer.requestedHeight },
+      { width: match.drawingBuffer.actualWidth, height: match.drawingBuffer.actualHeight }
+    ),
+    sampleInvalidReason: match.interruptedByVisibilityChange
+      ? 'the tab was hidden during the run, which stalls the frame loop and invalidates the sample'
+      : null,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Decision rule
+// ---------------------------------------------------------------------------
 
 export type RenderPathDecision = 'webgpu' | 'webgl2' | 'escalate';
 
 export type DecisionInput = {
   /** True only when `navigator.gpu.requestAdapter()` actually returned an adapter. */
   webgpuAdapterPresent: boolean;
-  /** Mean fps of the WebGPU run at 1440p, or null when that run did not produce numbers. */
-  webgpuMeanFps1440: number | null;
-  /**
-   * False when the WebGPU run could not wait on GPU completion, which makes its
-   * fps a count of submissions queued rather than work finished. Such a number
-   * is not evidence about the GPU and must not decide the render path.
-   */
-  webgpuMeasurementFenced: boolean;
-  /**
-   * True only when the canvas was read back successfully and held a single flat
-   * colour. A pipeline that emits no fragments is the cheapest thing a GPU can
-   * do, so a blank WebGPU run posts the best fps on the page; crediting it would
-   * send Phase 2 down the WebGPU path on a backend that renders nothing.
-   *
-   * A readback that could not run leaves this false: "we could not look" is not
-   * the same claim as "we looked and it was empty".
-   */
-  webgpuRenderedBlank: boolean;
-  /** Mean fps of the WebGL2 run at 1440p, or null when that run did not produce numbers. */
-  webgl2MeanFps1440: number | null;
+  webgpu: BackendEvidence;
+  webgl2: BackendEvidence;
 };
 
 export type DecisionResult = {
@@ -315,78 +453,113 @@ export type DecisionResult = {
 };
 
 /**
+ * Whether one backend's run may be credited with clearing the bar, and the
+ * sentence explaining the answer either way.
+ *
+ * Applied identically to both backends. The asymmetric version of this rule —
+ * four validity checks on WebGPU and a bare fps comparison on the WebGL2
+ * fallback — was the gate's worst failure mode, because a broken pipeline is
+ * *more* likely to clear an fps bar than a working one: drawing nothing is the
+ * cheapest thing a GPU can do. A blank or un-fenced WebGL2 run would have been
+ * selected as the path for Phase 2 on the strength of that.
+ *
+ * Order matters. Each check answers "is this number about the GPU at all?" and
+ * only the last one asks whether the number is big enough; reporting "only held
+ * 300 fps" would be absurd, so validity is settled first.
+ */
+function evaluateBackend(
+  label: string,
+  evidence: BackendEvidence
+): { clears: boolean; detail: string } {
+  const { meanFps, measurementFenced, renderedBlank, resolutionStatus, sampleInvalidReason } =
+    evidence;
+
+  if (sampleInvalidReason !== null) {
+    return {
+      clears: false,
+      detail: `the ${label} run is not a valid sample: ${sampleInvalidReason}`,
+    };
+  }
+  if (meanFps === null) {
+    return { clears: false, detail: `the ${label} run produced no numbers` };
+  }
+  const fps = meanFps.toFixed(1);
+  if (!measurementFenced) {
+    return {
+      clears: false,
+      detail:
+        `the ${label} run could not wait on GPU completion, so its ${fps} fps counts ` +
+        `submissions queued, not work done, and is not creditable`,
+    };
+  }
+  if (renderedBlank) {
+    return {
+      clears: false,
+      detail:
+        `the ${label} run reported ${fps} fps but its canvas read back blank, so it was ` +
+        `timing an empty frame, not the mesh`,
+    };
+  }
+  if (resolutionStatus === 'clamped') {
+    return {
+      clears: false,
+      detail:
+        `the ${label} run reported ${fps} fps but the drawing buffer it got was smaller ` +
+        `than the one it asked for, so the number is not a measurement of this resolution`,
+    };
+  }
+  if (meanFps < PASS_FPS) {
+    return { clears: false, detail: `the ${label} run only held ${fps} fps at 1440p` };
+  }
+  return { clears: true, detail: `the ${label} run held ${fps} fps at 1440p` };
+}
+
+/**
  * The plan's rule (BOARD_INTEGRATION_PLAN.md § Phases, Phase 0):
  *   "WebGPU adapter present and >= 45 fps at 1440p = proceed in browser;
  *    otherwise WebGL2 path; if WebGL2 also fails the bar, escalate."
  *
  * Two things the prose leaves implicit and this implementation fixes:
  *
- * 1. The fps in the WebGPU clause is the *WebGPU-measured* fps, and only when
- *    that measurement waited on GPU completion. An adapter that exists but
- *    could not be benchmarked — or was benchmarked without a fence, which times
- *    the clock rather than the GPU — is not evidence that the WebGPU path holds
- *    45 fps, so it falls through to WebGL2 rather than being credited.
+ * 1. The fps in each clause is that backend's *own* measured fps, and only when
+ *    the measurement is evidence about the GPU — fenced, non-blank, taken at the
+ *    resolution it names, and not interrupted. An adapter that exists but could
+ *    not be validly benchmarked is not evidence that its path holds 45 fps.
  * 2. The bar is read against mean fps. `minFps` is reported alongside because a
  *    run that means 60 and mins 12 is a stutter problem the mean cannot show,
  *    but it is not what gates the path choice.
  */
 export function decideRenderPath(input: DecisionInput): DecisionResult {
-  const {
-    webgpuAdapterPresent,
-    webgpuMeanFps1440,
-    webgpuMeasurementFenced,
-    webgpuRenderedBlank,
-    webgl2MeanFps1440,
-  } = input;
+  const { webgpuAdapterPresent, webgpu, webgl2 } = input;
 
-  if (
-    webgpuAdapterPresent &&
-    webgpuMeanFps1440 !== null &&
-    webgpuMeasurementFenced &&
-    !webgpuRenderedBlank &&
-    webgpuMeanFps1440 >= PASS_FPS
-  ) {
+  // Why WebGPU was or was not taken. Computed once and reported on every path:
+  // an ESCALATE that named only WebGL2 would leave the reader to find a large
+  // WebGPU fps in the JSON blob with nothing saying it was discarded.
+  const webgpuVerdict = webgpuAdapterPresent
+    ? evaluateBackend('WebGPU', webgpu)
+    : { clears: false, detail: 'no WebGPU adapter' };
+
+  if (webgpuVerdict.clears) {
     return {
       decision: 'webgpu',
       reason:
-        `WebGPU adapter present and the WebGPU run held ${webgpuMeanFps1440.toFixed(1)} fps ` +
-        `at 1440p (bar ${PASS_FPS}). Browser WebGPU path.`,
+        `WebGPU adapter present and ${webgpuVerdict.detail} (bar ${PASS_FPS}). ` +
+        `Browser WebGPU path.`,
     };
   }
 
-  // Why WebGPU was not taken. Computed once and reported on both remaining
-  // paths: an ESCALATE that named only WebGL2 would leave the reader to find a
-  // large WebGPU fps in the JSON blob with nothing saying it was discarded.
-  const webgpuDetail = !webgpuAdapterPresent
-    ? 'no WebGPU adapter'
-    : webgpuMeanFps1440 === null
-      ? 'WebGPU adapter present but its run produced no numbers'
-      : !webgpuMeasurementFenced
-        ? `WebGPU run could not wait on GPU completion, so its ` +
-          `${webgpuMeanFps1440.toFixed(1)} fps counts submissions queued, not work done, ` +
-          `and is not creditable`
-        : webgpuRenderedBlank
-          ? `WebGPU run reported ${webgpuMeanFps1440.toFixed(1)} fps but its canvas read ` +
-            `back blank, so it was timing an empty frame, not the mesh`
-          : `WebGPU run only held ${webgpuMeanFps1440.toFixed(1)} fps at 1440p`;
-
-  if (webgl2MeanFps1440 !== null && webgl2MeanFps1440 >= PASS_FPS) {
+  const webgl2Verdict = evaluateBackend('WebGL2', webgl2);
+  if (webgl2Verdict.clears) {
     return {
       decision: 'webgl2',
-      reason:
-        `${webgpuDetail}; the WebGL2 run held ${webgl2MeanFps1440.toFixed(1)} fps at 1440p ` +
-        `(bar ${PASS_FPS}). WebGL2 path.`,
+      reason: `${webgpuVerdict.detail}; ${webgl2Verdict.detail} (bar ${PASS_FPS}). WebGL2 path.`,
     };
   }
 
-  const webgl2Detail =
-    webgl2MeanFps1440 === null
-      ? 'the WebGL2 run produced no numbers'
-      : `the WebGL2 run only held ${webgl2MeanFps1440.toFixed(1)} fps at 1440p`;
   return {
     decision: 'escalate',
     reason:
-      `Neither backend cleared ${PASS_FPS} fps at 1440p: ${webgpuDetail}; ` +
-      `${webgl2Detail}. ESCALATE.`,
+      `Neither backend cleared ${PASS_FPS} fps at 1440p: ${webgpuVerdict.detail}; ` +
+      `${webgl2Verdict.detail}. ESCALATE.`,
   };
 }

@@ -1,0 +1,201 @@
+{
+  "mesh": {
+    "vertexCount": 4029,
+    "triangleCount": 7800
+  },
+  "planMesh": {
+    "vertexCount": 100149,
+    "triangleCount": 199000
+  },
+  "webgl2Info": {
+    "unmaskedRenderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "unmaskedVendor": "Google Inc. (Google)",
+    "renderer": "WebKit WebGL",
+    "vendor": "WebKit",
+    "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "shadingLanguageVersion": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+    "maxTextureSize": 8192
+  },
+  "webgpuInfo": {
+    "supported": true,
+    "adapterPresent": true,
+    "vendor": "google",
+    "architecture": "swiftshader",
+    "device": "",
+    "description": "",
+    "isFallbackAdapter": null,
+    "preferredCanvasFormat": "rgba8unorm",
+    "error": null
+  },
+  "backends": [
+    {
+      "backend": "webgl2",
+      "available": true,
+      "error": null,
+      "runs": [
+        {
+          "resolution": {
+            "key": "1440p",
+            "label": "640 x 360 (scaled stand-in for 2560x1440)",
+            "width": 640,
+            "height": 360
+          },
+          "stats": {
+            "frames": 13622,
+            "elapsedMs": 14109.799998879433,
+            "meanFps": 965.4282839644663,
+            "minFps": 0.17183902120563924,
+            "longestFrameMs": 5819.399999976158
+          },
+          "wallElapsedMs": 22233,
+          "interruptedByVisibilityChange": false,
+          "gpuFenced": true,
+          "fenceError": null,
+          "pixelCheck": {
+            "status": "content",
+            "uniqueColors": 128,
+            "meanLuma": 62.135127314814746,
+            "error": null
+          },
+          "drawingBuffer": {
+            "requestedWidth": 640,
+            "requestedHeight": 360,
+            "actualWidth": 640,
+            "actualHeight": 360
+          }
+        },
+        {
+          "resolution": {
+            "key": "2160p",
+            "label": "960 x 540 (scaled stand-in for 3840x2160)",
+            "width": 960,
+            "height": 540
+          },
+          "stats": {
+            "frames": 9910,
+            "elapsedMs": 10657.499999165535,
+            "meanFps": 929.8615998851454,
+            "minFps": 0.09998400256054384,
+            "longestFrameMs": 10001.599999904633
+          },
+          "wallElapsedMs": 21911.199999928474,
+          "interruptedByVisibilityChange": false,
+          "gpuFenced": true,
+          "fenceError": null,
+          "pixelCheck": {
+            "status": "content",
+            "uniqueColors": 119,
+            "meanLuma": 62.09302662037039,
+            "error": null
+          },
+          "drawingBuffer": {
+            "requestedWidth": 960,
+            "requestedHeight": 540,
+            "actualWidth": 960,
+            "actualHeight": 540
+          }
+        }
+      ],
+      "benchmarkedAdapter": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+    },
+    {
+      "backend": "webgpu",
+      "available": true,
+      "error": null,
+      "runs": [
+        {
+          "resolution": {
+            "key": "1440p",
+            "label": "640 x 360 (scaled stand-in for 2560x1440)",
+            "width": 640,
+            "height": 360
+          },
+          "stats": {
+            "frames": 2486,
+            "elapsedMs": 9884.199997782707,
+            "meanFps": 251.51251497922715,
+            "minFps": 91.7431194667272,
+            "longestFrameMs": 10.899999976158142
+          },
+          "wallElapsedMs": 10169.400000095367,
+          "interruptedByVisibilityChange": false,
+          "gpuFenced": true,
+          "fenceError": null,
+          "pixelCheck": {
+            "status": "unavailable",
+            "uniqueColors": 1,
+            "meanLuma": 0,
+            "error": "readback returned uniform zeroes, which the configured non-black clear colour cannot produce — the canvas could not be read back rather than being empty"
+          },
+          "drawingBuffer": {
+            "requestedWidth": 640,
+            "requestedHeight": 360,
+            "actualWidth": 640,
+            "actualHeight": 360
+          }
+        },
+        {
+          "resolution": {
+            "key": "2160p",
+            "label": "960 x 540 (scaled stand-in for 3840x2160)",
+            "width": 960,
+            "height": 540
+          },
+          "stats": {
+            "frames": 1540,
+            "elapsedMs": 9902.499999403954,
+            "meanFps": 155.51628377608634,
+            "minFps": 112.35954935781555,
+            "longestFrameMs": 8.900000095367432
+          },
+          "wallElapsedMs": 10204.599999904633,
+          "interruptedByVisibilityChange": false,
+          "gpuFenced": true,
+          "fenceError": null,
+          "pixelCheck": {
+            "status": "unavailable",
+            "uniqueColors": 1,
+            "meanLuma": 0,
+            "error": "readback returned uniform zeroes, which the configured non-black clear colour cannot produce — the canvas could not be read back rather than being empty"
+          },
+          "drawingBuffer": {
+            "requestedWidth": 960,
+            "requestedHeight": 540,
+            "actualWidth": 960,
+            "actualHeight": 540
+          }
+        }
+      ],
+      "benchmarkedAdapter": "google / swiftshader"
+    }
+  ],
+  "evidence": {
+    "webgl2": {
+      "meanFps": 965.4282839644663,
+      "measurementFenced": true,
+      "renderedBlank": false,
+      "resolutionStatus": "matched",
+      "sampleInvalidReason": null
+    },
+    "webgpu": {
+      "meanFps": 251.51251497922715,
+      "measurementFenced": true,
+      "renderedBlank": false,
+      "resolutionStatus": "matched",
+      "sampleInvalidReason": null
+    }
+  },
+  "decision": {
+    "decision": "webgpu",
+    "reason": "WebGPU adapter present and the WebGPU run held 251.5 fps at 1440p (bar 45). Browser WebGPU path."
+  },
+  "blankControl": {
+    "status": "blank",
+    "uniqueColors": 1,
+    "meanLuma": 9.33333333333323,
+    "error": "readback succeeded and found a single flat colour, so no fragments were drawn"
+  },
+  "wallMs": 64570,
+  "benchmarkDurationMs": 10000,
+  "warmupFrames": 30
+}
