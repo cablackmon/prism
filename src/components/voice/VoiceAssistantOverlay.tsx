@@ -244,10 +244,11 @@ export function VoiceAssistantOverlay() {
           });
       },
     });
+    // No connect here: the socket opens on the tap (beginCapture). Connecting on
+    // mount opened a full server voice session on every board load, and the wall
+    // kiosk reloads the board every 10 minutes, so each reload burned one that
+    // sat idle until the server's 5-minute timeout (NOX-11812).
     client.current = voiceClient;
-    void voiceClient.connect().catch(() => {
-      // Connection is retried on the first tap; keep an idle board quiet.
-    });
     return () => {
       captureGeneration.current += 1;
       voiceClient.disconnect('unmount');

@@ -101,6 +101,24 @@ describe('VoiceAssistantOverlay accessibility and turn controls', () => {
     expect(mic.closest('[data-screensaver-keep]')).not.toBeNull();
   });
 
+  it('opens no voice socket until the mic is tapped, across board reloads', async () => {
+    installCaptureMocks();
+    // The wall kiosk reloads the board every 10 minutes: mount, unmount, mount.
+    const first = render(<VoiceAssistantOverlay />);
+    await act(async () => undefined);
+    first.unmount();
+    render(<VoiceAssistantOverlay />);
+    await act(async () => undefined);
+    expect(connect).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ask NOX by voice' }));
+    await waitFor(() => expect(startTurn).toHaveBeenCalledTimes(1));
+    expect(connect).toHaveBeenCalledTimes(1);
+    expect(connect.mock.invocationCallOrder[0]).toBeLessThan(
+      startTurn.mock.invocationCallOrder[0] ?? 0
+    );
+  });
+
   it('announces errors and restores the idle control when dismissed', async () => {
     render(<VoiceAssistantOverlay />);
 
