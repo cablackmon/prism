@@ -16,11 +16,11 @@ export interface RecipeCardProps {
 export function RecipeCard({ recipe, onClick, onToggleFavorite }: RecipeCardProps) {
   return (
     <Card
-      className="cursor-pointer hover:shadow-md transition-shadow overflow-hidden"
+      className="cursor-pointer overflow-hidden transition-shadow hover:shadow-md"
       onClick={onClick}
     >
       {recipe.imageUrl && (
-        <div className="relative h-40 bg-muted overflow-hidden">
+        <div className="relative h-40 overflow-hidden bg-muted">
           <Image
             src={recipe.imageUrl}
             alt={recipe.name}
@@ -32,7 +32,7 @@ export function RecipeCard({ recipe, onClick, onToggleFavorite }: RecipeCardProp
       )}
       <CardContent className={cn('p-4', !recipe.imageUrl && 'pt-4')}>
         <div className="flex items-start justify-between gap-2">
-          <h3 className="font-semibold line-clamp-2">{recipe.name}</h3>
+          <h3 className="line-clamp-2 font-semibold">{recipe.name}</h3>
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -53,12 +53,10 @@ export function RecipeCard({ recipe, onClick, onToggleFavorite }: RecipeCardProp
         </div>
 
         {recipe.description && (
-          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-            {recipe.description}
-          </p>
+          <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{recipe.description}</p>
         )}
 
-        <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground">
+        <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
           {(recipe.prepTime || recipe.cookTime) && (
             <span className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
@@ -79,7 +77,7 @@ export function RecipeCard({ recipe, onClick, onToggleFavorite }: RecipeCardProp
           )}
         </div>
 
-        <div className="flex flex-wrap gap-1 mt-2">
+        <div className="mt-2 flex flex-wrap gap-1">
           {recipe.cuisine && (
             <Badge variant="outline" className="text-xs">
               {recipe.cuisine}

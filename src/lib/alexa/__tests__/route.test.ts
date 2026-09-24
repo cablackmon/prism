@@ -151,221 +151,255 @@ describe('POST /api/alexa', () => {
   });
 
   it('handles LaunchRequest with a welcome message', async () => {
-    const res = await POST(makeRequest({
-      version: '1.0',
-      request: { type: 'LaunchRequest', timestamp: new Date().toISOString() },
-    }) as never);
+    const res = await POST(
+      makeRequest({
+        version: '1.0',
+        request: { type: 'LaunchRequest', timestamp: new Date().toISOString() },
+      }) as never
+    );
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.response.outputSpeech.text).toMatch(/welcome to prism/i);
+    expect(body.response.outputSpeech.text).toMatch(/welcome to kyst/i);
   });
 
   it('dispatches GetTodayEventsIntent', async () => {
-    const res = await POST(makeRequest({
-      version: '1.0',
-      request: {
-        type: 'IntentRequest',
-        timestamp: new Date().toISOString(),
-        intent: { name: 'GetTodayEventsIntent' },
-      },
-    }) as never);
+    const res = await POST(
+      makeRequest({
+        version: '1.0',
+        request: {
+          type: 'IntentRequest',
+          timestamp: new Date().toISOString(),
+          intent: { name: 'GetTodayEventsIntent' },
+        },
+      }) as never
+    );
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.response.outputSpeech.text).toBe('Today you have Soccer at 4 PM.');
   });
 
   it('dispatches GetUpcomingEventsIntent with slot count', async () => {
-    const res = await POST(makeRequest({
-      version: '1.0',
-      request: {
-        type: 'IntentRequest',
-        timestamp: new Date().toISOString(),
-        intent: { name: 'GetUpcomingEventsIntent', slots: { Count: { value: '5' } } },
-      },
-    }) as never);
+    const res = await POST(
+      makeRequest({
+        version: '1.0',
+        request: {
+          type: 'IntentRequest',
+          timestamp: new Date().toISOString(),
+          intent: { name: 'GetUpcomingEventsIntent', slots: { Count: { value: '5' } } },
+        },
+      }) as never
+    );
     const body = await res.json();
     expect(body.response.outputSpeech.text).toBe('upcoming(count=5)');
   });
 
   it('dispatches GetTodayTasksIntent', async () => {
-    const res = await POST(makeRequest({
-      version: '1.0',
-      request: {
-        type: 'IntentRequest',
-        timestamp: new Date().toISOString(),
-        intent: { name: 'GetTodayTasksIntent' },
-      },
-    }) as never);
+    const res = await POST(
+      makeRequest({
+        version: '1.0',
+        request: {
+          type: 'IntentRequest',
+          timestamp: new Date().toISOString(),
+          intent: { name: 'GetTodayTasksIntent' },
+        },
+      }) as never
+    );
     const body = await res.json();
     expect(body.response.outputSpeech.text).toBe('today tasks');
   });
 
   it('dispatches GetFamilyMessagesIntent', async () => {
-    const res = await POST(makeRequest({
-      version: '1.0',
-      request: {
-        type: 'IntentRequest',
-        timestamp: new Date().toISOString(),
-        intent: { name: 'GetFamilyMessagesIntent' },
-      },
-    }) as never);
+    const res = await POST(
+      makeRequest({
+        version: '1.0',
+        request: {
+          type: 'IntentRequest',
+          timestamp: new Date().toISOString(),
+          intent: { name: 'GetFamilyMessagesIntent' },
+        },
+      }) as never
+    );
     const body = await res.json();
     expect(body.response.outputSpeech.text).toBe('family messages');
   });
 
   it('dispatches AddShoppingItemIntent with item + list slots', async () => {
-    const res = await POST(makeRequest({
-      version: '1.0',
-      request: {
-        type: 'IntentRequest',
-        timestamp: new Date().toISOString(),
-        intent: {
-          name: 'AddShoppingItemIntent',
-          slots: { Item: { value: 'milk' }, ListName: { value: 'grocery' } },
+    const res = await POST(
+      makeRequest({
+        version: '1.0',
+        request: {
+          type: 'IntentRequest',
+          timestamp: new Date().toISOString(),
+          intent: {
+            name: 'AddShoppingItemIntent',
+            slots: { Item: { value: 'milk' }, ListName: { value: 'grocery' } },
+          },
         },
-      },
-    }) as never);
+      }) as never
+    );
     const body = await res.json();
     expect(body.response.outputSpeech.text).toBe('added milk to grocery');
   });
 
   it('dispatches CompleteChoreIntent without optional assignee', async () => {
-    const res = await POST(makeRequest({
-      version: '1.0',
-      request: {
-        type: 'IntentRequest',
-        timestamp: new Date().toISOString(),
-        intent: { name: 'CompleteChoreIntent', slots: { Chore: { value: 'feed the dog' } } },
-      },
-    }) as never);
+    const res = await POST(
+      makeRequest({
+        version: '1.0',
+        request: {
+          type: 'IntentRequest',
+          timestamp: new Date().toISOString(),
+          intent: { name: 'CompleteChoreIntent', slots: { Chore: { value: 'feed the dog' } } },
+        },
+      }) as never
+    );
     const body = await res.json();
     expect(body.response.outputSpeech.text).toBe('chore=feed the dog assignee=none');
   });
 
   it('dispatches PostFamilyMessageIntent with message slot', async () => {
-    const res = await POST(makeRequest({
-      version: '1.0',
-      request: {
-        type: 'IntentRequest',
-        timestamp: new Date().toISOString(),
-        intent: { name: 'PostFamilyMessageIntent', slots: { Message: { value: 'soccer at 4' } } },
-      },
-    }) as never);
+    const res = await POST(
+      makeRequest({
+        version: '1.0',
+        request: {
+          type: 'IntentRequest',
+          timestamp: new Date().toISOString(),
+          intent: { name: 'PostFamilyMessageIntent', slots: { Message: { value: 'soccer at 4' } } },
+        },
+      }) as never
+    );
     const body = await res.json();
     expect(body.response.outputSpeech.text).toBe('posted: soccer at 4');
   });
 
   it('dispatches GetFamilyIntent', async () => {
-    const res = await POST(makeRequest({
-      version: '1.0',
-      request: {
-        type: 'IntentRequest',
-        timestamp: new Date().toISOString(),
-        intent: { name: 'GetFamilyIntent' },
-      },
-    }) as never);
+    const res = await POST(
+      makeRequest({
+        version: '1.0',
+        request: {
+          type: 'IntentRequest',
+          timestamp: new Date().toISOString(),
+          intent: { name: 'GetFamilyIntent' },
+        },
+      }) as never
+    );
     const body = await res.json();
     expect(body.response.outputSpeech.text).toBe('family list');
   });
 
   it('dispatches GetTodayMealIntent', async () => {
-    const res = await POST(makeRequest({
-      version: '1.0',
-      request: {
-        type: 'IntentRequest',
-        timestamp: new Date().toISOString(),
-        intent: { name: 'GetTodayMealIntent' },
-      },
-    }) as never);
+    const res = await POST(
+      makeRequest({
+        version: '1.0',
+        request: {
+          type: 'IntentRequest',
+          timestamp: new Date().toISOString(),
+          intent: { name: 'GetTodayMealIntent' },
+        },
+      }) as never
+    );
     const body = await res.json();
     expect(body.response.outputSpeech.text).toBe('today meal');
   });
 
   it('dispatches GetTodayChoresIntent with optional assignee', async () => {
-    const res = await POST(makeRequest({
-      version: '1.0',
-      request: {
-        type: 'IntentRequest',
-        timestamp: new Date().toISOString(),
-        intent: { name: 'GetTodayChoresIntent', slots: { Assignee: { value: 'Emma' } } },
-      },
-    }) as never);
+    const res = await POST(
+      makeRequest({
+        version: '1.0',
+        request: {
+          type: 'IntentRequest',
+          timestamp: new Date().toISOString(),
+          intent: { name: 'GetTodayChoresIntent', slots: { Assignee: { value: 'Emma' } } },
+        },
+      }) as never
+    );
     const body = await res.json();
     expect(body.response.outputSpeech.text).toBe('chores assignee=Emma');
   });
 
   it('dispatches GetWeatherIntent', async () => {
-    const res = await POST(makeRequest({
-      version: '1.0',
-      request: {
-        type: 'IntentRequest',
-        timestamp: new Date().toISOString(),
-        intent: { name: 'GetWeatherIntent' },
-      },
-    }) as never);
+    const res = await POST(
+      makeRequest({
+        version: '1.0',
+        request: {
+          type: 'IntentRequest',
+          timestamp: new Date().toISOString(),
+          intent: { name: 'GetWeatherIntent' },
+        },
+      }) as never
+    );
     const body = await res.json();
     expect(body.response.outputSpeech.text).toBe('weather today');
   });
 
   it('dispatches GetBusStatusIntent with optional student', async () => {
-    const res = await POST(makeRequest({
-      version: '1.0',
-      request: {
-        type: 'IntentRequest',
-        timestamp: new Date().toISOString(),
-        intent: { name: 'GetBusStatusIntent', slots: { Student: { value: 'Emma' } } },
-      },
-    }) as never);
+    const res = await POST(
+      makeRequest({
+        version: '1.0',
+        request: {
+          type: 'IntentRequest',
+          timestamp: new Date().toISOString(),
+          intent: { name: 'GetBusStatusIntent', slots: { Student: { value: 'Emma' } } },
+        },
+      }) as never
+    );
     const body = await res.json();
     expect(body.response.outputSpeech.text).toBe('bus student=Emma');
   });
 
   it('dispatches GetUpcomingBirthdaysIntent', async () => {
-    const res = await POST(makeRequest({
-      version: '1.0',
-      request: {
-        type: 'IntentRequest',
-        timestamp: new Date().toISOString(),
-        intent: { name: 'GetUpcomingBirthdaysIntent' },
-      },
-    }) as never);
+    const res = await POST(
+      makeRequest({
+        version: '1.0',
+        request: {
+          type: 'IntentRequest',
+          timestamp: new Date().toISOString(),
+          intent: { name: 'GetUpcomingBirthdaysIntent' },
+        },
+      }) as never
+    );
     const body = await res.json();
     expect(body.response.outputSpeech.text).toBe('birthdays upcoming');
   });
 
   it('returns a polite fallback for unknown intents', async () => {
-    const res = await POST(makeRequest({
-      version: '1.0',
-      request: {
-        type: 'IntentRequest',
-        timestamp: new Date().toISOString(),
-        intent: { name: 'NotARealIntentIntent' },
-      },
-    }) as never);
+    const res = await POST(
+      makeRequest({
+        version: '1.0',
+        request: {
+          type: 'IntentRequest',
+          timestamp: new Date().toISOString(),
+          intent: { name: 'NotARealIntentIntent' },
+        },
+      }) as never
+    );
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.response.outputSpeech.text).toMatch(/don't know how/i);
   });
 
   it('handles SessionEndedRequest with empty response', async () => {
-    const res = await POST(makeRequest({
-      version: '1.0',
-      request: { type: 'SessionEndedRequest', timestamp: new Date().toISOString() },
-    }) as never);
+    const res = await POST(
+      makeRequest({
+        version: '1.0',
+        request: { type: 'SessionEndedRequest', timestamp: new Date().toISOString() },
+      }) as never
+    );
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body).toEqual({ version: '1.0', response: {} });
   });
 
   it('handles AMAZON.StopIntent with goodbye', async () => {
-    const res = await POST(makeRequest({
-      version: '1.0',
-      request: {
-        type: 'IntentRequest',
-        timestamp: new Date().toISOString(),
-        intent: { name: 'AMAZON.StopIntent' },
-      },
-    }) as never);
+    const res = await POST(
+      makeRequest({
+        version: '1.0',
+        request: {
+          type: 'IntentRequest',
+          timestamp: new Date().toISOString(),
+          intent: { name: 'AMAZON.StopIntent' },
+        },
+      }) as never
+    );
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.response.outputSpeech.text).toMatch(/goodbye/i);
@@ -375,10 +409,12 @@ describe('POST /api/alexa', () => {
 describe('POST /api/alexa signature bypass — production', () => {
   it('rejects unsigned requests when NODE_ENV=production', async () => {
     jest.replaceProperty(process.env, 'NODE_ENV', 'production');
-    const res = await POST(makeRequest({
-      version: '1.0',
-      request: { type: 'LaunchRequest', timestamp: new Date().toISOString() },
-    }) as never);
+    const res = await POST(
+      makeRequest({
+        version: '1.0',
+        request: { type: 'LaunchRequest', timestamp: new Date().toISOString() },
+      }) as never
+    );
     expect(res.status).toBe(400);
     const body = await res.json();
     expect(body.error).toMatch(/missing|signature/i);
@@ -396,11 +432,13 @@ describe('POST /api/alexa skill ID gating', () => {
 
   it('rejects requests whose applicationId does not match ALEXA_SKILL_ID', async () => {
     process.env.ALEXA_SKILL_ID = 'amzn1.ask.skill.expected';
-    const res = await POST(makeRequest({
-      version: '1.0',
-      session: { application: { applicationId: 'amzn1.ask.skill.attacker' } },
-      request: { type: 'LaunchRequest', timestamp: new Date().toISOString() },
-    }) as never);
+    const res = await POST(
+      makeRequest({
+        version: '1.0',
+        session: { application: { applicationId: 'amzn1.ask.skill.attacker' } },
+        request: { type: 'LaunchRequest', timestamp: new Date().toISOString() },
+      }) as never
+    );
     expect(res.status).toBe(403);
     const body = await res.json();
     expect(body.error).toBe('skill_id_mismatch');
@@ -408,30 +446,36 @@ describe('POST /api/alexa skill ID gating', () => {
 
   it('rejects requests with no applicationId when ALEXA_SKILL_ID is set', async () => {
     process.env.ALEXA_SKILL_ID = 'amzn1.ask.skill.expected';
-    const res = await POST(makeRequest({
-      version: '1.0',
-      request: { type: 'LaunchRequest', timestamp: new Date().toISOString() },
-    }) as never);
+    const res = await POST(
+      makeRequest({
+        version: '1.0',
+        request: { type: 'LaunchRequest', timestamp: new Date().toISOString() },
+      }) as never
+    );
     expect(res.status).toBe(403);
   });
 
   it('accepts requests with matching applicationId in session', async () => {
     process.env.ALEXA_SKILL_ID = 'amzn1.ask.skill.expected';
-    const res = await POST(makeRequest({
-      version: '1.0',
-      session: { application: { applicationId: 'amzn1.ask.skill.expected' } },
-      request: { type: 'LaunchRequest', timestamp: new Date().toISOString() },
-    }) as never);
+    const res = await POST(
+      makeRequest({
+        version: '1.0',
+        session: { application: { applicationId: 'amzn1.ask.skill.expected' } },
+        request: { type: 'LaunchRequest', timestamp: new Date().toISOString() },
+      }) as never
+    );
     expect(res.status).toBe(200);
   });
 
   it('accepts requests with matching applicationId in context.System (LaunchRequest case)', async () => {
     process.env.ALEXA_SKILL_ID = 'amzn1.ask.skill.expected';
-    const res = await POST(makeRequest({
-      version: '1.0',
-      context: { System: { application: { applicationId: 'amzn1.ask.skill.expected' } } },
-      request: { type: 'LaunchRequest', timestamp: new Date().toISOString() },
-    }) as never);
+    const res = await POST(
+      makeRequest({
+        version: '1.0',
+        context: { System: { application: { applicationId: 'amzn1.ask.skill.expected' } } },
+        request: { type: 'LaunchRequest', timestamp: new Date().toISOString() },
+      }) as never
+    );
     expect(res.status).toBe(200);
   });
 

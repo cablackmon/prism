@@ -49,10 +49,11 @@ export function useMealsViewData() {
     fetchMeals();
   }, [fetchMeals]);
 
-  const goToPreviousWeek = useCallback(() => setCurrentWeek(prev => addDays(prev, -7)), []);
-  const goToNextWeek = useCallback(() => setCurrentWeek(prev => addDays(prev, 7)), []);
+  const goToPreviousWeek = useCallback(() => setCurrentWeek((prev) => addDays(prev, -7)), []);
+  const goToNextWeek = useCallback(() => setCurrentWeek((prev) => addDays(prev, 7)), []);
   const goToThisWeek = useCallback(() => setCurrentWeek(defaultWeekStart), [defaultWeekStart]);
-  const isCurrentWeek = format(currentWeek, 'yyyy-MM-dd') === format(defaultWeekStart, 'yyyy-MM-dd');
+  const isCurrentWeek =
+    format(currentWeek, 'yyyy-MM-dd') === format(defaultWeekStart, 'yyyy-MM-dd');
 
   const mealsByDay = meals.reduce<Record<string, Meal[]>>((acc, meal) => {
     if (!acc[meal.dayOfWeek]) acc[meal.dayOfWeek] = [];
@@ -64,7 +65,7 @@ export function useMealsViewData() {
   });
 
   const markCooked = async (mealId: string) => {
-    const user = await requireAuth("Who cooked this?");
+    const user = await requireAuth('Who cooked this?');
     if (!user) return;
     try {
       await fetch(`/api/meals/${mealId}`, {
@@ -92,7 +93,8 @@ export function useMealsViewData() {
   };
 
   const deleteMeal = async (mealId: string) => {
-    if (!await confirm('Delete this meal?', 'This will remove the meal from the planner.')) return;
+    if (!(await confirm('Delete this meal?', 'This will remove the meal from the planner.')))
+      return;
     try {
       await fetch(`/api/meals/${mealId}`, { method: 'DELETE' });
       await fetchMeals();
@@ -117,7 +119,10 @@ export function useMealsViewData() {
       await fetchMeals();
     } catch (err) {
       console.error('Failed to add meal:', err);
-      toast({ title: err instanceof Error ? err.message : 'Failed to add meal', variant: 'destructive' });
+      toast({
+        title: err instanceof Error ? err.message : 'Failed to add meal',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -151,15 +156,31 @@ export function useMealsViewData() {
   const cookedMeals = meals.filter((m) => m.cookedAt).length;
 
   return {
-    weekStartsOn, today, currentWeek, weekOfString, loading,
-    showAddModal, setShowAddModal,
-    selectedDay, setSelectedDay,
-    editingMeal, setEditingMeal,
-    goToPreviousWeek, goToNextWeek, goToThisWeek, isCurrentWeek,
+    weekStartsOn,
+    today,
+    currentWeek,
+    weekOfString,
+    loading,
+    showAddModal,
+    setShowAddModal,
+    selectedDay,
+    setSelectedDay,
+    editingMeal,
+    setEditingMeal,
+    goToPreviousWeek,
+    goToNextWeek,
+    goToThisWeek,
+    isCurrentWeek,
     mealsByDay,
-    markCooked, unmarkCooked, deleteMeal, addMeal, editMeal, handleDropMeal,
+    markCooked,
+    unmarkCooked,
+    deleteMeal,
+    addMeal,
+    editMeal,
+    handleDropMeal,
     refresh: fetchMeals,
-    totalMeals, cookedMeals,
+    totalMeals,
+    cookedMeals,
     confirmDialogProps,
   };
 }

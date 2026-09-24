@@ -14,13 +14,9 @@ export async function POST() {
   if (forbidden) return forbidden;
 
   try {
-    await db
-      .delete(taskSources)
-      .where(eq(taskSources.provider, 'microsoft_todo'));
+    await db.delete(taskSources).where(eq(taskSources.provider, 'microsoft_todo'));
 
-    await db
-      .delete(shoppingListSources)
-      .where(eq(shoppingListSources.provider, 'microsoft_todo'));
+    await db.delete(shoppingListSources).where(eq(shoppingListSources.provider, 'microsoft_todo'));
 
     logActivity({
       userId: auth.userId,
@@ -32,9 +28,6 @@ export async function POST() {
     return NextResponse.json({ success: true });
   } catch (error) {
     logError('Error disconnecting Microsoft:', error);
-    return NextResponse.json(
-      { error: 'Failed to disconnect Microsoft' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to disconnect Microsoft' }, { status: 500 });
   }
 }

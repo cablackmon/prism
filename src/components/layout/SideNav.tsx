@@ -29,7 +29,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { PrismIcon } from '@/components/ui/PrismIcon';
 import { useTranslations } from 'next-intl';
 import { ALL_NAV_ITEMS } from '@/lib/constants/navItems';
 import { useHiddenPages } from '@/lib/hooks/useHiddenPages';
@@ -115,7 +114,7 @@ export function SideNav({ user, onLogout, onLogin, uiHidden, className }: SideNa
   const handleAsideClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
     if (target.closest('a') || target.closest('button')) return;
-    setExpanded(prev => !prev);
+    setExpanded((prev) => !prev);
   };
 
   return (
@@ -135,12 +134,17 @@ export function SideNav({ user, onLogout, onLogin, uiHidden, className }: SideNa
         )}
       >
         {/* HEADER WITH LOGO */}
-        <div className={cn('flex items-center h-12 [@media(pointer:coarse)]:h-16 px-2', expanded ? 'justify-start' : 'justify-center')}>
-          <Link href="/" className="flex items-center gap-2" aria-label="Prism home">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 overflow-hidden">
-              <PrismIcon size={24} />
+        <div
+          className={cn(
+            'flex h-12 items-center px-2 [@media(pointer:coarse)]:h-16',
+            expanded ? 'justify-start' : 'justify-center'
+          )}
+        >
+          <Link href="/" className="flex items-center gap-2" aria-label="KYST home">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg">
+              <Image src="/kyst-emblem.svg" alt="" width={28} height={28} priority />
             </div>
-            {expanded && <span className="font-semibold text-lg">Prism</span>}
+            {expanded && <span className="text-lg font-semibold">KYST</span>}
           </Link>
         </div>
 
@@ -157,7 +161,7 @@ export function SideNav({ user, onLogout, onLogin, uiHidden, className }: SideNa
                     href={item.href}
                     aria-label={t(item.i18nKey)}
                     className={cn(
-                      'flex items-center gap-3 px-3 py-1.5 [@media(pointer:coarse)]:py-2.5 rounded-lg',
+                      'flex items-center gap-3 rounded-lg px-3 py-1.5 [@media(pointer:coarse)]:py-2.5',
                       'text-sm font-medium',
                       'transition-colors duration-200',
                       'touch-target',
@@ -168,9 +172,7 @@ export function SideNav({ user, onLogout, onLogin, uiHidden, className }: SideNa
                     )}
                   >
                     <Icon className="h-5 w-5 flex-shrink-0" aria-hidden="true" />
-                    {expanded && <span className="whitespace-nowrap">
-                      {t(item.i18nKey)}
-                    </span>}
+                    {expanded && <span className="whitespace-nowrap">{t(item.i18nKey)}</span>}
                   </Link>
                 </li>
               );
@@ -184,7 +186,7 @@ export function SideNav({ user, onLogout, onLogin, uiHidden, className }: SideNa
             href="/help"
             aria-label="Help"
             className={cn(
-              'flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground/50 hover:text-muted-foreground hover:bg-accent transition-colors',
+              'flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground/50 transition-colors hover:bg-accent hover:text-muted-foreground',
               expanded ? 'justify-start' : 'justify-center'
             )}
           >
@@ -198,7 +200,7 @@ export function SideNav({ user, onLogout, onLogin, uiHidden, className }: SideNa
           <button
             onClick={user ? onLogout : onLogin}
             className={cn(
-              'flex items-center gap-3 px-3 py-1.5 [@media(pointer:coarse)]:py-2.5 rounded-lg w-full',
+              'flex w-full items-center gap-3 rounded-lg px-3 py-1.5 [@media(pointer:coarse)]:py-2.5',
               'text-sm font-medium',
               'transition-colors duration-200',
               'touch-target',
@@ -210,11 +212,13 @@ export function SideNav({ user, onLogout, onLogin, uiHidden, className }: SideNa
             {user ? (
               <>
                 <div
-                  className="relative w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium text-white flex-shrink-0"
+                  className="relative flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-sm font-medium text-white"
                   style={{ backgroundColor: user.color || '#6B7280' }}
                 >
                   {user.avatarUrl?.startsWith('emoji:') ? (
-                    <span className="text-lg"><Emoji e={user.avatarUrl.slice(6)} /></span>
+                    <span className="text-lg">
+                      <Emoji e={user.avatarUrl.slice(6)} />
+                    </span>
                   ) : user.avatarUrl ? (
                     <Image
                       src={user.avatarUrl}
@@ -227,13 +231,11 @@ export function SideNav({ user, onLogout, onLogin, uiHidden, className }: SideNa
                     user.name.charAt(0).toUpperCase()
                   )}
                 </div>
-                {expanded && <span className="whitespace-nowrap truncate">
-                  {user.name}
-                </span>}
+                {expanded && <span className="truncate whitespace-nowrap">{user.name}</span>}
               </>
             ) : (
               <>
-                <div className="w-8 h-8 rounded-full flex items-center justify-center bg-red-500/10 border-2 border-dashed border-red-500 flex-shrink-0">
+                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border-2 border-dashed border-red-500 bg-red-500/10">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="16"
@@ -250,9 +252,7 @@ export function SideNav({ user, onLogout, onLogin, uiHidden, className }: SideNa
                     <circle cx="12" cy="7" r="4" />
                   </svg>
                 </div>
-                {expanded && <span className="whitespace-nowrap text-red-500">
-                  Log in
-                </span>}
+                {expanded && <span className="whitespace-nowrap text-red-500">Log in</span>}
               </>
             )}
           </button>
@@ -261,4 +261,3 @@ export function SideNav({ user, onLogout, onLogin, uiHidden, className }: SideNa
     </>
   );
 }
-

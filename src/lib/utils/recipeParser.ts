@@ -79,11 +79,20 @@ function parseImage(image: unknown): string | undefined {
   if (Array.isArray(image)) {
     const first = image[0];
     if (typeof first === 'string') return first;
-    if (first && typeof first === 'object' && 'url' in first && typeof (first as { url: unknown }).url === 'string') {
+    if (
+      first &&
+      typeof first === 'object' &&
+      'url' in first &&
+      typeof (first as { url: unknown }).url === 'string'
+    ) {
       return (first as { url: string }).url;
     }
   }
-  if (typeof image === 'object' && 'url' in image && typeof (image as { url: unknown }).url === 'string') {
+  if (
+    typeof image === 'object' &&
+    'url' in image &&
+    typeof (image as { url: unknown }).url === 'string'
+  ) {
     return (image as { url: string }).url;
   }
   return undefined;
@@ -107,8 +116,9 @@ function parseInstructions(instructions: unknown): string | undefined {
         }
         if (step && typeof step === 'object') {
           const obj = step as { text?: unknown; name?: unknown };
-          const text = (typeof obj.text === 'string' ? obj.text : '') ||
-                       (typeof obj.name === 'string' ? obj.name : '');
+          const text =
+            (typeof obj.text === 'string' ? obj.text : '') ||
+            (typeof obj.name === 'string' ? obj.name : '');
           return text ? `${index + 1}. ${text}` : '';
         }
         return '';
@@ -224,16 +234,16 @@ export async function parseRecipeFromUrl(url: string): Promise<ParsedRecipe | nu
   const hostname = parsedUrl.hostname.toLowerCase();
   const blockedPatterns = [
     /^localhost$/i,
-    /^127\.\d+\.\d+\.\d+$/,           // 127.0.0.0/8 loopback
-    /^10\.\d+\.\d+\.\d+$/,            // 10.0.0.0/8 private
+    /^127\.\d+\.\d+\.\d+$/, // 127.0.0.0/8 loopback
+    /^10\.\d+\.\d+\.\d+$/, // 10.0.0.0/8 private
     /^172\.(1[6-9]|2\d|3[01])\.\d+\.\d+$/, // 172.16.0.0/12 private
-    /^192\.168\.\d+\.\d+$/,           // 192.168.0.0/16 private
-    /^169\.254\.\d+\.\d+$/,           // 169.254.0.0/16 link-local
-    /^0\.0\.0\.0$/,                   // 0.0.0.0
-    /^\[::1\]$/,                      // IPv6 loopback
-    /^\[fe80:/i,                      // IPv6 link-local
-    /^\[fc00:/i,                      // IPv6 unique local
-    /^\[fd00:/i,                      // IPv6 unique local
+    /^192\.168\.\d+\.\d+$/, // 192.168.0.0/16 private
+    /^169\.254\.\d+\.\d+$/, // 169.254.0.0/16 link-local
+    /^0\.0\.0\.0$/, // 0.0.0.0
+    /^\[::1\]$/, // IPv6 loopback
+    /^\[fe80:/i, // IPv6 link-local
+    /^\[fc00:/i, // IPv6 unique local
+    /^\[fd00:/i, // IPv6 unique local
   ];
 
   if (blockedPatterns.some((pattern) => pattern.test(hostname))) {
@@ -250,8 +260,10 @@ export async function parseRecipeFromUrl(url: string): Promise<ParsedRecipe | nu
   try {
     response = await fetch(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+        Accept:
+          'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
         'Accept-Language': 'en-US,en;q=0.9',
         'Accept-Encoding': 'gzip, deflate, br',
         'Sec-Fetch-Dest': 'document',

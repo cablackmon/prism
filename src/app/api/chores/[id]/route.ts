@@ -28,10 +28,7 @@ interface RouteParams {
  * GET /api/chores/[id]
  * Retrieves a single chore by its ID.
  */
-export async function GET(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function GET(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -40,10 +37,7 @@ export async function GET(
 
     // Validate UUID format
     if (!id || id.length < 10) {
-      return NextResponse.json(
-        { error: 'Invalid chore ID' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid chore ID' }, { status: 400 });
     }
 
     // Fetch chore with assigned user data
@@ -74,10 +68,7 @@ export async function GET(
       .where(eq(chores.id, id));
 
     if (!choreWithUser) {
-      return NextResponse.json(
-        { error: 'Chore not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Chore not found' }, { status: 404 });
     }
 
     // Format and return response
@@ -108,10 +99,7 @@ export async function GET(
     });
   } catch (error) {
     logError('Error fetching chore:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch chore' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch chore' }, { status: 500 });
   }
 }
 
@@ -131,10 +119,7 @@ export async function GET(
  *   enabled?: boolean
  * }
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -152,10 +137,7 @@ export async function PATCH(
       .where(eq(chores.id, id));
 
     if (!existingChore) {
-      return NextResponse.json(
-        { error: 'Chore not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Chore not found' }, { status: 404 });
     }
 
     // Validate request body with partial schema
@@ -174,17 +156,14 @@ export async function PATCH(
     };
 
     // Remove undefined values (only update provided fields)
-    Object.keys(updateData).forEach(key => {
+    Object.keys(updateData).forEach((key) => {
       if (updateData[key] === undefined) {
         delete updateData[key];
       }
     });
 
     // Execute update
-    await db
-      .update(chores)
-      .set(updateData)
-      .where(eq(chores.id, id));
+    await db.update(chores).set(updateData).where(eq(chores.id, id));
 
     // Fetch and return updated chore
     const [updatedChoreWithUser] = await db
@@ -214,10 +193,7 @@ export async function PATCH(
       .where(eq(chores.id, id));
 
     if (!updatedChoreWithUser) {
-      return NextResponse.json(
-        { error: 'Chore not found after update' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Chore not found after update' }, { status: 404 });
     }
 
     await invalidateEntity('chores');
@@ -257,10 +233,7 @@ export async function PATCH(
     });
   } catch (error) {
     logError('Error updating chore:', error);
-    return NextResponse.json(
-      { error: 'Failed to update chore' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to update chore' }, { status: 500 });
   }
 }
 
@@ -268,10 +241,7 @@ export async function PATCH(
  * DELETE /api/chores/[id]
  * Deletes a specific chore.
  */
-export async function DELETE(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -288,16 +258,11 @@ export async function DELETE(
       .where(eq(chores.id, id));
 
     if (!existingChore) {
-      return NextResponse.json(
-        { error: 'Chore not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Chore not found' }, { status: 404 });
     }
 
     // Delete the chore (CASCADE will delete related completions)
-    await db
-      .delete(chores)
-      .where(eq(chores.id, id));
+    await db.delete(chores).where(eq(chores.id, id));
 
     await invalidateEntity('chores');
 
@@ -318,9 +283,6 @@ export async function DELETE(
     });
   } catch (error) {
     logError('Error deleting chore:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete chore' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to delete chore' }, { status: 500 });
   }
 }

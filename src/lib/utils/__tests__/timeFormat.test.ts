@@ -53,37 +53,45 @@ describe('time format utilities', () => {
   });
 
   it('persists calendar form times in the selected display timezone', () => {
-    expect(fromDisplayDateTime('2026-08-19', '08:00', 'Europe/Warsaw').toISOString())
-      .toBe('2026-08-19T06:00:00.000Z');
-    expect(fromDisplayDateTime('2026-08-19', '08:00', 'Europe/London').toISOString())
-      .toBe('2026-08-19T07:00:00.000Z');
+    expect(fromDisplayDateTime('2026-08-19', '08:00', 'Europe/Warsaw').toISOString()).toBe(
+      '2026-08-19T06:00:00.000Z'
+    );
+    expect(fromDisplayDateTime('2026-08-19', '08:00', 'Europe/London').toISOString()).toBe(
+      '2026-08-19T07:00:00.000Z'
+    );
   });
 
   it('uses the correct selected-timezone offset across daylight saving time', () => {
-    expect(fromDisplayDateTime('2026-01-19', '08:00', 'Europe/Warsaw').toISOString())
-      .toBe('2026-01-19T07:00:00.000Z');
-    expect(fromDisplayDateTime('2026-08-19', '08:00', 'Europe/Warsaw').toISOString())
-      .toBe('2026-08-19T06:00:00.000Z');
+    expect(fromDisplayDateTime('2026-01-19', '08:00', 'Europe/Warsaw').toISOString()).toBe(
+      '2026-01-19T07:00:00.000Z'
+    );
+    expect(fromDisplayDateTime('2026-08-19', '08:00', 'Europe/Warsaw').toISOString()).toBe(
+      '2026-08-19T06:00:00.000Z'
+    );
   });
 
   it('keeps a Google all-day event on its date despite a positive timezone offset', () => {
     const start = new Date('2026-08-18T00:00:00.000Z');
     const exclusiveEnd = new Date('2026-08-19T00:00:00.000Z');
 
-    expect(eventOccursOnDisplayDay(start, exclusiveEnd, true, new Date(2026, 7, 18), 'Europe/Warsaw'))
-      .toBe(true);
-    expect(eventOccursOnDisplayDay(start, exclusiveEnd, true, new Date(2026, 7, 19), 'Europe/Warsaw'))
-      .toBe(false);
+    expect(
+      eventOccursOnDisplayDay(start, exclusiveEnd, true, new Date(2026, 7, 18), 'Europe/Warsaw')
+    ).toBe(true);
+    expect(
+      eventOccursOnDisplayDay(start, exclusiveEnd, true, new Date(2026, 7, 19), 'Europe/Warsaw')
+    ).toBe(false);
   });
 
   it('supports Prism all-day events with an inclusive end-of-day timestamp', () => {
     const start = new Date('2026-08-18T00:00:00.000Z');
     const inclusiveEnd = new Date('2026-08-18T23:59:59.999Z');
 
-    expect(eventOccursOnDisplayDay(start, inclusiveEnd, true, new Date(2026, 7, 18), 'Europe/Warsaw'))
-      .toBe(true);
-    expect(eventOccursOnDisplayDay(start, inclusiveEnd, true, new Date(2026, 7, 19), 'Europe/Warsaw'))
-      .toBe(false);
+    expect(
+      eventOccursOnDisplayDay(start, inclusiveEnd, true, new Date(2026, 7, 18), 'Europe/Warsaw')
+    ).toBe(true);
+    expect(
+      eventOccursOnDisplayDay(start, inclusiveEnd, true, new Date(2026, 7, 19), 'Europe/Warsaw')
+    ).toBe(false);
   });
 
   it('preserves exclusive ends for multi-day all-day events', () => {
@@ -105,19 +113,23 @@ describe('time format utilities', () => {
   it('shows a timed event start only on its first displayed day', () => {
     const start = new Date('2026-08-21T16:00:00.000Z');
 
-    expect(eventStartsOnDisplayDay(start, false, new Date(2026, 7, 21), 'Europe/Warsaw'))
-      .toBe(true);
-    expect(eventStartsOnDisplayDay(start, false, new Date(2026, 7, 22), 'Europe/Warsaw'))
-      .toBe(false);
+    expect(eventStartsOnDisplayDay(start, false, new Date(2026, 7, 21), 'Europe/Warsaw')).toBe(
+      true
+    );
+    expect(eventStartsOnDisplayDay(start, false, new Date(2026, 7, 22), 'Europe/Warsaw')).toBe(
+      false
+    );
   });
 
   it('uses floating UTC dates for all-day event starts', () => {
     const start = new Date('2026-08-21T00:00:00.000Z');
 
-    expect(eventStartsOnDisplayDay(start, true, new Date(2026, 7, 21), 'America/Los_Angeles'))
-      .toBe(true);
-    expect(eventStartsOnDisplayDay(start, true, new Date(2026, 7, 20), 'America/Los_Angeles'))
-      .toBe(false);
+    expect(eventStartsOnDisplayDay(start, true, new Date(2026, 7, 21), 'America/Los_Angeles')).toBe(
+      true
+    );
+    expect(eventStartsOnDisplayDay(start, true, new Date(2026, 7, 20), 'America/Los_Angeles')).toBe(
+      false
+    );
   });
 
   it('does not treat an exact-midnight end as occupying another day', () => {
@@ -128,45 +140,53 @@ describe('time format utilities', () => {
   });
 
   it('distinguishes one-day and multi-day all-day ranges', () => {
-    expect(eventSpansMultipleDisplayDays(
-      new Date('2026-08-21T00:00:00.000Z'),
-      new Date('2026-08-22T00:00:00.000Z'),
-      true,
-    )).toBe(false);
-    expect(eventSpansMultipleDisplayDays(
-      new Date('2026-08-21T00:00:00.000Z'),
-      new Date('2026-08-24T00:00:00.000Z'),
-      true,
-    )).toBe(true);
+    expect(
+      eventSpansMultipleDisplayDays(
+        new Date('2026-08-21T00:00:00.000Z'),
+        new Date('2026-08-22T00:00:00.000Z'),
+        true
+      )
+    ).toBe(false);
+    expect(
+      eventSpansMultipleDisplayDays(
+        new Date('2026-08-21T00:00:00.000Z'),
+        new Date('2026-08-24T00:00:00.000Z'),
+        true
+      )
+    ).toBe(true);
   });
 
   it('treats an all-day event as past only after its exclusive end date', () => {
     const start = new Date('2026-08-18T00:00:00.000Z');
     const exclusiveEnd = new Date('2026-08-20T00:00:00.000Z');
 
-    expect(isCalendarEventPast(
-      start,
-      exclusiveEnd,
-      true,
-      new Date('2026-08-19T12:00:00.000Z'),
-      'Europe/Warsaw',
-    )).toBe(false);
-    expect(isCalendarEventPast(
-      start,
-      exclusiveEnd,
-      true,
-      new Date('2026-08-20T12:00:00.000Z'),
-      'Europe/Warsaw',
-    )).toBe(true);
+    expect(
+      isCalendarEventPast(
+        start,
+        exclusiveEnd,
+        true,
+        new Date('2026-08-19T12:00:00.000Z'),
+        'Europe/Warsaw'
+      )
+    ).toBe(false);
+    expect(
+      isCalendarEventPast(
+        start,
+        exclusiveEnd,
+        true,
+        new Date('2026-08-20T12:00:00.000Z'),
+        'Europe/Warsaw'
+      )
+    ).toBe(true);
   });
 
   it('keeps an ongoing timed event active until its actual end instant', () => {
     const start = new Date('2026-08-20T06:00:00.000Z');
     const end = new Date('2026-08-20T08:00:00.000Z');
 
-    expect(isCalendarEventPast(start, end, false, new Date('2026-08-20T07:00:00.000Z')))
-      .toBe(false);
-    expect(isCalendarEventPast(start, end, false, new Date('2026-08-20T08:00:00.000Z')))
-      .toBe(true);
+    expect(isCalendarEventPast(start, end, false, new Date('2026-08-20T07:00:00.000Z'))).toBe(
+      false
+    );
+    expect(isCalendarEventPast(start, end, false, new Date('2026-08-20T08:00:00.000Z'))).toBe(true);
   });
 });

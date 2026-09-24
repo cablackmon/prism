@@ -47,8 +47,8 @@ export function ImportPaprikaModal({ onClose, onImport }: ImportPaprikaModalProp
 
         <div className="space-y-4 py-4">
           <p className="text-sm text-muted-foreground">
-            Export your recipes from Paprika as HTML, then paste the content
-            below. We&apos;ll import all recipes found in the export.
+            Export your recipes from Paprika as HTML, then paste the content below. We&apos;ll
+            import all recipes found in the export.
           </p>
 
           <div className="space-y-2">

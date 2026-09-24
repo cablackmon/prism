@@ -105,7 +105,10 @@ interface SpeakableBusRoute {
   };
 }
 
-export function phraseBusStatus(routes: SpeakableBusRoute[], opts: { student?: string } = {}): string {
+export function phraseBusStatus(
+  routes: SpeakableBusRoute[],
+  opts: { student?: string } = {}
+): string {
   if (routes.length === 0) {
     if (opts.student) return `No bus routes are scheduled for ${opts.student} today.`;
     return 'No bus routes are scheduled today.';
@@ -172,9 +175,7 @@ export function phraseTodayMeals(items: SpeakableMeal[]): string {
 export function phraseTodayChores(titles: string[], assigneeName: string | null = null): string {
   const who = assigneeName ?? 'You';
   if (titles.length === 0) {
-    return assigneeName
-      ? `${assigneeName} has no chores due today.`
-      : 'No chores are due today.';
+    return assigneeName ? `${assigneeName} has no chores due today.` : 'No chores are due today.';
   }
   if (titles.length === 1) {
     return `${who} ${who === 'You' ? 'have' : 'has'} one chore today: ${titles[0]}.`;

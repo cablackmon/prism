@@ -33,7 +33,7 @@ export interface WeatherOptions {
 
 export async function fetchWeatherData(
   location?: LocationParam,
-  options?: WeatherOptions,
+  options?: WeatherOptions
 ): Promise<WeatherData> {
   const provider = process.env.WEATHER_PROVIDER ?? 'meteo';
 

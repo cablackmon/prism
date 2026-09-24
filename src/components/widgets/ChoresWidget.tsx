@@ -23,6 +23,7 @@
  */
 
 'use client';
+import { useBoardTheme } from '@/components/theme/KystTheme';
 
 import * as React from 'react';
 import { Emoji } from '@/components/ui/Emoji';
@@ -98,6 +99,7 @@ export const ChoresWidget = React.memo(function ChoresWidget({
   titleHref,
   className,
 }: ChoresWidgetProps) {
+  const nox = useBoardTheme() === 'nox';
   // Use provided chores (no demo data fallback in production)
   const allChores = externalChores || [];
 
@@ -111,28 +113,34 @@ export const ChoresWidget = React.memo(function ChoresWidget({
       if (!b.nextDue) return -1;
       return a.nextDue.localeCompare(b.nextDue);
     });
-    return { filteredChores: filtered, displayChores: filtered.slice(0, maxChores) };
-  }, [allChores, userId, showDisabled, maxChores]);
+    return {
+      filteredChores: filtered,
+      displayChores: nox ? filtered : filtered.slice(0, maxChores),
+    };
+  }, [allChores, userId, showDisabled, maxChores, nox]);
 
   // Local state for optimistic updates
   const [completingChores, setCompletingChores] = useState<Set<string>>(new Set());
 
-  const handleComplete = useCallback(async (choreId: string) => {
-    // Mark as completing
-    setCompletingChores((prev) => new Set(prev).add(choreId));
+  const handleComplete = useCallback(
+    async (choreId: string) => {
+      // Mark as completing
+      setCompletingChores((prev) => new Set(prev).add(choreId));
 
-    // Call external handler
-    try {
-      await onChoreComplete?.(choreId);
-    } finally {
-      // Remove from completing state
-      setCompletingChores((prev) => {
-        const next = new Set(prev);
-        next.delete(choreId);
-        return next;
-      });
-    }
-  }, [onChoreComplete]);
+      // Call external handler
+      try {
+        await onChoreComplete?.(choreId);
+      } finally {
+        // Remove from completing state
+        setCompletingChores((prev) => {
+          const next = new Set(prev);
+          next.delete(choreId);
+          return next;
+        });
+      }
+    },
+    [onChoreComplete]
+  );
 
   return (
     <WidgetContainer
@@ -173,7 +181,7 @@ export const ChoresWidget = React.memo(function ChoresWidget({
           }
         />
       ) : (
-        <div className="overflow-auto h-full -mr-2 pr-2">
+        <div className="-mr-2 h-full overflow-auto pr-2">
           <div className="space-y-2">
             {displayChores.map((chore) => (
               <ChoreItem
@@ -187,7 +195,7 @@ export const ChoresWidget = React.memo(function ChoresWidget({
           </div>
 
           {/* Show count of remaining chores */}
-          {filteredChores.length > maxChores && (
+          {!nox && filteredChores.length > maxChores && (
             <div className="mt-3 text-center text-xs text-muted-foreground">
               +{filteredChores.length - maxChores} more chores
             </div>
@@ -228,10 +236,10 @@ function ChoreItem({
   return (
     <div
       className={cn(
-        'flex items-start gap-3 p-2 rounded-lg',
-        'hover:bg-accent/50 transition-colors',
+        'flex items-start gap-3 rounded-lg p-2',
+        'transition-colors hover:bg-accent/50',
         'touch-action-manipulation',
-        isPendingApproval && 'bg-amber-500/10 border border-amber-500/30'
+        isPendingApproval && 'border border-amber-500/30 bg-amber-500/10'
       )}
     >
       {/* Complete button — stops propagation so the row click doesn't also
@@ -239,15 +247,20 @@ function ChoreItem({
       <Button
         size="icon"
         variant="ghost"
-        onClick={(e) => { e.stopPropagation(); onComplete(); }}
+        onClick={(e) => {
+          e.stopPropagation();
+          onComplete();
+        }}
         disabled={completing}
         className={cn(
           'h-8 w-8 shrink-0',
           isOverdue && !isPendingApproval && 'text-destructive hover:text-destructive',
           isPendingApproval && 'text-amber-500'
         )}
-        title={isPendingApproval ? 'Pending approval - click to complete or approve' : 'Mark as complete'}
-        aria-label={isPendingApproval ? 'Pending approval' : 'Mark as complete'}
+        title={
+          isPendingApproval ? 'Pending approval - click to complete or approve' : 'Mark as complete'
+        }
+        aria-label={isPendingApproval ? `Approve ${chore.title}` : `Complete ${chore.title}`}
       >
         {completing ? (
           <Clock className="h-4 w-4 animate-spin" />
@@ -260,43 +273,63 @@ function ChoreItem({
 
       {/* Chore content — clickable surface that opens the edit modal. */}
       <div
-        className={cn('flex-1 min-w-0', onClick && 'cursor-pointer')}
+        className={cn('min-w-0 flex-1', onClick && 'cursor-pointer')}
         role={onClick ? 'button' : undefined}
         tabIndex={onClick ? 0 : undefined}
         onClick={onClick}
-        onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } } : undefined}
+        onKeyDown={
+          onClick
+            ? (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onClick();
+                }
+              }
+            : undefined
+        }
       >
         <div className="flex items-center gap-2">
           {/* Category emoji */}
-          <span className="text-base"><Emoji e={categoryEmoji} /></span>
+          <span className="text-base">
+            <Emoji e={categoryEmoji} />
+          </span>
 
           {/* Title */}
-          <span className={cn(
-            'text-sm font-medium truncate',
-            isPendingApproval && 'text-amber-700 dark:text-amber-400'
-          )}>{chore.title}</span>
+          <span
+            className={cn(
+              'truncate text-sm font-medium',
+              isPendingApproval && 'text-amber-700 dark:text-amber-400'
+            )}
+          >
+            {chore.title}
+          </span>
 
           {/* Points badge */}
           {chore.pointValue > 0 && (
-            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+            <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
               +{chore.pointValue}
             </Badge>
           )}
 
           {/* Pending approval badge - takes priority over "requires approval" */}
           {isPendingApproval ? (
-            <Badge variant="default" className="text-[10px] px-1.5 py-0 bg-amber-500 hover:bg-amber-500">
+            <Badge
+              variant="default"
+              className="bg-amber-500 px-1.5 py-0 text-[10px] hover:bg-amber-500"
+            >
               Pending
             </Badge>
-          ) : chore.requiresApproval && (
-            <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-              Approval
-            </Badge>
+          ) : (
+            chore.requiresApproval && (
+              <Badge variant="outline" className="px-1.5 py-0 text-[10px]">
+                Approval
+              </Badge>
+            )
           )}
         </div>
 
         {/* Metadata row */}
-        <div className="flex items-center gap-2 mt-0.5">
+        <div className="mt-0.5 flex items-center gap-2">
           {/* Show who completed it if pending approval */}
           {isPendingApproval && chore.pendingApproval && (
             <div className="flex items-center gap-1">
@@ -321,9 +354,7 @@ function ChoreItem({
                 size="sm"
                 className="h-4 w-4 text-[8px]"
               />
-              <span className="text-xs text-muted-foreground">
-                {chore.assignedTo.name}
-              </span>
+              <span className="text-xs text-muted-foreground">{chore.assignedTo.name}</span>
             </div>
           )}
 
@@ -337,12 +368,10 @@ function ChoreItem({
             <span
               className={cn(
                 'text-xs',
-                isOverdue
-                  ? 'text-destructive font-medium'
-                  : 'text-muted-foreground'
+                isOverdue ? 'font-medium text-destructive' : 'text-muted-foreground'
               )}
             >
-              {isOverdue && <AlertCircle className="h-3 w-3 inline mr-0.5" />}
+              {isOverdue && <AlertCircle className="mr-0.5 inline h-3 w-3" />}
               {dueDateDisplay}
             </span>
           )}
@@ -407,4 +436,3 @@ function getCategoryEmoji(category: string): string {
       return '✨';
   }
 }
-

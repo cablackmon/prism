@@ -36,10 +36,7 @@ interface RouteParams {
  * IMPORTANT: Claims (claimed, claimedBy, claimedAt) are local-only and NEVER
  * sent to or affected by the external provider.
  */
-export async function POST(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function POST(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -56,26 +53,17 @@ export async function POST(
       .where(eq(wishItemSources.id, sourceId));
 
     if (!source) {
-      return NextResponse.json(
-        { error: 'Wish item source not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Wish item source not found' }, { status: 404 });
     }
 
     if (!source.syncEnabled) {
-      return NextResponse.json(
-        { error: 'Sync is disabled for this source' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Sync is disabled for this source' }, { status: 400 });
     }
 
     // 2. Get the provider
     const provider = getWishItemProvider(source.provider);
     if (!provider) {
-      return NextResponse.json(
-        { error: `Unknown provider: ${source.provider}` },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: `Unknown provider: ${source.provider}` }, { status: 400 });
     }
 
     // 3. Prepare tokens (decrypt from storage)
@@ -102,7 +90,9 @@ export async function POST(
             .update(wishItemSources)
             .set({
               accessToken: encrypt(newTokens.accessToken),
-              refreshToken: newTokens.refreshToken ? encrypt(newTokens.refreshToken) : source.refreshToken,
+              refreshToken: newTokens.refreshToken
+                ? encrypt(newTokens.refreshToken)
+                : source.refreshToken,
               tokenExpiresAt: newTokens.expiresAt,
               updatedAt: new Date(),
             })
@@ -195,7 +185,10 @@ function buildRemoteBody(notes: string | null, url: string | null): string | nul
 /**
  * Parse the body content from a remote task to extract notes and URL.
  */
-function parseRemoteBody(body: string | null | undefined): { notes: string | null; url: string | null } {
+function parseRemoteBody(body: string | null | undefined): {
+  notes: string | null;
+  url: string | null;
+} {
   if (!body) return { notes: null, url: null };
 
   const urlMatch = body.match(/\n\nLink: (https?:\/\/\S+)$/);
@@ -239,19 +232,14 @@ async function performSync(
       .where(
         and(
           eq(wishItems.memberId, memberId),
-          or(
-            eq(wishItems.wishItemSourceId, sourceId),
-            isNull(wishItems.wishItemSourceId)
-          )
+          or(eq(wishItems.wishItemSourceId, sourceId), isNull(wishItems.wishItemSourceId))
         )
       );
 
     // Create maps for quick lookup
-    const remoteById = new Map(remoteItems.map(i => [i.id, i]));
+    const remoteById = new Map(remoteItems.map((i) => [i.id, i]));
     const localByExternalId = new Map(
-      localItems
-        .filter(i => i.externalId)
-        .map(i => [i.externalId!, i])
+      localItems.filter((i) => i.externalId).map((i) => [i.externalId!, i])
     );
 
     // Process remote items

@@ -7,9 +7,14 @@
  * a capability they asked for, or wires up one they deliberately withheld.
  */
 
-import { detectCapabilities, describeCapabilities, GOOGLE_CAPABILITIES } from '../googleManualScopes';
+import {
+  detectCapabilities,
+  describeCapabilities,
+  GOOGLE_CAPABILITIES,
+} from '../googleManualScopes';
 
-const CAL_PAIR = 'https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.readonly';
+const CAL_PAIR =
+  'https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.readonly';
 const CAL_BROAD = 'https://www.googleapis.com/auth/calendar';
 const TASKS = 'https://www.googleapis.com/auth/tasks';
 const GMAIL_RO = 'https://www.googleapis.com/auth/gmail.readonly';
@@ -32,8 +37,11 @@ describe('detectCapabilities', () => {
   });
 
   it('detects all three together', () => {
-    expect(detectCapabilities(`${CAL_PAIR} ${TASKS} ${GMAIL_RO}`).sort())
-      .toEqual(['calendar', 'gmail', 'tasks']);
+    expect(detectCapabilities(`${CAL_PAIR} ${TASKS} ${GMAIL_RO}`).sort()).toEqual([
+      'calendar',
+      'gmail',
+      'tasks',
+    ]);
   });
 
   it('honours a deliberate subset — calendar and tasks without gmail', () => {
@@ -80,8 +88,9 @@ describe('describeCapabilities', () => {
   it('reads naturally for one, two and three', () => {
     expect(describeCapabilities(['calendar'])).toBe('Calendar');
     expect(describeCapabilities(['calendar', 'tasks'])).toBe('Calendar and Tasks');
-    expect(describeCapabilities(['calendar', 'tasks', 'gmail']))
-      .toBe('Calendar, Tasks and Gmail (bus tracking)');
+    expect(describeCapabilities(['calendar', 'tasks', 'gmail'])).toBe(
+      'Calendar, Tasks and Gmail (bus tracking)'
+    );
   });
 
   it('says nothing rather than producing an empty string', () => {

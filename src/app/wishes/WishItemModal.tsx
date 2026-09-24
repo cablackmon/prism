@@ -62,7 +62,7 @@ export function WishItemModal({ open, onOpenChange, onSave, editingItem }: WishI
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="wish-name" className="text-sm font-medium mb-1.5 block">
+            <label htmlFor="wish-name" className="mb-1.5 block text-sm font-medium">
               Name
             </label>
             <Input
@@ -75,7 +75,7 @@ export function WishItemModal({ open, onOpenChange, onSave, editingItem }: WishI
           </div>
 
           <div>
-            <label htmlFor="wish-url" className="text-sm font-medium mb-1.5 block">
+            <label htmlFor="wish-url" className="mb-1.5 block text-sm font-medium">
               Link (optional)
             </label>
             <Input
@@ -88,7 +88,7 @@ export function WishItemModal({ open, onOpenChange, onSave, editingItem }: WishI
           </div>
 
           <div>
-            <label htmlFor="wish-notes" className="text-sm font-medium mb-1.5 block">
+            <label htmlFor="wish-notes" className="mb-1.5 block text-sm font-medium">
               Notes (optional)
             </label>
             <Input

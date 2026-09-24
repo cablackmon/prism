@@ -13,14 +13,28 @@ const updateSetSpy = jest.fn();
 jest.mock('@/lib/db/client', () => ({
   db: {
     query: { calendarSources: { findFirst: (...a: unknown[]) => mockFindFirst(...a) } },
-    insert: () => ({ values: (v: unknown) => { insertValuesSpy(v); return Promise.resolve(); } }),
-    update: () => ({ set: (v: unknown) => { updateSetSpy(v); return { where: () => Promise.resolve() }; } }),
+    insert: () => ({
+      values: (v: unknown) => {
+        insertValuesSpy(v);
+        return Promise.resolve();
+      },
+    }),
+    update: () => ({
+      set: (v: unknown) => {
+        updateSetSpy(v);
+        return { where: () => Promise.resolve() };
+      },
+    }),
   },
 }));
-jest.mock('@/lib/db/schema', () => ({ calendarSources: { id: 'id', provider: 'provider', sourceCalendarId: 'src' } }));
+jest.mock('@/lib/db/schema', () => ({
+  calendarSources: { id: 'id', provider: 'provider', sourceCalendarId: 'src' },
+}));
 jest.mock('drizzle-orm', () => ({ eq: jest.fn() }));
 jest.mock('@/lib/utils/crypto', () => ({ encrypt: (v: string) => `enc(${v})` }));
-jest.mock('@/lib/services/settingsTombstone', () => ({ tombstoneIdSet: () => Promise.resolve(new Set()) }));
+jest.mock('@/lib/services/settingsTombstone', () => ({
+  tombstoneIdSet: () => Promise.resolve(new Set()),
+}));
 
 const mockFetchList = jest.fn();
 jest.mock('@/lib/integrations/google-calendar', () => ({

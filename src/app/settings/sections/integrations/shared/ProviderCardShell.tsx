@@ -33,15 +33,13 @@ export function ProviderCardShell({
     <Card id={id} className="scroll-mt-20 overflow-hidden">
       <CardContent className="p-0">
         <div className="flex items-start gap-3 p-4">
-          <div className="flex-shrink-0 mt-0.5">{icon}</div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="font-semibold text-base">{name}</h3>
+          <div className="mt-0.5 flex-shrink-0">{icon}</div>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-base font-semibold">{name}</h3>
               <ConnectionStatusBadge status={status} />
             </div>
-            {description && (
-              <p className="text-sm text-muted-foreground mt-1">{description}</p>
-            )}
+            {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
           </div>
           {primaryAction && <div className="flex-shrink-0">{primaryAction}</div>}
         </div>

@@ -7,12 +7,7 @@ import { Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { getCategoryEmoji } from '@/app/chores/ChoreItem';
 import type { Chore, FamilyMember } from '@/types';
 
@@ -73,7 +68,7 @@ export function ChoreModal({
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-md overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{chore ? 'Edit Chore' : 'Add Chore'}</DialogTitle>
         </DialogHeader>
@@ -100,26 +95,38 @@ export function ChoreModal({
 
           <div>
             <label className="text-sm font-medium">Category</label>
-            <div className="flex gap-2 mt-1 flex-wrap">
-              {(['cleaning', 'laundry', 'dishes', 'yard', 'pets', 'trash', 'other'] as const).map((cat) => (
-                <Button
-                  key={cat}
-                  type="button"
-                  variant={category === cat ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setCategory(cat)}
-                  className="capitalize"
-                >
-                  {getCategoryEmoji(cat)} {cat}
-                </Button>
-              ))}
+            <div className="mt-1 flex flex-wrap gap-2">
+              {(['cleaning', 'laundry', 'dishes', 'yard', 'pets', 'trash', 'other'] as const).map(
+                (cat) => (
+                  <Button
+                    key={cat}
+                    type="button"
+                    variant={category === cat ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setCategory(cat)}
+                    className="capitalize"
+                  >
+                    {getCategoryEmoji(cat)} {cat}
+                  </Button>
+                )
+              )}
             </div>
           </div>
 
           <div>
             <label className="text-sm font-medium">Frequency</label>
-            <div className="flex gap-2 mt-1 flex-wrap">
-              {(['daily', 'weekly', 'biweekly', 'monthly', 'quarterly', 'semi-annually', 'annually'] as const).map((freq) => (
+            <div className="mt-1 flex flex-wrap gap-2">
+              {(
+                [
+                  'daily',
+                  'weekly',
+                  'biweekly',
+                  'monthly',
+                  'quarterly',
+                  'semi-annually',
+                  'annually',
+                ] as const
+              ).map((freq) => (
                 <Button
                   key={freq}
                   type="button"
@@ -135,10 +142,10 @@ export function ChoreModal({
           </div>
 
           {/* Start Day / Reset Day */}
-          {(['weekly', 'biweekly'].includes(frequency)) && (
+          {['weekly', 'biweekly'].includes(frequency) && (
             <div>
               <label className="text-sm font-medium">Reset Day</label>
-              <div className="flex gap-2 mt-1 flex-wrap">
+              <div className="mt-1 flex flex-wrap gap-2">
                 {DAYS_SHORT_ARRAY.map((day, idx) => (
                   <Button
                     key={day}
@@ -151,13 +158,15 @@ export function ChoreModal({
                   </Button>
                 ))}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {startDay ? `Resets every ${DAYS_LONG_ARRAY[parseInt(startDay)]}` : 'Defaults to Sunday'}
+              <p className="mt-1 text-xs text-muted-foreground">
+                {startDay
+                  ? `Resets every ${DAYS_LONG_ARRAY[parseInt(startDay)]}`
+                  : 'Defaults to Sunday'}
               </p>
             </div>
           )}
 
-          {(['monthly', 'quarterly', 'semi-annually'].includes(frequency)) && (
+          {['monthly', 'quarterly', 'semi-annually'].includes(frequency) && (
             <div>
               <label className="text-sm font-medium">Reset Day of Month</label>
               <Input
@@ -168,7 +177,9 @@ export function ChoreModal({
                 max="28"
                 className="mt-1"
               />
-              <p className="text-xs text-muted-foreground mt-1">Day of the month the chore resets (1-28)</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Day of the month the chore resets (1-28)
+              </p>
             </div>
           )}
 
@@ -182,7 +193,9 @@ export function ChoreModal({
                 pattern="\d{2}-\d{2}"
                 className="mt-1"
               />
-              <p className="text-xs text-muted-foreground mt-1">Month and day the chore resets (e.g., 03-15 for March 15)</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Month and day the chore resets (e.g., 03-15 for March 15)
+              </p>
             </div>
           )}
 
@@ -204,7 +217,7 @@ export function ChoreModal({
                 onChange={(e) => setNextDueTime(e.target.value)}
                 className="mt-1"
               />
-              <p className="text-xs text-muted-foreground mt-1">Optional. Reminder only.</p>
+              <p className="mt-1 text-xs text-muted-foreground">Optional. Reminder only.</p>
             </div>
           </div>
 
@@ -220,10 +233,7 @@ export function ChoreModal({
           </div>
 
           <div className="flex items-center gap-2">
-            <Switch
-              checked={requiresApproval}
-              onCheckedChange={setRequiresApproval}
-            />
+            <Switch checked={requiresApproval} onCheckedChange={setRequiresApproval} />
             <label className="text-sm font-medium">Requires approval</label>
           </div>
 
@@ -232,16 +242,15 @@ export function ChoreModal({
               <Switch
                 checked={enabled}
                 onCheckedChange={setEnabled}
+                aria-label={`${enabled ? 'Disable' : 'Enable'} ${title.trim() || chore.title}`}
               />
-              <label className="text-sm font-medium">
-                {enabled ? 'Enabled' : 'Disabled'}
-              </label>
+              <label className="text-sm font-medium">{enabled ? 'Enabled' : 'Disabled'}</label>
             </div>
           )}
 
           <div>
             <label className="text-sm font-medium">Assign To</label>
-            <div className="flex gap-2 mt-1 flex-wrap">
+            <div className="mt-1 flex flex-wrap gap-2">
               <Button
                 type="button"
                 variant={!assignedTo ? 'default' : 'outline'}
@@ -259,10 +268,7 @@ export function ChoreModal({
                   onClick={() => setAssignedTo(member.id)}
                   className="gap-1"
                 >
-                  <div
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: member.color }}
-                  />
+                  <div className="h-3 w-3 rounded-full" style={{ backgroundColor: member.color }} />
                   {member.name}
                 </Button>
               ))}
@@ -274,7 +280,7 @@ export function ChoreModal({
               <Button
                 type="button"
                 variant="ghost"
-                className="text-destructive hover:text-destructive hover:bg-destructive/10 gap-1"
+                className="gap-1 text-destructive hover:bg-destructive/10 hover:text-destructive"
                 onClick={onDelete}
               >
                 <Trash2 className="h-4 w-4" />

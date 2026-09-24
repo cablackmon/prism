@@ -47,111 +47,115 @@ export async function GET(request: NextRequest) {
 
     const cacheKey = `chores:${assignedTo || 'all'}:${enabledOnly}:future=${includeFuture}`;
 
-    const data = await getCached(cacheKey, async () => {
-      // First, get all pending completions
-      const pendingCompletions = await db
-        .select({
-          choreId: choreCompletions.choreId,
-          completionId: choreCompletions.id,
-          completedAt: choreCompletions.completedAt,
-          completedById: choreCompletions.completedBy,
-          completedByName: users.name,
-          completedByColor: users.color,
-        })
-        .from(choreCompletions)
-        .innerJoin(users, eq(choreCompletions.completedBy, users.id))
-        .where(isNull(choreCompletions.approvedBy));
+    const data = await getCached(
+      cacheKey,
+      async () => {
+        // First, get all pending completions
+        const pendingCompletions = await db
+          .select({
+            choreId: choreCompletions.choreId,
+            completionId: choreCompletions.id,
+            completedAt: choreCompletions.completedAt,
+            completedById: choreCompletions.completedBy,
+            completedByName: users.name,
+            completedByColor: users.color,
+          })
+          .from(choreCompletions)
+          .innerJoin(users, eq(choreCompletions.completedBy, users.id))
+          .where(isNull(choreCompletions.approvedBy));
 
-      const pendingMap = new Map<string, {
-        completionId: string;
-        completedAt: string;
-        completedBy: { id: string; name: string; color: string };
-      }>();
+        const pendingMap = new Map<
+          string,
+          {
+            completionId: string;
+            completedAt: string;
+            completedBy: { id: string; name: string; color: string };
+          }
+        >();
 
-      const choreIdsWithPending = new Set<string>();
+        const choreIdsWithPending = new Set<string>();
 
-      for (const pc of pendingCompletions) {
-        choreIdsWithPending.add(pc.choreId);
-        pendingMap.set(pc.choreId, {
-          completionId: pc.completionId,
-          completedAt: pc.completedAt.toISOString(),
-          completedBy: {
-            id: pc.completedById,
-            name: pc.completedByName,
-            color: pc.completedByColor,
-          },
-        });
-      }
-
-      // Build base query for all matching chores
-      const query = db
-        .select({
-          id: chores.id,
-          title: chores.title,
-          description: chores.description,
-          category: chores.category,
-          frequency: chores.frequency,
-          customIntervalDays: chores.customIntervalDays,
-          startDay: chores.startDay,
-          lastCompleted: chores.lastCompleted,
-          nextDue: chores.nextDue,
-          nextDueTime: chores.nextDueTime,
-          pointValue: chores.pointValue,
-          requiresApproval: chores.requiresApproval,
-          enabled: chores.enabled,
-          createdAt: chores.createdAt,
-          assignedToId: chores.assignedTo,
-          assignedToName: users.name,
-          assignedToColor: users.color,
-          assignedToAvatar: users.avatarUrl,
-        })
-        .from(chores)
-        .leftJoin(users, eq(chores.assignedTo, users.id))
-        .orderBy(desc(chores.createdAt));
-
-      // Apply filters
-      const conditions = [];
-      if (assignedTo) {
-        conditions.push(eq(chores.assignedTo, assignedTo));
-      }
-      if (enabledOnly) {
-        conditions.push(eq(chores.enabled, true));
-      }
-
-      const results = await query.where(and(...conditions));
-
-      // Filter to show chores that are either:
-      // 1. Due today or earlier (nextDue <= today or no nextDue)
-      // 2. Have a pending completion awaiting approval
-      // 3. Were completed within the last 24 hours (so they still appear as "done" in the UI)
-      // When includeFuture=true (calendar overlay), skip the date filter so
-      // future-dated chores remain visible after a drag-and-drop reschedule.
-      const today = format(new Date(), 'yyyy-MM-dd');
-      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      const filteredResults = includeFuture
-        ? results
-        : results.filter(row => {
-            const isDue = !row.nextDue || row.nextDue <= today;
-            const hasPending = choreIdsWithPending.has(row.id);
-            const recentlyCompleted = row.lastCompleted && row.lastCompleted > oneDayAgo;
-            return isDue || hasPending || recentlyCompleted;
+        for (const pc of pendingCompletions) {
+          choreIdsWithPending.add(pc.choreId);
+          pendingMap.set(pc.choreId, {
+            completionId: pc.completionId,
+            completedAt: pc.completedAt.toISOString(),
+            completedBy: {
+              id: pc.completedById,
+              name: pc.completedByName,
+              color: pc.completedByColor,
+            },
           });
+        }
 
-      const formattedChores = filteredResults.map(row => {
-        const pendingCompletion = pendingMap.get(row.id);
-        return formatChoreRow(row, pendingCompletion);
-      });
+        // Build base query for all matching chores
+        const query = db
+          .select({
+            id: chores.id,
+            title: chores.title,
+            description: chores.description,
+            category: chores.category,
+            frequency: chores.frequency,
+            customIntervalDays: chores.customIntervalDays,
+            startDay: chores.startDay,
+            lastCompleted: chores.lastCompleted,
+            nextDue: chores.nextDue,
+            nextDueTime: chores.nextDueTime,
+            pointValue: chores.pointValue,
+            requiresApproval: chores.requiresApproval,
+            enabled: chores.enabled,
+            createdAt: chores.createdAt,
+            assignedToId: chores.assignedTo,
+            assignedToName: users.name,
+            assignedToColor: users.color,
+            assignedToAvatar: users.avatarUrl,
+          })
+          .from(chores)
+          .leftJoin(users, eq(chores.assignedTo, users.id))
+          .orderBy(desc(chores.createdAt));
 
-      return { chores: formattedChores };
-    }, 60);
+        // Apply filters
+        const conditions = [];
+        if (assignedTo) {
+          conditions.push(eq(chores.assignedTo, assignedTo));
+        }
+        if (enabledOnly) {
+          conditions.push(eq(chores.enabled, true));
+        }
+
+        const results = await query.where(and(...conditions));
+
+        // Filter to show chores that are either:
+        // 1. Due today or earlier (nextDue <= today or no nextDue)
+        // 2. Have a pending completion awaiting approval
+        // 3. Were completed within the last 24 hours (so they still appear as "done" in the UI)
+        // When includeFuture=true (calendar overlay), skip the date filter so
+        // future-dated chores remain visible after a drag-and-drop reschedule.
+        const today = format(new Date(), 'yyyy-MM-dd');
+        const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        const filteredResults = includeFuture
+          ? results
+          : results.filter((row) => {
+              const isDue = !row.nextDue || row.nextDue <= today;
+              const hasPending = choreIdsWithPending.has(row.id);
+              const recentlyCompleted = row.lastCompleted && row.lastCompleted > oneDayAgo;
+              return isDue || hasPending || recentlyCompleted;
+            });
+
+        const formattedChores = filteredResults.map((row) => {
+          const pendingCompletion = pendingMap.get(row.id);
+          return formatChoreRow(row, pendingCompletion);
+        });
+
+        return { chores: formattedChores };
+      },
+      60
+    );
 
     return NextResponse.json(data);
   } catch (error) {
     logError('Error fetching chores:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch chores' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch chores' }, { status: 500 });
   }
 }
 
@@ -229,10 +233,7 @@ export async function POST(request: NextRequest) {
       .returning();
 
     if (!newChore) {
-      return NextResponse.json(
-        { error: 'Failed to create chore' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to create chore' }, { status: 500 });
     }
 
     await invalidateEntity('chores');
@@ -249,9 +250,6 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     logError('Error creating chore:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.json(
-      { error: `Failed to create chore: ${errorMessage}` },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: `Failed to create chore: ${errorMessage}` }, { status: 500 });
   }
 }

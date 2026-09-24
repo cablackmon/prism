@@ -27,10 +27,7 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
   try {
     const { id: goalId } = await params;
 
-    const [goal] = await db
-      .select()
-      .from(goals)
-      .where(eq(goals.id, goalId));
+    const [goal] = await db.select().from(goals).where(eq(goals.id, goalId));
 
     if (!goal) {
       return NextResponse.json({ error: 'Goal not found' }, { status: 404 });
@@ -40,15 +37,10 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
 
     await db.transaction(async (tx) => {
       // Clear achievements for this goal
-      await tx
-        .delete(goalAchievements)
-        .where(eq(goalAchievements.goalId, goalId));
+      await tx.delete(goalAchievements).where(eq(goalAchievements.goalId, goalId));
 
       // Reset the goal's lastResetAt
-      await tx
-        .update(goals)
-        .set({ lastResetAt: now, updatedAt: now })
-        .where(eq(goals.id, goalId));
+      await tx.update(goals).set({ lastResetAt: now, updatedAt: now }).where(eq(goals.id, goalId));
     });
 
     await invalidateEntity('goals');

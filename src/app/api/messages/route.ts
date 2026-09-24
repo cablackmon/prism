@@ -26,7 +26,6 @@ import { invalidateEntity } from '@/lib/cache/cacheKeys';
 import { logActivity } from '@/lib/services/auditLog';
 import { logError } from '@/lib/utils/logError';
 
-
 /**
  * GET /api/messages
  * Lists all family messages.
@@ -69,80 +68,77 @@ export async function GET(request: NextRequest) {
 
     const cacheKey = `messages:${authorId ?? 'all'}:${pinned ?? 'any'}:${important ?? 'any'}:${includeExpired}:${limit}:${offset}`;
 
-    const result = await getCached(cacheKey, async () => {
-      // Build filter conditions
-      const conditions = [];
+    const result = await getCached(
+      cacheKey,
+      async () => {
+        // Build filter conditions
+        const conditions = [];
 
-      if (authorId) {
-        conditions.push(eq(familyMessages.authorId, authorId));
-      }
+        if (authorId) {
+          conditions.push(eq(familyMessages.authorId, authorId));
+        }
 
-      if (pinned !== null) {
-        conditions.push(eq(familyMessages.pinned, pinned === 'true'));
-      }
+        if (pinned !== null) {
+          conditions.push(eq(familyMessages.pinned, pinned === 'true'));
+        }
 
-      if (important !== null) {
-        conditions.push(eq(familyMessages.important, important === 'true'));
-      }
+        if (important !== null) {
+          conditions.push(eq(familyMessages.important, important === 'true'));
+        }
 
-      // By default, exclude expired messages
-      // A message is not expired if: expiresAt is null OR expiresAt > now
-      if (!includeExpired) {
-        conditions.push(
-          or(
-            isNull(familyMessages.expiresAt),
-            gt(familyMessages.expiresAt, new Date())
-          )
-        );
-      }
+        // By default, exclude expired messages
+        // A message is not expired if: expiresAt is null OR expiresAt > now
+        if (!includeExpired) {
+          conditions.push(
+            or(isNull(familyMessages.expiresAt), gt(familyMessages.expiresAt, new Date()))
+          );
+        }
 
-      // Execute query with joins
-      // Sort by pinned (desc so true comes first), then by createdAt (desc)
-      const results = await db
-        .select({
-          id: familyMessages.id,
-          message: familyMessages.message,
-          pinned: familyMessages.pinned,
-          important: familyMessages.important,
-          expiresAt: familyMessages.expiresAt,
-          createdAt: familyMessages.createdAt,
-          authorId: users.id,
-          authorName: users.name,
-          authorColor: users.color,
-          authorAvatar: users.avatarUrl,
-        })
-        .from(familyMessages)
-        .innerJoin(users, eq(familyMessages.authorId, users.id))
-        .where(conditions.length > 0 ? and(...conditions) : undefined)
-        .orderBy(desc(familyMessages.pinned), desc(familyMessages.createdAt))
-        .limit(limit)
-        .offset(offset);
+        // Execute query with joins
+        // Sort by pinned (desc so true comes first), then by createdAt (desc)
+        const results = await db
+          .select({
+            id: familyMessages.id,
+            message: familyMessages.message,
+            pinned: familyMessages.pinned,
+            important: familyMessages.important,
+            expiresAt: familyMessages.expiresAt,
+            createdAt: familyMessages.createdAt,
+            authorId: users.id,
+            authorName: users.name,
+            authorColor: users.color,
+            authorAvatar: users.avatarUrl,
+          })
+          .from(familyMessages)
+          .innerJoin(users, eq(familyMessages.authorId, users.id))
+          .where(conditions.length > 0 ? and(...conditions) : undefined)
+          .orderBy(desc(familyMessages.pinned), desc(familyMessages.createdAt))
+          .limit(limit)
+          .offset(offset);
 
-      const formattedMessages = results.map((row) => formatMessageRow(row));
+        const formattedMessages = results.map((row) => formatMessageRow(row));
 
-      const countResult = await db
-        .select({ count: sql<number>`count(*)` })
-        .from(familyMessages)
-        .where(conditions.length > 0 ? and(...conditions) : undefined);
+        const countResult = await db
+          .select({ count: sql<number>`count(*)` })
+          .from(familyMessages)
+          .where(conditions.length > 0 ? and(...conditions) : undefined);
 
-      return {
-        messages: formattedMessages,
-        total: Number(countResult[0]?.count ?? 0),
-        limit,
-        offset,
-      };
-    }, 60);
+        return {
+          messages: formattedMessages,
+          total: Number(countResult[0]?.count ?? 0),
+          limit,
+          offset,
+        };
+      },
+      60
+    );
 
     return NextResponse.json(result);
   } catch (error) {
     logError('Error fetching messages:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch messages' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch messages' }, { status: 500 });
   }
 }
-
 
 /**
  * POST /api/messages
@@ -171,118 +167,103 @@ export async function GET(request: NextRequest) {
  * }
  */
 export async function POST(request: NextRequest) {
-  return withAuth(async () => {
-    try {
-    const body = await request.json();
+  return withAuth(
+    async () => {
+      try {
+        const body = await request.json();
 
-    // Validate required fields
-    if (!body.message || typeof body.message !== 'string') {
-      return NextResponse.json(
-        { error: 'Message content is required' },
-        { status: 400 }
-      );
-    }
+        // Validate required fields
+        if (!body.message || typeof body.message !== 'string') {
+          return NextResponse.json({ error: 'Message content is required' }, { status: 400 });
+        }
 
-    if (!body.authorId || typeof body.authorId !== 'string') {
-      return NextResponse.json(
-        { error: 'Author ID is required' },
-        { status: 400 }
-      );
-    }
+        if (!body.authorId || typeof body.authorId !== 'string') {
+          return NextResponse.json({ error: 'Author ID is required' }, { status: 400 });
+        }
 
-    // Verify author exists
-    const [author] = await db
-      .select({ id: users.id })
-      .from(users)
-      .where(eq(users.id, body.authorId));
+        // Verify author exists
+        const [author] = await db
+          .select({ id: users.id })
+          .from(users)
+          .where(eq(users.id, body.authorId));
 
-    if (!author) {
-      return NextResponse.json(
-        { error: 'Author not found' },
-        { status: 400 }
-      );
-    }
+        if (!author) {
+          return NextResponse.json({ error: 'Author not found' }, { status: 400 });
+        }
 
-    // Validate expiresAt if provided
-    let expiresAt: Date | null = null;
-    if (body.expiresAt) {
-      expiresAt = new Date(body.expiresAt);
-      if (isNaN(expiresAt.getTime())) {
-        return NextResponse.json(
-          { error: 'Invalid expiresAt format. Use ISO 8601 format.' },
-          { status: 400 }
-        );
+        // Validate expiresAt if provided
+        let expiresAt: Date | null = null;
+        if (body.expiresAt) {
+          expiresAt = new Date(body.expiresAt);
+          if (isNaN(expiresAt.getTime())) {
+            return NextResponse.json(
+              { error: 'Invalid expiresAt format. Use ISO 8601 format.' },
+              { status: 400 }
+            );
+          }
+          // Ensure expiration is in the future
+          if (expiresAt <= new Date()) {
+            return NextResponse.json({ error: 'expiresAt must be in the future' }, { status: 400 });
+          }
+        }
+
+        // Insert the new message
+        const [newMessage] = await db
+          .insert(familyMessages)
+          .values({
+            message: body.message.trim(),
+            authorId: body.authorId,
+            pinned: Boolean(body.pinned),
+            important: Boolean(body.important),
+            expiresAt: expiresAt,
+          })
+          .returning();
+
+        if (!newMessage) {
+          return NextResponse.json({ error: 'Failed to create message' }, { status: 500 });
+        }
+
+        // Fetch with author data
+        const [messageWithAuthor] = await db
+          .select({
+            id: familyMessages.id,
+            message: familyMessages.message,
+            pinned: familyMessages.pinned,
+            important: familyMessages.important,
+            expiresAt: familyMessages.expiresAt,
+            createdAt: familyMessages.createdAt,
+            authorId: users.id,
+            authorName: users.name,
+            authorColor: users.color,
+            authorAvatar: users.avatarUrl,
+          })
+          .from(familyMessages)
+          .innerJoin(users, eq(familyMessages.authorId, users.id))
+          .where(eq(familyMessages.id, newMessage.id));
+
+        if (!messageWithAuthor) {
+          return NextResponse.json(
+            { error: 'Message created but could not be retrieved' },
+            { status: 500 }
+          );
+        }
+
+        await invalidateEntity('messages');
+
+        logActivity({
+          userId: body.authorId,
+          action: 'create',
+          entityType: 'message',
+          entityId: newMessage.id,
+          summary: 'Posted message',
+        });
+
+        return NextResponse.json(formatMessageRow(messageWithAuthor), { status: 201 });
+      } catch (error) {
+        logError('Error creating message:', error);
+        return NextResponse.json({ error: 'Failed to create message' }, { status: 500 });
       }
-      // Ensure expiration is in the future
-      if (expiresAt <= new Date()) {
-        return NextResponse.json(
-          { error: 'expiresAt must be in the future' },
-          { status: 400 }
-        );
-      }
-    }
-
-    // Insert the new message
-    const [newMessage] = await db
-      .insert(familyMessages)
-      .values({
-        message: body.message.trim(),
-        authorId: body.authorId,
-        pinned: Boolean(body.pinned),
-        important: Boolean(body.important),
-        expiresAt: expiresAt,
-      })
-      .returning();
-
-    if (!newMessage) {
-      return NextResponse.json(
-        { error: 'Failed to create message' },
-        { status: 500 }
-      );
-    }
-
-    // Fetch with author data
-    const [messageWithAuthor] = await db
-      .select({
-        id: familyMessages.id,
-        message: familyMessages.message,
-        pinned: familyMessages.pinned,
-        important: familyMessages.important,
-        expiresAt: familyMessages.expiresAt,
-        createdAt: familyMessages.createdAt,
-        authorId: users.id,
-        authorName: users.name,
-        authorColor: users.color,
-        authorAvatar: users.avatarUrl,
-      })
-      .from(familyMessages)
-      .innerJoin(users, eq(familyMessages.authorId, users.id))
-      .where(eq(familyMessages.id, newMessage.id));
-
-    if (!messageWithAuthor) {
-      return NextResponse.json(
-        { error: 'Message created but could not be retrieved' },
-        { status: 500 }
-      );
-    }
-
-    await invalidateEntity('messages');
-
-    logActivity({
-      userId: body.authorId,
-      action: 'create',
-      entityType: 'message',
-      entityId: newMessage.id,
-      summary: 'Posted message',
-    });
-
-    return NextResponse.json(formatMessageRow(messageWithAuthor), { status: 201 });
-    } catch (error) {
-      logError('Error creating message:', error);
-      return NextResponse.json(
-        { error: 'Failed to create message' },
-        { status: 500 }
-      );
-    }
-  }, { rateLimit: { feature: 'messages', limit: 30, windowSeconds: 60 } });
+    },
+    { rateLimit: { feature: 'messages', limit: 30, windowSeconds: 60 } }
+  );
 }

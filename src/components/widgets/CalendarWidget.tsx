@@ -1,8 +1,19 @@
 'use client';
 
+import { useBoardColor } from '@/components/theme/useBoardColor';
 import * as React from 'react';
 import { useMemo, useCallback, useState, useContext, lazy, Suspense } from 'react';
-import { format, isToday, isTomorrow, startOfWeek, endOfWeek, addDays, addWeeks, startOfMonth, endOfMonth } from 'date-fns';
+import {
+  format,
+  isToday,
+  isTomorrow,
+  startOfWeek,
+  endOfWeek,
+  addDays,
+  addWeeks,
+  startOfMonth,
+  endOfMonth,
+} from 'date-fns';
 import {
   DndContext,
   PointerSensor,
@@ -22,17 +33,33 @@ import { useDayBucketsForRange } from '@/lib/hooks/useDayBucketsForRange';
 import { useWeekMutations } from '@/lib/hooks/useWeekMutations';
 import { useAuth } from '@/components/providers';
 import { useWeekStartsOn } from '@/lib/hooks/useWeekStartsOn';
-import { useCalendarWidgetPrefs, VIEW_OPTIONS, CalendarPrefsScopeContext } from '@/lib/hooks/useCalendarWidgetPrefs';
+import {
+  useCalendarWidgetPrefs,
+  VIEW_OPTIONS,
+  CalendarPrefsScopeContext,
+} from '@/lib/hooks/useCalendarWidgetPrefs';
 import { CalendarWidgetControls } from './CalendarWidgetControls';
 import type { CalendarEvent } from '@/types/calendar';
 export type { CalendarEvent };
 
-const MonthView = lazy(() => import('@/components/calendar/MonthView').then(m => ({ default: m.MonthView })));
-const WeekView = lazy(() => import('@/components/calendar/WeekView').then(m => ({ default: m.WeekView })));
-const MultiWeekView = lazy(() => import('@/components/calendar/MultiWeekView').then(m => ({ default: m.MultiWeekView })));
-const DayViewSideBySide = lazy(() => import('@/components/calendar/DayViewSideBySide').then(m => ({ default: m.DayViewSideBySide })));
-const WeekVerticalView = lazy(() => import('@/components/calendar/WeekVerticalView').then(m => ({ default: m.WeekVerticalView })));
-const AgendaView = lazy(() => import('@/components/calendar/AgendaView').then(m => ({ default: m.AgendaView })));
+const MonthView = lazy(() =>
+  import('@/components/calendar/MonthView').then((m) => ({ default: m.MonthView }))
+);
+const WeekView = lazy(() =>
+  import('@/components/calendar/WeekView').then((m) => ({ default: m.WeekView }))
+);
+const MultiWeekView = lazy(() =>
+  import('@/components/calendar/MultiWeekView').then((m) => ({ default: m.MultiWeekView }))
+);
+const DayViewSideBySide = lazy(() =>
+  import('@/components/calendar/DayViewSideBySide').then((m) => ({ default: m.DayViewSideBySide }))
+);
+const WeekVerticalView = lazy(() =>
+  import('@/components/calendar/WeekVerticalView').then((m) => ({ default: m.WeekVerticalView }))
+);
+const AgendaView = lazy(() =>
+  import('@/components/calendar/AgendaView').then((m) => ({ default: m.AgendaView }))
+);
 
 export interface CalendarWidgetProps {
   events?: CalendarEvent[];
@@ -61,28 +88,55 @@ export const CalendarWidget = React.memo(function CalendarWidget({
   const transparentMode = bgOverride?.hasCustomBg === true;
 
   const {
-    currentDate, setCurrentDate,
-    widgetBordered, setWidgetBordered,
-    mergedView, setMergedView,
-    showNotes, setShowNotes,
-    viewType, setViewType,
-    displayMode, setDisplayMode,
-    hideWeekends, setHideWeekends,
-    overlays, setOverlays,
-    availableViews, effectiveView, resolvedView, resolvedWeekCount, viewUnavailable,
-    goToToday, goToPrevious, goToNext,
+    currentDate,
+    setCurrentDate,
+    widgetBordered,
+    setWidgetBordered,
+    mergedView,
+    setMergedView,
+    showNotes,
+    setShowNotes,
+    viewType,
+    setViewType,
+    displayMode,
+    setDisplayMode,
+    hideWeekends,
+    setHideWeekends,
+    overlays,
+    setOverlays,
+    availableViews,
+    effectiveView,
+    resolvedView,
+    resolvedWeekCount,
+    viewUnavailable,
+    goToToday,
+    goToPrevious,
+    goToNext,
   } = useCalendarWidgetPrefs(gridW, gridH, useContext(CalendarPrefsScopeContext));
 
-  const { events: apiEvents, loading: apiLoading, error: apiError, refresh: refreshEvents } = useCalendarEvents({ daysToShow: 60 });
+  const {
+    events: apiEvents,
+    loading: apiLoading,
+    error: apiError,
+    refresh: refreshEvents,
+  } = useCalendarEvents({ daysToShow: 60 });
   const { selectedCalendarIds, toggleCalendar, filterEvents, calendarGroups } = useCalendarFilter();
 
   const loading = externalLoading ?? apiLoading;
   const error = externalError ?? apiError;
   const rawEvents = externalEvents ?? apiEvents;
-  const events = useMemo(() => deduplicateEvents(filterEvents(rawEvents)), [filterEvents, rawEvents]);
+  const events = useMemo(
+    () => deduplicateEvents(filterEvents(rawEvents)),
+    [filterEvents, rawEvents]
+  );
 
   // Date range for overlay buckets (meals/chores/tasks). Mirrors the page-level
   // calculation so each view's visible window has the right data loaded.
+  const boardColor = useBoardColor();
+  const groupNames = useMemo(
+    () => Object.fromEntries(calendarGroups.map((group) => [group.id, group.name])),
+    [calendarGroups]
+  );
   const cardsMode = displayMode === 'cards';
   const { from: bucketsFrom, to: bucketsTo } = useMemo(() => {
     if (resolvedView === 'day') return { from: currentDate, to: currentDate };
@@ -112,12 +166,15 @@ export const CalendarWidget = React.memo(function CalendarWidget({
   }, [resolvedView, resolvedWeekCount, currentDate, weekStartsOn]);
 
   const overlaysActive = cardsMode;
-  const effectiveOverlays = useMemo(() => ({
-    events: overlays.events,
-    meals: cardsMode && overlays.meals,
-    chores: cardsMode && overlays.chores,
-    tasks: cardsMode && overlays.tasks,
-  }), [cardsMode, overlays]);
+  const effectiveOverlays = useMemo(
+    () => ({
+      events: overlays.events,
+      meals: cardsMode && overlays.meals,
+      chores: cardsMode && overlays.chores,
+      tasks: cardsMode && overlays.tasks,
+    }),
+    [cardsMode, overlays]
+  );
 
   const { bucketsByDate, refresh: refreshBuckets } = useDayBucketsForRange({
     from: bucketsFrom,
@@ -133,7 +190,7 @@ export const CalendarWidget = React.memo(function CalendarWidget({
   // subpage so meals/chores/tasks can be reordered between days.
   const dndSensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor),
+    useSensor(KeyboardSensor)
   );
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const [moveError, setMoveError] = useState<string | null>(null);
@@ -168,11 +225,13 @@ export const CalendarWidget = React.memo(function CalendarWidget({
         let originalDue: Date | null = null;
         for (const b of bucketsByDate.values()) {
           const t = b.tasks.find((x) => x.id === itemId);
-          if (t?.dueDate) { originalDue = new Date(t.dueDate); break; }
+          if (t?.dueDate) {
+            originalDue = new Date(t.dueDate);
+            break;
+          }
         }
         await moveTask(itemId, targetBucket.date, originalDue);
-      }
-      else if (variant === 'meal') await moveMeal(itemId, targetBucket.date);
+      } else if (variant === 'meal') await moveMeal(itemId, targetBucket.date);
       else if (variant === 'event') {
         const ev = events.find((e) => e.id === itemId);
         if (!ev) return;
@@ -194,55 +253,75 @@ export const CalendarWidget = React.memo(function CalendarWidget({
   }, [notesSupported, resolvedView, currentDate, weekStartsOn]);
 
   const notesFrom = notesDays.length > 0 ? format(notesDays[0]!, 'yyyy-MM-dd') : '';
-  const notesTo = notesDays.length > 0 ? format(notesDays[notesDays.length - 1]!, 'yyyy-MM-dd') : '';
+  const notesTo =
+    notesDays.length > 0 ? format(notesDays[notesDays.length - 1]!, 'yyyy-MM-dd') : '';
   const { notesByDate, upsertNote } = useCalendarNotes({
     from: notesFrom,
     to: notesTo,
     enabled: showNotes && notesSupported,
   });
 
-  const handleEventClick = useCallback((event: CalendarEvent) => {
-    onEventClick?.(event);
-  }, [onEventClick]);
+  const handleEventClick = useCallback(
+    (event: CalendarEvent) => {
+      onEventClick?.(event);
+    },
+    [onEventClick]
+  );
 
-  const showMerge = (resolvedView === 'day' || resolvedView === 'list') && calendarGroups.length > 1;
+  const showMerge =
+    (resolvedView === 'day' || resolvedView === 'list') && calendarGroups.length > 1;
 
   // Calendar filter chips
-  const calendarChips = calendarGroups.length > 0 ? (
-    <div className="flex items-center gap-1 flex-wrap px-3 pb-2 -mt-1">
-      <button
-        onClick={() => toggleCalendar('all')}
-        className={cn(
-          'px-2 py-1 rounded-full text-[10px] font-medium transition-colors leading-none',
-          selectedCalendarIds.has('all')
-            ? 'bg-primary text-primary-foreground'
-            : transparentMode ? 'text-current/70 hover:text-current' : 'bg-muted text-muted-foreground hover:bg-accent'
-        )}
-      >
-        All
-      </button>
-      {calendarGroups.map((group) => (
+  const calendarChips =
+    calendarGroups.length > 0 ? (
+      <div className="-mt-1 flex flex-wrap items-center gap-1 px-3 pb-2">
         <button
-          key={group.id}
-          onClick={() => toggleCalendar(group.id)}
+          onClick={() => toggleCalendar('all')}
           className={cn(
-            'px-2 py-1 rounded-full text-[10px] font-medium transition-colors inline-flex items-center gap-1 leading-none',
-            selectedCalendarIds.has(group.id) || selectedCalendarIds.has('all')
-              ? isLightColor(group.color) ? '!text-black' : '!text-white'
-              : transparentMode ? 'text-current/60 hover:text-current' : 'bg-muted text-muted-foreground hover:bg-accent'
+            'rounded-full px-2 py-1 text-[10px] font-medium leading-none transition-colors',
+            selectedCalendarIds.has('all')
+              ? 'bg-primary text-primary-foreground'
+              : transparentMode
+                ? 'text-current/70 hover:text-current'
+                : 'bg-muted text-muted-foreground hover:bg-accent'
           )}
-          style={
-            selectedCalendarIds.has(group.id) || selectedCalendarIds.has('all')
-              ? { backgroundColor: group.color }
-              : undefined
-          }
         >
-          <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: selectedCalendarIds.has(group.id) || selectedCalendarIds.has('all') ? 'rgba(255,255,255,0.55)' : group.color }} />
-          {group.name}
+          All
         </button>
-      ))}
-    </div>
-  ) : null;
+        {calendarGroups.map((group) => (
+          <button
+            key={group.id}
+            onClick={() => toggleCalendar(group.id)}
+            className={cn(
+              'inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-medium leading-none transition-colors',
+              selectedCalendarIds.has(group.id) || selectedCalendarIds.has('all')
+                ? isLightColor(boardColor(group.color, group.name))
+                  ? '!text-black'
+                  : '!text-white'
+                : transparentMode
+                  ? 'text-current/60 hover:text-current'
+                  : 'bg-muted text-muted-foreground hover:bg-accent'
+            )}
+            style={
+              selectedCalendarIds.has(group.id) || selectedCalendarIds.has('all')
+                ? { backgroundColor: boardColor(group.color, group.name) }
+                : undefined
+            }
+          >
+            <span
+              className="h-1.5 w-1.5 shrink-0 rounded-full"
+              style={{
+                backgroundColor:
+                  selectedCalendarIds.has(group.id) || selectedCalendarIds.has('all')
+                    ? 'rgba(255,255,255,0.55)'
+                    : boardColor(group.color, group.name),
+              }}
+            />
+            {group.name}
+          </button>
+        ))}
+      </div>
+    ) : null;
 
   return (
     <WidgetContainer
@@ -282,29 +361,39 @@ export const CalendarWidget = React.memo(function CalendarWidget({
     >
       {calendarChips}
       {viewUnavailable && (
-        <div className="text-[10px] text-muted-foreground text-center py-1 bg-muted/50 rounded mb-1">
-          Resize widget for {VIEW_OPTIONS.find(v => v.value === viewType)?.label} view
+        <div className="mb-1 rounded bg-muted/50 py-1 text-center text-[10px] text-muted-foreground">
+          Resize widget for {VIEW_OPTIONS.find((v) => v.value === viewType)?.label} view
         </div>
       )}
 
       {moveError && (
-        <div className="text-[10px] text-destructive text-center py-1 bg-destructive/10 rounded mb-1">
+        <div className="mb-1 rounded bg-destructive/10 py-1 text-center text-[10px] text-destructive">
           {moveError}
         </div>
       )}
 
       {/* flex-1 min-h-0: fills remaining space after chips / notices */}
-      <div className="flex-1 min-h-0 overflow-hidden">
+      <div className="min-h-0 flex-1 overflow-hidden">
         <DndContext
           sensors={dndSensors}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
-          onDragCancel={() => { setActiveDragId(null); setMoveError(null); }}
+          onDragCancel={() => {
+            setActiveDragId(null);
+            setMoveError(null);
+          }}
         >
-          <Suspense fallback={<div className="h-full flex items-center justify-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>}>
+          <Suspense
+            fallback={
+              <div className="flex h-full items-center justify-center">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            }
+          >
             {resolvedView === 'agenda' && (
               <AgendaView
                 events={visibleEvents}
+                groupNames={groupNames}
                 days={30}
                 // Agenda is a scrollable list — show every event for each day
                 // rather than truncating to a "+N more" summary (0 = no cap).
@@ -379,11 +468,11 @@ export const CalendarWidget = React.memo(function CalendarWidget({
             )}
 
             {resolvedView === 'day' && (
-              <div className="h-full flex flex-col">
-                <div className="text-center text-sm font-medium text-foreground mb-2 shrink-0">
+              <div className="flex h-full flex-col">
+                <div className="mb-2 shrink-0 text-center text-sm font-medium text-foreground">
                   {formatDayHeader(currentDate)}
                 </div>
-                <div className="flex-1 min-h-0">
+                <div className="min-h-0 flex-1">
                   <DayViewSideBySide
                     currentDate={currentDate}
                     events={visibleEvents}

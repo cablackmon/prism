@@ -41,11 +41,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       updateData.recurrencePeriod = null;
     }
 
-    const [updated] = await db
-      .update(goals)
-      .set(updateData)
-      .where(eq(goals.id, id))
-      .returning();
+    const [updated] = await db.update(goals).set(updateData).where(eq(goals.id, id)).returning();
 
     if (!updated) {
       return NextResponse.json({ error: 'Failed to update goal' }, { status: 500 });

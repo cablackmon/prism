@@ -43,7 +43,10 @@ export function MicrosoftCredentialsForm({ onSaved }: { onSaved?: () => void }) 
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || 'Failed to save credentials');
       }
-      toast({ title: 'Microsoft credentials saved', description: 'You can now connect Microsoft / OneDrive.' });
+      toast({
+        title: 'Microsoft credentials saved',
+        description: 'You can now connect Microsoft / OneDrive.',
+      });
       setClientSecret('');
       onSaved?.();
     } catch (err) {
@@ -66,11 +69,11 @@ export function MicrosoftCredentialsForm({ onSaved }: { onSaved?: () => void }) 
         Paste your Azure AD app registration values. In the Azure portal, create a{' '}
         <span className="font-medium">Client secret</span> under{' '}
         <span className="font-medium">Certificates &amp; secrets</span> and copy its{' '}
-        <span className="font-medium">Value</span>. Client secrets expire — set a long
-        expiry (e.g. 24 months). Add the Redirect URI below to the app&apos;s{' '}
-        <span className="font-medium">Authentication → Redirect URIs</span>. The app must
-        allow <span className="font-medium">personal Microsoft accounts</span> (Supported
-        account types) — otherwise sign-in fails with{' '}
+        <span className="font-medium">Value</span>. Client secrets expire — set a long expiry (e.g.
+        24 months). Add the Redirect URI below to the app&apos;s{' '}
+        <span className="font-medium">Authentication → Redirect URIs</span>. The app must allow{' '}
+        <span className="font-medium">personal Microsoft accounts</span> (Supported account types) —
+        otherwise sign-in fails with{' '}
         <span className="font-medium">&ldquo;not enabled for consumers&rdquo;</span>.
       </p>
 
@@ -103,8 +106,8 @@ export function MicrosoftCredentialsForm({ onSaved }: { onSaved?: () => void }) 
         />
         <span className="text-[11px] text-muted-foreground">
           Copy the secret&apos;s <span className="font-medium">Value</span> column — not the{' '}
-          <span className="font-medium">Secret ID</span>. Azure hides the Value once you
-          leave the page.
+          <span className="font-medium">Secret ID</span>. Azure hides the Value once you leave the
+          page.
         </span>
       </label>
 

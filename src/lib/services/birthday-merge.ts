@@ -32,14 +32,18 @@ import { and, eq, sql } from 'drizzle-orm';
 
 interface UpsertOpts {
   name: string;
-  birthDate: string;       // YYYY-MM-DD
+  birthDate: string; // YYYY-MM-DD
   eventType?: 'birthday' | 'anniversary' | 'milestone';
-  source: string;          // e.g. 'birthdays', 'friends_family', 'caldav_contacts'
+  source: string; // e.g. 'birthdays', 'friends_family', 'caldav_contacts'
 }
 
 /** Strip punctuation, collapse whitespace, lowercase. */
 function normalize(s: string): string {
-  return s.replace(/[^\w\s]/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
+  return s
+    .replace(/[^\w\s]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
 }
 
 /** Token-prefix: "alex" is prefix of "alex doe", "jordan doe" is NOT prefix of "jordan smith". */
@@ -67,10 +71,11 @@ async function upgradeSentinelYear(
   existing: { id: string; birthDate: string },
   newYear: number,
   mo: string,
-  dy: string,
+  dy: string
 ): Promise<'updated' | 'skipped'> {
   if (parseYear(existing.birthDate) !== 1904 || newYear === 1904) return 'skipped';
-  await db.update(birthdays)
+  await db
+    .update(birthdays)
     .set({ birthDate: `${newYear}-${mo}-${dy}` })
     .where(eq(birthdays.id, existing.id));
   return 'updated';
@@ -81,7 +86,9 @@ async function upgradeSentinelYear(
  * sharing the same month/day. Returns the action taken so callers can
  * count synced vs deduped rows.
  */
-export async function upsertBirthday(opts: UpsertOpts): Promise<'inserted' | 'updated' | 'skipped'> {
+export async function upsertBirthday(
+  opts: UpsertOpts
+): Promise<'inserted' | 'updated' | 'skipped'> {
   const { name, birthDate, source } = opts;
   const eventType = opts.eventType ?? 'birthday';
   const [yearStr, mo, dy] = birthDate.split('-');
@@ -92,7 +99,7 @@ export async function upsertBirthday(opts: UpsertOpts): Promise<'inserted' | 'up
     where: and(
       eq(birthdays.eventType, eventType),
       sql`EXTRACT(MONTH FROM ${birthdays.birthDate}) = ${parseInt(mo, 10)}`,
-      sql`EXTRACT(DAY FROM ${birthdays.birthDate}) = ${parseInt(dy, 10)}`,
+      sql`EXTRACT(DAY FROM ${birthdays.birthDate}) = ${parseInt(dy, 10)}`
     ),
   });
 
@@ -122,10 +129,13 @@ export async function upsertBirthday(opts: UpsertOpts): Promise<'inserted' | 'up
       if (existing.birthDate === mergedDate) {
         return 'skipped';
       }
-      await db.update(birthdays).set({
-        birthDate: mergedDate,
-        googleCalendarSource: source,
-      }).where(eq(birthdays.id, existing.id));
+      await db
+        .update(birthdays)
+        .set({
+          birthDate: mergedDate,
+          googleCalendarSource: source,
+        })
+        .where(eq(birthdays.id, existing.id));
       return 'updated';
     }
 
@@ -133,11 +143,14 @@ export async function upsertBirthday(opts: UpsertOpts): Promise<'inserted' | 'up
     if (isTokenPrefix(existing.name, name)) {
       const existingYear = parseYear(existing.birthDate);
       const keepYear = existingYear !== 1904 ? existingYear : newYear;
-      await db.update(birthdays).set({
-        name,
-        birthDate: `${keepYear}-${mo}-${dy}`,
-        googleCalendarSource: source,
-      }).where(eq(birthdays.id, existing.id));
+      await db
+        .update(birthdays)
+        .set({
+          name,
+          birthDate: `${keepYear}-${mo}-${dy}`,
+          googleCalendarSource: source,
+        })
+        .where(eq(birthdays.id, existing.id));
       return 'updated';
     }
 
@@ -145,9 +158,12 @@ export async function upsertBirthday(opts: UpsertOpts): Promise<'inserted' | 'up
     if (isTokenPrefix(name, existing.name)) {
       const existingYear = parseYear(existing.birthDate);
       if (existingYear === 1904 && newYear !== 1904) {
-        await db.update(birthdays).set({
-          birthDate: `${newYear}-${mo}-${dy}`,
-        }).where(eq(birthdays.id, existing.id));
+        await db
+          .update(birthdays)
+          .set({
+            birthDate: `${newYear}-${mo}-${dy}`,
+          })
+          .where(eq(birthdays.id, existing.id));
         return 'updated';
       }
       return 'skipped';
@@ -159,14 +175,17 @@ export async function upsertBirthday(opts: UpsertOpts): Promise<'inserted' | 'up
 
   // No prefix-match. Use the existing (name, eventType) unique index
   // for the standard upsert path.
-  await db.insert(birthdays).values({
-    name,
-    birthDate,
-    eventType,
-    googleCalendarSource: source,
-  }).onConflictDoUpdate({
-    target: [birthdays.name, birthdays.eventType],
-    set: { birthDate, googleCalendarSource: source },
-  });
+  await db
+    .insert(birthdays)
+    .values({
+      name,
+      birthDate,
+      eventType,
+      googleCalendarSource: source,
+    })
+    .onConflictDoUpdate({
+      target: [birthdays.name, birthdays.eventType],
+      set: { birthDate, googleCalendarSource: source },
+    });
   return 'inserted';
 }

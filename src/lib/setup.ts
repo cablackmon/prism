@@ -24,9 +24,7 @@ export async function isSetupComplete(): Promise<boolean> {
       .where(eq(settings.key, 'setupComplete'));
     if (!marker) return false;
 
-    const rows = await db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(users);
+    const rows = await db.select({ count: sql<number>`count(*)::int` }).from(users);
     return (rows[0]?.count ?? 0) > 0;
   } catch {
     return false;

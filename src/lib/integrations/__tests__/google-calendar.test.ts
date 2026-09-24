@@ -6,24 +6,30 @@ import {
 
 describe('toGoogleAllDayRange', () => {
   it('advances an inclusive same-day end to Google’s exclusive next day', () => {
-    expect(toGoogleAllDayRange(
-      new Date('2026-08-19T00:00:00.000Z'),
-      new Date('2026-08-19T23:59:59.000Z'),
-    )).toEqual({ start: { date: '2026-08-19' }, end: { date: '2026-08-20' } });
+    expect(
+      toGoogleAllDayRange(
+        new Date('2026-08-19T00:00:00.000Z'),
+        new Date('2026-08-19T23:59:59.000Z')
+      )
+    ).toEqual({ start: { date: '2026-08-19' }, end: { date: '2026-08-20' } });
   });
 
   it('preserves an end that is already an exclusive midnight boundary', () => {
-    expect(toGoogleAllDayRange(
-      new Date('2026-08-19T00:00:00.000Z'),
-      new Date('2026-08-20T00:00:00.000Z'),
-    )).toEqual({ start: { date: '2026-08-19' }, end: { date: '2026-08-20' } });
+    expect(
+      toGoogleAllDayRange(
+        new Date('2026-08-19T00:00:00.000Z'),
+        new Date('2026-08-20T00:00:00.000Z')
+      )
+    ).toEqual({ start: { date: '2026-08-19' }, end: { date: '2026-08-20' } });
   });
 
   it('uses an exclusive day after the inclusive end for multi-day events', () => {
-    expect(toGoogleAllDayRange(
-      new Date('2026-08-19T00:00:00.000Z'),
-      new Date('2026-08-21T23:59:59.000Z'),
-    )).toEqual({ start: { date: '2026-08-19' }, end: { date: '2026-08-22' } });
+    expect(
+      toGoogleAllDayRange(
+        new Date('2026-08-19T00:00:00.000Z'),
+        new Date('2026-08-21T23:59:59.000Z')
+      )
+    ).toEqual({ start: { date: '2026-08-19' }, end: { date: '2026-08-22' } });
   });
 });
 
@@ -164,10 +170,7 @@ describe('convertGoogleEventToInternal', () => {
         summary: 'Complex Recurring',
         start: { dateTime: '2026-03-01T10:00:00Z' },
         end: { dateTime: '2026-03-01T11:00:00Z' },
-        recurrence: [
-          'RRULE:FREQ=WEEKLY;BYDAY=MO',
-          'EXDATE:20260308T100000Z',
-        ],
+        recurrence: ['RRULE:FREQ=WEEKLY;BYDAY=MO', 'EXDATE:20260308T100000Z'],
       };
 
       const result = convertGoogleEventToInternal(event, SOURCE_ID);

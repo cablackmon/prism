@@ -18,12 +18,12 @@ import { TimeFormatProvider } from './TimeFormatProvider';
 
 // simple-keyboard accesses browser globals at module load — must be client-only
 const VirtualKeyboard = dynamic(
-  () => import('@/components/input/VirtualKeyboard').then(m => m.VirtualKeyboard),
-  { ssr: false },
+  () => import('@/components/input/VirtualKeyboard').then((m) => m.VirtualKeyboard),
+  { ssr: false }
 );
 const KeyboardToggleButton = dynamic(
-  () => import('@/components/input/KeyboardToggleButton').then(m => m.KeyboardToggleButton),
-  { ssr: false },
+  () => import('@/components/input/KeyboardToggleButton').then((m) => m.KeyboardToggleButton),
+  { ssr: false }
 );
 
 interface ProvidersProps {
@@ -37,7 +37,7 @@ interface ProvidersProps {
  */
 export function Providers({ children }: ProvidersProps) {
   return (
-    <ThemeProvider defaultTheme="light">
+    <ThemeProvider defaultTheme="dark">
       <LocaleProvider>
         <FamilyProvider>
           <AuthProvider>

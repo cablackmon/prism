@@ -11,12 +11,12 @@ export class WidgetErrorBoundary extends React.Component<
   render() {
     if (this.state.error) {
       return (
-        <div className="p-4 bg-destructive/10 text-destructive rounded-lg">
+        <div className="rounded-lg bg-destructive/10 p-4 text-destructive">
           <p className="font-bold">Widget Error</p>
           {process.env.NODE_ENV === 'development' && (
             <>
               <p className="text-sm">{this.state.error.message}</p>
-              <pre className="text-xs mt-2 overflow-auto max-h-40">{this.state.error.stack}</pre>
+              <pre className="mt-2 max-h-40 overflow-auto text-xs">{this.state.error.stack}</pre>
             </>
           )}
           <button

@@ -50,10 +50,17 @@ async function getConfig() {
       'Missing Gmail OAuth configuration. Configure in Settings → Setup Wizard or set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_GMAIL_REDIRECT_URI in .env'
     );
   }
-  return { clientId: creds.clientId, clientSecret: creds.clientSecret, redirectUri: creds.gmailRedirectUri };
+  return {
+    clientId: creds.clientId,
+    clientSecret: creds.clientSecret,
+    redirectUri: creds.gmailRedirectUri,
+  };
 }
 
-export async function getGmailAuthUrl(state?: string, redirectUriOverride?: string): Promise<string> {
+export async function getGmailAuthUrl(
+  state?: string,
+  redirectUriOverride?: string
+): Promise<string> {
   const { clientId, redirectUri } = await getConfig();
 
   const params = new URLSearchParams({
@@ -72,7 +79,10 @@ export async function getGmailAuthUrl(state?: string, redirectUriOverride?: stri
   return `${GOOGLE_OAUTH_URL}?${params.toString()}`;
 }
 
-export async function exchangeGmailCodeForTokens(code: string, redirectUriOverride?: string): Promise<GmailTokens> {
+export async function exchangeGmailCodeForTokens(
+  code: string,
+  redirectUriOverride?: string
+): Promise<GmailTokens> {
   const { clientId, clientSecret, redirectUri } = await getConfig();
 
   const response = await fetch(GOOGLE_TOKEN_URL, {
@@ -111,7 +121,10 @@ export async function refreshGmailAccessToken(refreshToken: string): Promise<Gma
 
   if (!response.ok) {
     const errorText = await response.text();
-    if (errorText.includes('invalid_grant') || errorText.includes('Token has been expired or revoked')) {
+    if (
+      errorText.includes('invalid_grant') ||
+      errorText.includes('Token has been expired or revoked')
+    ) {
       throw new TokenRevokedError(`Gmail token expired or revoked: ${errorText}`);
     }
     throw new Error(`Failed to refresh Gmail token: ${errorText}`);
@@ -140,7 +153,12 @@ export class TokenRevokedError extends Error {
 export async function fetchEmails(
   accessToken: string,
   query: string,
-  options: { unreadOnly?: boolean; labelName?: string; afterDate?: string; maxResults?: number } = {}
+  options: {
+    unreadOnly?: boolean;
+    labelName?: string;
+    afterDate?: string;
+    maxResults?: number;
+  } = {}
 ): Promise<{ id: string; threadId: string }[]> {
   const { unreadOnly = false, labelName, afterDate, maxResults = 20 } = options;
   let fullQuery = query;
@@ -158,10 +176,9 @@ export async function fetchEmails(
     });
     if (pageToken) params.set('pageToken', pageToken);
 
-    const response = await fetch(
-      `${GMAIL_API}/users/me/messages?${params}`,
-      { headers: { Authorization: `Bearer ${accessToken}` } }
-    );
+    const response = await fetch(`${GMAIL_API}/users/me/messages?${params}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
 
     if (!response.ok) {
       const error = await response.text();
@@ -184,10 +201,9 @@ export async function getEmailContent(
   accessToken: string,
   messageId: string
 ): Promise<GmailMessage> {
-  const response = await fetch(
-    `${GMAIL_API}/users/me/messages/${messageId}?format=full`,
-    { headers: { Authorization: `Bearer ${accessToken}` } }
-  );
+  const response = await fetch(`${GMAIL_API}/users/me/messages/${messageId}?format=full`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
 
   if (!response.ok) {
     const error = await response.text();
@@ -200,21 +216,15 @@ export async function getEmailContent(
 /**
  * Mark an email as read by removing the UNREAD label.
  */
-export async function markEmailAsRead(
-  accessToken: string,
-  messageId: string
-): Promise<void> {
-  const response = await fetch(
-    `${GMAIL_API}/users/me/messages/${messageId}/modify`,
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ removeLabelIds: ['UNREAD'] }),
-    }
-  );
+export async function markEmailAsRead(accessToken: string, messageId: string): Promise<void> {
+  const response = await fetch(`${GMAIL_API}/users/me/messages/${messageId}/modify`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ removeLabelIds: ['UNREAD'] }),
+  });
 
   if (!response.ok) {
     const error = await response.text();
@@ -232,8 +242,8 @@ export function extractEmailFields(message: GmailMessage): {
   messageId: string;
 } {
   const headers = message.payload?.headers || [];
-  const subject = headers.find(h => h.name.toLowerCase() === 'subject')?.value || '';
-  const dateStr = headers.find(h => h.name.toLowerCase() === 'date')?.value || '';
+  const subject = headers.find((h) => h.name.toLowerCase() === 'subject')?.value || '';
+  const dateStr = headers.find((h) => h.name.toLowerCase() === 'date')?.value || '';
 
   // Extract plain text body
   const body = extractPlainTextBody(message.payload);

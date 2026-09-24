@@ -18,7 +18,6 @@ import { cookies } from 'next/headers';
 import { validateSession } from '@/lib/auth/session';
 import { logError } from '@/lib/utils/logError';
 
-
 /**
  * GET /api/auth/me
  * Returns the currently logged-in user.

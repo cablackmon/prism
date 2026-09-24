@@ -15,7 +15,6 @@
 import { Suspense } from 'react';
 import { MessagesView } from './MessagesView';
 
-
 /**
  * PAGE METADATA
  */
@@ -23,7 +22,6 @@ export const metadata = {
   title: 'Messages',
   description: 'Family message board.',
 };
-
 
 /**
  * MESSAGES PAGE COMPONENT
@@ -38,25 +36,24 @@ export default function MessagesPage() {
   );
 }
 
-
 /**
  * MESSAGES SKELETON
  */
 function MessagesSkeleton() {
   return (
-    <div className="h-screen flex flex-col p-4">
+    <div className="flex h-screen flex-col p-4">
       {/* Header skeleton */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="h-8 w-32 bg-muted rounded animate-pulse" />
+      <div className="mb-6 flex items-center justify-between">
+        <div className="h-8 w-32 animate-pulse rounded bg-muted" />
         <div className="flex gap-2">
-          <div className="h-10 w-32 bg-muted rounded animate-pulse" />
+          <div className="h-10 w-32 animate-pulse rounded bg-muted" />
         </div>
       </div>
 
       {/* Message list skeleton */}
       <div className="space-y-2">
         {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="h-20 bg-muted/50 rounded animate-pulse" />
+          <div key={i} className="h-20 animate-pulse rounded bg-muted/50" />
         ))}
       </div>
     </div>

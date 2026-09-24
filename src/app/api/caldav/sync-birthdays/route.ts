@@ -24,9 +24,6 @@ export async function POST() {
     return NextResponse.json(result);
   } catch (err) {
     logError('CardDAV birthday sync failed', err);
-    return NextResponse.json(
-      { error: 'Sync failed' },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: 'Sync failed' }, { status: 500 });
   }
 }

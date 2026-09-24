@@ -35,10 +35,7 @@ export function useIntegrationsHashRouter() {
     setHash(id ?? '');
   }, []);
 
-  const matches = useCallback(
-    (id: string) => hash === id || hash.startsWith(`${id}-`),
-    [hash],
-  );
+  const matches = useCallback((id: string) => hash === id || hash.startsWith(`${id}-`), [hash]);
 
   return { hash, setActive, matches };
 }

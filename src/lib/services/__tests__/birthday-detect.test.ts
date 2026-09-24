@@ -15,14 +15,14 @@ import { parseEventTitle } from '../birthday-detect';
 const D = '2026-03-14';
 const parse = (
   title: string,
-  opts: { recurring?: boolean; lifeEvents?: boolean; description?: string | null } = {},
+  opts: { recurring?: boolean; lifeEvents?: boolean; description?: string | null } = {}
 ) =>
   parseEventTitle(
     title,
     D,
     opts.description ?? null,
     opts.lifeEvents ?? false,
-    opts.recurring ?? false,
+    opts.recurring ?? false
   );
 
 describe('birthdays', () => {
@@ -59,13 +59,17 @@ describe('milestones', () => {
   // Real titles: "Ana ❤️ Ben (2005)", "CJT ❤️ MRT (1977)". The signal is the
   // year plus the annual repeat — NOT the heart, which is one user's habit.
   it('detects a recurring event carrying a year, with no keyword', () => {
-    expect(parse('Ana ❤️ Ben (2005)', { recurring: true }))
-      .toMatchObject({ eventType: 'milestone', year: 2005 });
+    expect(parse('Ana ❤️ Ben (2005)', { recurring: true })).toMatchObject({
+      eventType: 'milestone',
+      year: 2005,
+    });
   });
 
   it('does not depend on the heart character', () => {
-    expect(parse('Ana and Ben (2005)', { recurring: true }))
-      .toMatchObject({ eventType: 'milestone', year: 2005 });
+    expect(parse('Ana and Ben (2005)', { recurring: true })).toMatchObject({
+      eventType: 'milestone',
+      year: 2005,
+    });
   });
 
   it('ignores the same title when it is a one-off', () => {
@@ -98,7 +102,10 @@ describe('other languages', () => {
 
   it('detects a German anniversary', () => {
     expect(parse('Hochzeitstag')).toMatchObject({ eventType: 'anniversary' });
-    expect(parse('Jubiläum Oma und Opa')).toMatchObject({ name: 'Oma und Opa', eventType: 'anniversary' });
+    expect(parse('Jubiläum Oma und Opa')).toMatchObject({
+      name: 'Oma und Opa',
+      eventType: 'anniversary',
+    });
   });
 
   it('rejects a German birthday party', () => {
@@ -132,8 +139,9 @@ describe('false positives that reached production data', () => {
 
 describe('designated life-events calendar (optional override)', () => {
   it('accepts a keyword-free, non-recurring title', () => {
-    expect(parse('Moved to the new house', { lifeEvents: true }))
-      .toMatchObject({ eventType: 'milestone' });
+    expect(parse('Moved to the new house', { lifeEvents: true })).toMatchObject({
+      eventType: 'milestone',
+    });
   });
 
   it('trusts the calendar over the negative-keyword list', () => {

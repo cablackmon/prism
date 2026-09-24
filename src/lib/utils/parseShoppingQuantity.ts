@@ -15,28 +15,75 @@
  */
 
 const MEASUREMENT_WORDS = new Set([
-  'cup', 'cups', 'c',
-  'tbsp', 'tbsps', 'tablespoon', 'tablespoons', 't', 'tb',
-  'tsp', 'tsps', 'teaspoon', 'teaspoons',
-  'oz', 'ounce', 'ounces',
-  'lb', 'lbs', 'pound', 'pounds',
-  'g', 'gram', 'grams',
-  'kg', 'kilogram', 'kilograms',
-  'ml', 'milliliter', 'milliliters',
-  'l', 'liter', 'liters',
-  'pinch', 'pinches', 'dash', 'dashes',
-  'clove', 'cloves',
-  'can', 'cans', 'jar', 'jars', 'package', 'packages', 'pkg',
-  'slice', 'slices', 'piece', 'pieces',
-  'stick', 'sticks',
-  'qt', 'quart', 'quarts', 'pt', 'pint', 'pints', 'gal', 'gallon', 'gallons',
-  'bunch', 'bunches', 'head', 'heads',
+  'cup',
+  'cups',
+  'c',
+  'tbsp',
+  'tbsps',
+  'tablespoon',
+  'tablespoons',
+  't',
+  'tb',
+  'tsp',
+  'tsps',
+  'teaspoon',
+  'teaspoons',
+  'oz',
+  'ounce',
+  'ounces',
+  'lb',
+  'lbs',
+  'pound',
+  'pounds',
+  'g',
+  'gram',
+  'grams',
+  'kg',
+  'kilogram',
+  'kilograms',
+  'ml',
+  'milliliter',
+  'milliliters',
+  'l',
+  'liter',
+  'liters',
+  'pinch',
+  'pinches',
+  'dash',
+  'dashes',
+  'clove',
+  'cloves',
+  'can',
+  'cans',
+  'jar',
+  'jars',
+  'package',
+  'packages',
+  'pkg',
+  'slice',
+  'slices',
+  'piece',
+  'pieces',
+  'stick',
+  'sticks',
+  'qt',
+  'quart',
+  'quarts',
+  'pt',
+  'pint',
+  'pints',
+  'gal',
+  'gallon',
+  'gallons',
+  'bunch',
+  'bunches',
+  'head',
+  'heads',
 ]);
 
 // Numeric quantity at start of line:
 //   "2", "1.5", "1 1/2", "1/2", "¼"
-const QUANTITY_RE =
-  /^(\d+(?:\.\d+)?(?:\s+\d+\/\d+)?|\d+\/\d+|[¼½¾⅓⅔⅛⅜⅝⅞])\s+(.+)$/;
+const QUANTITY_RE = /^(\d+(?:\.\d+)?(?:\s+\d+\/\d+)?|\d+\/\d+|[¼½¾⅓⅔⅛⅜⅝⅞])\s+(.+)$/;
 
 export interface ParsedShoppingQuantity {
   /** Cleaned name suitable for product search (no quantity, no unit). */
@@ -59,8 +106,8 @@ export interface ParsedShoppingQuantity {
  *   - drop " to taste" suffix
  */
 function stripModifiers(text: string): string {
-  let s = text.replace(/\([^)]*\)/g, ' ');           // (parentheticals)
-  s = s.replace(/\s+to taste\b.*$/i, '');             // "salt to taste"
+  let s = text.replace(/\([^)]*\)/g, ' '); // (parentheticals)
+  s = s.replace(/\s+to taste\b.*$/i, ''); // "salt to taste"
   const orIdx = s.search(/\s+or\s+/i);
   if (orIdx >= 0) s = s.slice(0, orIdx);
   const commaIdx = s.indexOf(',');

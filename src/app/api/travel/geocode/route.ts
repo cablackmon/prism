@@ -37,8 +37,7 @@ function shortDisplayName(result: NominatimResult): string {
   const a = result.address || {};
   // Most specific to least: city > town > village > county/municipality > island > state
   const place =
-    a.city || a.town || a.village ||
-    a.county || a.municipality || a.island || a.archipelago;
+    a.city || a.town || a.village || a.county || a.municipality || a.island || a.archipelago;
   const parts = [place, a.state, a.country].filter(Boolean);
   if (parts.length > 0) return parts.join(', ');
   // Fallback: first 3 comma-separated parts of full name
@@ -60,14 +59,14 @@ export async function GET(request: NextRequest) {
 
   // Normalize special characters and common colloquial aliases
   const ALIASES: Record<string, string> = {
-    'big island':         'Hawaii Island, Hawaii, United States',
-    'big island hawaii':  'Hawaii Island, Hawaii, United States',
-    'big island hi':      'Hawaii Island, Hawaii, United States',
-    'the big island':     'Hawaii Island, Hawaii, United States',
-    'hawaii island':      'Hawaii Island, Hawaii, United States',
-    'island of hawaii':   'Hawaii Island, Hawaii, United States',
-    'maui island':        'Maui, Hawaii, United States',
-    'oahu':               'Oahu, Hawaii, United States',
+    'big island': 'Hawaii Island, Hawaii, United States',
+    'big island hawaii': 'Hawaii Island, Hawaii, United States',
+    'big island hi': 'Hawaii Island, Hawaii, United States',
+    'the big island': 'Hawaii Island, Hawaii, United States',
+    'hawaii island': 'Hawaii Island, Hawaii, United States',
+    'island of hawaii': 'Hawaii Island, Hawaii, United States',
+    'maui island': 'Maui, Hawaii, United States',
+    oahu: 'Oahu, Hawaii, United States',
     'the big island of hawaii': 'Hawaii Island, Hawaii, United States',
   };
   const normalized = rawQ
@@ -104,9 +103,13 @@ export async function GET(request: NextRequest) {
     if (isNationalParkSearch) {
       data.sort((a, b) => {
         const score = (r: NominatimResult) =>
-          r.type === 'national_park' ? 0 :
-          r.class === 'boundary' ? 1 :
-          r.class === 'leisure' ? 2 : 3;
+          r.type === 'national_park'
+            ? 0
+            : r.class === 'boundary'
+              ? 1
+              : r.class === 'leisure'
+                ? 2
+                : 3;
         return score(a) - score(b) || (b.importance ?? 0) - (a.importance ?? 0);
       });
     }
@@ -119,9 +122,15 @@ export async function GET(request: NextRequest) {
         latitude: parseFloat(item.lat),
         longitude: parseFloat(item.lon),
       }))
-      .filter(r => isFinite(r.latitude) && isFinite(r.longitude) &&
-        r.latitude >= -90 && r.latitude <= 90 &&
-        r.longitude >= -180 && r.longitude <= 180);
+      .filter(
+        (r) =>
+          isFinite(r.latitude) &&
+          isFinite(r.longitude) &&
+          r.latitude >= -90 &&
+          r.latitude <= 90 &&
+          r.longitude >= -180 &&
+          r.longitude <= 180
+      );
 
     return NextResponse.json({ results });
   } catch (error) {

@@ -19,14 +19,12 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
-
 /**
  * INPUT PROPS
  * Extends standard HTML input attributes.
  * No additional props needed - we just style the native input.
  */
 export type InputProps = React.InputHTMLAttributes<HTMLInputElement>;
-
 
 /**
  * INPUT COMPONENT

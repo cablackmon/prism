@@ -21,9 +21,9 @@ export async function GET(request: NextRequest) {
     const sources = await getCached(
       cacheKey,
       async () => {
-        const memberUser = db.$with('member_user').as(
-          db.select({ id: users.id, name: users.name }).from(users)
-        );
+        const memberUser = db
+          .$with('member_user')
+          .as(db.select({ id: users.id, name: users.name }).from(users));
 
         let query = db
           .select({
@@ -49,13 +49,14 @@ export async function GET(request: NextRequest) {
         const rows = await query;
 
         // Fetch member names for each source
-        const memberIds = [...new Set(rows.map(r => r.memberId))];
-        const members = memberIds.length > 0
-          ? await db.select({ id: users.id, name: users.name }).from(users)
-          : [];
-        const memberMap = new Map(members.map(m => [m.id, m.name]));
+        const memberIds = [...new Set(rows.map((r) => r.memberId))];
+        const members =
+          memberIds.length > 0
+            ? await db.select({ id: users.id, name: users.name }).from(users)
+            : [];
+        const memberMap = new Map(members.map((m) => [m.id, m.name]));
 
-        return rows.map(r => ({
+        return rows.map((r) => ({
           ...r,
           memberName: memberMap.get(r.memberId) || null,
         }));
@@ -66,10 +67,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(sources);
   } catch (error) {
     logError('Error fetching wish item sources:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch wish item sources' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch wish item sources' }, { status: 500 });
   }
 }
 
@@ -91,16 +89,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify the member exists
-    const [member] = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, body.memberId));
+    const [member] = await db.select().from(users).where(eq(users.id, body.memberId));
 
     if (!member) {
-      return NextResponse.json(
-        { error: 'Member not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Member not found' }, { status: 404 });
     }
 
     // Check for duplicate source
@@ -138,10 +130,7 @@ export async function POST(request: NextRequest) {
       .returning();
 
     if (!newSource) {
-      return NextResponse.json(
-        { error: 'Failed to create wish item source' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to create wish item source' }, { status: 500 });
     }
 
     await invalidateEntity('wish-item-sources');
@@ -154,22 +143,22 @@ export async function POST(request: NextRequest) {
       summary: `Connected wish list sync: ${newSource.provider} (${newSource.externalListName || newSource.externalListId})`,
     });
 
-    return NextResponse.json({
-      id: newSource.id,
-      userId: newSource.userId,
-      provider: newSource.provider,
-      externalListId: newSource.externalListId,
-      externalListName: newSource.externalListName,
-      memberId: newSource.memberId,
-      syncEnabled: newSource.syncEnabled,
-      lastSyncAt: newSource.lastSyncAt,
-      createdAt: newSource.createdAt,
-    }, { status: 201 });
+    return NextResponse.json(
+      {
+        id: newSource.id,
+        userId: newSource.userId,
+        provider: newSource.provider,
+        externalListId: newSource.externalListId,
+        externalListName: newSource.externalListName,
+        memberId: newSource.memberId,
+        syncEnabled: newSource.syncEnabled,
+        lastSyncAt: newSource.lastSyncAt,
+        createdAt: newSource.createdAt,
+      },
+      { status: 201 }
+    );
   } catch (error) {
     logError('Error creating wish item source:', error);
-    return NextResponse.json(
-      { error: 'Failed to create wish item source' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to create wish item source' }, { status: 500 });
   }
 }

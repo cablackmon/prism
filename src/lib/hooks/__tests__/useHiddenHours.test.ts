@@ -12,7 +12,7 @@ const STORAGE_KEY = 'prism:calendar-hidden-hours';
 // no-op and the localStorage-cache behavior these tests assert is preserved).
 beforeAll(() => {
   global.fetch = jest.fn(() =>
-    Promise.resolve({ ok: true, json: () => Promise.resolve({ settings: {} }) }),
+    Promise.resolve({ ok: true, json: () => Promise.resolve({ settings: {} }) })
   ) as unknown as typeof fetch;
 });
 afterAll(() => {
@@ -38,13 +38,16 @@ describe('useHiddenHours', () => {
   });
 
   it('loads settings from localStorage', () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      mode: 'auto-fit',
-      startHour: 22,
-      endHour: 6,
-      bufferHours: 2,
-      enabled: true,
-    }));
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        mode: 'auto-fit',
+        startHour: 22,
+        endHour: 6,
+        bufferHours: 2,
+        enabled: true,
+      })
+    );
 
     const { result } = renderHook(() => useHiddenHours());
 
@@ -108,11 +111,14 @@ describe('useHiddenHours', () => {
     });
 
     it('hides contiguous range (0-6) when enabled', () => {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        startHour: 0,
-        endHour: 6,
-        enabled: true,
-      }));
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          startHour: 0,
+          endHour: 6,
+          enabled: true,
+        })
+      );
 
       const { result } = renderHook(() => useHiddenHours());
 
@@ -125,11 +131,14 @@ describe('useHiddenHours', () => {
     });
 
     it('handles wrap-around range (22:00 to 6:00)', () => {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        startHour: 22,
-        endHour: 6,
-        enabled: true,
-      }));
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          startHour: 22,
+          endHour: 6,
+          enabled: true,
+        })
+      );
 
       const { result } = renderHook(() => useHiddenHours());
 
@@ -145,11 +154,14 @@ describe('useHiddenHours', () => {
     });
 
     it('hides single hour when start == end - 1', () => {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        startHour: 12,
-        endHour: 13,
-        enabled: true,
-      }));
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          startHour: 12,
+          endHour: 13,
+          enabled: true,
+        })
+      );
 
       const { result } = renderHook(() => useHiddenHours());
 

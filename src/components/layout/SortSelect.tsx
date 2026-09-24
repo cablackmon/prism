@@ -18,12 +18,18 @@ export interface SortSelectProps<T extends string> {
   className?: string;
 }
 
-export function SortSelect<T extends string>({ value, onValueChange, options, showSortIcon = false, className }: SortSelectProps<T>) {
+export function SortSelect<T extends string>({
+  value,
+  onValueChange,
+  options,
+  showSortIcon = false,
+  className,
+}: SortSelectProps<T>) {
   return (
-    <div className={cn('flex items-center gap-1.5 shrink-0', className)}>
+    <div className={cn('flex shrink-0 items-center gap-1.5', className)}>
       {showSortIcon && <SortAsc className="h-4 w-4 text-muted-foreground" />}
       <Select value={value} onValueChange={(v) => onValueChange(v as T)}>
-        <SelectTrigger className="h-8 text-sm w-auto min-w-[100px]">
+        <SelectTrigger className="h-8 w-auto min-w-[100px] text-sm">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

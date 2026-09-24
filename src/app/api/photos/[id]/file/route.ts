@@ -23,22 +23,22 @@ async function getValidToken(sourceId: string): Promise<string> {
 
   if (source.tokenExpiresAt && source.tokenExpiresAt < new Date()) {
     const tokens = await refreshAccessToken(decrypt(source.refreshToken));
-    await db.update(photoSources).set({
-      accessToken: encrypt(tokens.access_token),
-      refreshToken: tokens.refresh_token ? encrypt(tokens.refresh_token) : source.refreshToken,
-      tokenExpiresAt: new Date(Date.now() + tokens.expires_in * 1000),
-      updatedAt: new Date(),
-    }).where(eq(photoSources.id, sourceId));
+    await db
+      .update(photoSources)
+      .set({
+        accessToken: encrypt(tokens.access_token),
+        refreshToken: tokens.refresh_token ? encrypt(tokens.refresh_token) : source.refreshToken,
+        tokenExpiresAt: new Date(Date.now() + tokens.expires_in * 1000),
+        updatedAt: new Date(),
+      })
+      .where(eq(photoSources.id, sourceId));
     return tokens.access_token;
   }
 
   return decrypt(source.accessToken);
 }
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await getDisplayAuth();
   if (!auth) {
     return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
@@ -80,10 +80,7 @@ export async function GET(
         }
 
         if (!source.immichServerUrl || !source.immichShareKey) {
-          return NextResponse.json(
-            { error: 'Immich source missing credentials' },
-            { status: 500 },
-          );
+          return NextResponse.json({ error: 'Immich source missing credentials' }, { status: 500 });
         }
 
         const creds: ImmichShareCredentials = {
@@ -95,11 +92,9 @@ export async function GET(
           sourceId: source.id,
         };
 
-        const { buffer, contentType } = await downloadImmichAsset(
-          creds,
-          photo.externalId,
-          { thumb },
-        );
+        const { buffer, contentType } = await downloadImmichAsset(creds, photo.externalId, {
+          thumb,
+        });
 
         await writePhotoCache(photo.sourceId, photo.externalId, thumb, buffer, contentType);
 
@@ -145,9 +140,7 @@ export async function GET(
     }
 
     // Local file
-    const filename = thumb && photo.thumbnailPath
-      ? photo.thumbnailPath
-      : photo.filename;
+    const filename = thumb && photo.thumbnailPath ? photo.thumbnailPath : photo.filename;
     const filePath = getPhotoPath(filename, thumb && !!photo.thumbnailPath);
 
     const fileBuffer = await fs.readFile(filePath);

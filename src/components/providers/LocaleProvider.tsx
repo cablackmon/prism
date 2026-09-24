@@ -38,8 +38,12 @@ function deepMerge(base: Messages, override: Messages): Messages {
   for (const [key, value] of Object.entries(override)) {
     const existing = out[key];
     if (
-      value && typeof value === 'object' && !Array.isArray(value) &&
-      existing && typeof existing === 'object' && !Array.isArray(existing)
+      value &&
+      typeof value === 'object' &&
+      !Array.isArray(value) &&
+      existing &&
+      typeof existing === 'object' &&
+      !Array.isArray(existing)
     ) {
       out[key] = deepMerge(existing as Messages, value as Messages);
     } else {
@@ -89,7 +93,7 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
         throw error;
       }
     },
-    [locale],
+    [locale]
   );
 
   const value = React.useMemo(() => ({ locale, setLocale }), [locale, setLocale]);
@@ -97,7 +101,7 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
   // English as the base, active locale overlaid → missing translations show English.
   const messages = React.useMemo(
     () => (locale === 'en' ? en : deepMerge(en as Messages, MESSAGES[locale] as Messages)),
-    [locale],
+    [locale]
   );
 
   return (

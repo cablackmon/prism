@@ -14,23 +14,24 @@ export async function GET() {
   try {
     const lists = await getCached(
       'task-lists:all',
-      async () => db
-        .select({
-          id: taskLists.id,
-          name: taskLists.name,
-          color: taskLists.color,
-          sortOrder: taskLists.sortOrder,
-          createdBy: taskLists.createdBy,
-          createdAt: taskLists.createdAt,
-          updatedAt: taskLists.updatedAt,
-          // Derived: which external system populated this list, if any.
-          // 'caldav' when either:
-          //   (a) at least one task in the list has a caldav-prefixed externalId, OR
-          //   (b) a calendar_source's providerConfig has taskListId pointing here.
-          // Checking (b) catches CalDAV-backed lists whose only tasks were
-          // Apple's placeholder VTODOs (now filtered out by sync) — those
-          // lists are empty but still legitimately CalDAV-sourced.
-          linkedProvider: sql<string | null>`(
+      async () =>
+        db
+          .select({
+            id: taskLists.id,
+            name: taskLists.name,
+            color: taskLists.color,
+            sortOrder: taskLists.sortOrder,
+            createdBy: taskLists.createdBy,
+            createdAt: taskLists.createdAt,
+            updatedAt: taskLists.updatedAt,
+            // Derived: which external system populated this list, if any.
+            // 'caldav' when either:
+            //   (a) at least one task in the list has a caldav-prefixed externalId, OR
+            //   (b) a calendar_source's providerConfig has taskListId pointing here.
+            // Checking (b) catches CalDAV-backed lists whose only tasks were
+            // Apple's placeholder VTODOs (now filtered out by sync) — those
+            // lists are empty but still legitimately CalDAV-sourced.
+            linkedProvider: sql<string | null>`(
             CASE
               WHEN EXISTS (
                 SELECT 1 FROM ${tasks}
@@ -45,19 +46,16 @@ export async function GET() {
               ELSE NULL
             END
           )`,
-        })
-        .from(taskLists)
-        .orderBy(asc(taskLists.sortOrder), asc(taskLists.name)),
+          })
+          .from(taskLists)
+          .orderBy(asc(taskLists.sortOrder), asc(taskLists.name)),
       300
     );
 
     return NextResponse.json(lists);
   } catch (error) {
     logError('Error fetching task lists:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch task lists' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch task lists' }, { status: 500 });
   }
 }
 
@@ -72,10 +70,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     if (!body.name || typeof body.name !== 'string' || body.name.trim().length === 0) {
-      return NextResponse.json(
-        { error: 'Name is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Name is required' }, { status: 400 });
     }
 
     const maxSort = await db
@@ -102,9 +97,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(newList, { status: 201 });
   } catch (error) {
     logError('Error creating task list:', error);
-    return NextResponse.json(
-      { error: 'Failed to create task list' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to create task list' }, { status: 500 });
   }
 }

@@ -2,7 +2,16 @@
 
 import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addDays, addWeeks, startOfDay } from 'date-fns';
+import {
+  format,
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+  addDays,
+  addWeeks,
+  startOfDay,
+} from 'date-fns';
 import {
   DndContext,
   DragOverlay,
@@ -36,13 +45,27 @@ import { ManageCalendarsModal } from './ManageCalendarsModal';
 import { PendingDeletionsModal } from './PendingDeletionsModal';
 import { usePendingDeletions } from '@/lib/hooks/usePendingDeletions';
 import { PageWrapper, SubpageHeader, FilterBar } from '@/components/layout';
-const MonthView = lazy(() => import('@/components/calendar/MonthView').then(m => ({ default: m.MonthView })));
-const WeekView = lazy(() => import('@/components/calendar/WeekView').then(m => ({ default: m.WeekView })));
-const MultiWeekView = lazy(() => import('@/components/calendar/MultiWeekView').then(m => ({ default: m.MultiWeekView })));
-const ThreeMonthView = lazy(() => import('@/components/calendar/ThreeMonthView').then(m => ({ default: m.ThreeMonthView })));
-const DayViewSideBySide = lazy(() => import('@/components/calendar/DayViewSideBySide').then(m => ({ default: m.DayViewSideBySide })));
-const WeekVerticalView = lazy(() => import('@/components/calendar/WeekVerticalView').then(m => ({ default: m.WeekVerticalView })));
-const AgendaView = lazy(() => import('@/components/calendar/AgendaView').then(m => ({ default: m.AgendaView })));
+const MonthView = lazy(() =>
+  import('@/components/calendar/MonthView').then((m) => ({ default: m.MonthView }))
+);
+const WeekView = lazy(() =>
+  import('@/components/calendar/WeekView').then((m) => ({ default: m.WeekView }))
+);
+const MultiWeekView = lazy(() =>
+  import('@/components/calendar/MultiWeekView').then((m) => ({ default: m.MultiWeekView }))
+);
+const ThreeMonthView = lazy(() =>
+  import('@/components/calendar/ThreeMonthView').then((m) => ({ default: m.ThreeMonthView }))
+);
+const DayViewSideBySide = lazy(() =>
+  import('@/components/calendar/DayViewSideBySide').then((m) => ({ default: m.DayViewSideBySide }))
+);
+const WeekVerticalView = lazy(() =>
+  import('@/components/calendar/WeekVerticalView').then((m) => ({ default: m.WeekVerticalView }))
+);
+const AgendaView = lazy(() =>
+  import('@/components/calendar/AgendaView').then((m) => ({ default: m.AgendaView }))
+);
 import { useCalendarViewData } from './useCalendarViewData';
 import { useCalendarNotes } from '@/lib/hooks/useCalendarNotes';
 import { useDayBucketsForRange } from '@/lib/hooks/useDayBucketsForRange';
@@ -75,14 +98,16 @@ const EMPTY_EVENTS: CalendarEvent[] = [];
  * dinner regardless of insertion order. Stable for equal mealType values.
  */
 function sortMealsByType<T extends { mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack' }>(
-  meals: T[],
+  meals: T[]
 ): T[] {
   return [...meals].sort((a, b) => MEAL_TYPE_ORDER[a.mealType] - MEAL_TYPE_ORDER[b.mealType]);
 }
 
 // Lazy-loaded MealModal — pulled from MealsView so the meal-edit modal can
 // be opened directly from the calendar without yanking in all of MealsView.
-const MealModal = lazy(() => import('@/app/meals/MealsView').then(m => ({ default: m.MealModal })));
+const MealModal = lazy(() =>
+  import('@/app/meals/MealsView').then((m) => ({ default: m.MealModal }))
+);
 
 export function CalendarView() {
   const { activeUser, requireAuth } = useAuth();
@@ -94,22 +119,39 @@ export function CalendarView() {
   const { calendars: calendarSources, loading: calendarSourcesLoading } = useCalendarSources();
   const hasNoCalendarSources = !calendarSourcesLoading && calendarSources.length === 0;
   const {
-    currentDate, setCurrentDate,
-    viewType, setViewType,
-    weekCount, setWeekCount,
-    weeksBordered, setWeeksBordered,
-    displayMode, setDisplayMode,
-    hideWeekends, setHideWeekends,
-    overlays, setOverlays,
-    selectedEvent, setSelectedEvent,
-    showAddEvent, setShowAddEvent,
-    editingEvent, setEditingEvent,
+    currentDate,
+    setCurrentDate,
+    viewType,
+    setViewType,
+    weekCount,
+    setWeekCount,
+    weeksBordered,
+    setWeeksBordered,
+    displayMode,
+    setDisplayMode,
+    hideWeekends,
+    setHideWeekends,
+    overlays,
+    setOverlays,
+    selectedEvent,
+    setSelectedEvent,
+    showAddEvent,
+    setShowAddEvent,
+    editingEvent,
+    setEditingEvent,
     selectedCalendarIds,
     calendarGroups,
     toggleCalendar,
-    mergedView, setMergedView,
-    events, loading, error, refreshEvents,
-    goToToday, goToPrevious, goToNext, getDateRangeTitle,
+    mergedView,
+    setMergedView,
+    events,
+    loading,
+    error,
+    refreshEvents,
+    goToToday,
+    goToPrevious,
+    goToNext,
+    getDateRangeTitle,
   } = useCalendarViewData();
 
   // Date range covered by the active view — used by useDayBucketsForRange to
@@ -161,7 +203,7 @@ export function CalendarView() {
   // user setups), default to showing meals.
   const familyGroup = useMemo(
     () => calendarGroups.find((g) => g.name === 'Family'),
-    [calendarGroups],
+    [calendarGroups]
   );
   const showAll = selectedCalendarIds.has('all');
   const familyVisible = useMemo(() => {
@@ -208,15 +250,18 @@ export function CalendarView() {
     return next;
   }, [bucketsByDate, familyVisible, selectedUserIds, showAll]);
 
-  const refreshAll = useMemo(() => async () => {
-    await Promise.all([refreshEvents(), refreshBuckets()]);
-  }, [refreshEvents, refreshBuckets]);
+  const refreshAll = useMemo(
+    () => async () => {
+      await Promise.all([refreshEvents(), refreshBuckets()]);
+    },
+    [refreshEvents, refreshBuckets]
+  );
 
   const { moveChore, moveTask, moveMeal, moveEvent } = useWeekMutations({ refresh: refreshAll });
 
   const dndSensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor),
+    useSensor(KeyboardSensor)
   );
 
   const [moveError, setMoveError] = useState<string | null>(null);
@@ -229,7 +274,12 @@ export function CalendarView() {
   const [editingMeal, setEditingMeal] = useState<Meal | null>(null);
   const [showManageCalendars, setShowManageCalendars] = useState(false);
   const [showPendingReview, setShowPendingReview] = useState(false);
-  const { pending, count: pendingCount, apply: applyPending, refresh: refreshPending } = usePendingDeletions();
+  const {
+    pending,
+    count: pendingCount,
+    apply: applyPending,
+    refresh: refreshPending,
+  } = usePendingDeletions();
 
   // Deep link: /calendar?manage=calendars opens the Manage panel (used by the
   // Integrations settings cards after connecting a Google/CalDAV account).
@@ -256,11 +306,14 @@ export function CalendarView() {
   const { recipes } = useRecipes();
   const { lists: taskLists } = useTaskLists();
 
+  const { confirm: confirmChoreEdit, dialogProps: choreEditConfirmDialogProps } =
+    useConfirmDialog();
   const { saveEditedChore } = useChoreModals({
     refreshChores: refreshAllChores,
     setShowAddModal: () => {},
     setEditingChore,
     deleteChore: () => {},
+    confirm: confirmChoreEdit,
   });
 
   const handleOverlayItemClick = useMemo(
@@ -276,7 +329,7 @@ export function CalendarView() {
         if (m) setEditingMeal(m);
       }
     },
-    [allChoresList, allTasksList, allMealsList],
+    [allChoresList, allTasksList, allMealsList]
   );
 
   const handleDragStart = (e: DragStartEvent) => {
@@ -308,8 +361,7 @@ export function CalendarView() {
       else if (variant === 'task') {
         const t = allTasksList.find((x) => x.id === itemId);
         await moveTask(itemId, targetBucket.date, t?.dueDate ? new Date(t.dueDate) : null);
-      }
-      else if (variant === 'meal') await moveMeal(itemId, targetBucket.date);
+      } else if (variant === 'meal') await moveMeal(itemId, targetBucket.date);
       else if (variant === 'event') {
         const ev = events.find((e) => e.id === itemId);
         if (!ev) return;
@@ -333,7 +385,8 @@ export function CalendarView() {
   }, [notesSupported, showNotes, viewType, currentDate, weekStartsOn]);
 
   const notesFrom = notesDays.length > 0 ? format(notesDays[0]!, 'yyyy-MM-dd') : '';
-  const notesTo = notesDays.length > 0 ? format(notesDays[notesDays.length - 1]!, 'yyyy-MM-dd') : '';
+  const notesTo =
+    notesDays.length > 0 ? format(notesDays[notesDays.length - 1]!, 'yyyy-MM-dd') : '';
   const { notesByDate, upsertNote } = useCalendarNotes({
     from: notesFrom,
     to: notesTo,
@@ -362,92 +415,116 @@ export function CalendarView() {
 
   return (
     <PageWrapper>
-      <div className="h-screen flex flex-col">
+      <div className="flex h-screen flex-col">
         <SubpageHeader
           icon={!isMobile ? <Calendar className="h-5 w-5 text-primary" /> : undefined}
           title={getDateRangeTitle()}
-          actions={<>
-            {pendingCount > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowPendingReview(true)}
-                className="h-9 border-amber-500/50 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
-                title="Review calendar removals held for your approval"
-              >
-                <AlertTriangle className="h-4 w-4 mr-1" />
-                Review {pendingCount}
-              </Button>
-            )}
-            {isMobile ? null : (
-              <>
-                <Button variant="outline" size="sm" onClick={goToToday} className="h-9">Today</Button>
-                <div className="flex items-center gap-1">
-                  <Button variant="outline" size="icon" onClick={goToPrevious} aria-label="Previous" className="h-9 w-9">
-                    <ChevronLeft className="h-5 w-5" />
+          actions={
+            <>
+              {pendingCount > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowPendingReview(true)}
+                  className="h-9 border-amber-500/50 text-amber-600 hover:bg-amber-500/10 dark:text-amber-400"
+                  title="Review calendar removals held for your approval"
+                >
+                  <AlertTriangle className="mr-1 h-4 w-4" />
+                  Review {pendingCount}
+                </Button>
+              )}
+              {isMobile ? null : (
+                <>
+                  <Button variant="outline" size="sm" onClick={goToToday} className="h-9">
+                    Today
                   </Button>
-                  <Button variant="outline" size="icon" onClick={goToNext} aria-label="Next" className="h-9 w-9">
-                    <ChevronRight className="h-5 w-5" />
-                  </Button>
-                </div>
-              </>
-            )}
-            {/* View switcher dropdown — mobile is agenda-only and hides this. */}
-            <div className="hidden md:flex">
-              <ViewMenu
-                viewType={viewType}
-                weekCount={weekCount}
-                onViewChange={setViewType}
-                onWeekCountChange={setWeekCount}
-              />
-            </div>
-            {/* Single gear popover replacing Notes/Grid/Cards/Hide-weekends/
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={goToPrevious}
+                      aria-label="Previous"
+                      className="h-9 w-9"
+                    >
+                      <ChevronLeft className="h-5 w-5" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={goToNext}
+                      aria-label="Next"
+                      className="h-9 w-9"
+                    >
+                      <ChevronRight className="h-5 w-5" />
+                    </Button>
+                  </div>
+                </>
+              )}
+              {/* View switcher dropdown — mobile is agenda-only and hides this. */}
+              <div className="hidden md:flex">
+                <ViewMenu
+                  viewType={viewType}
+                  weekCount={weekCount}
+                  onViewChange={setViewType}
+                  onWeekCountChange={setWeekCount}
+                />
+              </div>
+              {/* Single gear popover replacing Notes/Grid/Cards/Hide-weekends/
                 Overlays toggle buttons. */}
-            <div className="hidden md:flex items-center gap-1">
-              <ViewOptionsMenu
-                displayMode={displayMode}
-                onDisplayModeChange={setDisplayMode}
-                weeksBordered={weeksBordered}
-                onWeeksBorderedChange={setWeeksBordered}
-                hideWeekends={hideWeekends}
-                onHideWeekendsChange={setHideWeekends}
-                showNotes={showNotes}
-                onShowNotesChange={setShowNotes}
-                // hideWeekends is currently only honored by MultiWeekView.
-                // Only show the toggle when it has effect; expand here if/when
-                // WeekView, WeekVerticalView, MonthView learn to respect it.
-                weekendsApplicable={viewType === 'multiWeek'}
-                notesApplicable={notesSupported}
-                displayApplicable={viewType !== 'threeMonth'}
-                overlays={overlays}
-                onOverlaysChange={setOverlays}
-                showOverlayRows={cardsMode}
-                onReset={() => {
-                  setDisplayMode('inline');
-                  setWeeksBordered(false);
-                  setHideWeekends(false);
-                  setShowNotes(false);
-                  setMergedView(false);
-                  setOverlays({ events: true, meals: true, chores: true, tasks: true });
-                }}
-              />
-            </div>
-            {!isMobile && (
-              <Button variant="outline" size="sm" onClick={() => setShowManageCalendars(true)} className="h-9" title="Manage calendars">
-                <CalendarCog className="h-4 w-4 mr-1" />Manage
-              </Button>
-            )}
-            {!isMobile && (
-              <Button size="sm" onClick={handleAddWithAuth}>
-                <Plus className="h-4 w-4 mr-1" />Add Event
-              </Button>
-            )}
-          </>}
+              <div className="hidden items-center gap-1 md:flex">
+                <ViewOptionsMenu
+                  displayMode={displayMode}
+                  onDisplayModeChange={setDisplayMode}
+                  weeksBordered={weeksBordered}
+                  onWeeksBorderedChange={setWeeksBordered}
+                  hideWeekends={hideWeekends}
+                  onHideWeekendsChange={setHideWeekends}
+                  showNotes={showNotes}
+                  onShowNotesChange={setShowNotes}
+                  // hideWeekends is currently only honored by MultiWeekView.
+                  // Only show the toggle when it has effect; expand here if/when
+                  // WeekView, WeekVerticalView, MonthView learn to respect it.
+                  weekendsApplicable={viewType === 'multiWeek'}
+                  notesApplicable={notesSupported}
+                  displayApplicable={viewType !== 'threeMonth'}
+                  overlays={overlays}
+                  onOverlaysChange={setOverlays}
+                  showOverlayRows={cardsMode}
+                  onReset={() => {
+                    setDisplayMode('inline');
+                    setWeeksBordered(false);
+                    setHideWeekends(false);
+                    setShowNotes(false);
+                    setMergedView(false);
+                    setOverlays({ events: true, meals: true, chores: true, tasks: true });
+                  }}
+                />
+              </div>
+              {!isMobile && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowManageCalendars(true)}
+                  className="h-9"
+                  title="Manage calendars"
+                >
+                  <CalendarCog className="mr-1 h-4 w-4" />
+                  Manage
+                </Button>
+              )}
+              {!isMobile && (
+                <Button size="sm" onClick={handleAddWithAuth}>
+                  <Plus className="mr-1 h-4 w-4" />
+                  Add Event
+                </Button>
+              )}
+            </>
+          }
         />
 
         {!isMobile && calendarGroups.length > 0 && (
           <FilterBar>
-            <span className="text-sm text-muted-foreground shrink-0">Show:</span>
+            <span className="shrink-0 text-sm text-muted-foreground">Show:</span>
             <Button
               variant={selectedCalendarIds.has('all') ? 'default' : 'outline'}
               size="sm"
@@ -457,17 +534,25 @@ export function CalendarView() {
               All
             </Button>
             {calendarGroups.map((group) => {
-              const isSelected = selectedCalendarIds.has(group.id) || selectedCalendarIds.has('all');
+              const isSelected =
+                selectedCalendarIds.has(group.id) || selectedCalendarIds.has('all');
               return (
                 <Button
                   key={group.id}
                   variant={isSelected ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => toggleCalendar(group.id)}
-                  className={cn('h-7 text-xs gap-1.5', isSelected && 'border-transparent')}
-                  style={isSelected ? { backgroundColor: group.color, color: contrastText(group.color) } : undefined}
+                  className={cn('h-7 gap-1.5 text-xs', isSelected && 'border-transparent')}
+                  style={
+                    isSelected
+                      ? { backgroundColor: group.color, color: contrastText(group.color) }
+                      : undefined
+                  }
                 >
-                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: isSelected ? 'rgba(255,255,255,0.55)' : group.color }} />
+                  <span
+                    className="h-2 w-2 shrink-0 rounded-full"
+                    style={{ backgroundColor: isSelected ? 'rgba(255,255,255,0.55)' : group.color }}
+                  />
                   {group.name}
                 </Button>
               );
@@ -477,7 +562,7 @@ export function CalendarView() {
                 variant={mergedView ? 'secondary' : 'ghost'}
                 size="sm"
                 onClick={() => setMergedView(!mergedView)}
-                className="gap-1 ml-auto"
+                className="ml-auto gap-1"
                 title={mergedView ? 'Split by calendar' : 'Merge into one column'}
               >
                 <Merge className="h-3.5 w-3.5" />
@@ -487,14 +572,14 @@ export function CalendarView() {
           </FilterBar>
         )}
 
-        <div ref={swipeRef} className="flex-1 overflow-hidden p-4 min-h-0">
+        <div ref={swipeRef} className="min-h-0 flex-1 overflow-hidden p-4">
           {loading && (
-            <div className="h-full flex items-center justify-center">
+            <div className="flex h-full items-center justify-center">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           )}
           {error && (
-            <div className="h-full flex items-center justify-center">
+            <div className="flex h-full items-center justify-center">
               <p className="text-destructive">Failed to load calendar: {error}</p>
             </div>
           )}
@@ -505,7 +590,7 @@ export function CalendarView() {
               description="Connect Google, Apple, Outlook, or any iCal link to see events here."
               action={
                 <Button onClick={() => setShowManageCalendars(true)}>
-                  <Plus className="h-4 w-4 mr-1" />
+                  <Plus className="mr-1 h-4 w-4" />
                   Connect a calendar
                 </Button>
               }
@@ -513,108 +598,146 @@ export function CalendarView() {
           )}
           {!loading && !error && !hasNoCalendarSources && (
             <div className="h-full">
-            {moveError && (
-              <div className="mb-2 rounded border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                {moveError}
-              </div>
-            )}
-            <Suspense fallback={<div className="h-full flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>}>
-            <DndContext
-              sensors={dndSensors}
-              onDragStart={handleDragStart}
-              onDragEnd={handleDragEnd}
-              onDragCancel={() => setActiveDragId(null)}
-            >
-              {viewType === 'agenda' && (
-                <AgendaView
-                  events={visibleEvents}
-                  days={30}
-                  onEventClick={setSelectedEvent}
-                  displayMode={displayMode}
-                  bucketsByDate={overlaysActive ? filteredBucketsByDate : undefined}
-                  enableDnd={overlaysActive}
-                  mealColor={mealColor}
-                  onItemClick={handleOverlayItemClick}
-                />
+              {moveError && (
+                <div className="mb-2 rounded border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                  {moveError}
+                </div>
               )}
-              {viewType === 'month' && (
-                <MonthView currentDate={currentDate} events={visibleEvents} onEventClick={setSelectedEvent}
-                  onDateClick={(date) => { setCurrentDate(date); setViewType('day'); }} bordered={weeksBordered} displayMode={displayMode}
-                  bucketsByDate={overlaysActive ? filteredBucketsByDate : undefined}
-                  enableDnd={overlaysActive}
-                  onItemClick={handleOverlayItemClick}
-                  showMonthHeader={false}
-                />
-              )}
-              {viewType === 'week' && (
-                <WeekView currentDate={currentDate} events={visibleEvents} onEventClick={setSelectedEvent} bordered={weeksBordered} displayMode={displayMode}
-                  bucketsByDate={overlaysActive ? filteredBucketsByDate : undefined}
-                  enableDnd={overlaysActive}
-                  mealColor={mealColor}
-                  onItemClick={handleOverlayItemClick}
-                />
-              )}
-              {viewType === 'weekVertical' && (
-                <WeekVerticalView
-                  currentDate={currentDate}
-                  events={visibleEvents}
-                  calendarGroups={calendarGroups}
-                  selectedCalendarIds={selectedCalendarIds}
-                  mergedView={mergedView}
-                  bordered={weeksBordered}
-                  onEventClick={setSelectedEvent}
-                  showNotes={showNotes}
-                  notesByDate={notesByDate}
-                  onNoteChange={activeUser ? upsertNote : undefined}
-                  displayMode={displayMode}
-                  bucketsByDate={overlaysActive ? filteredBucketsByDate : undefined}
-                  enableDnd={overlaysActive}
-                  mealColor={mealColor}
-                  onItemClick={handleOverlayItemClick}
-                />
-              )}
-              {viewType === 'multiWeek' && (
-                /* All weekCounts (1/2/3/4) use MultiWeekView so the grid
+              <Suspense
+                fallback={
+                  <div className="flex h-full items-center justify-center">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  </div>
+                }
+              >
+                <DndContext
+                  sensors={dndSensors}
+                  onDragStart={handleDragStart}
+                  onDragEnd={handleDragEnd}
+                  onDragCancel={() => setActiveDragId(null)}
+                >
+                  {viewType === 'agenda' && (
+                    <AgendaView
+                      events={visibleEvents}
+                      days={30}
+                      onEventClick={setSelectedEvent}
+                      displayMode={displayMode}
+                      bucketsByDate={overlaysActive ? filteredBucketsByDate : undefined}
+                      enableDnd={overlaysActive}
+                      mealColor={mealColor}
+                      onItemClick={handleOverlayItemClick}
+                    />
+                  )}
+                  {viewType === 'month' && (
+                    <MonthView
+                      currentDate={currentDate}
+                      events={visibleEvents}
+                      onEventClick={setSelectedEvent}
+                      onDateClick={(date) => {
+                        setCurrentDate(date);
+                        setViewType('day');
+                      }}
+                      bordered={weeksBordered}
+                      displayMode={displayMode}
+                      bucketsByDate={overlaysActive ? filteredBucketsByDate : undefined}
+                      enableDnd={overlaysActive}
+                      onItemClick={handleOverlayItemClick}
+                      showMonthHeader={false}
+                    />
+                  )}
+                  {viewType === 'week' && (
+                    <WeekView
+                      currentDate={currentDate}
+                      events={visibleEvents}
+                      onEventClick={setSelectedEvent}
+                      bordered={weeksBordered}
+                      displayMode={displayMode}
+                      bucketsByDate={overlaysActive ? filteredBucketsByDate : undefined}
+                      enableDnd={overlaysActive}
+                      mealColor={mealColor}
+                      onItemClick={handleOverlayItemClick}
+                    />
+                  )}
+                  {viewType === 'weekVertical' && (
+                    <WeekVerticalView
+                      currentDate={currentDate}
+                      events={visibleEvents}
+                      calendarGroups={calendarGroups}
+                      selectedCalendarIds={selectedCalendarIds}
+                      mergedView={mergedView}
+                      bordered={weeksBordered}
+                      onEventClick={setSelectedEvent}
+                      showNotes={showNotes}
+                      notesByDate={notesByDate}
+                      onNoteChange={activeUser ? upsertNote : undefined}
+                      displayMode={displayMode}
+                      bucketsByDate={overlaysActive ? filteredBucketsByDate : undefined}
+                      enableDnd={overlaysActive}
+                      mealColor={mealColor}
+                      onItemClick={handleOverlayItemClick}
+                    />
+                  )}
+                  {viewType === 'multiWeek' && (
+                    /* All weekCounts (1/2/3/4) use MultiWeekView so the grid
                    compresses to fit the page and overflows into popovers
                    instead of growing taller than the viewport. */
-                <MultiWeekView currentDate={currentDate} events={visibleEvents} onEventClick={setSelectedEvent} weekCount={weekCount} bordered={weeksBordered} displayMode={displayMode}
-                  bucketsByDate={overlaysActive ? filteredBucketsByDate : undefined}
-                  enableDnd={overlaysActive}
-                  hideWeekends={hideWeekends}
-                  mealColor={mealColor}
-                  onItemClick={handleOverlayItemClick}
-                />
-              )}
-              {viewType === 'threeMonth' && (
-                <ThreeMonthView currentDate={currentDate} events={visibleEvents} onEventClick={setSelectedEvent}
-                  onDateClick={(date) => { setCurrentDate(date); setViewType('month'); }} bordered={weeksBordered} />
-              )}
-              {viewType === 'day' && (
-                <DayViewSideBySide
-                  currentDate={currentDate}
-                  events={visibleEvents}
-                  calendarGroups={calendarGroups}
-                  selectedCalendarIds={selectedCalendarIds}
-                  mergedView={mergedView}
-                  bordered={weeksBordered}
-                  onEventClick={setSelectedEvent}
-                  showNotes={showNotes}
-                  notesByDate={notesByDate}
-                  onNoteChange={activeUser ? upsertNote : undefined}
-                  displayMode={displayMode}
-                  bucketsByDate={overlaysActive ? filteredBucketsByDate : undefined}
-                  enableDnd={overlaysActive}
-                  mealColor={mealColor}
-                  onItemClick={handleOverlayItemClick}
-                />
-              )}
-              <DragOverlay dropAnimation={null}>
-                {activeDragId ? (
-                  <CalendarDragPreview dragId={activeDragId} bucketsByDate={filteredBucketsByDate} events={visibleEvents} mealColor={mealColor} />
-                ) : null}
-              </DragOverlay>
-            </DndContext>
-            </Suspense>
+                    <MultiWeekView
+                      currentDate={currentDate}
+                      events={visibleEvents}
+                      onEventClick={setSelectedEvent}
+                      weekCount={weekCount}
+                      bordered={weeksBordered}
+                      displayMode={displayMode}
+                      bucketsByDate={overlaysActive ? filteredBucketsByDate : undefined}
+                      enableDnd={overlaysActive}
+                      hideWeekends={hideWeekends}
+                      mealColor={mealColor}
+                      onItemClick={handleOverlayItemClick}
+                    />
+                  )}
+                  {viewType === 'threeMonth' && (
+                    <ThreeMonthView
+                      currentDate={currentDate}
+                      events={visibleEvents}
+                      onEventClick={setSelectedEvent}
+                      onDateClick={(date) => {
+                        setCurrentDate(date);
+                        setViewType('month');
+                      }}
+                      bordered={weeksBordered}
+                    />
+                  )}
+                  {viewType === 'day' && (
+                    <DayViewSideBySide
+                      currentDate={currentDate}
+                      events={visibleEvents}
+                      calendarGroups={calendarGroups}
+                      selectedCalendarIds={selectedCalendarIds}
+                      mergedView={mergedView}
+                      bordered={weeksBordered}
+                      onEventClick={setSelectedEvent}
+                      showNotes={showNotes}
+                      notesByDate={notesByDate}
+                      onNoteChange={activeUser ? upsertNote : undefined}
+                      displayMode={displayMode}
+                      bucketsByDate={overlaysActive ? filteredBucketsByDate : undefined}
+                      enableDnd={overlaysActive}
+                      mealColor={mealColor}
+                      onItemClick={handleOverlayItemClick}
+                    />
+                  )}
+                  <DragOverlay dropAnimation={null}>
+                    {activeDragId ? (
+                      <CalendarDragPreview
+                        dragId={activeDragId}
+                        bucketsByDate={filteredBucketsByDate}
+                        events={visibleEvents}
+                        mealColor={mealColor}
+                      />
+                    ) : null}
+                  </DragOverlay>
+                </DndContext>
+              </Suspense>
             </div>
           )}
         </div>
@@ -623,35 +746,58 @@ export function CalendarView() {
           <EventDetailModal
             event={selectedEvent}
             onClose={() => setSelectedEvent(null)}
-            onEdit={() => { setEditingEvent(selectedEvent); setSelectedEvent(null); }}
-            onDeleted={() => { setSelectedEvent(null); refreshEvents(); }}
+            onEdit={() => {
+              setEditingEvent(selectedEvent);
+              setSelectedEvent(null);
+            }}
+            onDeleted={() => {
+              setSelectedEvent(null);
+              refreshEvents();
+            }}
           />
         )}
 
         <AddEventModal
           open={showAddEvent || editingEvent !== null}
-          onOpenChange={(open) => { if (!open) { setShowAddEvent(false); setEditingEvent(null); } }}
-          event={editingEvent ? {
-            id: editingEvent.id,
-            title: editingEvent.title,
-            description: editingEvent.description,
-            location: editingEvent.location,
-            startTime: editingEvent.startTime,
-            endTime: editingEvent.endTime,
-            allDay: editingEvent.allDay,
-            color: editingEvent.color,
-            recurring: editingEvent.recurring ?? false,
-            recurrenceRule: editingEvent.recurrenceRule ?? undefined,
-            reminderMinutes: editingEvent.reminderMinutes ?? undefined,
-            calendarSourceId: editingEvent.calendarId !== 'local' ? editingEvent.calendarId : undefined,
-          } : undefined}
-          onEventCreated={() => { refreshEvents(); setShowAddEvent(false); setEditingEvent(null); }}
+          onOpenChange={(open) => {
+            if (!open) {
+              setShowAddEvent(false);
+              setEditingEvent(null);
+            }
+          }}
+          event={
+            editingEvent
+              ? {
+                  id: editingEvent.id,
+                  title: editingEvent.title,
+                  description: editingEvent.description,
+                  location: editingEvent.location,
+                  startTime: editingEvent.startTime,
+                  endTime: editingEvent.endTime,
+                  allDay: editingEvent.allDay,
+                  color: editingEvent.color,
+                  recurring: editingEvent.recurring ?? false,
+                  recurrenceRule: editingEvent.recurrenceRule ?? undefined,
+                  reminderMinutes: editingEvent.reminderMinutes ?? undefined,
+                  calendarSourceId:
+                    editingEvent.calendarId !== 'local' ? editingEvent.calendarId : undefined,
+                }
+              : undefined
+          }
+          onEventCreated={() => {
+            refreshEvents();
+            setShowAddEvent(false);
+            setEditingEvent(null);
+          }}
         />
 
         {showManageCalendars && (
           <ManageCalendarsModal
             onClose={() => setShowManageCalendars(false)}
-            onSynced={() => { refreshAll(); refreshPending(); }}
+            onSynced={() => {
+              refreshAll();
+              refreshPending();
+            }}
           />
         )}
 
@@ -673,11 +819,13 @@ export function CalendarView() {
             familyMembers={familyMembers}
             onClose={() => setEditingChore(null)}
             onSave={async (updated) => {
-              await saveEditedChore(editingChore.id, updated);
-              await refreshBuckets();
+              const saved = await saveEditedChore(editingChore, updated);
+              if (saved) await refreshBuckets();
             }}
           />
         )}
+
+        <ConfirmDialog {...choreEditConfirmDialogProps} />
 
         {editingTask && (
           <TaskModal
@@ -704,7 +852,10 @@ export function CalendarView() {
                 await refreshAllTasks();
                 await refreshBuckets();
               } catch (err) {
-                toast({ title: err instanceof Error ? err.message : 'Failed to update task', variant: 'destructive' });
+                toast({
+                  title: err instanceof Error ? err.message : 'Failed to update task',
+                  variant: 'destructive',
+                });
               } finally {
                 setEditingTask(null);
               }
@@ -717,7 +868,17 @@ export function CalendarView() {
             <MealModal
               meal={editingMeal}
               weekOf={editingMeal.weekOf}
-              dayOptions={['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const}
+              dayOptions={
+                [
+                  'sunday',
+                  'monday',
+                  'tuesday',
+                  'wednesday',
+                  'thursday',
+                  'friday',
+                  'saturday',
+                ] as const
+              }
               recipes={recipes}
               onClose={() => setEditingMeal(null)}
               onSave={async (updates) => {
@@ -731,7 +892,10 @@ export function CalendarView() {
                   await refreshAllMeals();
                   await refreshBuckets();
                 } catch (err) {
-                  toast({ title: err instanceof Error ? err.message : 'Failed to update meal', variant: 'destructive' });
+                  toast({
+                    title: err instanceof Error ? err.message : 'Failed to update meal',
+                    variant: 'destructive',
+                  });
                 } finally {
                   setEditingMeal(null);
                 }
@@ -744,9 +908,22 @@ export function CalendarView() {
   );
 }
 
-
-function EventDetailModal({ event, onClose, onEdit, onDeleted }: {
-  event: { id: string; title: string; startTime: Date; endTime: Date; allDay: boolean; color: string; location?: string; calendarName: string };
+function EventDetailModal({
+  event,
+  onClose,
+  onEdit,
+  onDeleted,
+}: {
+  event: {
+    id: string;
+    title: string;
+    startTime: Date;
+    endTime: Date;
+    allDay: boolean;
+    color: string;
+    location?: string;
+    calendarName: string;
+  };
   onClose: () => void;
   onEdit: () => void;
   onDeleted: () => void;
@@ -765,27 +942,40 @@ function EventDetailModal({ event, onClose, onEdit, onDeleted }: {
         return;
       }
       onDeleted();
-    } catch { toast({ title: 'Failed to delete event', variant: 'destructive' }); }
+    } catch {
+      toast({ title: 'Failed to delete event', variant: 'destructive' });
+    }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
-      <div className="bg-card rounded-lg p-6 max-w-md w-full mx-4 shadow-lg border border-border" onClick={(e) => e.stopPropagation()}>
-        <div className="w-full h-2 rounded-t-lg -mt-6 -mx-6 mb-4" style={{ backgroundColor: event.color }} />
-        <h2 className="text-xl font-bold mb-2">{event.title}</h2>
-        <p className="text-sm text-muted-foreground mb-1">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      onClick={onClose}
+    >
+      <div
+        className="mx-4 w-full max-w-md rounded-lg border border-border bg-card p-6 shadow-lg"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div
+          className="-mx-6 -mt-6 mb-4 h-2 w-full rounded-t-lg"
+          style={{ backgroundColor: event.color }}
+        />
+        <h2 className="mb-2 text-xl font-bold">{event.title}</h2>
+        <p className="mb-1 text-sm text-muted-foreground">
           {event.allDay
             ? format(toDisplayDate(event.startTime, displayTimezone), 'EEEE, MMMM d')
             : `${format(toDisplayDate(event.startTime, displayTimezone), 'EEEE, MMMM d')} at ${formatDisplayTime(event.startTime, timeFormat, {}, displayTimezone)}`}
         </p>
-        {event.location && <p className="text-sm text-muted-foreground mb-4">{event.location}</p>}
+        {event.location && <p className="mb-4 text-sm text-muted-foreground">{event.location}</p>}
         <p className="text-xs text-muted-foreground">{event.calendarName}</p>
-        <div className="flex justify-between mt-6">
+        <div className="mt-6 flex justify-between">
           <Button variant="destructive" onClick={handleDelete}>
             Delete
           </Button>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={onClose}>Close</Button>
+            <Button variant="outline" onClick={onClose}>
+              Close
+            </Button>
             <Button onClick={onEdit}>Edit</Button>
           </div>
         </div>
@@ -839,7 +1029,9 @@ function CalendarDragPreview({
           layout="column"
           stripeColor={ev.color}
           title={ev.title}
-          timeLabel={ev.allDay ? 'All day' : formatDisplayTime(ev.startTime, timeFormat, {}, displayTimezone)}
+          timeLabel={
+            ev.allDay ? 'All day' : formatDisplayTime(ev.startTime, timeFormat, {}, displayTimezone)
+          }
           subtitle={ev.location || ev.calendarName}
         />
       </div>

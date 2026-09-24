@@ -14,7 +14,10 @@ import { ChevronLeft, ChevronRight, Check, X, ExternalLink, Search } from 'lucid
 import { Input } from '@/components/ui/input';
 import { PageLoader } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
-import { parseShoppingQuantity, type ParsedShoppingQuantity } from '@/lib/utils/parseShoppingQuantity';
+import {
+  parseShoppingQuantity,
+  type ParsedShoppingQuantity,
+} from '@/lib/utils/parseShoppingQuantity';
 import type { ShoppingItem } from '@/types';
 
 interface KrogerProductCandidate {
@@ -33,11 +36,19 @@ type Dimension = 'weight' | 'volume' | 'count';
 // Conversion to the canonical base unit of each dimension.
 // Weight → ounces. Volume → fl oz. Count → count.
 const TO_OZ: Record<string, number> = {
-  oz: 1, lb: 16, g: 0.035274, kg: 35.274,
+  oz: 1,
+  lb: 16,
+  g: 0.035274,
+  kg: 35.274,
 };
 const TO_FLOZ: Record<string, number> = {
-  floz: 1, ml: 0.033814, l: 33.814,
-  cup: 8, pt: 16, qt: 32, gal: 128,
+  floz: 1,
+  ml: 0.033814,
+  l: 33.814,
+  cup: 8,
+  pt: 16,
+  qt: 32,
+  gal: 128,
 };
 
 interface ParsedSize {
@@ -56,7 +67,9 @@ interface ParsedSize {
 function parseSize(size: string | undefined): ParsedSize | null {
   if (!size) return null;
   // Take the FIRST measurement chunk so "2 lb / 32 oz" yields "2 lb".
-  const m = size.match(/(\d+(?:\.\d+)?)\s*(fl\s*oz|oz|lb|lbs?|g|kg|ml|l|cup|pt|pint|qt|quart|gal|gallon|ct|count|pk|pack)\b/i);
+  const m = size.match(
+    /(\d+(?:\.\d+)?)\s*(fl\s*oz|oz|lb|lbs?|g|kg|ml|l|cup|pt|pint|qt|quart|gal|gallon|ct|count|pk|pack)\b/i
+  );
   if (!m) return null;
   const value = parseFloat(m[1]!);
   let unit = m[2]!.toLowerCase().replace(/\s+/g, '');
@@ -113,7 +126,7 @@ function formatPrice(value: number): string {
 function unitPriceDisplay(
   price: number | undefined,
   size: string | undefined,
-  canonicalDim: Dimension | null,
+  canonicalDim: Dimension | null
 ): string | null {
   if (price == null) return null;
   const parsed = parseSize(size);
@@ -195,7 +208,7 @@ export function KrogerCartModal({ items, onClose }: KrogerCartModalProps) {
         }
         if (!res.ok) throw new Error(await res.text());
 
-        const data = await res.json() as { results: SearchResult[] };
+        const data = (await res.json()) as { results: SearchResult[] };
         setResults(data.results);
 
         // Initialize picks with the preselected productId for each item.
@@ -214,7 +227,9 @@ export function KrogerCartModal({ items, onClose }: KrogerCartModalProps) {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
     // Intentionally only run once on mount; items+parsed map are stable
     // for the lifetime of this modal instance.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -228,7 +243,7 @@ export function KrogerCartModal({ items, onClose }: KrogerCartModalProps) {
   // rather than mixing $/oz with $/lb.
   const canonicalDim = useMemo(
     () => (current ? dominantDimension(current.candidates) : null),
-    [current],
+    [current]
   );
 
   const summary = useMemo(() => {
@@ -288,7 +303,7 @@ export function KrogerCartModal({ items, onClose }: KrogerCartModalProps) {
         }),
       });
       if (!res.ok) throw new Error('Search failed');
-      const data = await res.json() as { results: SearchResult[] };
+      const data = (await res.json()) as { results: SearchResult[] };
       const updated = data.results[0];
       if (!updated) throw new Error('No result returned');
       setResults((prev) => prev.map((r, i) => (i === index ? updated : r)));
@@ -312,7 +327,10 @@ export function KrogerCartModal({ items, onClose }: KrogerCartModalProps) {
     else setDone(true);
   };
   const goBack = () => {
-    if (done) { setDone(false); return; }
+    if (done) {
+      setDone(false);
+      return;
+    }
     if (index > 0) setIndex(index - 1);
   };
 
@@ -328,7 +346,10 @@ export function KrogerCartModal({ items, onClose }: KrogerCartModalProps) {
           const quantity = quantities.get(r.id) ?? 1;
           return { shoppingItemId: r.id, productId: cand.productId, upc: cand.upc, quantity };
         })
-        .filter((x): x is { shoppingItemId: string; productId: string; upc: string; quantity: number } => x !== null);
+        .filter(
+          (x): x is { shoppingItemId: string; productId: string; upc: string; quantity: number } =>
+            x !== null
+        );
 
       if (selections.length === 0) {
         toast({ title: 'Nothing selected to send', variant: 'warning' });
@@ -346,7 +367,7 @@ export function KrogerCartModal({ items, onClose }: KrogerCartModalProps) {
         throw new Error(err.error || 'Cart add failed');
       }
 
-      const data = await res.json() as { count: number };
+      const data = (await res.json()) as { count: number };
       toast({ title: `Sent ${data.count} item${data.count === 1 ? '' : 's'} to your Kroger cart` });
       onClose();
     } catch (err) {
@@ -369,14 +390,16 @@ export function KrogerCartModal({ items, onClose }: KrogerCartModalProps) {
           <DialogHeader>
             <DialogTitle>Connect Kroger first</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground py-2">
+          <p className="py-2 text-sm text-muted-foreground">
             Connect your Kroger / Mariano&apos;s account to send shopping items to your online cart.
           </p>
           <DialogFooter>
-            <Button variant="outline" onClick={onClose}>Cancel</Button>
+            <Button variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
             <Button asChild>
               <a href="/api/auth/kroger">
-                Connect Kroger <ExternalLink className="h-4 w-4 ml-1" />
+                Connect Kroger <ExternalLink className="ml-1 h-4 w-4" />
               </a>
             </Button>
           </DialogFooter>
@@ -402,7 +425,7 @@ export function KrogerCartModal({ items, onClose }: KrogerCartModalProps) {
           // Mobile: tight horizontal padding so the candidate row's image +
           // name + price all fit on a ~390px iPhone width. Desktop reverts
           // to the cushy defaults.
-          'max-w-lg p-3 sm:p-6 max-h-[90vh] overflow-y-auto',
+          'max-h-[90vh] max-w-lg overflow-y-auto p-3 sm:p-6'
         )}
       >
         <DialogHeader>
@@ -413,11 +436,14 @@ export function KrogerCartModal({ items, onClose }: KrogerCartModalProps) {
                 ? `${index + 1} of ${total}: ${parsedByItemId.get(current.id)?.original ?? current.query}`
                 : ''}
           </DialogTitle>
-          {!done && current && parsedByItemId.get(current.id) && parsedByItemId.get(current.id)!.original !== parsedByItemId.get(current.id)!.name && (
-            <p className="text-xs text-muted-foreground">
-              Searching Kroger for &quot;{parsedByItemId.get(current.id)!.name}&quot;
-            </p>
-          )}
+          {!done &&
+            current &&
+            parsedByItemId.get(current.id) &&
+            parsedByItemId.get(current.id)!.original !== parsedByItemId.get(current.id)!.name && (
+              <p className="text-xs text-muted-foreground">
+                Searching Kroger for &quot;{parsedByItemId.get(current.id)!.name}&quot;
+              </p>
+            )}
         </DialogHeader>
 
         {!done && current && (
@@ -426,11 +452,13 @@ export function KrogerCartModal({ items, onClose }: KrogerCartModalProps) {
                 a wrong parse without skipping the whole item. */}
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
-                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   value={editQuery}
                   onChange={(e) => setEditQuery(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') retrySearch(); }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') retrySearch();
+                  }}
                   placeholder="Search Kroger…"
                   className="h-8 pl-7 text-sm"
                 />
@@ -448,8 +476,8 @@ export function KrogerCartModal({ items, onClose }: KrogerCartModalProps) {
 
             {current.candidates.length === 0 ? (
               <div className="rounded border border-dashed p-4 text-sm text-muted-foreground">
-                No Kroger matches found for &quot;{current.query}&quot;. Try editing the
-                search above (e.g. shorten to the noun).
+                No Kroger matches found for &quot;{current.query}&quot;. Try editing the search
+                above (e.g. shorten to the noun).
               </div>
             ) : (
               <ul className="space-y-2">
@@ -461,10 +489,10 @@ export function KrogerCartModal({ items, onClose }: KrogerCartModalProps) {
                         type="button"
                         onClick={() => pickCurrent(c.productId)}
                         className={cn(
-                          'w-full flex items-stretch gap-2 sm:gap-3 rounded border p-2 text-left transition',
+                          'flex w-full items-stretch gap-2 rounded border p-2 text-left transition sm:gap-3',
                           selected
                             ? 'border-primary bg-primary/5'
-                            : 'border-border hover:bg-muted/50',
+                            : 'border-border hover:bg-muted/50'
                         )}
                       >
                         {c.imageUrl ? (
@@ -472,30 +500,37 @@ export function KrogerCartModal({ items, onClose }: KrogerCartModalProps) {
                           <img
                             src={c.imageUrl}
                             alt=""
-                            className="h-12 w-12 sm:h-14 sm:w-14 object-contain rounded bg-white flex-shrink-0"
+                            className="h-12 w-12 flex-shrink-0 rounded bg-white object-contain sm:h-14 sm:w-14"
                           />
                         ) : (
-                          <div className="h-12 w-12 sm:h-14 sm:w-14 rounded bg-muted flex-shrink-0" />
+                          <div className="h-12 w-12 flex-shrink-0 rounded bg-muted sm:h-14 sm:w-14" />
                         )}
-                        <div className="flex-1 min-w-0 flex flex-col justify-center">
+                        <div className="flex min-w-0 flex-1 flex-col justify-center">
                           {/* Wrap name to 2 lines instead of truncating —
                               full product strings need to be readable on
                               narrow phone screens. */}
-                          <div className="text-sm font-medium leading-tight line-clamp-2">
-                            {c.brand ? `${c.brand} — ` : ''}{c.description}
+                          <div className="line-clamp-2 text-sm font-medium leading-tight">
+                            {c.brand ? `${c.brand} — ` : ''}
+                            {c.description}
                           </div>
                           {c.size && (
-                            <div className="text-xs text-muted-foreground truncate mt-0.5">{c.size}</div>
+                            <div className="mt-0.5 truncate text-xs text-muted-foreground">
+                              {c.size}
+                            </div>
                           )}
                         </div>
-                        <div className="flex-shrink-0 flex flex-col items-end justify-center min-w-[3.5rem]">
+                        <div className="flex min-w-[3.5rem] flex-shrink-0 flex-col items-end justify-center">
                           {c.priceDisplay ? (
                             <>
-                              <span className="text-sm font-semibold tabular-nums whitespace-nowrap">{c.priceDisplay}</span>
+                              <span className="whitespace-nowrap text-sm font-semibold tabular-nums">
+                                {c.priceDisplay}
+                              </span>
                               {(() => {
                                 const u = unitPriceDisplay(c.price, c.size, canonicalDim);
                                 return u ? (
-                                  <span className="text-[10px] text-muted-foreground tabular-nums whitespace-nowrap">{u}</span>
+                                  <span className="whitespace-nowrap text-[10px] tabular-nums text-muted-foreground">
+                                    {u}
+                                  </span>
                                 ) : null;
                               })()}
                             </>
@@ -503,7 +538,9 @@ export function KrogerCartModal({ items, onClose }: KrogerCartModalProps) {
                             <span className="text-[10px] text-muted-foreground">no price</span>
                           )}
                         </div>
-                        {selected && <Check className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0 self-center" />}
+                        {selected && (
+                          <Check className="h-4 w-4 flex-shrink-0 self-center text-primary sm:h-5 sm:w-5" />
+                        )}
                       </button>
                     </li>
                   );
@@ -515,10 +552,10 @@ export function KrogerCartModal({ items, onClose }: KrogerCartModalProps) {
               type="button"
               onClick={() => pickCurrent(null)}
               className={cn(
-                'w-full flex items-center justify-center gap-2 rounded border border-dashed p-2 text-sm transition',
+                'flex w-full items-center justify-center gap-2 rounded border border-dashed p-2 text-sm transition',
                 picks.get(current.id) === null
-                  ? 'border-destructive text-destructive bg-destructive/5'
-                  : 'border-border text-muted-foreground hover:bg-muted/50',
+                  ? 'border-destructive bg-destructive/5 text-destructive'
+                  : 'border-border text-muted-foreground hover:bg-muted/50'
               )}
             >
               <X className="h-4 w-4" />
@@ -566,30 +603,34 @@ export function KrogerCartModal({ items, onClose }: KrogerCartModalProps) {
         {done && (
           <div className="space-y-3 py-2">
             <p className="text-sm">
-              <span className="font-medium">{summary.added}</span> item{summary.added === 1 ? '' : 's'} ready to send
+              <span className="font-medium">{summary.added}</span> item
+              {summary.added === 1 ? '' : 's'} ready to send
               {summary.skipped > 0 && (
-                <>, <span className="font-medium">{summary.skipped}</span> skipped</>
+                <>
+                  , <span className="font-medium">{summary.skipped}</span> skipped
+                </>
               )}
               .
             </p>
-            <ul className="max-h-60 overflow-y-auto space-y-1 text-sm border rounded p-2">
+            <ul className="max-h-60 space-y-1 overflow-y-auto rounded border p-2 text-sm">
               {results.map((r) => {
                 const pid = picks.get(r.id);
                 const cand = pid ? r.candidates.find((c) => c.productId === pid) : null;
                 return (
-                  <li key={r.id} className="flex items-start gap-2 min-w-0">
+                  <li key={r.id} className="flex min-w-0 items-start gap-2">
                     {cand ? (
-                      <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                      <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
                     ) : (
-                      <X className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <X className="mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground" />
                     )}
-                    <div className="flex-1 min-w-0">
-                      <div className="text-muted-foreground break-words">
+                    <div className="min-w-0 flex-1">
+                      <div className="break-words text-muted-foreground">
                         {parsedByItemId.get(r.id)?.original ?? r.query}
                       </div>
                       {cand && (
-                        <div className="text-xs text-muted-foreground break-words">
-                          → {cand.brand ? `${cand.brand} ` : ''}{cand.description}
+                        <div className="break-words text-xs text-muted-foreground">
+                          → {cand.brand ? `${cand.brand} ` : ''}
+                          {cand.description}
                           {(quantities.get(r.id) ?? 1) > 1 && (
                             <span className="ml-1 font-medium text-foreground">
                               × {quantities.get(r.id)}
@@ -605,13 +646,9 @@ export function KrogerCartModal({ items, onClose }: KrogerCartModalProps) {
           </div>
         )}
 
-        <DialogFooter className="flex-row sm:justify-between gap-2">
-          <Button
-            variant="ghost"
-            onClick={goBack}
-            disabled={!done && index === 0}
-          >
-            <ChevronLeft className="h-4 w-4 mr-1" /> Back
+        <DialogFooter className="flex-row gap-2 sm:justify-between">
+          <Button variant="ghost" onClick={goBack} disabled={!done && index === 0}>
+            <ChevronLeft className="mr-1 h-4 w-4" /> Back
           </Button>
           {done ? (
             <Button onClick={submit} disabled={submitting || summary.added === 0}>
@@ -619,7 +656,13 @@ export function KrogerCartModal({ items, onClose }: KrogerCartModalProps) {
             </Button>
           ) : (
             <Button onClick={goNext}>
-              {index < total - 1 ? <>Next <ChevronRight className="h-4 w-4 ml-1" /></> : 'Review'}
+              {index < total - 1 ? (
+                <>
+                  Next <ChevronRight className="ml-1 h-4 w-4" />
+                </>
+              ) : (
+                'Review'
+              )}
             </Button>
           )}
         </DialogFooter>

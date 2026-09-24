@@ -26,7 +26,16 @@ export function CalendarsSection({ onSynced }: { onSynced?: () => void } = {}) {
   const [updatingCalendar, setUpdatingCalendar] = useState<string | null>(null);
   const [localCalendars, setLocalCalendars] = useState<typeof calendars>([]);
 
-  const [calGroups, setCalGroups] = useState<Array<{ id: string; name: string; color: string; type: string; userId?: string | null; sourceCount?: number }>>([]);
+  const [calGroups, setCalGroups] = useState<
+    Array<{
+      id: string;
+      name: string;
+      color: string;
+      type: string;
+      userId?: string | null;
+      sourceCount?: number;
+    }>
+  >([]);
   const [newGroupName, setNewGroupName] = useState('');
   const [newGroupColor, setNewGroupColor] = useState('#3B82F6');
 
@@ -36,9 +45,10 @@ export function CalendarsSection({ onSynced }: { onSynced?: () => void } = {}) {
   const [removedCalendars, setRemovedCalendars] = useState<Array<{ id: string; name: string }>>([]);
   const [restoringId, setRestoringId] = useState<string | null>(null);
 
-  const familyCalendarColor = typeof window !== 'undefined'
-    ? localStorage.getItem('prism-family-calendar-color') || '#F59E0B'
-    : '#F59E0B';
+  const familyCalendarColor =
+    typeof window !== 'undefined'
+      ? localStorage.getItem('prism-family-calendar-color') || '#F59E0B'
+      : '#F59E0B';
 
   useEffect(() => {
     async function fetchGroups() {
@@ -48,7 +58,9 @@ export function CalendarsSection({ onSynced }: { onSynced?: () => void } = {}) {
           const data = await res.json();
           setCalGroups(data.groups || []);
         }
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
     fetchGroups();
   }, [calendars]);
@@ -63,7 +75,9 @@ export function CalendarsSection({ onSynced }: { onSynced?: () => void } = {}) {
           const data = await res.json();
           setRemovedCalendars(data.removed || []);
         }
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
     fetchRemoved();
   }, [calendars]);
@@ -116,7 +130,10 @@ export function CalendarsSection({ onSynced }: { onSynced?: () => void } = {}) {
     }
   }, [calendars]);
 
-  const updateCalendar = async (calendarId: string, updates: { enabled?: boolean; userId?: string | null }) => {
+  const updateCalendar = async (
+    calendarId: string,
+    updates: { enabled?: boolean; userId?: string | null }
+  ) => {
     setUpdatingCalendar(calendarId);
 
     setLocalCalendars((prev) =>
@@ -240,16 +257,30 @@ export function CalendarsSection({ onSynced }: { onSynced?: () => void } = {}) {
         // host has no calendar of its own to refresh.
         window.dispatchEvent(new Event('prism:calendar-synced'));
       } else {
-        const hasReauthError = data.errors?.some((e: string) => e.includes('Re-authentication required') || e.includes('Token expired'));
+        const hasReauthError = data.errors?.some(
+          (e: string) => e.includes('Re-authentication required') || e.includes('Token expired')
+        );
         if (hasReauthError) {
-          toast({ title: 'Google token expired', description: 'Use the "Re-authenticate Google" button to refresh all calendars at once.', variant: 'warning' });
+          toast({
+            title: 'Google token expired',
+            description:
+              'Use the "Re-authenticate Google" button to refresh all calendars at once.',
+            variant: 'warning',
+          });
         } else {
-          toast({ title: `Sync failed: ${data.error || data.message || 'Unknown error'}`, description: data.errors?.join('\n') || undefined, variant: 'destructive' });
+          toast({
+            title: `Sync failed: ${data.error || data.message || 'Unknown error'}`,
+            description: data.errors?.join('\n') || undefined,
+            variant: 'destructive',
+          });
         }
       }
     } catch (error) {
       console.error('Failed to sync calendars:', error);
-      toast({ title: `Sync error: ${error instanceof Error ? error.message : 'Unknown error'}`, variant: 'destructive' });
+      toast({
+        title: `Sync error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        variant: 'destructive',
+      });
     } finally {
       setSyncing(false);
     }
@@ -289,16 +320,14 @@ export function CalendarsSection({ onSynced }: { onSynced?: () => void } = {}) {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Calendar Integration</h2>
-          <p className="text-muted-foreground">
-            Connect external calendars to sync events
-          </p>
+          <p className="text-muted-foreground">Connect external calendars to sync events</p>
         </div>
         <Button
           onClick={handleSyncCalendars}
           disabled={syncing || calendars.length === 0}
           variant="outline"
         >
-          <RefreshCw className={cn('h-4 w-4 mr-2', syncing && 'animate-spin')} />
+          <RefreshCw className={cn('mr-2 h-4 w-4', syncing && 'animate-spin')} />
           {syncing ? 'Syncing...' : 'Sync Now'}
         </Button>
       </div>
@@ -311,31 +340,31 @@ export function CalendarsSection({ onSynced }: { onSynced?: () => void } = {}) {
       <Card>
         <CardHeader>
           <CardTitle>Connected Calendars</CardTitle>
-          <CardDescription>
-            Manage your connected calendar accounts
-          </CardDescription>
+          <CardDescription>Manage your connected calendar accounts</CardDescription>
         </CardHeader>
         <CardContent>
           {calendarsLoading ? (
-            <div className="text-center py-4 text-muted-foreground">
-              Loading calendars...
-            </div>
+            <div className="py-4 text-center text-muted-foreground">Loading calendars...</div>
           ) : manageableCalendars.length === 0 ? (
-            <div className="text-center py-6 space-y-2">
+            <div className="space-y-2 py-6 text-center">
               <p className="text-muted-foreground">No calendars connected yet</p>
               <p className="text-sm text-muted-foreground">
-                Subscribe to a calendar above for a read-only feed with zero setup, or use
-                two-way sync in Advanced above.
+                Subscribe to a calendar above for a read-only feed with zero setup, or use two-way
+                sync in Advanced above.
               </p>
             </div>
           ) : (
             <div className="space-y-3">
               {/* Single re-auth banner if any Google calendar needs it */}
-              {manageableCalendars.some((c) => c.provider === 'google' && c.syncErrors?.needsReauth) && (
-                <div className="flex items-center gap-3 p-3 rounded-md border border-orange-500/50 bg-orange-50 dark:bg-orange-950/30">
-                  <AlertTriangle className="h-5 w-5 text-orange-500 shrink-0" />
+              {manageableCalendars.some(
+                (c) => c.provider === 'google' && c.syncErrors?.needsReauth
+              ) && (
+                <div className="flex items-center gap-3 rounded-md border border-orange-500/50 bg-orange-50 p-3 dark:bg-orange-950/30">
+                  <AlertTriangle className="h-5 w-5 shrink-0 text-orange-500" />
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-orange-700 dark:text-orange-400">Google token expired</p>
+                    <p className="text-sm font-medium text-orange-700 dark:text-orange-400">
+                      Google token expired
+                    </p>
                     <p className="text-xs text-orange-600 dark:text-orange-400/80">
                       Re-authenticate once to refresh all Google calendars.
                     </p>
@@ -346,7 +375,8 @@ export function CalendarsSection({ onSynced }: { onSynced?: () => void } = {}) {
                     className="border-orange-500/50 text-orange-600 hover:bg-orange-100 dark:hover:bg-orange-950"
                     onClick={() => {
                       const firstGoogle = manageableCalendars.find((c) => c.provider === 'google');
-                      if (firstGoogle) window.location.href = `/api/auth/google?reauth=${firstGoogle.id}&returnSection=calendars`;
+                      if (firstGoogle)
+                        window.location.href = `/api/auth/google?reauth=${firstGoogle.id}&returnSection=calendars`;
                     }}
                   >
                     Re-authenticate Google
@@ -364,295 +394,355 @@ export function CalendarsSection({ onSynced }: { onSynced?: () => void } = {}) {
                   return cfg?.supportsEvents !== false;
                 })
                 .map((cal) => (
-                <div
-                  key={cal.id}
-                  className={cn(
-                    "p-3 rounded-md border border-border",
-                    !cal.enabled && "opacity-60"
-                  )}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-3">
-                      <CalendarColorPicker
-                        color={cal.color || '#3B82F6'}
-                        onChange={async (c) => {
-                          try {
-                            await fetch(`/api/calendars/${cal.id}`, {
-                              method: 'PATCH',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ color: c }),
-                            });
-                            setLocalCalendars((prev) =>
-                              prev.map((lc) => lc.id === cal.id ? { ...lc, color: c } : lc)
-                            );
-                          } catch { /* ignore */ }
-                        }}
-                      />
-                      <div className="flex-1 min-w-0">
-                        {editingCalendarId === cal.id ? (
-                          <div className="flex items-center gap-1">
-                            <Input
-                              value={editingName}
-                              onChange={(e) => setEditingName(e.target.value)}
-                              className="h-7 text-sm"
-                              autoFocus
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  e.preventDefault();
-                                  // Save the new name
-                                  (async () => {
-                                    if (editingName.trim() && editingName.trim() !== cal.dashboardCalendarName) {
-                                      setUpdatingCalendar(cal.id);
-                                      try {
-                                        await fetch(`/api/calendars/${cal.id}`, {
-                                          method: 'PATCH',
-                                          headers: { 'Content-Type': 'application/json' },
-                                          body: JSON.stringify({ dashboardCalendarName: editingName.trim() }),
-                                        });
-                                        setLocalCalendars((prev) =>
-                                          prev.map((lc) => lc.id === cal.id ? { ...lc, dashboardCalendarName: editingName.trim() } : lc)
-                                        );
-                                      } catch { /* ignore */ }
-                                      setUpdatingCalendar(null);
-                                    }
-                                    setEditingCalendarId(null);
-                                  })();
-                                } else if (e.key === 'Escape') {
-                                  setEditingCalendarId(null);
-                                }
-                              }}
-                            />
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7"
-                              onClick={async () => {
-                                if (editingName.trim() && editingName.trim() !== cal.dashboardCalendarName) {
-                                  setUpdatingCalendar(cal.id);
-                                  try {
-                                    await fetch(`/api/calendars/${cal.id}`, {
-                                      method: 'PATCH',
-                                      headers: { 'Content-Type': 'application/json' },
-                                      body: JSON.stringify({ dashboardCalendarName: editingName.trim() }),
-                                    });
-                                    setLocalCalendars((prev) =>
-                                      prev.map((lc) => lc.id === cal.id ? { ...lc, dashboardCalendarName: editingName.trim() } : lc)
-                                    );
-                                  } catch { /* ignore */ }
-                                  setUpdatingCalendar(null);
-                                }
-                                setEditingCalendarId(null);
-                              }}
-                            >
-                              <Check className="h-4 w-4 text-green-600" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7"
-                              onClick={() => setEditingCalendarId(null)}
-                            >
-                              <X className="h-4 w-4 text-red-600" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-1">
-                            <div className="font-medium">{cal.dashboardCalendarName}</div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6 opacity-50 hover:opacity-100"
-                              onClick={() => {
-                                setEditingCalendarId(cal.id);
-                                setEditingName(cal.dashboardCalendarName);
-                              }}
-                            >
-                              <Pencil className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        )}
-                        <div className="text-xs text-muted-foreground">
-                          {cal.provider === 'google'
-                            ? 'Google Calendar'
-                            : cal.provider === 'ical'
-                              ? 'iCal Subscription'
-                              : cal.provider}
-                          {cal.displayName && cal.displayName !== cal.dashboardCalendarName && (
-                            <span className="ml-2 text-muted-foreground/60">
-                              (Source: {cal.displayName})
-                            </span>
-                          )}
-                          {cal.lastSynced && (
-                            <span className="ml-2">
-                              Synced: {new Date(cal.lastSynced).toLocaleString()}
-                            </span>
-                          )}
-                        </div>
-                        {cal.syncErrors?.needsReauth && (
-                          <div className="flex items-center gap-1 mt-1">
-                            <AlertTriangle className="h-3 w-3 text-orange-500 shrink-0" />
-                            <span className="text-xs text-orange-600 dark:text-orange-400">
-                              Token expired
-                            </span>
-                          </div>
-                        )}
-                        {cal.syncErrors?.removedAtSource && (
-                          <div className="flex items-center gap-1 mt-1">
-                            <AlertTriangle className="h-3 w-3 text-muted-foreground shrink-0" />
-                            <span className="text-xs text-muted-foreground">
-                              Removed in Google — auto-disabled here
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <span className="text-xs text-muted-foreground">
-                        {cal.enabled ? 'Enabled' : 'Disabled'}
-                      </span>
-                      <Switch
-                        checked={cal.enabled}
-                        onCheckedChange={() => updateCalendar(cal.id, { enabled: !cal.enabled })}
-                        disabled={updatingCalendar === cal.id}
-                        className="data-[state=checked]:bg-blue-500"
-                      />
-                    </label>
-                  </div>
-                  <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border">
-                    <span className="text-xs text-muted-foreground">Group:</span>
-                    <select
-                      value={(cal as { groupId?: string }).groupId || ''}
-                      onChange={async (e) => {
-                        const groupId = e.target.value || null;
-                        setUpdatingCalendar(cal.id);
-                        try {
-                          await fetch(`/api/calendars/${cal.id}`, {
-                            method: 'PATCH',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ groupId }),
-                          });
-                          refreshCalendars();
-                        } catch { /* ignore */ }
-                        setUpdatingCalendar(null);
-                      }}
-                      disabled={updatingCalendar === cal.id}
-                      className="flex-1 text-sm border border-border rounded px-2 py-1 bg-background"
-                    >
-                      <option value="">-- Unassigned --</option>
-                      {calGroups.map((group) => (
-                        <option key={group.id} value={group.id}>
-                          {group.name}
-                        </option>
-                      ))}
-                    </select>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10 flex-shrink-0"
-                      onClick={async () => {
-                        if (!await confirm(`Remove "${cal.dashboardCalendarName}"?`, 'This will remove the calendar and all its events.')) return;
-                        setUpdatingCalendar(cal.id);
-                        try {
-                          await fetch(`/api/calendars/${cal.id}`, { method: 'DELETE' });
-                          setLocalCalendars((prev) => prev.filter((c) => c.id !== cal.id));
-                          refreshCalendars();
-                        } catch { /* ignore */ }
-                        setUpdatingCalendar(null);
-                      }}
-                      disabled={updatingCalendar === cal.id}
-                      title="Remove calendar"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                  {/* Show in Event Modal toggle - only for writable calendars */}
-                  {(() => {
-                    // Detect subscription/read-only calendars by common patterns
-                    const name = cal.dashboardCalendarName.toLowerCase();
-                    const isSubscription = cal.provider !== 'local' && (
-                      name.includes('birthday') ||
-                      name.includes('holiday') ||
-                      name.includes('contacts') ||
-                      name.startsWith('subscribe') ||
-                      name.includes('phases of the moon') ||
-                      name.includes('week numbers')
-                    );
-                    const isWritable = cal.provider === 'local' || (cal.provider === 'google' && !isSubscription);
-
-                    return (
-                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-border">
-                        <div className="flex items-center gap-2">
-                          <span className={cn("text-xs", isWritable ? "text-muted-foreground" : "text-muted-foreground/50")}>
-                            Show in &quot;Add Event&quot; modal
-                          </span>
-                          {isSubscription && (
-                            <Badge variant="outline" className="text-[10px] px-1 py-0 opacity-60">Read-only</Badge>
-                          )}
-                        </div>
-                        <Switch
-                          checked={(cal as { showInEventModal?: boolean }).showInEventModal !== false && isWritable}
-                          onCheckedChange={async () => {
-                            if (!isWritable) return;
-                            const newValue = !(cal as { showInEventModal?: boolean }).showInEventModal;
-                            setUpdatingCalendar(cal.id);
+                  <div
+                    key={cal.id}
+                    className={cn(
+                      'rounded-md border border-border p-3',
+                      !cal.enabled && 'opacity-60'
+                    )}
+                  >
+                    <div className="mb-2 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <CalendarColorPicker
+                          color={cal.color || '#3B82F6'}
+                          onChange={async (c) => {
                             try {
                               await fetch(`/api/calendars/${cal.id}`, {
                                 method: 'PATCH',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ showInEventModal: newValue }),
+                                body: JSON.stringify({ color: c }),
                               });
                               setLocalCalendars((prev) =>
-                                prev.map((lc) => lc.id === cal.id ? { ...lc, showInEventModal: newValue } : lc)
+                                prev.map((lc) => (lc.id === cal.id ? { ...lc, color: c } : lc))
                               );
-                            } catch { /* ignore */ }
-                            setUpdatingCalendar(null);
+                            } catch {
+                              /* ignore */
+                            }
                           }}
-                          disabled={updatingCalendar === cal.id || !isWritable}
+                        />
+                        <div className="min-w-0 flex-1">
+                          {editingCalendarId === cal.id ? (
+                            <div className="flex items-center gap-1">
+                              <Input
+                                value={editingName}
+                                onChange={(e) => setEditingName(e.target.value)}
+                                className="h-7 text-sm"
+                                autoFocus
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    // Save the new name
+                                    (async () => {
+                                      if (
+                                        editingName.trim() &&
+                                        editingName.trim() !== cal.dashboardCalendarName
+                                      ) {
+                                        setUpdatingCalendar(cal.id);
+                                        try {
+                                          await fetch(`/api/calendars/${cal.id}`, {
+                                            method: 'PATCH',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({
+                                              dashboardCalendarName: editingName.trim(),
+                                            }),
+                                          });
+                                          setLocalCalendars((prev) =>
+                                            prev.map((lc) =>
+                                              lc.id === cal.id
+                                                ? {
+                                                    ...lc,
+                                                    dashboardCalendarName: editingName.trim(),
+                                                  }
+                                                : lc
+                                            )
+                                          );
+                                        } catch {
+                                          /* ignore */
+                                        }
+                                        setUpdatingCalendar(null);
+                                      }
+                                      setEditingCalendarId(null);
+                                    })();
+                                  } else if (e.key === 'Escape') {
+                                    setEditingCalendarId(null);
+                                  }
+                                }}
+                              />
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={async () => {
+                                  if (
+                                    editingName.trim() &&
+                                    editingName.trim() !== cal.dashboardCalendarName
+                                  ) {
+                                    setUpdatingCalendar(cal.id);
+                                    try {
+                                      await fetch(`/api/calendars/${cal.id}`, {
+                                        method: 'PATCH',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                          dashboardCalendarName: editingName.trim(),
+                                        }),
+                                      });
+                                      setLocalCalendars((prev) =>
+                                        prev.map((lc) =>
+                                          lc.id === cal.id
+                                            ? { ...lc, dashboardCalendarName: editingName.trim() }
+                                            : lc
+                                        )
+                                      );
+                                    } catch {
+                                      /* ignore */
+                                    }
+                                    setUpdatingCalendar(null);
+                                  }
+                                  setEditingCalendarId(null);
+                                }}
+                              >
+                                <Check className="h-4 w-4 text-green-600" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={() => setEditingCalendarId(null)}
+                              >
+                                <X className="h-4 w-4 text-red-600" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1">
+                              <div className="font-medium">{cal.dashboardCalendarName}</div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 opacity-50 hover:opacity-100"
+                                onClick={() => {
+                                  setEditingCalendarId(cal.id);
+                                  setEditingName(cal.dashboardCalendarName);
+                                }}
+                              >
+                                <Pencil className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          )}
+                          <div className="text-xs text-muted-foreground">
+                            {cal.provider === 'google'
+                              ? 'Google Calendar'
+                              : cal.provider === 'ical'
+                                ? 'iCal Subscription'
+                                : cal.provider}
+                            {cal.displayName && cal.displayName !== cal.dashboardCalendarName && (
+                              <span className="ml-2 text-muted-foreground/60">
+                                (Source: {cal.displayName})
+                              </span>
+                            )}
+                            {cal.lastSynced && (
+                              <span className="ml-2">
+                                Synced: {new Date(cal.lastSynced).toLocaleString()}
+                              </span>
+                            )}
+                          </div>
+                          {cal.syncErrors?.needsReauth && (
+                            <div className="mt-1 flex items-center gap-1">
+                              <AlertTriangle className="h-3 w-3 shrink-0 text-orange-500" />
+                              <span className="text-xs text-orange-600 dark:text-orange-400">
+                                Token expired
+                              </span>
+                            </div>
+                          )}
+                          {cal.syncErrors?.removedAtSource && (
+                            <div className="mt-1 flex items-center gap-1">
+                              <AlertTriangle className="h-3 w-3 shrink-0 text-muted-foreground" />
+                              <span className="text-xs text-muted-foreground">
+                                Removed in Google — auto-disabled here
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <label className="flex cursor-pointer items-center gap-2">
+                        <span className="text-xs text-muted-foreground">
+                          {cal.enabled ? 'Enabled' : 'Disabled'}
+                        </span>
+                        <Switch
+                          checked={cal.enabled}
+                          onCheckedChange={() => updateCalendar(cal.id, { enabled: !cal.enabled })}
+                          disabled={updatingCalendar === cal.id}
                           className="data-[state=checked]:bg-blue-500"
                         />
-                      </div>
-                    );
-                  })()}
-                  {/* Life-events calendar. Optional: birthdays and anniversaries
+                      </label>
+                    </div>
+                    <div className="mt-2 flex items-center gap-2 border-t border-border pt-2">
+                      <span className="text-xs text-muted-foreground">Group:</span>
+                      <select
+                        value={(cal as { groupId?: string }).groupId || ''}
+                        onChange={async (e) => {
+                          const groupId = e.target.value || null;
+                          setUpdatingCalendar(cal.id);
+                          try {
+                            await fetch(`/api/calendars/${cal.id}`, {
+                              method: 'PATCH',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ groupId }),
+                            });
+                            refreshCalendars();
+                          } catch {
+                            /* ignore */
+                          }
+                          setUpdatingCalendar(null);
+                        }}
+                        disabled={updatingCalendar === cal.id}
+                        className="flex-1 rounded border border-border bg-background px-2 py-1 text-sm"
+                      >
+                        <option value="">-- Unassigned --</option>
+                        {calGroups.map((group) => (
+                          <option key={group.id} value={group.id}>
+                            {group.name}
+                          </option>
+                        ))}
+                      </select>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 flex-shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                        onClick={async () => {
+                          if (
+                            !(await confirm(
+                              `Remove "${cal.dashboardCalendarName}"?`,
+                              'This will remove the calendar and all its events.'
+                            ))
+                          )
+                            return;
+                          setUpdatingCalendar(cal.id);
+                          try {
+                            await fetch(`/api/calendars/${cal.id}`, { method: 'DELETE' });
+                            setLocalCalendars((prev) => prev.filter((c) => c.id !== cal.id));
+                            refreshCalendars();
+                          } catch {
+                            /* ignore */
+                          }
+                          setUpdatingCalendar(null);
+                        }}
+                        disabled={updatingCalendar === cal.id}
+                        title="Remove calendar"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                    {/* Show in Event Modal toggle - only for writable calendars */}
+                    {(() => {
+                      // Detect subscription/read-only calendars by common patterns
+                      const name = cal.dashboardCalendarName.toLowerCase();
+                      const isSubscription =
+                        cal.provider !== 'local' &&
+                        (name.includes('birthday') ||
+                          name.includes('holiday') ||
+                          name.includes('contacts') ||
+                          name.startsWith('subscribe') ||
+                          name.includes('phases of the moon') ||
+                          name.includes('week numbers'));
+                      const isWritable =
+                        cal.provider === 'local' || (cal.provider === 'google' && !isSubscription);
+
+                      return (
+                        <div className="mt-2 flex items-center justify-between border-t border-border pt-2">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={cn(
+                                'text-xs',
+                                isWritable ? 'text-muted-foreground' : 'text-muted-foreground/50'
+                              )}
+                            >
+                              Show in &quot;Add Event&quot; modal
+                            </span>
+                            {isSubscription && (
+                              <Badge variant="outline" className="px-1 py-0 text-[10px] opacity-60">
+                                Read-only
+                              </Badge>
+                            )}
+                          </div>
+                          <Switch
+                            checked={
+                              (cal as { showInEventModal?: boolean }).showInEventModal !== false &&
+                              isWritable
+                            }
+                            onCheckedChange={async () => {
+                              if (!isWritable) return;
+                              const newValue = !(cal as { showInEventModal?: boolean })
+                                .showInEventModal;
+                              setUpdatingCalendar(cal.id);
+                              try {
+                                await fetch(`/api/calendars/${cal.id}`, {
+                                  method: 'PATCH',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ showInEventModal: newValue }),
+                                });
+                                setLocalCalendars((prev) =>
+                                  prev.map((lc) =>
+                                    lc.id === cal.id ? { ...lc, showInEventModal: newValue } : lc
+                                  )
+                                );
+                              } catch {
+                                /* ignore */
+                              }
+                              setUpdatingCalendar(null);
+                            }}
+                            disabled={updatingCalendar === cal.id || !isWritable}
+                            className="data-[state=checked]:bg-blue-500"
+                          />
+                        </div>
+                      );
+                    })()}
+                    {/* Life-events calendar. Optional: birthdays and anniversaries
                       are detected on every calendar by keyword, and milestones by
                       shape (recurring + a year). This is for a curated calendar
                       where EVERY all-day entry is a life event, and it replaces
                       the old hardcoded "Friends & Family" name match. */}
-                  <div className="flex items-center justify-between mt-2 pt-2 border-t border-border">
-                    <span className="text-xs text-muted-foreground">
-                      Treat every all-day event here as a birthday or milestone
-                    </span>
-                    <Switch
-                      checked={
-                        ((cal as { providerConfig?: Record<string, unknown> }).providerConfig
-                          ?.lifeEventsCalendar) === true
-                      }
-                      onCheckedChange={async () => {
-                        const current = (cal as { providerConfig?: Record<string, unknown> }).providerConfig ?? {};
-                        const newValue = current.lifeEventsCalendar !== true;
-                        setUpdatingCalendar(cal.id);
-                        try {
-                          await fetch(`/api/calendars/${cal.id}`, {
-                            method: 'PATCH',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ lifeEventsCalendar: newValue }),
-                          });
-                          setLocalCalendars((prev) =>
-                            prev.map((lc) =>
-                              lc.id === cal.id
-                                ? { ...lc, providerConfig: { ...current, lifeEventsCalendar: newValue } }
-                                : lc
-                            )
-                          );
-                        } catch { /* ignore */ }
-                        setUpdatingCalendar(null);
-                      }}
-                      disabled={updatingCalendar === cal.id}
-                      className="data-[state=checked]:bg-blue-500"
-                    />
+                    <div className="mt-2 flex items-center justify-between border-t border-border pt-2">
+                      <span className="text-xs text-muted-foreground">
+                        Treat every all-day event here as a birthday or milestone
+                      </span>
+                      <Switch
+                        checked={
+                          (cal as { providerConfig?: Record<string, unknown> }).providerConfig
+                            ?.lifeEventsCalendar === true
+                        }
+                        onCheckedChange={async () => {
+                          const current =
+                            (cal as { providerConfig?: Record<string, unknown> }).providerConfig ??
+                            {};
+                          const newValue = current.lifeEventsCalendar !== true;
+                          setUpdatingCalendar(cal.id);
+                          try {
+                            await fetch(`/api/calendars/${cal.id}`, {
+                              method: 'PATCH',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ lifeEventsCalendar: newValue }),
+                            });
+                            setLocalCalendars((prev) =>
+                              prev.map((lc) =>
+                                lc.id === cal.id
+                                  ? {
+                                      ...lc,
+                                      providerConfig: { ...current, lifeEventsCalendar: newValue },
+                                    }
+                                  : lc
+                              )
+                            );
+                          } catch {
+                            /* ignore */
+                          }
+                          setUpdatingCalendar(null);
+                        }}
+                        disabled={updatingCalendar === cal.id}
+                        className="data-[state=checked]:bg-blue-500"
+                      />
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
           )}
         </CardContent>
@@ -660,7 +750,7 @@ export function CalendarsSection({ onSynced }: { onSynced?: () => void } = {}) {
 
       <RemovedItemsManager
         title="Removed calendars"
-        description="Google calendars you deleted from Prism. Discovery won't re-add them automatically — restore one to bring it back on your next Google sign-in."
+        description="Google calendars you deleted from KYST. Discovery won't re-add them automatically — restore one to bring it back on your next Google sign-in."
         items={removedCalendars}
         onRestore={handleRestoreCalendar}
         restoringId={restoringId}
@@ -671,13 +761,18 @@ export function CalendarsSection({ onSynced }: { onSynced?: () => void } = {}) {
         <CardHeader>
           <CardTitle>Calendar Groups</CardTitle>
           <CardDescription>
-            Manage calendar groups used for filtering and display colors. Member and Family groups are created and managed automatically — they take their color from the profile and cannot be renamed or deleted. Custom groups are yours to add and remove.
+            Manage calendar groups used for filtering and display colors. Member and Family groups
+            are created and managed automatically — they take their color from the profile and
+            cannot be renamed or deleted. Custom groups are yours to add and remove.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
             {calGroups.map((group) => (
-              <div key={group.id} className="flex items-center justify-between p-3 rounded-md border border-border">
+              <div
+                key={group.id}
+                className="flex items-center justify-between rounded-md border border-border p-3"
+              >
                 <div className="flex items-center gap-3">
                   <CalendarColorPicker
                     color={group.color}
@@ -689,12 +784,14 @@ export function CalendarsSection({ onSynced }: { onSynced?: () => void } = {}) {
                           body: JSON.stringify({ color: c }),
                         });
                         setCalGroups((prev) =>
-                          prev.map((g) => g.id === group.id ? { ...g, color: c } : g)
+                          prev.map((g) => (g.id === group.id ? { ...g, color: c } : g))
                         );
-                      } catch { /* ignore */ }
+                      } catch {
+                        /* ignore */
+                      }
                     }}
                   />
-                  <span className="font-medium text-sm">{group.name}</span>
+                  <span className="text-sm font-medium">{group.name}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge variant={group.type === 'custom' ? 'secondary' : 'default'}>
@@ -709,12 +806,20 @@ export function CalendarsSection({ onSynced }: { onSynced?: () => void } = {}) {
                       size="icon"
                       className="h-7 w-7 text-destructive"
                       onClick={async () => {
-                        if (!await confirm(`Delete group "${group.name}"?`, 'Sources will be unassigned.')) return;
+                        if (
+                          !(await confirm(
+                            `Delete group "${group.name}"?`,
+                            'Sources will be unassigned.'
+                          ))
+                        )
+                          return;
                         try {
                           await fetch(`/api/calendar-groups/${group.id}`, { method: 'DELETE' });
                           setCalGroups((prev) => prev.filter((g) => g.id !== group.id));
                           refreshCalendars();
-                        } catch { /* ignore */ }
+                        } catch {
+                          /* ignore */
+                        }
                       }}
                     >
                       <Trash2 className="h-3 w-3" />
@@ -724,26 +829,19 @@ export function CalendarsSection({ onSynced }: { onSynced?: () => void } = {}) {
               </div>
             ))}
 
-            <div className="flex items-center gap-2 pt-2 border-t border-border">
-              <CalendarColorPicker
-                color={newGroupColor}
-                onChange={setNewGroupColor}
-              />
+            <div className="flex items-center gap-2 border-t border-border pt-2">
+              <CalendarColorPicker color={newGroupColor} onChange={setNewGroupColor} />
               <Input
                 value={newGroupName}
                 onChange={(e) => setNewGroupName(e.target.value)}
                 placeholder="New group name..."
-                className="flex-1 h-8 text-sm"
+                className="h-8 flex-1 text-sm"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && newGroupName.trim()) addGroup();
                 }}
               />
-              <Button
-                size="sm"
-                disabled={!newGroupName.trim()}
-                onClick={addGroup}
-              >
-                <Plus className="h-3 w-3 mr-1" />
+              <Button size="sm" disabled={!newGroupName.trim()} onClick={addGroup}>
+                <Plus className="mr-1 h-3 w-3" />
                 Add
               </Button>
             </div>
@@ -753,10 +851,10 @@ export function CalendarsSection({ onSynced }: { onSynced?: () => void } = {}) {
       <ConfirmDialog {...confirmDialogProps} />
 
       <div className="flex items-center gap-3 pt-2">
-        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">
+        <span className="whitespace-nowrap text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Calendar Preferences
         </span>
-        <div className="flex-1 h-px bg-border" />
+        <div className="h-px flex-1 bg-border" />
       </div>
 
       <CalendarHoursCard />
@@ -783,7 +881,8 @@ function CalendarHoursCard() {
         <CardTitle>Calendar Hours</CardTitle>
         <CardDescription>
           Hide a time range from day and week calendar views. When hidden, the remaining hours
-          auto-resize to fill the available space. Toggle visibility with the clock button in calendar views.
+          auto-resize to fill the available space. Toggle visibility with the clock button in
+          calendar views.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -792,7 +891,7 @@ function CalendarHoursCard() {
           <select
             value={settings.mode}
             onChange={(e) => setSettings({ mode: e.target.value as 'manual' | 'auto-fit' })}
-            className="border border-border rounded px-2 py-1 text-sm bg-background"
+            className="rounded border border-border bg-background px-2 py-1 text-sm"
           >
             <option value="manual">Manual</option>
             <option value="auto-fit">Auto-fit</option>
@@ -805,7 +904,7 @@ function CalendarHoursCard() {
             <select
               value={settings.startHour}
               onChange={(e) => setSettings({ startHour: Number(e.target.value) })}
-              className="border border-border rounded px-2 py-1 text-sm bg-background"
+              className="rounded border border-border bg-background px-2 py-1 text-sm"
             >
               {hours.map((h) => (
                 <option key={h} value={h}>
@@ -817,7 +916,7 @@ function CalendarHoursCard() {
             <select
               value={settings.endHour}
               onChange={(e) => setSettings({ endHour: Number(e.target.value) })}
-              className="border border-border rounded px-2 py-1 text-sm bg-background"
+              className="rounded border border-border bg-background px-2 py-1 text-sm"
             >
               {hours.map((h) => (
                 <option key={h} value={h}>
@@ -832,7 +931,7 @@ function CalendarHoursCard() {
             <select
               value={settings.bufferHours}
               onChange={(e) => setSettings({ bufferHours: Number(e.target.value) })}
-              className="border border-border rounded px-2 py-1 text-sm bg-background"
+              className="rounded border border-border bg-background px-2 py-1 text-sm"
             >
               {[0, 1, 2, 3, 4].map((h) => (
                 <option key={h} value={h}>
@@ -845,13 +944,18 @@ function CalendarHoursCard() {
 
         <div className="text-xs text-muted-foreground">
           {settings.mode === 'manual' ? (
-            <>Hiding {formatHour(settings.startHour)} to {formatHour(settings.endHour)} ({
-              settings.startHour <= settings.endHour
+            <>
+              Hiding {formatHour(settings.startHour)} to {formatHour(settings.endHour)} (
+              {settings.startHour <= settings.endHour
                 ? settings.endHour - settings.startHour
-                : 24 - settings.startHour + settings.endHour
-            } hours)</>
+                : 24 - settings.startHour + settings.endHour}{' '}
+              hours)
+            </>
           ) : (
-            <>Auto-fit trims dead hours around your timed events in day/week views with a {settings.bufferHours}-hour buffer.</>
+            <>
+              Auto-fit trims dead hours around your timed events in day/week views with a{' '}
+              {settings.bufferHours}-hour buffer.
+            </>
           )}
         </div>
       </CardContent>
@@ -898,10 +1002,13 @@ function AddIcalSubscriptionCard({ onAdded }: { onAdded: () => void }) {
       // seconds a first import takes — so events appear without a page refresh.
       window.dispatchEvent(new Event('prism:calendar-synced'));
       [2500, 6000].forEach((ms) =>
-        setTimeout(() => window.dispatchEvent(new Event('prism:calendar-synced')), ms),
+        setTimeout(() => window.dispatchEvent(new Event('prism:calendar-synced')), ms)
       );
     } catch (err) {
-      toast({ title: err instanceof Error ? err.message : 'Failed to add calendar', variant: 'destructive' });
+      toast({
+        title: err instanceof Error ? err.message : 'Failed to add calendar',
+        variant: 'destructive',
+      });
     } finally {
       setSubmitting(false);
     }
@@ -912,9 +1019,11 @@ function AddIcalSubscriptionCard({ onAdded }: { onAdded: () => void }) {
       <CardHeader>
         <CardTitle>Subscribe to a calendar — no account needed</CardTitle>
         <CardDescription>
-          Paste any public iCal URL — Google Calendar, Apple Calendar / iCloud, Outlook.live.com, a school sports feed, etc.
-          Works immediately, read-only, zero setup.
-          Apple users: in <em>Calendar.app → right-click your calendar → Share Calendar → Public Calendar</em>, then copy the <code>webcal://</code> URL. iCloud.com works the same way under <em>Calendar → ⓘ → Public Calendar</em>.
+          Paste any public iCal URL — Google Calendar, Apple Calendar / iCloud, Outlook.live.com, a
+          school sports feed, etc. Works immediately, read-only, zero setup. Apple users: in{' '}
+          <em>Calendar.app → right-click your calendar → Share Calendar → Public Calendar</em>, then
+          copy the <code>webcal://</code> URL. iCloud.com works the same way under{' '}
+          <em>Calendar → ⓘ → Public Calendar</em>.
         </CardDescription>
         <details className="text-xs text-muted-foreground">
           <summary className="cursor-pointer select-none hover:text-foreground">
@@ -935,7 +1044,9 @@ function AddIcalSubscriptionCard({ onAdded }: { onAdded: () => void }) {
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             disabled={submitting}
-            onKeyDown={(e) => { if (e.key === 'Enter') submit(); }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') submit();
+            }}
           />
           <Input
             type="text"
@@ -943,10 +1054,12 @@ function AddIcalSubscriptionCard({ onAdded }: { onAdded: () => void }) {
             value={name}
             onChange={(e) => setName(e.target.value)}
             disabled={submitting}
-            onKeyDown={(e) => { if (e.key === 'Enter') submit(); }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') submit();
+            }}
           />
           <Button onClick={submit} disabled={submitting || !url.trim()}>
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus className="mr-2 h-4 w-4" />
             {submitting ? 'Adding…' : 'Add'}
           </Button>
         </div>
@@ -980,9 +1093,9 @@ function AdvancedCalendarSyncCard() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-2">
-        <div className="flex items-center justify-between gap-3 p-3 rounded-md border border-border">
+        <div className="flex items-center justify-between gap-3 rounded-md border border-border p-3">
           <div className="min-w-0">
-            <div className="font-medium text-sm">Google Calendar</div>
+            <div className="text-sm font-medium">Google Calendar</div>
             <div className="text-xs text-muted-foreground">
               {googleConfigured ? 'Two-way sync via OAuth' : 'Needs a one-time admin setup'}
             </div>
@@ -991,9 +1104,9 @@ function AdvancedCalendarSyncCard() {
             {googleConfigured ? 'Connect' : 'Set up'}
           </Button>
         </div>
-        <div className="flex items-center justify-between gap-3 p-3 rounded-md border border-border">
+        <div className="flex items-center justify-between gap-3 rounded-md border border-border p-3">
           <div className="min-w-0">
-            <div className="font-medium text-sm">Apple iCloud / CalDAV</div>
+            <div className="text-sm font-medium">Apple iCloud / CalDAV</div>
             <div className="text-xs text-muted-foreground">
               App-specific password — no admin setup needed
             </div>
@@ -1002,9 +1115,9 @@ function AdvancedCalendarSyncCard() {
             Connect
           </Button>
         </div>
-        <div className="flex items-center justify-between gap-3 p-3 rounded-md border border-border">
+        <div className="flex items-center justify-between gap-3 rounded-md border border-border p-3">
           <div className="min-w-0">
-            <div className="font-medium text-sm">Microsoft</div>
+            <div className="text-sm font-medium">Microsoft</div>
             <div className="text-xs text-muted-foreground">
               {microsoftConfigured ? 'Two-way sync via OAuth' : 'Needs a one-time admin setup'}
             </div>

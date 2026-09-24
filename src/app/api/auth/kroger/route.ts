@@ -34,7 +34,7 @@ export async function GET(request: Request) {
       await redis.setEx(
         `kroger-oauth-state:${state}`,
         STATE_TTL,
-        JSON.stringify({ userId: auth.userId, redirectUri }),
+        JSON.stringify({ userId: auth.userId, redirectUri })
       );
     }
 
@@ -42,7 +42,7 @@ export async function GET(request: Request) {
     if (!url) {
       return NextResponse.json(
         { error: 'Kroger OAuth not configured. Add credentials in setup.' },
-        { status: 500 },
+        { status: 500 }
       );
     }
 
@@ -51,7 +51,7 @@ export async function GET(request: Request) {
     logError('Failed to initiate Kroger OAuth:', error);
     return NextResponse.json(
       { error: 'Failed to initiate Kroger authentication' },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

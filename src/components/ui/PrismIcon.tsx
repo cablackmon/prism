@@ -19,25 +19,25 @@ export function PrismIcon({ className, size = 24 }: PrismIconProps) {
       {/* Main center facet */}
       <path
         d="M12 4L7 9L12 14L17 9L12 4Z"
-        className="fill-slate-600 dark:fill-slate-200 stroke-slate-800 dark:stroke-white"
+        className="fill-slate-600 stroke-slate-800 dark:fill-slate-200 dark:stroke-white"
         strokeWidth="0.5"
       />
       {/* Left facet */}
       <path
         d="M7 9L4 13L9 18L12 14L7 9Z"
-        className="fill-slate-700 dark:fill-slate-300 stroke-slate-800 dark:stroke-white"
+        className="fill-slate-700 stroke-slate-800 dark:fill-slate-300 dark:stroke-white"
         strokeWidth="0.5"
       />
       {/* Right facet */}
       <path
         d="M17 9L20 13L15 18L12 14L17 9Z"
-        className="fill-slate-500 dark:fill-slate-100 stroke-slate-800 dark:stroke-white"
+        className="fill-slate-500 stroke-slate-800 dark:fill-slate-100 dark:stroke-white"
         strokeWidth="0.5"
       />
       {/* Bottom facet */}
       <path
         d="M12 14L9 18L12 21L15 18L12 14Z"
-        className="fill-slate-600 dark:fill-slate-200 stroke-slate-800 dark:stroke-white"
+        className="fill-slate-600 stroke-slate-800 dark:fill-slate-200 dark:stroke-white"
         strokeWidth="0.5"
       />
       {/* Light beam entering */}

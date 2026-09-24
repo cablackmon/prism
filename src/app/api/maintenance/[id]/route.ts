@@ -15,7 +15,11 @@ import { requireAuth } from '@/lib/auth';
 import { db } from '@/lib/db/client';
 import { maintenanceReminders, maintenanceCompletions, users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { createMaintenanceSchema, completeMaintenanceSchema, validateRequest } from '@/lib/validations';
+import {
+  createMaintenanceSchema,
+  completeMaintenanceSchema,
+  validateRequest,
+} from '@/lib/validations';
 import { logError } from '@/lib/utils/logError';
 
 /**
@@ -29,10 +33,7 @@ interface RouteParams {
  * GET /api/maintenance/[id]
  * Retrieves a single maintenance reminder by its ID.
  */
-export async function GET(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function GET(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -61,10 +62,7 @@ export async function GET(
       .where(eq(maintenanceReminders.id, id));
 
     if (!reminderWithUser) {
-      return NextResponse.json(
-        { error: 'Maintenance reminder not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Maintenance reminder not found' }, { status: 404 });
     }
 
     return NextResponse.json({
@@ -79,18 +77,17 @@ export async function GET(
       notes: reminderWithUser.notes,
       createdAt: reminderWithUser.createdAt.toISOString(),
       updatedAt: reminderWithUser.updatedAt.toISOString(),
-      assignedTo: reminderWithUser.assignedUserId ? {
-        id: reminderWithUser.assignedUserId,
-        name: reminderWithUser.assignedUserName,
-        color: reminderWithUser.assignedUserColor,
-      } : null,
+      assignedTo: reminderWithUser.assignedUserId
+        ? {
+            id: reminderWithUser.assignedUserId,
+            name: reminderWithUser.assignedUserName,
+            color: reminderWithUser.assignedUserColor,
+          }
+        : null,
     });
   } catch (error) {
     logError('Error fetching maintenance reminder:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch maintenance reminder' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch maintenance reminder' }, { status: 500 });
   }
 }
 
@@ -98,10 +95,7 @@ export async function GET(
  * PATCH /api/maintenance/[id]
  * Updates a specific maintenance reminder.
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -116,10 +110,7 @@ export async function PATCH(
       .where(eq(maintenanceReminders.id, id));
 
     if (!existingReminder) {
-      return NextResponse.json(
-        { error: 'Maintenance reminder not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Maintenance reminder not found' }, { status: 404 });
     }
 
     // Validate request body
@@ -138,17 +129,14 @@ export async function PATCH(
     };
 
     // Remove undefined values
-    Object.keys(updateData).forEach(key => {
+    Object.keys(updateData).forEach((key) => {
       if (updateData[key] === undefined) {
         delete updateData[key];
       }
     });
 
     // Execute update
-    await db
-      .update(maintenanceReminders)
-      .set(updateData)
-      .where(eq(maintenanceReminders.id, id));
+    await db.update(maintenanceReminders).set(updateData).where(eq(maintenanceReminders.id, id));
 
     // Fetch and return updated reminder
     const [updatedReminderWithUser] = await db
@@ -191,18 +179,17 @@ export async function PATCH(
       notes: updatedReminderWithUser.notes,
       createdAt: updatedReminderWithUser.createdAt.toISOString(),
       updatedAt: updatedReminderWithUser.updatedAt.toISOString(),
-      assignedTo: updatedReminderWithUser.assignedUserId ? {
-        id: updatedReminderWithUser.assignedUserId,
-        name: updatedReminderWithUser.assignedUserName,
-        color: updatedReminderWithUser.assignedUserColor,
-      } : null,
+      assignedTo: updatedReminderWithUser.assignedUserId
+        ? {
+            id: updatedReminderWithUser.assignedUserId,
+            name: updatedReminderWithUser.assignedUserName,
+            color: updatedReminderWithUser.assignedUserColor,
+          }
+        : null,
     });
   } catch (error) {
     logError('Error updating maintenance reminder:', error);
-    return NextResponse.json(
-      { error: 'Failed to update maintenance reminder' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to update maintenance reminder' }, { status: 500 });
   }
 }
 
@@ -210,10 +197,7 @@ export async function PATCH(
  * DELETE /api/maintenance/[id]
  * Deletes a specific maintenance reminder.
  */
-export async function DELETE(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -227,16 +211,11 @@ export async function DELETE(
       .where(eq(maintenanceReminders.id, id));
 
     if (!existingReminder) {
-      return NextResponse.json(
-        { error: 'Maintenance reminder not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Maintenance reminder not found' }, { status: 404 });
     }
 
     // Delete the reminder (CASCADE will delete completions)
-    await db
-      .delete(maintenanceReminders)
-      .where(eq(maintenanceReminders.id, id));
+    await db.delete(maintenanceReminders).where(eq(maintenanceReminders.id, id));
 
     return NextResponse.json({
       message: 'Maintenance reminder deleted successfully',
@@ -247,9 +226,6 @@ export async function DELETE(
     });
   } catch (error) {
     logError('Error deleting maintenance reminder:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete maintenance reminder' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to delete maintenance reminder' }, { status: 500 });
   }
 }

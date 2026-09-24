@@ -41,21 +41,36 @@ function makeChain() {
 const mockDelete = jest.fn();
 
 jest.mock('@/lib/db/client', () => ({
-  db: new Proxy({}, {
-    get: (_target, prop) => {
-      if (prop === 'delete') return (...a: unknown[]) => { mockDelete(...a); return makeChain(); };
-      // select, insert, update all return the chainable proxy
-      return () => makeChain();
-    },
-  }),
+  db: new Proxy(
+    {},
+    {
+      get: (_target, prop) => {
+        if (prop === 'delete')
+          return (...a: unknown[]) => {
+            mockDelete(...a);
+            return makeChain();
+          };
+        // select, insert, update all return the chainable proxy
+        return () => makeChain();
+      },
+    }
+  ),
 }));
 
 jest.mock('@/lib/db/schema', () => ({
   giftIdeas: {
-    id: 'id', name: 'name', url: 'url', notes: 'notes', price: 'price',
-    purchased: 'purchased', purchasedAt: 'purchasedAt', sortOrder: 'sortOrder',
-    createdAt: 'createdAt', updatedAt: 'updatedAt',
-    createdBy: 'createdBy', forUserId: 'forUserId',
+    id: 'id',
+    name: 'name',
+    url: 'url',
+    notes: 'notes',
+    price: 'price',
+    purchased: 'purchased',
+    purchasedAt: 'purchasedAt',
+    sortOrder: 'sortOrder',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt',
+    createdBy: 'createdBy',
+    forUserId: 'forUserId',
   },
   users: { id: 'id', name: 'name', role: 'role', color: 'color' },
 }));
@@ -70,7 +85,9 @@ jest.mock('drizzle-orm', () => ({
 
 jest.mock('drizzle-orm/pg-core', () => ({
   alias: jest.fn().mockReturnValue({
-    id: 'id', name: 'name', color: 'color',
+    id: 'id',
+    name: 'name',
+    color: 'color',
   }),
 }));
 
@@ -223,9 +240,7 @@ describe('GET /api/gift-ideas', () => {
   });
 
   it('filters by forUserId query parameter', async () => {
-    queryResults = [
-      [sampleIdea],
-    ];
+    queryResults = [[sampleIdea]];
 
     const res = await GET(makeGetRequest({ forUserId: 'child-1' }));
     const data = await res.json();
@@ -262,22 +277,31 @@ describe('POST /api/gift-ideas', () => {
   });
 
   it('creates a gift idea successfully', async () => {
-    const body = { forUserId: 'child-1', name: 'Lego Set', url: 'https://example.com', notes: 'Big one', price: '$49.99' };
+    const body = {
+      forUserId: 'child-1',
+      name: 'Lego Set',
+      url: 'https://example.com',
+      notes: 'Big one',
+      price: '$49.99',
+    };
 
     queryResults = [
-      [{ max: 2 }],  // max sort order query
-      [{              // insert returning
-        id: 'idea-new',
-        name: 'Lego Set',
-        url: 'https://example.com',
-        notes: 'Big one',
-        price: '$49.99',
-        purchased: false,
-        purchasedAt: null,
-        sortOrder: 3,
-        forUserId: 'child-1',
-        createdAt: now,
-      }],
+      [{ max: 2 }], // max sort order query
+      [
+        {
+          // insert returning
+          id: 'idea-new',
+          name: 'Lego Set',
+          url: 'https://example.com',
+          notes: 'Big one',
+          price: '$49.99',
+          purchased: false,
+          purchasedAt: null,
+          sortOrder: 3,
+          forUserId: 'child-1',
+          createdAt: now,
+        },
+      ],
     ];
 
     const res = await POST(makePostRequest(body));
@@ -345,18 +369,21 @@ describe('PATCH /api/gift-ideas/[id]', () => {
   it('allows the creator to update their idea', async () => {
     queryResults = [
       [{ id: 'idea-1', createdBy: 'parent-1' }], // ownership check
-      [{                                           // update returning
-        id: 'idea-1',
-        name: 'Updated Lego Set',
-        url: 'https://example.com/updated',
-        notes: 'Even bigger',
-        price: '$59.99',
-        purchased: false,
-        purchasedAt: null,
-        sortOrder: 0,
-        forUserId: 'child-1',
-        createdAt: now,
-      }],
+      [
+        {
+          // update returning
+          id: 'idea-1',
+          name: 'Updated Lego Set',
+          url: 'https://example.com/updated',
+          notes: 'Even bigger',
+          price: '$59.99',
+          purchased: false,
+          purchasedAt: null,
+          sortOrder: 0,
+          forUserId: 'child-1',
+          createdAt: now,
+        },
+      ],
     ];
 
     const res = await PATCH(makePatchRequest({ name: 'Updated Lego Set' }), routeParams);
@@ -408,18 +435,20 @@ describe('PATCH /api/gift-ideas/[id]', () => {
   it('handles purchased toggle with purchasedAt timestamp', async () => {
     queryResults = [
       [{ id: 'idea-1', createdBy: 'parent-1' }],
-      [{
-        id: 'idea-1',
-        name: 'Lego Set',
-        url: null,
-        notes: null,
-        price: null,
-        purchased: true,
-        purchasedAt: now,
-        sortOrder: 0,
-        forUserId: 'child-1',
-        createdAt: now,
-      }],
+      [
+        {
+          id: 'idea-1',
+          name: 'Lego Set',
+          url: null,
+          notes: null,
+          price: null,
+          purchased: true,
+          purchasedAt: now,
+          sortOrder: 0,
+          forUserId: 'child-1',
+          createdAt: now,
+        },
+      ],
     ];
 
     const res = await PATCH(makePatchRequest({ purchased: true }), routeParams);
@@ -500,26 +529,30 @@ describe('Gift Ideas CRUD flow', () => {
     // --- CREATE ---
     queryResults = [
       [{ max: -1 }], // max sort order
-      [{
-        id: 'idea-crud',
-        name: 'Board Game',
-        url: null,
-        notes: 'Family game night',
-        price: '$30',
-        purchased: false,
-        purchasedAt: null,
-        sortOrder: 0,
-        forUserId: 'child-1',
-        createdAt: now,
-      }],
+      [
+        {
+          id: 'idea-crud',
+          name: 'Board Game',
+          url: null,
+          notes: 'Family game night',
+          price: '$30',
+          purchased: false,
+          purchasedAt: null,
+          sortOrder: 0,
+          forUserId: 'child-1',
+          createdAt: now,
+        },
+      ],
     ];
 
-    const createRes = await POST(makePostRequest({
-      forUserId: 'child-1',
-      name: 'Board Game',
-      notes: 'Family game night',
-      price: '$30',
-    }));
+    const createRes = await POST(
+      makePostRequest({
+        forUserId: 'child-1',
+        name: 'Board Game',
+        notes: 'Family game night',
+        price: '$30',
+      })
+    );
     expect(createRes.status).toBe(201);
     const created = await createRes.json();
     expect(created.name).toBe('Board Game');
@@ -528,23 +561,25 @@ describe('Gift Ideas CRUD flow', () => {
     queryResults = [];
     queryIndex = 0;
     queryResults = [
-      [{
-        id: 'idea-crud',
-        name: 'Board Game',
-        url: null,
-        notes: 'Family game night',
-        price: '$30',
-        purchased: false,
-        purchasedAt: null,
-        sortOrder: 0,
-        createdAt: now,
-        forUserId: 'child-1',
-        forUserName: 'Timmy',
-        forUserColor: '#FF0000',
-        createdById: 'parent-1',
-        createdByName: 'Dad',
-        createdByColor: '#0000FF',
-      }],
+      [
+        {
+          id: 'idea-crud',
+          name: 'Board Game',
+          url: null,
+          notes: 'Family game night',
+          price: '$30',
+          purchased: false,
+          purchasedAt: null,
+          sortOrder: 0,
+          createdAt: now,
+          forUserId: 'child-1',
+          forUserName: 'Timmy',
+          forUserColor: '#FF0000',
+          createdById: 'parent-1',
+          createdByName: 'Dad',
+          createdByColor: '#0000FF',
+        },
+      ],
     ];
 
     const readRes = await GET(makeGetRequest());
@@ -558,24 +593,26 @@ describe('Gift Ideas CRUD flow', () => {
     queryIndex = 0;
     queryResults = [
       [{ id: 'idea-crud', createdBy: 'parent-1' }], // ownership check
-      [{
-        id: 'idea-crud',
-        name: 'Board Game Deluxe',
-        url: null,
-        notes: 'Upgraded edition',
-        price: '$45',
-        purchased: false,
-        purchasedAt: null,
-        sortOrder: 0,
-        forUserId: 'child-1',
-        createdAt: now,
-      }],
+      [
+        {
+          id: 'idea-crud',
+          name: 'Board Game Deluxe',
+          url: null,
+          notes: 'Upgraded edition',
+          price: '$45',
+          purchased: false,
+          purchasedAt: null,
+          sortOrder: 0,
+          forUserId: 'child-1',
+          createdAt: now,
+        },
+      ],
     ];
 
     const crudParams = { params: Promise.resolve({ id: 'idea-crud' }) };
     const updateRes = await PATCH(
       makePatchRequest({ name: 'Board Game Deluxe', notes: 'Upgraded edition', price: '$45' }),
-      crudParams,
+      crudParams
     );
     expect(updateRes.status).toBe(200);
     const updated = await updateRes.json();
@@ -584,14 +621,11 @@ describe('Gift Ideas CRUD flow', () => {
     // --- DELETE ---
     queryResults = [];
     queryIndex = 0;
-    queryResults = [
-      [{ id: 'idea-crud', name: 'Board Game Deluxe', createdBy: 'parent-1' }],
-      [],
-    ];
+    queryResults = [[{ id: 'idea-crud', name: 'Board Game Deluxe', createdBy: 'parent-1' }], []];
 
     const deleteRes = await DELETE_ROUTE(
       new NextRequest('http://localhost:3000/api/gift-ideas/idea-crud', { method: 'DELETE' }),
-      crudParams,
+      crudParams
     );
     expect(deleteRes.status).toBe(200);
     const deleted = await deleteRes.json();

@@ -48,63 +48,62 @@ export async function GET(request: NextRequest) {
 
     const cacheKey = `meals:${from && to ? `${from}_${to}` : weekOf || 'all'}`;
 
-    const data = await getCached(cacheKey, async () => {
-      const query = db
-        .select({
-          id: meals.id,
-          name: meals.name,
-          description: meals.description,
-          recipe: meals.recipe,
-          recipeUrl: meals.recipeUrl,
-          recipeId: meals.recipeId,
-          prepTime: meals.prepTime,
-          cookTime: meals.cookTime,
-          servings: meals.servings,
-          ingredients: meals.ingredients,
-          dayOfWeek: meals.dayOfWeek,
-          mealType: meals.mealType,
-          mealTime: meals.mealTime,
-          cookedAt: meals.cookedAt,
-          cookedById: meals.cookedBy,
-          weekOf: meals.weekOf,
-          date: meals.date,
-          source: meals.source,
-          sourceId: meals.sourceId,
-          createdAt: meals.createdAt,
-          createdById: users.id,
-          createdByName: users.name,
-          createdByColor: users.color,
-          cookedByUserId: cookedByUser.id,
-          cookedByUserName: cookedByUser.name,
-          cookedByUserColor: cookedByUser.color,
-        })
-        .from(meals)
-        .leftJoin(users, eq(meals.createdBy, users.id))
-        .leftJoin(cookedByUser, eq(meals.cookedBy, cookedByUser.id))
-        .orderBy(asc(meals.date), asc(meals.name));
+    const data = await getCached(
+      cacheKey,
+      async () => {
+        const query = db
+          .select({
+            id: meals.id,
+            name: meals.name,
+            description: meals.description,
+            recipe: meals.recipe,
+            recipeUrl: meals.recipeUrl,
+            recipeId: meals.recipeId,
+            prepTime: meals.prepTime,
+            cookTime: meals.cookTime,
+            servings: meals.servings,
+            ingredients: meals.ingredients,
+            dayOfWeek: meals.dayOfWeek,
+            mealType: meals.mealType,
+            mealTime: meals.mealTime,
+            cookedAt: meals.cookedAt,
+            cookedById: meals.cookedBy,
+            weekOf: meals.weekOf,
+            date: meals.date,
+            source: meals.source,
+            sourceId: meals.sourceId,
+            createdAt: meals.createdAt,
+            createdById: users.id,
+            createdByName: users.name,
+            createdByColor: users.color,
+            cookedByUserId: cookedByUser.id,
+            cookedByUserName: cookedByUser.name,
+            cookedByUserColor: cookedByUser.color,
+          })
+          .from(meals)
+          .leftJoin(users, eq(meals.createdBy, users.id))
+          .leftJoin(cookedByUser, eq(meals.cookedBy, cookedByUser.id))
+          .orderBy(asc(meals.date), asc(meals.name));
 
-      const conditions = [];
-      if (from && to) {
-        conditions.push(gte(meals.date, from), lte(meals.date, to));
-      } else if (weekOf) {
-        conditions.push(eq(meals.weekOf, weekOf));
-      }
+        const conditions = [];
+        if (from && to) {
+          conditions.push(gte(meals.date, from), lte(meals.date, to));
+        } else if (weekOf) {
+          conditions.push(eq(meals.weekOf, weekOf));
+        }
 
-      const results = conditions.length > 0
-        ? await query.where(and(...conditions))
-        : await query;
+        const results = conditions.length > 0 ? await query.where(and(...conditions)) : await query;
 
-      const formattedMeals = results.map(meal => formatMealRow(meal));
-      return { meals: formattedMeals };
-    }, 300);
+        const formattedMeals = results.map((meal) => formatMealRow(meal));
+        return { meals: formattedMeals };
+      },
+      300
+    );
 
     return NextResponse.json(data);
   } catch (error) {
     logError('Error fetching meals:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch meals' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch meals' }, { status: 500 });
   }
 }
 
@@ -189,10 +188,7 @@ export async function POST(request: NextRequest) {
       .returning();
 
     if (!newMeal) {
-      return NextResponse.json(
-        { error: 'Failed to create meal' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to create meal' }, { status: 500 });
     }
 
     await invalidateEntity('meals');
@@ -208,32 +204,32 @@ export async function POST(request: NextRequest) {
     // Note: Cannot use formatMealRow here because the insert().returning() result
     // lacks joined user fields (createdByName, createdByColor, cookedByUserName,
     // cookedByUserColor) that formatMealRow expects from the joined query in GET.
-    return NextResponse.json({
-      id: newMeal.id,
-      name: newMeal.name,
-      description: newMeal.description,
-      recipe: newMeal.recipe,
-      recipeUrl: newMeal.recipeUrl,
-      prepTime: newMeal.prepTime,
-      cookTime: newMeal.cookTime,
-      servings: newMeal.servings,
-      ingredients: newMeal.ingredients,
-      dayOfWeek: newMeal.dayOfWeek,
-      mealType: newMeal.mealType,
-      mealTime: newMeal.mealTime,
-      cookedAt: newMeal.cookedAt?.toISOString() || null,
-      cookedBy: newMeal.cookedBy,
-      weekOf: newMeal.weekOf,
-      source: newMeal.source,
-      sourceId: newMeal.sourceId,
-      createdAt: newMeal.createdAt.toISOString(),
-    }, { status: 201 });
+    return NextResponse.json(
+      {
+        id: newMeal.id,
+        name: newMeal.name,
+        description: newMeal.description,
+        recipe: newMeal.recipe,
+        recipeUrl: newMeal.recipeUrl,
+        prepTime: newMeal.prepTime,
+        cookTime: newMeal.cookTime,
+        servings: newMeal.servings,
+        ingredients: newMeal.ingredients,
+        dayOfWeek: newMeal.dayOfWeek,
+        mealType: newMeal.mealType,
+        mealTime: newMeal.mealTime,
+        cookedAt: newMeal.cookedAt?.toISOString() || null,
+        cookedBy: newMeal.cookedBy,
+        weekOf: newMeal.weekOf,
+        source: newMeal.source,
+        sourceId: newMeal.sourceId,
+        createdAt: newMeal.createdAt.toISOString(),
+      },
+      { status: 201 }
+    );
   } catch (error) {
     logError('Error creating meal:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.json(
-      { error: `Failed to create meal: ${errorMessage}` },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: `Failed to create meal: ${errorMessage}` }, { status: 500 });
   }
 }

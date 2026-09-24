@@ -1,0 +1,79 @@
+[
+  {
+    "id": "P1-fallback-validity",
+    "finding": "Validate WebGL2 before selecting the fallback",
+    "file": "src/lib/diagnostics/gpuBenchmark.ts",
+    "from": "  const webgl2Verdict = evaluateBackend('WebGL2', webgl2);",
+    "to": "  const webgl2Verdict = evaluateBackend('WebGL2', { ...webgl2, measurementFenced: true, renderedBlank: false, resolutionStatus: 'matched', sampleInvalidReason: null });",
+    "note": "restores fps-only selection of the WebGL2 fallback",
+    "verdict": "KILLED",
+    "failed": 5,
+    "tests": []
+  },
+  {
+    "id": "P1-clamped-resolution",
+    "finding": "Verify rendering at the measured resolution",
+    "file": "src/lib/diagnostics/gpuBenchmark.ts",
+    "from": "  return actual.width >= requested.width && actual.height >= requested.height\n    ? 'matched'\n    : 'clamped';",
+    "to": "  return 'matched';",
+    "note": "stops noticing a drawing buffer the driver shrank",
+    "verdict": "KILLED",
+    "failed": 2,
+    "tests": []
+  },
+  {
+    "id": "P2-zero-readback",
+    "finding": "Treat known all-zero readbacks as unavailable",
+    "file": "src/lib/diagnostics/gpuBenchmark.ts",
+    "from": "    if (control === 'broken') {",
+    "to": "    if (false as boolean) {",
+    "note": "calls a SwiftShader all-zero readback a genuinely blank canvas",
+    "verdict": "KILLED",
+    "failed": 2,
+    "tests": []
+  },
+  {
+    "id": "P2-hidden-tab",
+    "finding": "Exclude visibility-interrupted runs from the decision",
+    "file": "src/lib/diagnostics/gpuBenchmark.ts",
+    "from": "    sampleInvalidReason: match.interruptedByVisibilityChange\n      ? 'the tab was hidden during the run, which stalls the frame loop and invalidates the sample'\n      : null,",
+    "to": "    sampleInvalidReason: null,",
+    "note": "feeds a run measured behind a hidden tab into the gate",
+    "verdict": "KILLED",
+    "failed": 1,
+    "tests": []
+  },
+  {
+    "id": "P1-credit-unproven-black",
+    "finding": "Reject all-zero frames unless readback failure is independently proven",
+    "file": "src/lib/diagnostics/gpuBenchmark.ts",
+    "from": "    if (control === 'broken') {",
+    "to": "    if (control === 'broken' || control === 'untested') {",
+    "note": "restores crediting every all-zero frame, proven or not",
+    "verdict": "KILLED",
+    "failed": 2,
+    "tests": []
+  },
+  {
+    "id": "P1-control-defaults-permissive",
+    "finding": "Reject all-zero frames unless readback failure is independently proven",
+    "file": "src/lib/diagnostics/gpuBenchmark.ts",
+    "from": "  control: ReadbackControl = 'untested'",
+    "to": "  control: ReadbackControl = 'broken'",
+    "note": "makes an unprobed backend credit its own black frames",
+    "verdict": "KILLED",
+    "failed": 1,
+    "tests": []
+  },
+  {
+    "id": "P1-control-assumes-working",
+    "finding": "Reject all-zero frames unless readback failure is independently proven",
+    "file": "src/lib/diagnostics/gpuBenchmark.ts",
+    "from": "  if (uniqueColors === 0 || flatColor === null) return 'broken';",
+    "to": "  if (uniqueColors === 0 || flatColor === null) return 'working';",
+    "note": "treats a control that returned no pixels as proof readback works",
+    "verdict": "KILLED",
+    "failed": 1,
+    "tests": []
+  }
+]

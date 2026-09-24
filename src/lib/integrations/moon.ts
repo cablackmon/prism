@@ -58,7 +58,7 @@ export function getMoonData(lat: number, lon: number, date: Date = new Date()): 
 
   return {
     moonrise: times.rise instanceof Date ? times.rise : undefined,
-    moonset:  times.set  instanceof Date ? times.set  : undefined,
+    moonset: times.set instanceof Date ? times.set : undefined,
     moonPhase: illum.phase,
     moonIllumination: illum.fraction,
     moonPhaseName: phaseName(illum.phase),

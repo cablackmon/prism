@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
   if (limited) return limited;
 
   try {
-    const body = await request.json() as { selections?: Selection[] };
+    const body = (await request.json()) as { selections?: Selection[] };
     const selections = Array.isArray(body.selections) ? body.selections : [];
     if (selections.length === 0) {
       return NextResponse.json({ error: 'No selections provided' }, { status: 400 });
@@ -41,13 +41,13 @@ export async function POST(request: NextRequest) {
     if (!tokens) {
       return NextResponse.json(
         { error: 'Not connected to Kroger', code: 'KROGER_NOT_CONNECTED' },
-        { status: 401 },
+        { status: 401 }
       );
     }
 
     await addToCart(
       selections.map((s) => ({ upc: s.upc, quantity: s.quantity ?? 1 })),
-      tokens,
+      tokens
     );
 
     // Cache the chosen productId on each shopping item so the next send
@@ -57,8 +57,8 @@ export async function POST(request: NextRequest) {
         db
           .update(shoppingItems)
           .set({ krogerProductId: s.productId, updatedAt: new Date() })
-          .where(eq(shoppingItems.id, s.shoppingItemId)),
-      ),
+          .where(eq(shoppingItems.id, s.shoppingItemId))
+      )
     );
 
     return NextResponse.json({ ok: true, count: selections.length });

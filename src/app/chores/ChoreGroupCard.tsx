@@ -2,12 +2,7 @@
 
 import { format } from 'date-fns';
 import { isPast, differenceInDays, formatDistanceToNow } from 'date-fns';
-import {
-  CalendarDays,
-  Hourglass,
-  Settings,
-  Trash2,
-} from 'lucide-react';
+import { CalendarDays, Hourglass, Settings, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -56,14 +51,14 @@ export function ChoreGroupCard({
   return (
     <div
       className={cn(
-        'p-2 rounded-md border cursor-pointer hover:bg-muted/50 transition-colors group',
+        'group cursor-pointer rounded-md border p-2 transition-colors hover:bg-muted/50',
         isPendingApproval
-          ? 'bg-amber-50/80 dark:bg-amber-950/30 border-amber-500/50'
+          ? 'border-amber-500/50 bg-amber-50/80 dark:bg-amber-950/30'
           : isCompletedToday
-          ? 'opacity-60 bg-green-50/50 dark:bg-green-950/20 border-green-500/30'
-          : isOverdue
-          ? 'border-red-500/50 bg-red-50/50 dark:bg-red-950/20'
-          : 'border-border'
+            ? 'border-green-500/30 bg-green-50/50 opacity-60 dark:bg-green-950/20'
+            : isOverdue
+              ? 'border-red-500/50 bg-red-50/50 dark:bg-red-950/20'
+              : 'border-border'
       )}
       onClick={async () => {
         const success = await onComplete();
@@ -81,14 +76,12 @@ export function ChoreGroupCard({
       }}
     >
       <div className="flex items-start justify-between gap-2">
-        <div className="flex-1 min-w-0">
+        <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
-            {isPendingApproval && (
-              <Hourglass className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-            )}
+            {isPendingApproval && <Hourglass className="h-3.5 w-3.5 shrink-0 text-amber-500" />}
             <p
               className={cn(
-                'font-medium text-sm truncate',
+                'truncate text-sm font-medium',
                 isCompletedToday && !isPendingApproval && 'line-through',
                 isPendingApproval && 'text-amber-700 dark:text-amber-400'
               )}
@@ -97,7 +90,7 @@ export function ChoreGroupCard({
             </p>
           </div>
           {isPendingApproval && chore.pendingApproval && (
-            <div className="flex items-center gap-1 text-xs mt-0.5 text-amber-600 dark:text-amber-400">
+            <div className="mt-0.5 flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
               <span>Awaiting approval</span>
               <span className="text-muted-foreground">
                 &middot; {chore.pendingApproval.completedBy.name}
@@ -107,7 +100,7 @@ export function ChoreGroupCard({
           {!isPendingApproval && nextDue && !isCompletedToday && (
             <div
               className={cn(
-                'flex items-center gap-1 text-xs mt-0.5',
+                'mt-0.5 flex items-center gap-1 text-xs',
                 isOverdue ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'
               )}
             >
@@ -124,11 +117,11 @@ export function ChoreGroupCard({
             </div>
           )}
         </div>
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="flex shrink-0 items-center gap-1">
           {isPendingApproval && (
             <Badge
               variant="default"
-              className="text-[10px] bg-amber-500 hover:bg-amber-500 px-1.5 py-0"
+              className="bg-amber-500 px-1.5 py-0 text-[10px] hover:bg-amber-500"
             >
               Pending
             </Badge>
@@ -138,27 +131,38 @@ export function ChoreGroupCard({
               {chore.pointValue} pts
             </Badge>
           )}
+        </div>
+      </div>
+      <div
+        className="mt-2 flex flex-col gap-14 border-t border-border/60 pt-2"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-14 w-full gap-2"
+          aria-label={`Edit ${chore.title}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit();
+          }}
+        >
+          <Settings className="h-4 w-4" />
+          Edit
+        </Button>
+        <div className="w-full rounded-lg border border-destructive/30 bg-destructive/5 p-1">
           <Button
             variant="ghost"
             size="sm"
-            className="h-6 w-6 p-0 opacity-50 hover:opacity-100"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit();
-            }}
-          >
-            <Settings className="h-3 w-3" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive"
+            className="h-14 w-full gap-2 px-3 text-destructive hover:text-destructive"
+            aria-label={`Delete ${chore.title}`}
             onClick={(e) => {
               e.stopPropagation();
               onDelete();
             }}
           >
-            <Trash2 className="h-3 w-3" />
+            <Trash2 className="h-4 w-4" />
+            Delete
           </Button>
         </div>
       </div>

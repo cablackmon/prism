@@ -52,10 +52,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(sources);
   } catch (error) {
     logError('Error fetching shopping list sources:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch shopping list sources' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch shopping list sources' }, { status: 500 });
   }
 }
 
@@ -83,10 +80,7 @@ export async function POST(request: NextRequest) {
       .where(eq(shoppingLists.id, body.shoppingListId));
 
     if (!list) {
-      return NextResponse.json(
-        { error: 'Shopping list not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Shopping list not found' }, { status: 404 });
     }
 
     // Check for duplicate source
@@ -124,10 +118,7 @@ export async function POST(request: NextRequest) {
       .returning();
 
     if (!newSource) {
-      return NextResponse.json(
-        { error: 'Failed to create shopping list source' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to create shopping list source' }, { status: 500 });
     }
 
     await invalidateEntity('shopping-list-sources');
@@ -140,22 +131,22 @@ export async function POST(request: NextRequest) {
       summary: `Connected shopping list sync: ${newSource.provider} (${newSource.externalListName || newSource.externalListId})`,
     });
 
-    return NextResponse.json({
-      id: newSource.id,
-      userId: newSource.userId,
-      provider: newSource.provider,
-      externalListId: newSource.externalListId,
-      externalListName: newSource.externalListName,
-      shoppingListId: newSource.shoppingListId,
-      syncEnabled: newSource.syncEnabled,
-      lastSyncAt: newSource.lastSyncAt,
-      createdAt: newSource.createdAt,
-    }, { status: 201 });
+    return NextResponse.json(
+      {
+        id: newSource.id,
+        userId: newSource.userId,
+        provider: newSource.provider,
+        externalListId: newSource.externalListId,
+        externalListName: newSource.externalListName,
+        shoppingListId: newSource.shoppingListId,
+        syncEnabled: newSource.syncEnabled,
+        lastSyncAt: newSource.lastSyncAt,
+        createdAt: newSource.createdAt,
+      },
+      { status: 201 }
+    );
   } catch (error) {
     logError('Error creating shopping list source:', error);
-    return NextResponse.json(
-      { error: 'Failed to create shopping list source' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to create shopping list source' }, { status: 500 });
   }
 }

@@ -3,18 +3,36 @@ import { ClockWidget } from './ClockWidget';
 import { WeatherWidget } from './WeatherWidget';
 
 // Lazy-load non-default widgets to reduce initial bundle size
-const CalendarWidget = lazy(() => import('./CalendarWidget').then(m => ({ default: m.CalendarWidget })));
-const TasksWidget = lazy(() => import('./TasksWidget').then(m => ({ default: m.TasksWidget })));
-const MessagesWidget = lazy(() => import('./MessagesWidget').then(m => ({ default: m.MessagesWidget })));
-const ChoresWidget = lazy(() => import('./ChoresWidget').then(m => ({ default: m.ChoresWidget })));
-const ShoppingWidget = lazy(() => import('./ShoppingWidget').then(m => ({ default: m.ShoppingWidget })));
-const MealsWidget = lazy(() => import('./MealsWidget').then(m => ({ default: m.MealsWidget })));
-const BirthdaysWidget = lazy(() => import('./BirthdaysWidget').then(m => ({ default: m.BirthdaysWidget })));
-const PhotoWidget = lazy(() => import('./PhotoWidget').then(m => ({ default: m.PhotoWidget })));
-const PointsWidget = lazy(() => import('./PointsWidget').then(m => ({ default: m.PointsWidget })));
-const WishesWidget = lazy(() => import('./WishesWidget').then(m => ({ default: m.WishesWidget })));
-const BusTrackingWidget = lazy(() => import('./BusTrackingWidget').then(m => ({ default: m.BusTrackingWidget })));
-const TravelWidget = lazy(() => import('./TravelWidget').then(m => ({ default: m.TravelWidget })));
+const CalendarWidget = lazy(() =>
+  import('./CalendarWidget').then((m) => ({ default: m.CalendarWidget }))
+);
+const TasksWidget = lazy(() => import('./TasksWidget').then((m) => ({ default: m.TasksWidget })));
+const MessagesWidget = lazy(() =>
+  import('./MessagesWidget').then((m) => ({ default: m.MessagesWidget }))
+);
+const ChoresWidget = lazy(() =>
+  import('./ChoresWidget').then((m) => ({ default: m.ChoresWidget }))
+);
+const ShoppingWidget = lazy(() =>
+  import('./ShoppingWidget').then((m) => ({ default: m.ShoppingWidget }))
+);
+const MealsWidget = lazy(() => import('./MealsWidget').then((m) => ({ default: m.MealsWidget })));
+const BirthdaysWidget = lazy(() =>
+  import('./BirthdaysWidget').then((m) => ({ default: m.BirthdaysWidget }))
+);
+const PhotoWidget = lazy(() => import('./PhotoWidget').then((m) => ({ default: m.PhotoWidget })));
+const PointsWidget = lazy(() =>
+  import('./PointsWidget').then((m) => ({ default: m.PointsWidget }))
+);
+const WishesWidget = lazy(() =>
+  import('./WishesWidget').then((m) => ({ default: m.WishesWidget }))
+);
+const BusTrackingWidget = lazy(() =>
+  import('./BusTrackingWidget').then((m) => ({ default: m.BusTrackingWidget }))
+);
+const TravelWidget = lazy(() =>
+  import('./TravelWidget').then((m) => ({ default: m.TravelWidget }))
+);
 
 export interface WidgetProps {
   className?: string;
@@ -37,6 +55,25 @@ export interface WidgetRegistryEntry {
   maxH?: number;
   hasGrid?: boolean;
 }
+
+export const WIDGET_TYPES = [
+  'clock',
+  'weather',
+  'calendar',
+  'tasks',
+  'messages',
+  'chores',
+  'shopping',
+  'meals',
+  'birthdays',
+  'photos',
+  'points',
+  'wishes',
+  'busTracking',
+  'travel',
+] as const;
+
+export type WidgetType = (typeof WIDGET_TYPES)[number];
 
 export const WIDGET_REGISTRY: Record<string, WidgetRegistryEntry> = {
   clock: {
@@ -167,6 +204,37 @@ export const WIDGET_REGISTRY: Record<string, WidgetRegistryEntry> = {
     defaultH: 12,
   },
 };
+
+export type WidgetPageRoute = `/${string}`;
+
+/**
+ * Full-function page opened by a dashboard widget's double-tap gesture.
+ *
+ * A null entry is intentional: that widget has no equivalent full page. Keep
+ * this map exhaustive so adding a widget requires an explicit navigation
+ * decision instead of silently reviving the retired magnify behavior.
+ */
+export const WIDGET_ROUTE_MAP = {
+  clock: null,
+  weather: null,
+  calendar: '/calendar',
+  tasks: '/tasks',
+  messages: '/messages',
+  chores: '/chores',
+  shopping: '/shopping',
+  meals: '/meals',
+  birthdays: '/calendar',
+  photos: '/photos',
+  points: '/goals',
+  wishes: '/wishes',
+  busTracking: null,
+  travel: '/travel',
+} as const satisfies Record<WidgetType, WidgetPageRoute | null>;
+
+export function getWidgetRoute(widgetId: string): WidgetPageRoute | null {
+  if (!(widgetId in WIDGET_ROUTE_MAP)) return null;
+  return WIDGET_ROUTE_MAP[widgetId as WidgetType];
+}
 
 export const ALL_WIDGET_TYPES = Object.keys(WIDGET_REGISTRY);
 

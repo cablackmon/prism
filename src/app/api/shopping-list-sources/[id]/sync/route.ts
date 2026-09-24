@@ -33,10 +33,7 @@ interface RouteParams {
  *    - If deleted remotely: delete locally
  * 4. Update lastSyncAt timestamp
  */
-export async function POST(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function POST(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -53,26 +50,17 @@ export async function POST(
       .where(eq(shoppingListSources.id, sourceId));
 
     if (!source) {
-      return NextResponse.json(
-        { error: 'Shopping list source not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Shopping list source not found' }, { status: 404 });
     }
 
     if (!source.syncEnabled) {
-      return NextResponse.json(
-        { error: 'Sync is disabled for this source' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Sync is disabled for this source' }, { status: 400 });
     }
 
     // 2. Get the provider
     const provider = getShoppingProvider(source.provider);
     if (!provider) {
-      return NextResponse.json(
-        { error: `Unknown provider: ${source.provider}` },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: `Unknown provider: ${source.provider}` }, { status: 400 });
     }
 
     // 3. Prepare tokens (decrypt from storage)
@@ -100,7 +88,9 @@ export async function POST(
             .update(shoppingListSources)
             .set({
               accessToken: encrypt(newTokens.accessToken),
-              refreshToken: newTokens.refreshToken ? encrypt(newTokens.refreshToken) : source.refreshToken,
+              refreshToken: newTokens.refreshToken
+                ? encrypt(newTokens.refreshToken)
+                : source.refreshToken,
               tokenExpiresAt: newTokens.expiresAt,
               updatedAt: new Date(),
             })
@@ -217,11 +207,9 @@ async function performSync(
       );
 
     // Create maps for quick lookup
-    const remoteById = new Map(remoteItems.map(i => [i.id, i]));
+    const remoteById = new Map(remoteItems.map((i) => [i.id, i]));
     const localByExternalId = new Map(
-      localItems
-        .filter(i => i.externalId)
-        .map(i => [i.externalId!, i])
+      localItems.filter((i) => i.externalId).map((i) => [i.externalId!, i])
     );
 
     // Process remote items

@@ -52,25 +52,32 @@ interface UseGoalsResult {
     recurring?: boolean;
     recurrencePeriod?: 'weekly' | 'monthly' | 'yearly';
   }) => Promise<void>;
-  updateGoal: (id: string, data: Partial<{
-    name: string;
-    description?: string;
-    pointCost: number;
-    emoji?: string;
-    recurring: boolean;
-    recurrencePeriod: 'weekly' | 'monthly' | 'yearly';
-    active: boolean;
-  }>) => Promise<void>;
+  updateGoal: (
+    id: string,
+    data: Partial<{
+      name: string;
+      description?: string;
+      pointCost: number;
+      emoji?: string;
+      recurring: boolean;
+      recurrencePeriod: 'weekly' | 'monthly' | 'yearly';
+      active: boolean;
+    }>
+  ) => Promise<void>;
   deleteGoal: (id: string) => Promise<void>;
   reorderGoals: (goalIds: string[]) => Promise<void>;
   resetGoal: (goalId: string) => Promise<void>;
 }
 
-export function useGoals(options: { refreshInterval?: number; enabled?: boolean } = {}): UseGoalsResult {
+export function useGoals(
+  options: { refreshInterval?: number; enabled?: boolean } = {}
+): UseGoalsResult {
   const { refreshInterval = 2 * 60 * 1000, enabled = true } = options;
   const cached = navCacheGet<GoalsResponse>('/api/goals');
   const [goals, setGoals] = useState<Goal[]>(() => cached?.goals ?? []);
-  const [progress, setProgress] = useState<Record<string, Record<string, ChildProgress>>>(() => cached?.progress ?? {});
+  const [progress, setProgress] = useState<Record<string, Record<string, ChildProgress>>>(
+    () => cached?.progress ?? {}
+  );
   const [goalChildren, setGoalChildren] = useState<GoalChild[]>(() => cached?.children ?? []);
   const [loading, setLoading] = useState(!cached);
   const [error, setError] = useState<string | null>(null);
@@ -95,79 +102,105 @@ export function useGoals(options: { refreshInterval?: number; enabled?: boolean 
     }
   }, []);
 
-  const createGoal = useCallback(async (data: {
-    name: string;
-    description?: string;
-    pointCost: number;
-    emoji?: string;
-    recurring?: boolean;
-    recurrencePeriod?: 'weekly' | 'monthly' | 'yearly';
-  }) => {
-    const response = await fetch('/api/goals', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    if (!response.ok) {
-      const err = await response.json();
-      throw new Error(err.error || 'Failed to create goal');
-    }
-    await fetchGoals();
-  }, [fetchGoals]);
+  const createGoal = useCallback(
+    async (data: {
+      name: string;
+      description?: string;
+      pointCost: number;
+      emoji?: string;
+      recurring?: boolean;
+      recurrencePeriod?: 'weekly' | 'monthly' | 'yearly';
+    }) => {
+      const response = await fetch('/api/goals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to create goal');
+      }
+      await fetchGoals();
+    },
+    [fetchGoals]
+  );
 
-  const updateGoal = useCallback(async (id: string, data: Record<string, unknown>) => {
-    const response = await fetch(`/api/goals/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    if (!response.ok) {
-      const err = await response.json();
-      throw new Error(err.error || 'Failed to update goal');
-    }
-    await fetchGoals();
-  }, [fetchGoals]);
+  const updateGoal = useCallback(
+    async (id: string, data: Record<string, unknown>) => {
+      const response = await fetch(`/api/goals/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to update goal');
+      }
+      await fetchGoals();
+    },
+    [fetchGoals]
+  );
 
-  const deleteGoal = useCallback(async (id: string) => {
-    const response = await fetch(`/api/goals/${id}`, { method: 'DELETE' });
-    if (!response.ok) {
-      const err = await response.json();
-      throw new Error(err.error || 'Failed to delete goal');
-    }
-    await fetchGoals();
-  }, [fetchGoals]);
+  const deleteGoal = useCallback(
+    async (id: string) => {
+      const response = await fetch(`/api/goals/${id}`, { method: 'DELETE' });
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to delete goal');
+      }
+      await fetchGoals();
+    },
+    [fetchGoals]
+  );
 
-  const reorderGoals = useCallback(async (goalIds: string[]) => {
-    const response = await fetch('/api/goals/reorder', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ order: goalIds }),
-    });
-    if (!response.ok) {
-      const err = await response.json();
-      throw new Error(err.error || 'Failed to reorder goals');
-    }
-    await fetchGoals();
-  }, [fetchGoals]);
+  const reorderGoals = useCallback(
+    async (goalIds: string[]) => {
+      const response = await fetch('/api/goals/reorder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order: goalIds }),
+      });
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to reorder goals');
+      }
+      await fetchGoals();
+    },
+    [fetchGoals]
+  );
 
-  const resetGoal = useCallback(async (goalId: string) => {
-    const response = await fetch(`/api/goals/${goalId}/redeem`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-    });
-    if (!response.ok) {
-      const err = await response.json();
-      throw new Error(err.error || 'Failed to reset goal');
-    }
-    await fetchGoals();
-  }, [fetchGoals]);
+  const resetGoal = useCallback(
+    async (goalId: string) => {
+      const response = await fetch(`/api/goals/${goalId}/redeem`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to reset goal');
+      }
+      await fetchGoals();
+    },
+    [fetchGoals]
+  );
 
-  useEffect(() => { if (enabled) fetchGoals(); }, [fetchGoals, enabled]);
+  useEffect(() => {
+    if (enabled) fetchGoals();
+  }, [fetchGoals, enabled]);
 
   useVisibilityPolling(fetchGoals, enabled ? refreshInterval : 0);
 
   return {
-    goals, progress, goalChildren, loading, error,
-    refresh: fetchGoals, createGoal, updateGoal, deleteGoal, reorderGoals, resetGoal,
+    goals,
+    progress,
+    goalChildren,
+    loading,
+    error,
+    refresh: fetchGoals,
+    createGoal,
+    updateGoal,
+    deleteGoal,
+    reorderGoals,
+    resetGoal,
   };
 }

@@ -21,14 +21,20 @@ const MS_TODO_ICON_XS = (
 const GOOGLE_TASKS_ICON = (
   <svg className="h-5 w-5" viewBox="0 0 24 24">
     <path d="M22 5.18L10.59 16.6l-4.24-4.24 1.41-1.41 2.83 2.83 10-10L22 5.18z" fill="#4285F4" />
-    <path d="M19.79 20.79H4.21V5.21h8.79V3H4.21C2.99 3 2 3.99 2 5.21v15.58C2 22.01 2.99 23 4.21 23h15.58C21.01 23 22 22.01 22 20.79V12h-2.21v8.79z" fill="#4285F4" />
+    <path
+      d="M19.79 20.79H4.21V5.21h8.79V3H4.21C2.99 3 2 3.99 2 5.21v15.58C2 22.01 2.99 23 4.21 23h15.58C21.01 23 22 22.01 22 20.79V12h-2.21v8.79z"
+      fill="#4285F4"
+    />
   </svg>
 );
 
 const GOOGLE_TASKS_ICON_SM = (
   <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24">
     <path d="M22 5.18L10.59 16.6l-4.24-4.24 1.41-1.41 2.83 2.83 10-10L22 5.18z" fill="#4285F4" />
-    <path d="M19.79 20.79H4.21V5.21h8.79V3H4.21C2.99 3 2 3.99 2 5.21v15.58C2 22.01 2.99 23 4.21 23h15.58C21.01 23 22 22.01 22 20.79V12h-2.21v8.79z" fill="#4285F4" />
+    <path
+      d="M19.79 20.79H4.21V5.21h8.79V3H4.21C2.99 3 2 3.99 2 5.21v15.58C2 22.01 2.99 23 4.21 23h15.58C21.01 23 22 22.01 22 20.79V12h-2.21v8.79z"
+      fill="#4285F4"
+    />
   </svg>
 );
 
@@ -49,7 +55,7 @@ export const TASK_CONFIG: IntegrationConfig = {
   finalizeEndpoint: '/api/task-sources/finalize',
   oauthEntityParam: 'taskListId',
   returnSection: 'tasks',
-  deleteConfirmSuffix: 'Tasks already synced will remain in Prism.',
+  deleteConfirmSuffix: 'Tasks already synced will remain in KYST.',
   providers: {
     microsoft_todo: { name: 'Microsoft To-Do', icon: MS_TODO_ICON, color: '#0078D4' },
     google_tasks: { name: 'Google Tasks', icon: GOOGLE_TASKS_ICON, color: '#4285F4' },
@@ -73,7 +79,7 @@ export const SHOPPING_CONFIG: IntegrationConfig = {
   finalizeEndpoint: '/api/shopping-list-sources/finalize',
   oauthEntityParam: 'shoppingListId',
   returnSection: 'shopping',
-  deleteConfirmSuffix: 'Items already synced will remain in Prism.',
+  deleteConfirmSuffix: 'Items already synced will remain in KYST.',
   providers: {
     microsoft_todo: { name: 'Microsoft To-Do', icon: MS_TODO_ICON, color: '#0078D4' },
   },
@@ -94,7 +100,7 @@ export const WISH_CONFIG: IntegrationConfig = {
   finalizeEndpoint: '/api/wish-item-sources/finalize',
   oauthEntityParam: 'wishMemberId',
   returnSection: 'wish',
-  deleteConfirmSuffix: 'Items already synced will remain in Prism.',
+  deleteConfirmSuffix: 'Items already synced will remain in KYST.',
   providers: {
     microsoft_todo: { name: 'Microsoft To-Do', icon: MS_TODO_ICON, color: '#0078D4' },
   },

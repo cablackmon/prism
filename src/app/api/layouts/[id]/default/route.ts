@@ -9,26 +9,17 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-export async function POST(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function POST(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
   try {
     const { id } = await params;
 
-    const [existing] = await db
-      .select({ id: layouts.id })
-      .from(layouts)
-      .where(eq(layouts.id, id));
+    const [existing] = await db.select({ id: layouts.id }).from(layouts).where(eq(layouts.id, id));
 
     if (!existing) {
-      return NextResponse.json(
-        { error: 'Layout not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Layout not found' }, { status: 404 });
     }
 
     // Unset all other defaults
@@ -43,17 +34,11 @@ export async function POST(
       .set({ isDefault: true, updatedAt: new Date() })
       .where(eq(layouts.id, id));
 
-    const [updated] = await db
-      .select()
-      .from(layouts)
-      .where(eq(layouts.id, id));
+    const [updated] = await db.select().from(layouts).where(eq(layouts.id, id));
 
     return NextResponse.json(updated);
   } catch (error) {
     logError('Error setting default layout:', error);
-    return NextResponse.json(
-      { error: 'Failed to set default layout' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to set default layout' }, { status: 500 });
   }
 }

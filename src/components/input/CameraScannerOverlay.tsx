@@ -25,7 +25,9 @@ function makeAudioContext(): AudioContext | null {
     const ctx = new AudioContext();
     ctx.resume().catch(() => {});
     return ctx;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 function playBeep(ctx: AudioContext | null, type: 'success' | 'error' = 'success') {
@@ -51,7 +53,9 @@ function playBeep(ctx: AudioContext | null, type: 'success' | 'error' = 'success
       osc.stop(ctx.currentTime + 0.22);
     }
     setTimeout(() => ctx.close().catch(() => {}), 400);
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 }
 
 async function decodeImageFile(file: File): Promise<string | null> {
@@ -79,7 +83,9 @@ async function decodeImageFile(file: File): Promise<string | null> {
     const { BrowserMultiFormatReader } = await import('@zxing/browser');
     const result = await new BrowserMultiFormatReader().decodeFromCanvas(canvas);
     return result.getText();
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 export function CameraScannerOverlay({ onClose, onScan }: CameraScannerOverlayProps) {
@@ -95,8 +101,12 @@ export function CameraScannerOverlay({ onClose, onScan }: CameraScannerOverlayPr
   // Use refs so callbacks never go stale across async boundaries
   const onScanRef = useRef(onScan);
   const onCloseRef = useRef(onClose);
-  useEffect(() => { onScanRef.current = onScan; }, [onScan]);
-  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
+  useEffect(() => {
+    onScanRef.current = onScan;
+  }, [onScan]);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   // Continuous scanner (Android/Chrome): self-dismiss immediately then notify parent
   const handleSuccess = useCallback((barcode: string) => {
@@ -168,65 +178,91 @@ export function CameraScannerOverlay({ onClose, onScan }: CameraScannerOverlayPr
           <Camera className="h-5 w-5" />
           <span className="font-medium">Scan Barcode</span>
         </div>
-        <Button variant="ghost" size="icon" onClick={handleClose}
-          className="text-white hover:text-white hover:bg-white/20">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleClose}
+          className="text-white hover:bg-white/20 hover:text-white"
+        >
           <X className="h-5 w-5" />
         </Button>
       </div>
 
-      <div className="flex-1 flex flex-col items-center justify-center gap-6 px-6">
+      <div className="flex flex-1 flex-col items-center justify-center gap-6 px-6">
         {usePhotoMode ? (
           <>
-            <div className="flex flex-col items-center gap-3 text-white text-center">
+            <div className="flex flex-col items-center gap-3 text-center text-white">
               <ScanLine className="h-16 w-16 text-white/60" />
               <p className="text-base font-medium">Take a photo of the barcode</p>
               <p className="text-sm text-white/60">
                 Hold steady so the barcode fills the frame, then tap below.
               </p>
             </div>
-            <input ref={fileInputRef} type="file" accept="image/*" capture="environment"
-              className="hidden" onChange={handlePhotoCapture} />
-            <Button size="lg" className="gap-2 text-base px-8" disabled={photoDecoding}
-              onClick={handleOpenCamera}>
-              {photoDecoding
-                ? <><Loader2 className="h-5 w-5 animate-spin" /> Scanning...</>
-                : <><Camera className="h-5 w-5" /> Open Camera</>}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={handlePhotoCapture}
+            />
+            <Button
+              size="lg"
+              className="gap-2 px-8 text-base"
+              disabled={photoDecoding}
+              onClick={handleOpenCamera}
+            >
+              {photoDecoding ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" /> Scanning...
+                </>
+              ) : (
+                <>
+                  <Camera className="h-5 w-5" /> Open Camera
+                </>
+              )}
             </Button>
           </>
         ) : (
-          <div className="w-full flex-1 flex items-center justify-center relative overflow-hidden -mx-6">
-            <video ref={videoRef}
-              className={cn('w-full h-full object-cover', state !== 'scanning' && 'opacity-30')}
-              playsInline muted />
+          <div className="relative -mx-6 flex w-full flex-1 items-center justify-center overflow-hidden">
+            <video
+              ref={videoRef}
+              className={cn('h-full w-full object-cover', state !== 'scanning' && 'opacity-30')}
+              playsInline
+              muted
+            />
             {state === 'scanning' && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="relative w-64 h-40">
-                  <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-white rounded-tl" />
-                  <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-white rounded-tr" />
-                  <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-white rounded-bl" />
-                  <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-white rounded-br" />
-                  <div className="absolute inset-x-2 top-1/2 h-px bg-primary/80 animate-pulse" />
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                <div className="relative h-40 w-64">
+                  <div className="absolute left-0 top-0 h-8 w-8 rounded-tl border-l-2 border-t-2 border-white" />
+                  <div className="absolute right-0 top-0 h-8 w-8 rounded-tr border-r-2 border-t-2 border-white" />
+                  <div className="absolute bottom-0 left-0 h-8 w-8 rounded-bl border-b-2 border-l-2 border-white" />
+                  <div className="absolute bottom-0 right-0 h-8 w-8 rounded-br border-b-2 border-r-2 border-white" />
+                  <div className="absolute inset-x-2 top-1/2 h-px animate-pulse bg-primary/80" />
                 </div>
-                <p className="absolute bottom-8 text-white/70 text-sm">Point camera at barcode</p>
+                <p className="absolute bottom-8 text-sm text-white/70">Point camera at barcode</p>
               </div>
             )}
             {state === 'starting' && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-white">
-                <Loader2 className="h-8 w-8 animate-spin" /><p className="text-sm">Starting camera...</p>
+                <Loader2 className="h-8 w-8 animate-spin" />
+                <p className="text-sm">Starting camera...</p>
               </div>
             )}
             {state === 'error' && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-white px-8 text-center">
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-8 text-center text-white">
                 <AlertCircle className="h-10 w-10 text-destructive" />
                 <p className="font-medium">Camera unavailable</p>
                 <p className="text-sm text-white/70">{errorMessage}</p>
-                <Button variant="secondary" onClick={handleClose} className="mt-2">Close</Button>
+                <Button variant="secondary" onClick={handleClose} className="mt-2">
+                  Close
+                </Button>
               </div>
             )}
           </div>
         )}
       </div>
     </div>,
-    document.body,
+    document.body
   );
 }

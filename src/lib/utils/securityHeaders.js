@@ -28,7 +28,7 @@ function buildSecurityHeaders() {
   } else if (allowedAncestors) {
     const origins = allowedAncestors
       .split(',')
-      .map(o => o.trim())
+      .map((o) => o.trim())
       .filter(Boolean);
     frameAncestors = `frame-ancestors 'self' ${origins.join(' ')}`;
   } else {
@@ -52,8 +52,8 @@ function buildSecurityHeaders() {
     "media-src 'self' blob:",
     // PWA service worker
     "worker-src 'self' blob:",
-    // Prism never loads external frames
-    "frame-src 'none'",
+    // Screensavers may load a sealed same-origin document. External frames stay blocked.
+    "frame-src 'self'",
     // Block all plugin content (Flash, etc.)
     "object-src 'none'",
     // Prevent base tag injection attacks

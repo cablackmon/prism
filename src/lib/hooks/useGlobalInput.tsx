@@ -100,8 +100,8 @@ export function GlobalInputProvider({ children }: { children: React.ReactNode })
   const [virtualKeyboardEnabled, setVirtualKeyboardEnabled] = useState(true);
   useEffect(() => {
     fetch('/api/settings?key=input.virtualKeyboardEnabled')
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
         if (data?.value === false) setVirtualKeyboardEnabled(false);
       })
       .catch(() => {});
@@ -111,9 +111,10 @@ export function GlobalInputProvider({ children }: { children: React.ReactNode })
   const injectText = useCallback((text: string) => {
     const input = activeInputRef.current;
     if (!input) return;
-    const proto = input instanceof HTMLTextAreaElement
-      ? window.HTMLTextAreaElement.prototype
-      : window.HTMLInputElement.prototype;
+    const proto =
+      input instanceof HTMLTextAreaElement
+        ? window.HTMLTextAreaElement.prototype
+        : window.HTMLInputElement.prototype;
     const setter = Object.getOwnPropertyDescriptor(proto, 'value')?.set;
     if (!setter) return;
     setter.call(input, text);
@@ -124,7 +125,9 @@ export function GlobalInputProvider({ children }: { children: React.ReactNode })
 
   // Mirror keyboardVisible into a ref so the document event handlers (bound once)
   // can read the live value without re-binding.
-  useEffect(() => { keyboardVisibleRef.current = keyboardVisible; }, [keyboardVisible]);
+  useEffect(() => {
+    keyboardVisibleRef.current = keyboardVisible;
+  }, [keyboardVisible]);
 
   // ---- audio feedback ----
   const playBeep = useCallback(async () => {
@@ -143,67 +146,81 @@ export function GlobalInputProvider({ children }: { children: React.ReactNode })
       gain.connect(ctx.destination);
       osc.frequency.value = style === 'scan' ? 1800 : 1200;
       gain.gain.setValueAtTime(0.25, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + (style === 'scan' ? 0.08 : 0.15));
+      gain.gain.exponentialRampToValueAtTime(
+        0.001,
+        ctx.currentTime + (style === 'scan' ? 0.08 : 0.15)
+      );
       osc.start(ctx.currentTime);
       osc.stop(ctx.currentTime + 0.2);
-    } catch { /* ignore autoplay policy errors */ }
+    } catch {
+      /* ignore autoplay policy errors */
+    }
   }, []);
 
   // ---- barcode scan dispatch ----
-  const dispatchScan = useCallback(async (barcode: string) => {
-    suppressedForScan.current = true;
-    setTimeout(() => { suppressedForScan.current = false; }, 500);
-    playBeep();
+  const dispatchScan = useCallback(
+    async (barcode: string) => {
+      suppressedForScan.current = true;
+      setTimeout(() => {
+        suppressedForScan.current = false;
+      }, 500);
+      playBeep();
 
-    try {
-      const res = await fetch('/api/shopping/scan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ barcode }),
-      });
-      const data = await res.json() as {
-        found: boolean;
-        item?: { name: string };
-        action?: string;
-        itemId?: string;
-        listId?: string;
-      };
+      try {
+        const res = await fetch('/api/shopping/scan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ barcode }),
+        });
+        const data = (await res.json()) as {
+          found: boolean;
+          item?: { name: string };
+          action?: string;
+          itemId?: string;
+          listId?: string;
+        };
 
-      if (!data.found) {
-        toast({ title: `Unknown barcode`, description: `No product found for ${barcode}` });
-        return;
+        if (!data.found) {
+          toast({ title: `Unknown barcode`, description: `No product found for ${barcode}` });
+          return;
+        }
+
+        // Notify shopping page if open
+        window.dispatchEvent(new CustomEvent('prism:scan-result', { detail: data }));
+
+        const isOnShopping = window.location.pathname.startsWith('/shopping');
+        toast({
+          title:
+            data.action === 'updated_existing'
+              ? `${data.item!.name} already on list`
+              : `${data.item!.name} added`,
+          description: isOnShopping ? undefined : 'View shopping list',
+        });
+      } catch {
+        toast({ title: 'Scan failed', variant: 'destructive' });
       }
-
-      // Notify shopping page if open
-      window.dispatchEvent(new CustomEvent('prism:scan-result', { detail: data }));
-
-      const isOnShopping = window.location.pathname.startsWith('/shopping');
-      toast({
-        title: data.action === 'updated_existing'
-          ? `${data.item!.name} already on list`
-          : `${data.item!.name} added`,
-        description: isOnShopping ? undefined : 'View shopping list',
-      });
-    } catch {
-      toast({ title: 'Scan failed', variant: 'destructive' });
-    }
-  }, [playBeep]);
+    },
+    [playBeep]
+  );
 
   // ---- speech recognition ----
-  const handleSpeechResult = useCallback((transcript: string) => {
-    const editable = activeContentEditableRef.current;
-    if (editable) {
-      editable.focus();
-      document.execCommand('insertText', false, transcript);
-      textInjectedWhileOpen.current = true;
-      return;
-    }
-    const input = activeInputRef.current;
-    if (!input) return;
-    const current = input.value;
-    const sep = current.length > 0 && !current.endsWith(' ') ? ' ' : '';
-    injectText(current + sep + transcript);
-  }, [injectText]);
+  const handleSpeechResult = useCallback(
+    (transcript: string) => {
+      const editable = activeContentEditableRef.current;
+      if (editable) {
+        editable.focus();
+        document.execCommand('insertText', false, transcript);
+        textInjectedWhileOpen.current = true;
+        return;
+      }
+      const input = activeInputRef.current;
+      if (!input) return;
+      const current = input.value;
+      const sep = current.length > 0 && !current.endsWith(' ') ? ' ' : '';
+      injectText(current + sep + transcript);
+    },
+    [injectText]
+  );
 
   const speech = useSpeechRecognition(handleSpeechResult);
 
@@ -231,25 +248,28 @@ export function GlobalInputProvider({ children }: { children: React.ReactNode })
   }, []);
 
   // ---- setKeyboardVisible (public) ----
-  const setKeyboardVisible = useCallback((visible: boolean) => {
-    setKeyboardVisibleState(visible);
-    if (visible) {
-      textInjectedWhileOpen.current = false;
-    } else {
-      // Explicit close (↓ dismiss / Enter). Clear the keyboard-tap flag so the
-      // blur those keys trigger isn't caught by the focusout refocus guard,
-      // which would otherwise immediately reopen the keyboard.
-      pointerOnKeyboardRef.current = false;
-      if (!textInjectedWhileOpen.current) restoreScroll();
-      textInjectedWhileOpen.current = false;
-    }
-  }, [restoreScroll]);
+  const setKeyboardVisible = useCallback(
+    (visible: boolean) => {
+      setKeyboardVisibleState(visible);
+      if (visible) {
+        textInjectedWhileOpen.current = false;
+      } else {
+        // Explicit close (↓ dismiss / Enter). Clear the keyboard-tap flag so the
+        // blur those keys trigger isn't caught by the focusout refocus guard,
+        // which would otherwise immediately reopen the keyboard.
+        pointerOnKeyboardRef.current = false;
+        if (!textInjectedWhileOpen.current) restoreScroll();
+        textInjectedWhileOpen.current = false;
+      }
+    },
+    [restoreScroll]
+  );
 
   // ---- keyboard height CSS var ----
   useEffect(() => {
     document.documentElement.style.setProperty(
       '--keyboard-height',
-      keyboardVisible ? `${KEYBOARD_HEIGHT_VH}vh` : '0px',
+      keyboardVisible ? `${KEYBOARD_HEIGHT_VH}vh` : '0px'
     );
   }, [keyboardVisible]);
 
@@ -314,7 +334,10 @@ export function GlobalInputProvider({ children }: { children: React.ReactNode })
       // Restore focus and keep the keyboard open instead of tearing it down.
       if (pointerOnKeyboardRef.current) {
         const el = activeContentEditableRef.current ?? activeInputRef.current;
-        if (el) { el.focus({ preventScroll: true }); return; }
+        if (el) {
+          el.focus({ preventScroll: true });
+          return;
+        }
       }
       activeInputRef.current = null;
       activeContentEditableRef.current = null;
@@ -336,7 +359,7 @@ export function GlobalInputProvider({ children }: { children: React.ReactNode })
         if (buf.length >= 10) {
           const elapsed = buf[buf.length - 1]!.time - buf[0]!.time;
           if (elapsed < 100) {
-            const barcode = buf.map(b => b.char).join('');
+            const barcode = buf.map((b) => b.char).join('');
             barcodeBuffer.current = [];
             e.preventDefault();
             dispatchScan(barcode);
@@ -350,7 +373,7 @@ export function GlobalInputProvider({ children }: { children: React.ReactNode })
         const now = Date.now();
         barcodeBuffer.current.push({ char: e.key, time: now });
         const cutoff = now - 200;
-        barcodeBuffer.current = barcodeBuffer.current.filter(b => b.time >= cutoff);
+        barcodeBuffer.current = barcodeBuffer.current.filter((b) => b.time >= cutoff);
       } else {
         barcodeBuffer.current = [];
       }
@@ -367,32 +390,38 @@ export function GlobalInputProvider({ children }: { children: React.ReactNode })
       document.removeEventListener('focusout', onFocusOut);
       document.removeEventListener('keydown', onKeyDown);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMobile, virtualKeyboardEnabled, scrollInputIntoView, restoreScroll]);
 
-  const value = useMemo<GlobalInputContextValue>(() => ({
-    keyboardVisible,
-    isListening: speech.isListening,
-    isInputFocused,
-    isMobile,
-    activeInputRef,
-    activeContentEditableRef,
-    setKeyboardVisible,
-    setIsListening: () => {},
-    injectText,
-    startListening: speech.start,
-    stopListening: speech.stop,
-    virtualKeyboardEnabled,
-  }), [
-    keyboardVisible, speech.isListening, speech.start, speech.stop,
-    isInputFocused, isMobile, setKeyboardVisible, injectText, virtualKeyboardEnabled,
-  ]);
-
-  return (
-    <GlobalInputContext.Provider value={value}>
-      {children}
-    </GlobalInputContext.Provider>
+  const value = useMemo<GlobalInputContextValue>(
+    () => ({
+      keyboardVisible,
+      isListening: speech.isListening,
+      isInputFocused,
+      isMobile,
+      activeInputRef,
+      activeContentEditableRef,
+      setKeyboardVisible,
+      setIsListening: () => {},
+      injectText,
+      startListening: speech.start,
+      stopListening: speech.stop,
+      virtualKeyboardEnabled,
+    }),
+    [
+      keyboardVisible,
+      speech.isListening,
+      speech.start,
+      speech.stop,
+      isInputFocused,
+      isMobile,
+      setKeyboardVisible,
+      injectText,
+      virtualKeyboardEnabled,
+    ]
   );
+
+  return <GlobalInputContext.Provider value={value}>{children}</GlobalInputContext.Provider>;
 }
 
 // ---------------------------------------------------------------------------

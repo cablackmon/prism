@@ -14,22 +14,49 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 // --- Mock calendar sources ---
 const mockCalendarSources = [
   {
-    id: 'src-1', provider: 'google', dashboardCalendarName: 'Alice Cal',
-    displayName: null, color: '#FF0000', enabled: true, showInEventModal: true,
-    isFamily: false, groupId: 'group-1', groupName: 'Alice', groupColor: '#FF0000',
-    lastSynced: null, user: { id: 'user-1', name: 'Alice', color: '#FF0000' },
+    id: 'src-1',
+    provider: 'google',
+    dashboardCalendarName: 'Alice Cal',
+    displayName: null,
+    color: '#FF0000',
+    enabled: true,
+    showInEventModal: true,
+    isFamily: false,
+    groupId: 'group-1',
+    groupName: 'Alice',
+    groupColor: '#FF0000',
+    lastSynced: null,
+    user: { id: 'user-1', name: 'Alice', color: '#FF0000' },
   },
   {
-    id: 'src-2', provider: 'google', dashboardCalendarName: 'Bob Cal',
-    displayName: null, color: '#0000FF', enabled: true, showInEventModal: true,
-    isFamily: false, groupId: 'group-2', groupName: 'Bob', groupColor: '#0000FF',
-    lastSynced: null, user: { id: 'user-2', name: 'Bob', color: '#0000FF' },
+    id: 'src-2',
+    provider: 'google',
+    dashboardCalendarName: 'Bob Cal',
+    displayName: null,
+    color: '#0000FF',
+    enabled: true,
+    showInEventModal: true,
+    isFamily: false,
+    groupId: 'group-2',
+    groupName: 'Bob',
+    groupColor: '#0000FF',
+    lastSynced: null,
+    user: { id: 'user-2', name: 'Bob', color: '#0000FF' },
   },
   {
-    id: 'src-family', provider: 'google', dashboardCalendarName: 'Family',
-    displayName: null, color: '#F59E0B', enabled: true, showInEventModal: true,
-    isFamily: true, groupId: 'FAMILY', groupName: 'Family', groupColor: '#F59E0B',
-    lastSynced: null, user: null,
+    id: 'src-family',
+    provider: 'google',
+    dashboardCalendarName: 'Family',
+    displayName: null,
+    color: '#F59E0B',
+    enabled: true,
+    showInEventModal: true,
+    isFamily: true,
+    groupId: 'FAMILY',
+    groupName: 'Family',
+    groupColor: '#F59E0B',
+    lastSynced: null,
+    user: null,
   },
 ];
 
@@ -86,11 +113,10 @@ describe('useCalendarFilter', () => {
     it('uses API groups when available', async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({
-          groups: [
-            { id: 'api-group-1', name: 'API Group', color: '#00FF00', type: 'person' },
-          ],
-        }),
+        json: () =>
+          Promise.resolve({
+            groups: [{ id: 'api-group-1', name: 'API Group', color: '#00FF00', type: 'person' }],
+          }),
       });
 
       const { result } = renderHook(() => useCalendarFilter());
@@ -176,9 +202,15 @@ describe('useCalendarFilter', () => {
       });
 
       // Deselect all, then add two
-      act(() => { result.current.toggleCalendar('all'); });
-      act(() => { result.current.toggleCalendar('user-1'); });
-      act(() => { result.current.toggleCalendar('user-2'); });
+      act(() => {
+        result.current.toggleCalendar('all');
+      });
+      act(() => {
+        result.current.toggleCalendar('user-1');
+      });
+      act(() => {
+        result.current.toggleCalendar('user-2');
+      });
 
       expect(result.current.selectedCalendarIds.has('user-1')).toBe(true);
 
@@ -199,7 +231,9 @@ describe('useCalendarFilter', () => {
       });
 
       // Start from nothing
-      act(() => { result.current.toggleCalendar('all'); });
+      act(() => {
+        result.current.toggleCalendar('all');
+      });
       expect(result.current.selectedCalendarIds.has('all')).toBe(false);
 
       // Add each group individually
@@ -252,12 +286,16 @@ describe('useCalendarFilter', () => {
       });
 
       // Deselect all, then select only group-1
-      act(() => { result.current.toggleCalendar('all'); });
-      act(() => { result.current.toggleCalendar('group-1'); });
+      act(() => {
+        result.current.toggleCalendar('all');
+      });
+      act(() => {
+        result.current.toggleCalendar('group-1');
+      });
 
       const filtered = result.current.filterEvents(mockEvents as never[]);
       expect(filtered).toHaveLength(1);
-      expect((filtered[0] as typeof mockEvents[0]).title).toBe('Alice Event');
+      expect((filtered[0] as (typeof mockEvents)[0]).title).toBe('Alice Event');
     });
 
     it('filters events by user id (legacy fallback)', async () => {
@@ -268,12 +306,16 @@ describe('useCalendarFilter', () => {
       });
 
       // Deselect all, then select user-2
-      act(() => { result.current.toggleCalendar('all'); });
-      act(() => { result.current.toggleCalendar('user-2'); });
+      act(() => {
+        result.current.toggleCalendar('all');
+      });
+      act(() => {
+        result.current.toggleCalendar('user-2');
+      });
 
       const filtered = result.current.filterEvents(mockEvents as never[]);
       expect(filtered).toHaveLength(1);
-      expect((filtered[0] as typeof mockEvents[0]).title).toBe('Bob Event');
+      expect((filtered[0] as (typeof mockEvents)[0]).title).toBe('Bob Event');
     });
 
     it('excludes events with unknown calendar source', async () => {
@@ -284,9 +326,15 @@ describe('useCalendarFilter', () => {
       });
 
       // Select only some groups (not all — selecting all triggers auto-"all")
-      act(() => { result.current.toggleCalendar('all'); });
-      act(() => { result.current.toggleCalendar('group-1'); });
-      act(() => { result.current.toggleCalendar('group-2'); });
+      act(() => {
+        result.current.toggleCalendar('all');
+      });
+      act(() => {
+        result.current.toggleCalendar('group-1');
+      });
+      act(() => {
+        result.current.toggleCalendar('group-2');
+      });
 
       const filtered = result.current.filterEvents(mockEvents as never[]);
       const titles = filtered.map((e: { title: string }) => e.title);
@@ -306,9 +354,13 @@ describe('useCalendarFilter', () => {
       });
 
       // Deselect all, then re-select each group one by one
-      act(() => { result.current.toggleCalendar('all'); });
+      act(() => {
+        result.current.toggleCalendar('all');
+      });
       for (const g of result.current.calendarGroups) {
-        act(() => { result.current.toggleCalendar(g.id); });
+        act(() => {
+          result.current.toggleCalendar(g.id);
+        });
       }
 
       // Auto-"all" should be active now

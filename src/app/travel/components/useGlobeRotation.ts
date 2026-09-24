@@ -10,7 +10,9 @@ export function useGlobeRotation(
   const isRotatingRef = useRef(false);
   const overlayOpenRef = useRef(overlayOpen);
 
-  useEffect(() => { overlayOpenRef.current = overlayOpen; }, [overlayOpen]);
+  useEffect(() => {
+    overlayOpenRef.current = overlayOpen;
+  }, [overlayOpen]);
 
   const startRotation = useCallback(() => {
     if (!mapRef.current || isRotatingRef.current) return;
@@ -45,7 +47,10 @@ export function useGlobeRotation(
   useEffect(() => {
     if (overlayOpen) {
       stopRotation();
-      if (resumeTimerRef.current !== null) { clearTimeout(resumeTimerRef.current); resumeTimerRef.current = null; }
+      if (resumeTimerRef.current !== null) {
+        clearTimeout(resumeTimerRef.current);
+        resumeTimerRef.current = null;
+      }
     } else {
       scheduleResume();
     }
@@ -66,7 +71,10 @@ export function useGlobeRotation(
 
   const cleanup = useCallback(() => {
     stopRotation();
-    if (resumeTimerRef.current !== null) { clearTimeout(resumeTimerRef.current); resumeTimerRef.current = null; }
+    if (resumeTimerRef.current !== null) {
+      clearTimeout(resumeTimerRef.current);
+      resumeTimerRef.current = null;
+    }
   }, [stopRotation]);
 
   return { startRotation, stopRotation, scheduleResume, cleanup, overlayOpenRef };

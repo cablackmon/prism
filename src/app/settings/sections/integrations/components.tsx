@@ -37,10 +37,10 @@ export function StatusBanner({
   return (
     <div
       className={cn(
-        'p-4 rounded-lg flex items-center gap-3',
+        'flex items-center gap-3 rounded-lg p-4',
         message.type === 'error'
-          ? 'bg-destructive/10 text-destructive border border-destructive/20'
-          : 'bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20'
+          ? 'border border-destructive/20 bg-destructive/10 text-destructive'
+          : 'border border-green-500/20 bg-green-500/10 text-green-600 dark:text-green-400'
       )}
     >
       {message.type === 'error' ? (
@@ -49,10 +49,7 @@ export function StatusBanner({
         <CheckCircle2 className="h-5 w-5 shrink-0" />
       )}
       <span>{message.text}</span>
-      <button
-        onClick={onDismiss}
-        className="ml-auto text-sm underline hover:no-underline"
-      >
+      <button onClick={onDismiss} className="ml-auto text-sm underline hover:no-underline">
         Dismiss
       </button>
     </div>
@@ -83,24 +80,15 @@ export function SourceRow<S extends BaseSource>({
   extraActions?: React.ReactNode;
 }) {
   return (
-    <div
-      className={cn(
-        'p-4 rounded-lg border border-border',
-        !source.syncEnabled && 'opacity-60'
-      )}
-    >
+    <div className={cn('rounded-lg border border-border p-4', !source.syncEnabled && 'opacity-60')}>
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
           {providerInfo.icon}
           <div>
-            <div className="font-medium">
-              {source.externalListName || 'Unnamed List'}
-            </div>
+            <div className="font-medium">{source.externalListName || 'Unnamed List'}</div>
             <div className="text-xs text-muted-foreground">
               {providerInfo.name}
-              {source.userName && (
-                <span className="ml-2">• {source.userName}</span>
-              )}
+              {source.userName && <span className="ml-2">• {source.userName}</span>}
             </div>
           </div>
         </div>
@@ -124,7 +112,7 @@ export function SourceRow<S extends BaseSource>({
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+            className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
             onClick={onDelete}
             disabled={isUpdating}
           >
@@ -133,7 +121,7 @@ export function SourceRow<S extends BaseSource>({
         </div>
       </div>
 
-      <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
+      <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
           <div className="flex items-center gap-1">
             <span>{badge.label}:</span>
@@ -202,11 +190,13 @@ export function ConnectedSourcesCard<S extends BaseSource>({
   emptyExtra?: React.ReactNode;
 }) {
   const getProviderInfo = (provider: string): ProviderInfoEntry => {
-    return config.providers[provider] || {
-      name: provider,
-      icon: emptyIcon,
-      color: '#6B7280',
-    };
+    return (
+      config.providers[provider] || {
+        name: provider,
+        icon: emptyIcon,
+        color: '#6B7280',
+      }
+    );
   };
 
   return (
@@ -215,11 +205,9 @@ export function ConnectedSourcesCard<S extends BaseSource>({
         <div className="flex items-center justify-between">
           <div>
             <CardTitle>Connected Sources</CardTitle>
-            <CardDescription>
-              External lists syncing with Prism
-            </CardDescription>
+            <CardDescription>External lists syncing with KYST</CardDescription>
           </div>
-          {sources.filter(s => s.syncEnabled).length > 0 && (
+          {sources.filter((s) => s.syncEnabled).length > 0 && (
             <Button
               variant="outline"
               size="sm"
@@ -235,14 +223,12 @@ export function ConnectedSourcesCard<S extends BaseSource>({
       </CardHeader>
       <CardContent>
         {loading ? (
-          <div className="text-center py-4 text-muted-foreground">
-            Loading sources...
-          </div>
+          <div className="py-4 text-center text-muted-foreground">Loading sources...</div>
         ) : sources.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <Link2 className="h-12 w-12 mx-auto mb-3 opacity-50" />
+          <div className="py-8 text-center text-muted-foreground">
+            <Link2 className="mx-auto mb-3 h-12 w-12 opacity-50" />
             <p>{emptyText}</p>
-            <p className="text-sm mt-1">{emptySubtext}</p>
+            <p className="mt-1 text-sm">{emptySubtext}</p>
             {emptyExtra}
           </div>
         ) : (
@@ -296,21 +282,26 @@ export function ListSelectionModal({
   listIcon?: React.ReactNode;
 }) {
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) onClose();
+      }}
+    >
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{title || 'Select List'}</DialogTitle>
         </DialogHeader>
         <div className="py-4">
-          <p className="text-sm text-muted-foreground mb-4">
+          <p className="mb-4 text-sm text-muted-foreground">
             {description || 'Choose which list to sync'}
           </p>
           {loading ? (
-            <div className="text-center py-4 text-muted-foreground">
+            <div className="py-4 text-center text-muted-foreground">
               {loadingText || 'Loading lists...'}
             </div>
           ) : lists.length === 0 ? (
-            <div className="text-center py-4 text-muted-foreground">
+            <div className="py-4 text-center text-muted-foreground">
               {emptyText || 'No lists found'}
             </div>
           ) : (
@@ -320,7 +311,7 @@ export function ListSelectionModal({
                   key={list.id}
                   onClick={() => onSelect(list.id, list.name)}
                   disabled={finalizingConnection}
-                  className="w-full flex items-center gap-3 p-3 rounded-md border border-border hover:bg-accent transition-colors text-left disabled:opacity-50"
+                  className="flex w-full items-center gap-3 rounded-md border border-border p-3 text-left transition-colors hover:bg-accent disabled:opacity-50"
                 >
                   {listIcon || MS_TODO_ICON_SM}
                   <span className="font-medium">{list.name}</span>
@@ -375,12 +366,12 @@ export function ProviderPickerModal({
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
         <div className="py-4">
-          <p className="text-sm text-muted-foreground mb-4">{description}</p>
+          <p className="mb-4 text-sm text-muted-foreground">{description}</p>
           <div className="space-y-2">
             {onSelectMsTodo && (
               <button
                 onClick={onSelectMsTodo}
-                className="w-full flex items-center gap-3 p-3 rounded-md border border-border hover:bg-accent transition-colors text-left"
+                className="flex w-full items-center gap-3 rounded-md border border-border p-3 text-left transition-colors hover:bg-accent"
               >
                 <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="#0078D4">
                   <path d="M0 0h11.377v11.377H0zm12.623 0H24v11.377H12.623zM0 12.623h11.377V24H0zm12.623 0H24V24H12.623z" />
@@ -391,26 +382,30 @@ export function ProviderPickerModal({
                     Sync items as tasks in a To-Do list
                   </p>
                 </div>
-                <ExternalLink className="h-4 w-4 ml-auto text-muted-foreground" />
+                <ExternalLink className="ml-auto h-4 w-4 text-muted-foreground" />
               </button>
             )}
 
             {onSelectGoogleTasks && (
               <button
                 onClick={onSelectGoogleTasks}
-                className="w-full flex items-center gap-3 p-3 rounded-md border border-border hover:bg-accent transition-colors text-left"
+                className="flex w-full items-center gap-3 rounded-md border border-border p-3 text-left transition-colors hover:bg-accent"
               >
                 <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24">
-                  <path d="M22 5.18L10.59 16.6l-4.24-4.24 1.41-1.41 2.83 2.83 10-10L22 5.18z" fill="#4285F4" />
-                  <path d="M19.79 20.79H4.21V5.21h8.79V3H4.21C2.99 3 2 3.99 2 5.21v15.58C2 22.01 2.99 23 4.21 23h15.58C21.01 23 22 22.01 22 20.79V12h-2.21v8.79z" fill="#4285F4" />
+                  <path
+                    d="M22 5.18L10.59 16.6l-4.24-4.24 1.41-1.41 2.83 2.83 10-10L22 5.18z"
+                    fill="#4285F4"
+                  />
+                  <path
+                    d="M19.79 20.79H4.21V5.21h8.79V3H4.21C2.99 3 2 3.99 2 5.21v15.58C2 22.01 2.99 23 4.21 23h15.58C21.01 23 22 22.01 22 20.79V12h-2.21v8.79z"
+                    fill="#4285F4"
+                  />
                 </svg>
                 <div>
                   <span className="font-medium">Google Tasks</span>
-                  <p className="text-xs text-muted-foreground">
-                    Sync items with Google Tasks
-                  </p>
+                  <p className="text-xs text-muted-foreground">Sync items with Google Tasks</p>
                 </div>
-                <ExternalLink className="h-4 w-4 ml-auto text-muted-foreground" />
+                <ExternalLink className="ml-auto h-4 w-4 text-muted-foreground" />
               </button>
             )}
 
@@ -418,7 +413,7 @@ export function ProviderPickerModal({
               <button
                 key={p.name}
                 disabled
-                className="w-full flex items-center gap-3 p-3 rounded-md border border-border text-left opacity-50 cursor-not-allowed"
+                className="flex w-full cursor-not-allowed items-center gap-3 rounded-md border border-border p-3 text-left opacity-50"
               >
                 {p.icon}
                 <div>
@@ -472,7 +467,9 @@ export function EntityListCard<T extends { id: string; name: string }>({
 }) {
   return (
     <Card>
-      <CardHeader className={headerActions ? 'flex flex-row items-center justify-between' : undefined}>
+      <CardHeader
+        className={headerActions ? 'flex flex-row items-center justify-between' : undefined}
+      >
         <div>
           <CardTitle>{title}</CardTitle>
           <CardDescription>{description}</CardDescription>
@@ -481,13 +478,9 @@ export function EntityListCard<T extends { id: string; name: string }>({
       </CardHeader>
       <CardContent>
         {entitiesLoading ? (
-          <div className="text-center py-4 text-muted-foreground">
-            Loading...
-          </div>
+          <div className="py-4 text-center text-muted-foreground">Loading...</div>
         ) : entities.length === 0 ? (
-          <div className="text-center py-4 text-muted-foreground">
-            {emptyText}
-          </div>
+          <div className="py-4 text-center text-muted-foreground">{emptyText}</div>
         ) : (
           <div className="space-y-2">
             {entities.map((entity) => {
@@ -495,20 +488,25 @@ export function EntityListCard<T extends { id: string; name: string }>({
               return (
                 <div
                   key={entity.id}
-                  className="flex items-center justify-between p-3 rounded-md border border-border"
+                  className="flex items-center justify-between rounded-md border border-border p-3"
                 >
                   <div className="flex items-center gap-3">
                     {renderEntityIcon ? renderEntityIcon(entity) : entityIcon}
                     <div>
                       <span className="font-medium">{entity.name}</span>
                       {connectedSource && (
-                        <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                        <div className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
                           {config?.providers[connectedSource.provider]?.icon || (
                             <svg className="h-3 w-3" viewBox="0 0 24 24" fill="#0078D4">
                               <path d="M0 0h11.377v11.377H0zm12.623 0H24v11.377H12.623zM0 12.623h11.377V24H0zm12.623 0H24V24H12.623z" />
                             </svg>
                           )}
-                          <span>Synced with: {connectedSource.externalListName || config?.providers[connectedSource.provider]?.name || 'External'}</span>
+                          <span>
+                            Synced with:{' '}
+                            {connectedSource.externalListName ||
+                              config?.providers[connectedSource.provider]?.name ||
+                              'External'}
+                          </span>
                         </div>
                       )}
                       {/* CalDAV-backed entities don't have a task_source row
@@ -518,12 +516,13 @@ export function EntityListCard<T extends { id: string; name: string }>({
                           user can see "this list is auto-populated from
                           Apple iCloud" without needing to wire CalDAV into
                           task_sources. */}
-                      {!connectedSource && (entity as T & { linkedProvider?: string }).linkedProvider === 'caldav' && (
-                        <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                          <Cloud className="h-3 w-3" />
-                          <span>From Apple iCloud (read-only)</span>
-                        </div>
-                      )}
+                      {!connectedSource &&
+                        (entity as T & { linkedProvider?: string }).linkedProvider === 'caldav' && (
+                          <div className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                            <Cloud className="h-3 w-3" />
+                            <span>From Apple iCloud (read-only)</span>
+                          </div>
+                        )}
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
@@ -539,8 +538,7 @@ export function EntityListCard<T extends { id: string; name: string }>({
                             <Link2 className="h-4 w-4" />
                             Connect
                           </Button>
-                        )
-                    }
+                        )}
                   </div>
                 </div>
               );

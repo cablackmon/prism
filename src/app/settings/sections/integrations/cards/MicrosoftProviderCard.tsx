@@ -25,12 +25,7 @@ interface Props {
 }
 
 const MicrosoftIcon = () => (
-  <svg
-    className="h-6 w-6"
-    viewBox="0 0 24 24"
-    fill="#0078D4"
-    aria-hidden="true"
-  >
+  <svg className="h-6 w-6" viewBox="0 0 24 24" fill="#0078D4" aria-hidden="true">
     <path d="M0 0h11.377v11.377H0zm12.623 0H24v11.377H12.623zM0 12.623h11.377V24H0zm12.623 0H24V24H12.623z" />
   </svg>
 );
@@ -48,11 +43,7 @@ const handleConnect = () => {
 // way to recover from expired/revoked tokens without disconnecting.
 const handleReauth = handleConnect;
 
-export function MicrosoftProviderCard({
-  status,
-  onChange,
-  forceSubSectionOpen,
-}: Props) {
+export function MicrosoftProviderCard({ status, onChange, forceSubSectionOpen }: Props) {
   const { confirm, dialogProps } = useConfirmDialog();
   const [disconnecting, setDisconnecting] = React.useState(false);
   const oauthStatus = useOAuthConfigStatus();
@@ -75,7 +66,7 @@ export function MicrosoftProviderCard({
   const handleDisconnect = async () => {
     const ok = await confirm(
       'Disconnect Microsoft?',
-      'This will remove all Microsoft task, shopping, and wish-list sources. OneDrive photo sources will also disconnect. Items already synced remain in Prism.',
+      'This will remove all Microsoft task, shopping, and wish-list sources. OneDrive photo sources will also disconnect. Items already synced remain in KYST.'
     );
     if (!ok) return;
     setDisconnecting(true);
@@ -108,21 +99,13 @@ export function MicrosoftProviderCard({
 
   // To-Do and OneDrive can be authorized with different Microsoft accounts;
   // merge both providers' emails into one label (#100).
-  const allMsEmails = [
-    ...(ms?.accountEmails ?? []),
-    ...(od?.accountEmails ?? []),
-  ];
-  const connectedAs = connectedAsLabel(
-    ms?.accountEmail ?? od?.accountEmail ?? null,
-    allMsEmails,
-  );
+  const allMsEmails = [...(ms?.accountEmails ?? []), ...(od?.accountEmails ?? [])];
+  const connectedAs = connectedAsLabel(ms?.accountEmail ?? od?.accountEmail ?? null, allMsEmails);
 
   const description = connected
     ? [
         connectedAs,
-        taskCount > 0
-          ? `${taskCount} task list${taskCount === 1 ? '' : 's'}`
-          : null,
+        taskCount > 0 ? `${taskCount} task list${taskCount === 1 ? '' : 's'}` : null,
         shoppingCount > 0
           ? `${shoppingCount} shopping list${shoppingCount === 1 ? '' : 's'}`
           : null,
@@ -148,7 +131,7 @@ export function MicrosoftProviderCard({
       </Button>
     ) : connected ? (
       <Button variant="outline" size="sm" onClick={handleReauth}>
-        <RefreshCw className="h-4 w-4 mr-2" />
+        <RefreshCw className="mr-2 h-4 w-4" />
         Re-authenticate
       </Button>
     ) : (
@@ -198,7 +181,7 @@ export function MicrosoftProviderCard({
               size="sm"
               onClick={handleDisconnect}
               disabled={disconnecting}
-              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
             >
               {disconnecting ? 'Disconnecting…' : 'Disconnect Microsoft'}
             </Button>
@@ -268,15 +251,14 @@ export function MicrosoftProviderCard({
           }
           forceOpen={forceSubSectionOpen === 'microsoft-onedrive'}
         >
-          <div className="text-sm space-y-2">
+          <div className="space-y-2 text-sm">
             <p className="text-muted-foreground">
-              OneDrive shares the same Microsoft OAuth. Folders are configured
-              alongside other photo sources so cross-source priority stays
-              sensible.
+              OneDrive shares the same Microsoft OAuth. Folders are configured alongside other photo
+              sources so cross-source priority stays sensible.
             </p>
             <Link
               href="/settings?section=integrations#photo-sources"
-              className="text-primary hover:underline inline-flex items-center gap-1"
+              className="inline-flex items-center gap-1 text-primary hover:underline"
             >
               <ImageIcon className="h-3.5 w-3.5" />
               Go to Photo data sources

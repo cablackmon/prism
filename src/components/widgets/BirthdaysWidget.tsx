@@ -11,6 +11,7 @@
  */
 
 'use client';
+import { useBoardTheme } from '@/components/theme/KystTheme';
 
 import * as React from 'react';
 import { useTranslations, useLocale } from 'next-intl';
@@ -54,9 +55,10 @@ export const BirthdaysWidget = React.memo(function BirthdaysWidget({
   maxItems = 8,
   titleHref,
 }: BirthdaysWidgetProps) {
+  const nox = useBoardTheme() === 'nox';
   const t = useTranslations('birthdays');
   const locale = useLocale();
-  const items = birthdays.slice(0, maxItems);
+  const items = nox ? birthdays : birthdays.slice(0, maxItems);
 
   // Show only the whole rows that fit (no scrollbar, no half-cut last row).
   // Measure the REAL header + row heights from the rendered table rather than
@@ -84,7 +86,7 @@ export const BirthdaysWidget = React.memo(function BirthdaysWidget({
     ro.observe(el);
     return () => ro.disconnect();
   }, [items.length]);
-  const visible = items.slice(0, maxRows);
+  const visible = nox ? items : items.slice(0, maxRows);
 
   return (
     <WidgetContainer
@@ -95,20 +97,17 @@ export const BirthdaysWidget = React.memo(function BirthdaysWidget({
       titleHref={titleHref}
     >
       {items.length === 0 ? (
-        <WidgetEmpty
-          icon={<Emoji e="🎂" />}
-          message={t('empty')}
-        />
+        <WidgetEmpty icon={<Emoji e="🎂" />} message={t('empty')} />
       ) : (
-        <div ref={listRef} className="overflow-hidden h-full">
+        <div ref={listRef} className={cn(nox ? 'overflow-auto' : 'overflow-hidden', 'h-full')}>
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b text-xs text-muted-foreground">
-                <th className="text-left py-1 pr-2 font-medium">{t('colEvent')}</th>
-                <th className="text-right py-1 px-1 font-medium w-20">{t('colDays')}</th>
-                <th className="py-1 px-1 font-medium w-8"></th>
-                <th className="text-right py-1 px-1 font-medium w-10">{t('colYears')}</th>
-                <th className="text-right py-1 pl-2 font-medium w-16">{t('colDate')}</th>
+                <th className="py-1 pr-2 text-left font-medium">{t('colEvent')}</th>
+                <th className="w-20 px-1 py-1 text-right font-medium">{t('colDays')}</th>
+                <th className="w-8 px-1 py-1 font-medium"></th>
+                <th className="w-10 px-1 py-1 text-right font-medium">{t('colYears')}</th>
+                <th className="w-16 py-1 pl-2 text-right font-medium">{t('colDate')}</th>
               </tr>
             </thead>
             <tbody>
@@ -120,27 +119,30 @@ export const BirthdaysWidget = React.memo(function BirthdaysWidget({
                     item.daysUntil === 0 && 'bg-green-500/10'
                   )}
                 >
-                  <td className="py-1.5 pr-2 truncate max-w-[140px]" title={item.name}>
+                  <td className="max-w-[140px] truncate py-1.5 pr-2" title={item.name}>
                     {item.name}
                     {item.daysUntil === 0 && (
-                      <span className="ml-1.5 text-[10px] bg-green-600 text-white px-1 py-0.5 rounded">
+                      <span className="ml-1.5 rounded bg-green-600 px-1 py-0.5 text-[10px] text-white">
                         {t('todayBadge')}
                       </span>
                     )}
                   </td>
                   <td
                     data-keep-color
-                    className={cn('py-1.5 px-1 text-right tabular-nums', daysUntilColor(item.daysUntil))}
+                    className={cn(
+                      'px-1 py-1.5 text-right tabular-nums',
+                      daysUntilColor(item.daysUntil)
+                    )}
                   >
                     {t('daysUntil', { days: item.daysUntil })}
                   </td>
-                  <td className="py-1.5 px-1 text-center">
+                  <td className="px-1 py-1.5 text-center">
                     <Emoji e={TYPE_ICONS[item.eventType] || '⭐'} />
                   </td>
-                  <td className="py-1.5 px-1 text-right text-muted-foreground tabular-nums">
+                  <td className="px-1 py-1.5 text-right tabular-nums text-muted-foreground">
                     {item.age != null ? item.age : ''}
                   </td>
-                  <td className="py-1.5 pl-2 text-right text-muted-foreground whitespace-nowrap">
+                  <td className="whitespace-nowrap py-1.5 pl-2 text-right text-muted-foreground">
                     {formatDate(item.nextBirthday, locale)}
                   </td>
                 </tr>

@@ -16,10 +16,7 @@ interface RouteParams {
  *
  * Fetches available lists from the provider using the source's stored tokens.
  */
-export async function GET(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function GET(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -29,16 +26,10 @@ export async function GET(
   const { id: sourceId } = await params;
 
   try {
-    const [source] = await db
-      .select()
-      .from(taskSources)
-      .where(eq(taskSources.id, sourceId));
+    const [source] = await db.select().from(taskSources).where(eq(taskSources.id, sourceId));
 
     if (!source) {
-      return NextResponse.json(
-        { error: 'Task source not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Task source not found' }, { status: 404 });
     }
 
     if (!source.accessToken) {
@@ -50,10 +41,7 @@ export async function GET(
 
     const provider = getTaskProvider(source.provider);
     if (!provider) {
-      return NextResponse.json(
-        { error: `Unknown provider: ${source.provider}` },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: `Unknown provider: ${source.provider}` }, { status: 400 });
     }
 
     // Decrypt tokens
@@ -76,7 +64,9 @@ export async function GET(
             .update(taskSources)
             .set({
               accessToken: encrypt(newTokens.accessToken),
-              refreshToken: newTokens.refreshToken ? encrypt(newTokens.refreshToken) : source.refreshToken,
+              refreshToken: newTokens.refreshToken
+                ? encrypt(newTokens.refreshToken)
+                : source.refreshToken,
               tokenExpiresAt: newTokens.expiresAt,
               updatedAt: new Date(),
             })
@@ -101,9 +91,6 @@ export async function GET(
     return NextResponse.json({ lists });
   } catch (error) {
     logError('Error fetching provider lists:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch lists from provider' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch lists from provider' }, { status: 500 });
   }
 }

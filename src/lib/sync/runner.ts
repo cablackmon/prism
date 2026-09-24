@@ -18,7 +18,7 @@ export interface SyncSourceRef {
 export async function previewSync<TPayload>(
   adapter: EntitySyncAdapter<TPayload>,
   source: SyncSourceRef,
-  diffOptions?: Omit<ComputeDiffOptions, 'lastSynced'>,
+  diffOptions?: Omit<ComputeDiffOptions, 'lastSynced'>
 ): Promise<SyncDiff<TPayload>> {
   const [remote, local] = await Promise.all([
     adapter.fetchRemote(source.id),
@@ -39,7 +39,7 @@ export interface ApplyResult {
 export async function applySync<TPayload>(
   adapter: EntitySyncAdapter<TPayload>,
   sourceId: string,
-  changes: SyncChange<TPayload>[],
+  changes: SyncChange<TPayload>[]
 ): Promise<ApplyResult> {
   const applied = { add: 0, update: 0, delete: 0 };
   const errors: string[] = [];
@@ -57,7 +57,7 @@ export async function applySync<TPayload>(
       }
     } catch (err) {
       errors.push(
-        `Failed to ${change.kind} "${change.label}": ${err instanceof Error ? err.message : String(err)}`,
+        `Failed to ${change.kind} "${change.label}": ${err instanceof Error ? err.message : String(err)}`
       );
     }
   }

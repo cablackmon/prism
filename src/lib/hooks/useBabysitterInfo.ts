@@ -26,12 +26,15 @@ interface UseBabysitterInfoResult {
     isSensitive?: boolean;
     sortOrder?: number;
   }) => Promise<void>;
-  updateItem: (id: string, updates: Partial<{
-    section: BabysitterSection;
-    content: Record<string, unknown>;
-    isSensitive: boolean;
-    sortOrder: number;
-  }>) => Promise<void>;
+  updateItem: (
+    id: string,
+    updates: Partial<{
+      section: BabysitterSection;
+      content: Record<string, unknown>;
+      isSensitive: boolean;
+      sortOrder: number;
+    }>
+  ) => Promise<void>;
   deleteItem: (id: string) => Promise<void>;
   reorder: (section: BabysitterSection, itemIds: string[]) => Promise<void>;
   getBySection: (section: BabysitterSection) => BabysitterInfoItem[];
@@ -65,76 +68,88 @@ export function useBabysitterInfo(
     }
   }, [includeSensitive]);
 
-  const addItem = useCallback(async (item: {
-    section: BabysitterSection;
-    content: Record<string, unknown>;
-    isSensitive?: boolean;
-    sortOrder?: number;
-  }) => {
-    const response = await fetch('/api/babysitter-info', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(item),
-    });
-
-    if (!response.ok) {
-      const err = await response.json();
-      throw new Error(err.error || 'Failed to add babysitter info');
-    }
-
-    await fetchItems();
-  }, [fetchItems]);
-
-  const updateItem = useCallback(async (
-    id: string,
-    updates: Partial<{
+  const addItem = useCallback(
+    async (item: {
       section: BabysitterSection;
       content: Record<string, unknown>;
-      isSensitive: boolean;
-      sortOrder: number;
-    }>
-  ) => {
-    const response = await fetch(`/api/babysitter-info/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updates),
-    });
+      isSensitive?: boolean;
+      sortOrder?: number;
+    }) => {
+      const response = await fetch('/api/babysitter-info', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(item),
+      });
 
-    if (!response.ok) {
-      const err = await response.json();
-      throw new Error(err.error || 'Failed to update babysitter info');
-    }
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to add babysitter info');
+      }
 
-    await fetchItems();
-  }, [fetchItems]);
+      await fetchItems();
+    },
+    [fetchItems]
+  );
 
-  const deleteItem = useCallback(async (id: string) => {
-    const response = await fetch(`/api/babysitter-info/${id}`, {
-      method: 'DELETE',
-    });
+  const updateItem = useCallback(
+    async (
+      id: string,
+      updates: Partial<{
+        section: BabysitterSection;
+        content: Record<string, unknown>;
+        isSensitive: boolean;
+        sortOrder: number;
+      }>
+    ) => {
+      const response = await fetch(`/api/babysitter-info/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
 
-    if (!response.ok) {
-      const err = await response.json();
-      throw new Error(err.error || 'Failed to delete babysitter info');
-    }
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to update babysitter info');
+      }
 
-    await fetchItems();
-  }, [fetchItems]);
+      await fetchItems();
+    },
+    [fetchItems]
+  );
 
-  const reorder = useCallback(async (section: BabysitterSection, itemIds: string[]) => {
-    const response = await fetch('/api/babysitter-info/reorder', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ section, itemIds }),
-    });
+  const deleteItem = useCallback(
+    async (id: string) => {
+      const response = await fetch(`/api/babysitter-info/${id}`, {
+        method: 'DELETE',
+      });
 
-    if (!response.ok) {
-      const err = await response.json();
-      throw new Error(err.error || 'Failed to reorder babysitter info');
-    }
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to delete babysitter info');
+      }
 
-    await fetchItems();
-  }, [fetchItems]);
+      await fetchItems();
+    },
+    [fetchItems]
+  );
+
+  const reorder = useCallback(
+    async (section: BabysitterSection, itemIds: string[]) => {
+      const response = await fetch('/api/babysitter-info/reorder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ section, itemIds }),
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to reorder babysitter info');
+      }
+
+      await fetchItems();
+    },
+    [fetchItems]
+  );
 
   const getBySection = useCallback(
     (section: BabysitterSection) => items.filter((item) => item.section === section),

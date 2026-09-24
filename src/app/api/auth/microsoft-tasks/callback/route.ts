@@ -19,10 +19,15 @@ interface MicrosoftTokens {
   expires_in: number;
 }
 
-async function exchangeCodeForTokens(code: string, redirectUriOverride?: string): Promise<MicrosoftTokens> {
+async function exchangeCodeForTokens(
+  code: string,
+  redirectUriOverride?: string
+): Promise<MicrosoftTokens> {
   const clientId = process.env.MICROSOFT_CLIENT_ID;
   const clientSecret = process.env.MICROSOFT_CLIENT_SECRET;
-  const redirectUri = redirectUriOverride || process.env.MICROSOFT_TASKS_REDIRECT_URI ||
+  const redirectUri =
+    redirectUriOverride ||
+    process.env.MICROSOFT_TASKS_REDIRECT_URI ||
     `${BASE_URL}/api/auth/microsoft-tasks/callback`;
 
   if (!clientId || !clientSecret) {
@@ -86,8 +91,7 @@ export async function GET(request: Request) {
     : shoppingListId
       ? '#microsoft-shopping'
       : '#microsoft-tasks';
-  const errorAnchor =
-    returnSection === 'integrations' ? errorAnchorByEntity : '';
+  const errorAnchor = returnSection === 'integrations' ? errorAnchorByEntity : '';
 
   try {
     const code = searchParams.get('code');
@@ -108,7 +112,10 @@ export async function GET(request: Request) {
     }
 
     // Exchange code for tokens
-    const tokens = await exchangeCodeForTokens(code, resolveRedirectUri(request, '/api/auth/microsoft-tasks/callback')); // dynamic redirect URI per request (#124)
+    const tokens = await exchangeCodeForTokens(
+      code,
+      resolveRedirectUri(request, '/api/auth/microsoft-tasks/callback')
+    ); // dynamic redirect URI per request (#124)
     const tokenExpiresAt = new Date(Date.now() + tokens.expires_in * 1000);
 
     // Which Microsoft account this is, carried through the temp store to the
@@ -117,16 +124,12 @@ export async function GET(request: Request) {
 
     // Encrypt tokens for storage
     const encryptedAccessToken = encrypt(tokens.access_token);
-    const encryptedRefreshToken = tokens.refresh_token
-      ? encrypt(tokens.refresh_token)
-      : null;
+    const encryptedRefreshToken = tokens.refresh_token ? encrypt(tokens.refresh_token) : null;
 
     // Store tokens temporarily in Redis for MS list selection
     const redis = await getRedisClient();
     if (!redis) {
-      return NextResponse.redirect(
-        `${BASE_URL}/settings?section=tasks&error=redis_unavailable`
-      );
+      return NextResponse.redirect(`${BASE_URL}/settings?section=tasks&error=redis_unavailable`);
     }
 
     // Use appropriate key based on whether this is for tasks, shopping, or wish

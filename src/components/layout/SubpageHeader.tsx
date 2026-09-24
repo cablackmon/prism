@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Home, MoreVertical } from 'lucide-react';
 import { useIsMobile } from '@/lib/hooks/useIsMobile';
 import { cn } from '@/lib/utils';
@@ -34,14 +35,28 @@ export interface SubpageHeaderProps {
 
 export function SubpageHeader({ icon, title, badge, actions, overflow }: SubpageHeaderProps) {
   const isMobile = useIsMobile();
+  const pathname = usePathname();
+  const dashboardSlug = pathname.match(/^\/d\/([^/]+)(?:\/|$)/)?.[1];
+  const boardHref = dashboardSlug ? `/d/${dashboardSlug}` : '/';
 
   return (
-    <header className="flex-shrink-0 border-b border-border bg-card/85 backdrop-blur-sm px-4 safe-area-top">
-      <div className={cn('flex items-center justify-between', isMobile ? 'h-11' : 'h-12 [@media(pointer:coarse)]:h-16')}>
+    <header className="safe-area-top flex-shrink-0 border-b border-border bg-card/85 px-4 backdrop-blur-sm">
+      <div
+        className={cn(
+          'flex items-center justify-between',
+          isMobile ? 'h-11' : 'h-12 [@media(pointer:coarse)]:h-16'
+        )}
+      >
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" asChild className="hidden md:inline-flex">
-            <Link href="/" aria-label="Back to dashboard">
+          <Button
+            variant="ghost"
+            size="icon"
+            asChild
+            className="hidden h-11 w-auto gap-2 px-3 md:inline-flex [@media(pointer:coarse)]:h-14 [@media(pointer:coarse)]:px-5"
+          >
+            <Link href={boardHref} aria-label="Back to board">
               <Home className="h-5 w-5" />
+              <span className="hidden xl:inline">Back to board</span>
             </Link>
           </Button>
           <div className="flex items-center gap-2">
@@ -72,16 +87,20 @@ export function SubpageHeader({ icon, title, badge, actions, overflow }: Subpage
                             onCheckedChange={() => item.onClick()}
                             disabled={item.disabled}
                           >
-                            {IconComp && <IconComp className="h-4 w-4 mr-2" />}
+                            {IconComp && <IconComp className="mr-2 h-4 w-4" />}
                             {item.label}
                           </DropdownMenuCheckboxItem>
                         ) : (
                           <DropdownMenuItem
                             onClick={item.onClick}
                             disabled={item.disabled}
-                            className={item.destructive ? 'text-destructive focus:text-destructive' : undefined}
+                            className={
+                              item.destructive
+                                ? 'text-destructive focus:text-destructive'
+                                : undefined
+                            }
                           >
-                            {IconComp && <IconComp className="h-4 w-4 mr-2" />}
+                            {IconComp && <IconComp className="mr-2 h-4 w-4" />}
                             {item.label}
                           </DropdownMenuItem>
                         )}
@@ -96,7 +115,7 @@ export function SubpageHeader({ icon, title, badge, actions, overflow }: Subpage
                         onCheckedChange={() => item.onClick()}
                         disabled={item.disabled}
                       >
-                        {IconComp && <IconComp className="h-4 w-4 mr-2" />}
+                        {IconComp && <IconComp className="mr-2 h-4 w-4" />}
                         {item.label}
                       </DropdownMenuCheckboxItem>
                     );
@@ -106,9 +125,11 @@ export function SubpageHeader({ icon, title, badge, actions, overflow }: Subpage
                       key={i}
                       onClick={item.onClick}
                       disabled={item.disabled}
-                      className={item.destructive ? 'text-destructive focus:text-destructive' : undefined}
+                      className={
+                        item.destructive ? 'text-destructive focus:text-destructive' : undefined
+                      }
                     >
-                      {IconComp && <IconComp className="h-4 w-4 mr-2" />}
+                      {IconComp && <IconComp className="mr-2 h-4 w-4" />}
                       {item.label}
                     </DropdownMenuItem>
                   );

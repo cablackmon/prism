@@ -51,9 +51,9 @@ export async function POST(request: NextRequest) {
     const byNewUsage = new Map<string, string[]>();
     for (const row of rows) {
       const tags = new Set(
-        (row.usage ?? '').split(',').filter((t): t is UsageTag =>
-          VALID_TAGS.includes(t as UsageTag),
-        ),
+        (row.usage ?? '')
+          .split(',')
+          .filter((t): t is UsageTag => VALID_TAGS.includes(t as UsageTag))
       );
       if (action === 'add') tags.add(tag);
       else tags.delete(tag);

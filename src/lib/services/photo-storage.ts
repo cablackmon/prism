@@ -26,9 +26,10 @@ export async function savePhoto(
   const metadata = await image.metadata();
 
   // Resize original to max dimension, preserving aspect ratio
-  const resized = metadata.width && metadata.width > MAX_WIDTH
-    ? image.resize(MAX_WIDTH, undefined, { withoutEnlargement: true })
-    : image;
+  const resized =
+    metadata.width && metadata.width > MAX_WIDTH
+      ? image.resize(MAX_WIDTH, undefined, { withoutEnlargement: true })
+      : image;
 
   const originalPath = path.join(ORIGINALS_DIR, filename);
   const outputInfo = await resized.toFile(originalPath);
@@ -67,7 +68,5 @@ export async function deletePhoto(filename: string, thumbFilename?: string | nul
 }
 
 export function getPhotoPath(filename: string, thumb = false): string {
-  return thumb
-    ? path.join(THUMBS_DIR, filename)
-    : path.join(ORIGINALS_DIR, filename);
+  return thumb ? path.join(THUMBS_DIR, filename) : path.join(ORIGINALS_DIR, filename);
 }

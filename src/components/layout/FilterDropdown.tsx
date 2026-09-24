@@ -53,9 +53,10 @@ export function FilterDropdown({
   const activeCount = selected.size;
 
   // For single mode, show the selected label in the trigger
-  const singleLabel = mode === 'single' && selected.size === 1
-    ? options.find(o => selected.has(o.value))?.label
-    : null;
+  const singleLabel =
+    mode === 'single' && selected.size === 1
+      ? options.find((o) => selected.has(o.value))?.label
+      : null;
 
   const handleToggle = (value: string) => {
     if (mode === 'single') {
@@ -83,7 +84,7 @@ export function FilterDropdown({
         <Button
           variant={isActive ? 'secondary' : 'outline'}
           size="sm"
-          className={cn('h-8 gap-1 shrink-0', className)}
+          className={cn('h-8 shrink-0 gap-1', className)}
           aria-label={`${label}${activeCount > 0 ? `, ${activeCount} selected` : ''}`}
         >
           {icon}
@@ -102,7 +103,7 @@ export function FilterDropdown({
             {option.dividerBefore && (
               <>
                 <DropdownMenuSeparator />
-                <DropdownMenuLabel className="text-xs text-muted-foreground font-normal px-2 py-1">
+                <DropdownMenuLabel className="px-2 py-1 text-xs font-normal text-muted-foreground">
                   {option.dividerBefore}
                 </DropdownMenuLabel>
               </>
@@ -124,7 +125,7 @@ export function FilterDropdown({
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={clearAll}
-              className="text-muted-foreground justify-center text-xs"
+              className="justify-center text-xs text-muted-foreground"
             >
               Clear all
             </DropdownMenuItem>

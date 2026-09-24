@@ -41,31 +41,28 @@ export function CalendarFilterPopover({
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className={cn(
-          'p-1 rounded hover:bg-accent transition-colors',
-          open && 'bg-accent'
-        )}
+        className={cn('rounded p-1 transition-colors hover:bg-accent', open && 'bg-accent')}
         aria-label="Filter calendars"
       >
         <Filter className="h-3.5 w-3.5" />
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-1 z-50 bg-card border border-border rounded-lg shadow-lg p-2 min-w-[160px]">
+        <div className="absolute right-0 top-full z-50 mt-1 min-w-[160px] rounded-lg border border-border bg-card p-2 shadow-lg">
           {/* All toggle */}
           <button
             onClick={() => onToggle('all')}
             className={cn(
-              'w-full text-left px-2 py-1.5 rounded text-xs font-medium transition-colors',
+              'w-full rounded px-2 py-1.5 text-left text-xs font-medium transition-colors',
               allSelected
                 ? 'bg-primary text-primary-foreground'
-                : 'hover:bg-accent text-muted-foreground'
+                : 'text-muted-foreground hover:bg-accent'
             )}
           >
             All Calendars
           </button>
 
-          <div className="border-t border-border my-1" />
+          <div className="my-1 border-t border-border" />
 
           {/* Individual calendars */}
           {calendarGroups.map((group) => {
@@ -75,13 +72,17 @@ export function CalendarFilterPopover({
                 key={group.id}
                 onClick={() => onToggle(group.id)}
                 className={cn(
-                  'w-full text-left px-2 py-1.5 rounded text-xs font-medium transition-colors flex items-center gap-2',
-                  isSelected ? '' : 'hover:bg-accent text-muted-foreground'
+                  'flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs font-medium transition-colors',
+                  isSelected ? '' : 'text-muted-foreground hover:bg-accent'
                 )}
-                style={isSelected ? { backgroundColor: group.color, color: contrastText(group.color) } : undefined}
+                style={
+                  isSelected
+                    ? { backgroundColor: group.color, color: contrastText(group.color) }
+                    : undefined
+                }
               >
                 <span
-                  className="w-2 h-2 rounded-full flex-shrink-0 border border-white/60 dark:border-white/80"
+                  className="h-2 w-2 flex-shrink-0 rounded-full border border-white/60 dark:border-white/80"
                   style={{ backgroundColor: group.color }}
                 />
                 {group.name}

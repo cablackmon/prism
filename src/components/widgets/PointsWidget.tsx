@@ -1,5 +1,6 @@
 'use client';
 
+import { useBoardColor } from '@/components/theme/useBoardColor';
 import * as React from 'react';
 import { Emoji } from '@/components/ui/Emoji';
 import { cn } from '@/lib/utils';
@@ -24,10 +25,15 @@ export const PointsWidget = React.memo(function PointsWidget({
   error,
   titleHref = '/goals',
 }: PointsWidgetProps) {
+  const boardColor = useBoardColor();
   return (
     <WidgetContainer
       title="Points"
-      icon={<span className="text-sm"><Emoji e="🏆" /></span>}
+      icon={
+        <span className="text-sm">
+          <Emoji e="🏆" />
+        </span>
+      }
       loading={loading}
       error={error}
       titleHref={titleHref}
@@ -35,18 +41,18 @@ export const PointsWidget = React.memo(function PointsWidget({
       {goals.length === 0 ? (
         <WidgetEmpty message="No goals yet" />
       ) : (
-        <div className="space-y-3 p-2 overflow-y-auto h-full">
+        <div className="h-full space-y-3 overflow-y-auto p-2">
           {/* Per-child weekly counters */}
           {goalChildren.length > 0 && (
-            <div className="flex gap-3 flex-wrap">
+            <div className="flex flex-wrap gap-3">
               {goalChildren.map((child) => (
                 <div key={child.userId} className="flex items-center gap-1.5 text-xs">
                   <div
-                    className="w-2 h-2 rounded-full"
-                    style={{ backgroundColor: child.color }}
+                    className="h-2 w-2 rounded-full"
+                    style={{ backgroundColor: boardColor(child.color, child.name) }}
                   />
                   <span className="font-medium">{child.name}</span>
-                  <span className="text-muted-foreground tabular-nums">
+                  <span className="tabular-nums text-muted-foreground">
                     {child.counters.weekly}/wk
                   </span>
                 </div>
@@ -58,12 +64,12 @@ export const PointsWidget = React.memo(function PointsWidget({
           {goals.map((goal) => (
             <div key={goal.id} className="space-y-1">
               <div className="flex items-center gap-1.5 text-sm">
-                {goal.fullyAchieved && (
-                  <Check className="h-3.5 w-3.5 text-green-500 shrink-0" />
-                )}
-                <span><Emoji e={goal.emoji || '🎯'} /></span>
-                <span className="font-medium truncate">{goal.name}</span>
-                <span className="ml-auto text-xs text-muted-foreground tabular-nums shrink-0">
+                {goal.fullyAchieved && <Check className="h-3.5 w-3.5 shrink-0 text-green-500" />}
+                <span>
+                  <Emoji e={goal.emoji || '🎯'} />
+                </span>
+                <span className="truncate font-medium">{goal.name}</span>
+                <span className="ml-auto shrink-0 text-xs tabular-nums text-muted-foreground">
                   {goal.pointCost}pts
                 </span>
               </div>
@@ -75,17 +81,23 @@ export const PointsWidget = React.memo(function PointsWidget({
                 return (
                   <div key={child.userId} className="flex items-center gap-1.5">
                     {cp?.achieved ? (
-                      <Check className="h-3 w-3 shrink-0" style={{ color: child.color }} />
+                      <Check
+                        className="h-3 w-3 shrink-0"
+                        style={{ color: boardColor(child.color, child.name) }}
+                      />
                     ) : (
-                      <div className="w-3 h-3 shrink-0" />
+                      <div className="h-3 w-3 shrink-0" />
                     )}
-                    <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                    <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
                       <div
                         className="h-full rounded-full transition-all"
-                        style={{ width: `${pct}%`, backgroundColor: child.color }}
+                        style={{
+                          width: `${pct}%`,
+                          backgroundColor: boardColor(child.color, child.name),
+                        }}
                       />
                     </div>
-                    <span className="text-[10px] text-muted-foreground tabular-nums w-8 text-right">
+                    <span className="w-8 text-right text-[10px] tabular-nums text-muted-foreground">
                       {allocated}
                     </span>
                   </div>

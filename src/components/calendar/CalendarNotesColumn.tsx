@@ -25,7 +25,7 @@ export function CalendarNotesColumn({
         return (
           <div key={dateKey} className="border-b border-border/50">
             {!hideDateHeaders && (
-              <div className="px-3 pt-2 pb-1">
+              <div className="px-3 pb-1 pt-2">
                 <span className="text-xs font-medium text-muted-foreground">
                   {format(day, 'EEE, MMM d')}
                 </span>
@@ -35,7 +35,7 @@ export function CalendarNotesColumn({
               dateKey={dateKey}
               content={note?.content || ''}
               onNoteChange={onNoteChange}
-              className="px-3 pb-3 min-h-[48px]"
+              className="min-h-[48px] px-3 pb-3"
             />
           </div>
         );

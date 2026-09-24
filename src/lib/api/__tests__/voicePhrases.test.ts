@@ -23,42 +23,46 @@ describe('phraseEventList', () => {
   });
 
   it('renders a single timed event', () => {
-    expect(phraseEventList([
-      { title: 'Soccer Practice', startTime: at(16), allDay: false },
-    ])).toBe('Today you have Soccer Practice at 4 PM.');
+    expect(phraseEventList([{ title: 'Soccer Practice', startTime: at(16), allDay: false }])).toBe(
+      'Today you have Soccer Practice at 4 PM.'
+    );
   });
 
   it('renders an all-day event without a time', () => {
-    expect(phraseEventList([
-      { title: 'Beach Day', startTime: at(0), allDay: true },
-    ])).toBe('Today you have Beach Day, all day.');
+    expect(phraseEventList([{ title: 'Beach Day', startTime: at(0), allDay: true }])).toBe(
+      'Today you have Beach Day, all day.'
+    );
   });
 
   it('renders two events joined with "and"', () => {
-    expect(phraseEventList([
-      { title: 'Standup', startTime: at(9), allDay: false },
-      { title: 'Lunch', startTime: at(12, 30), allDay: false },
-    ])).toBe('Today you have Standup at 9 AM and Lunch at 12:30 PM.');
+    expect(
+      phraseEventList([
+        { title: 'Standup', startTime: at(9), allDay: false },
+        { title: 'Lunch', startTime: at(12, 30), allDay: false },
+      ])
+    ).toBe('Today you have Standup at 9 AM and Lunch at 12:30 PM.');
   });
 
   it('renders three or more events with Oxford comma', () => {
-    expect(phraseEventList([
-      { title: 'A', startTime: at(8), allDay: false },
-      { title: 'B', startTime: at(10), allDay: false },
-      { title: 'C', startTime: at(14), allDay: false },
-    ])).toBe('Today you have A at 8 AM, B at 10 AM, and C at 2 PM.');
+    expect(
+      phraseEventList([
+        { title: 'A', startTime: at(8), allDay: false },
+        { title: 'B', startTime: at(10), allDay: false },
+        { title: 'C', startTime: at(14), allDay: false },
+      ])
+    ).toBe('Today you have A at 8 AM, B at 10 AM, and C at 2 PM.');
   });
 
   it('omits zero minutes from the spoken time', () => {
-    expect(phraseEventList([
-      { title: 'Meeting', startTime: at(9, 0), allDay: false },
-    ])).toBe('Today you have Meeting at 9 AM.');
+    expect(phraseEventList([{ title: 'Meeting', startTime: at(9, 0), allDay: false }])).toBe(
+      'Today you have Meeting at 9 AM.'
+    );
   });
 
   it('includes non-zero minutes', () => {
-    expect(phraseEventList([
-      { title: 'Meeting', startTime: at(9, 15), allDay: false },
-    ])).toBe('Today you have Meeting at 9:15 AM.');
+    expect(phraseEventList([{ title: 'Meeting', startTime: at(9, 15), allDay: false }])).toBe(
+      'Today you have Meeting at 9:15 AM.'
+    );
   });
 });
 
@@ -76,24 +80,22 @@ describe('phraseUpcomingEvents', () => {
   });
 
   it('uses "today" for events on the same day', () => {
-    expect(phraseUpcomingEvents(
-      [{ title: 'Soccer', startTime: onDay(0, 16), allDay: false }],
-      now,
-    )).toBe('Coming up: Soccer today at 4 PM.');
+    expect(
+      phraseUpcomingEvents([{ title: 'Soccer', startTime: onDay(0, 16), allDay: false }], now)
+    ).toBe('Coming up: Soccer today at 4 PM.');
   });
 
   it('uses "tomorrow" for next-day events', () => {
-    expect(phraseUpcomingEvents(
-      [{ title: 'Dentist', startTime: onDay(1, 9), allDay: false }],
-      now,
-    )).toBe('Coming up: Dentist tomorrow at 9 AM.');
+    expect(
+      phraseUpcomingEvents([{ title: 'Dentist', startTime: onDay(1, 9), allDay: false }], now)
+    ).toBe('Coming up: Dentist tomorrow at 9 AM.');
   });
 
   it('uses weekday names within the next week', () => {
     // 2026-05-02 is a Saturday; +3 days = Tuesday
     const out = phraseUpcomingEvents(
       [{ title: 'Movie', startTime: onDay(3, 18), allDay: false }],
-      now,
+      now
     );
     expect(out).toMatch(/Coming up: Movie on (Sun|Mon|Tue|Wed|Thu|Fri|Sat)\w+ at 6 PM\./);
   });
@@ -105,7 +107,7 @@ describe('phraseUpcomingEvents', () => {
         { title: 'B', startTime: onDay(1, 11), allDay: false },
         { title: 'C', startTime: onDay(2, 12), allDay: false },
       ],
-      now,
+      now
     );
     expect(out).toContain(', and ');
     expect(out.startsWith('Coming up: ')).toBe(true);
@@ -122,8 +124,7 @@ describe('phraseTaskList', () => {
   });
 
   it('counts and joins multiple tasks', () => {
-    expect(phraseTaskList(['A', 'B', 'C']))
-      .toBe('You have 3 tasks today: A, B, and C.');
+    expect(phraseTaskList(['A', 'B', 'C'])).toBe('You have 3 tasks today: A, B, and C.');
   });
 });
 
@@ -137,8 +138,9 @@ describe('phraseFamilyMembers', () => {
   });
 
   it('joins multiple members with Oxford comma', () => {
-    expect(phraseFamilyMembers(['Alex', 'Jordan', 'Emma', 'Sophie']))
-      .toBe('Your family has Alex, Jordan, Emma, and Sophie.');
+    expect(phraseFamilyMembers(['Alex', 'Jordan', 'Emma', 'Sophie'])).toBe(
+      'Your family has Alex, Jordan, Emma, and Sophie.'
+    );
   });
 });
 
@@ -174,12 +176,24 @@ describe('phraseWeatherToday', () => {
 
   it('mentions precipitation only when probability is 30+%', () => {
     const wet = phraseWeatherToday({
-      location: 'X', currentTemp: 60, feelsLike: 60, description: 'Rain', high: 65, low: 55, precipProbability: 70,
+      location: 'X',
+      currentTemp: 60,
+      feelsLike: 60,
+      description: 'Rain',
+      high: 65,
+      low: 55,
+      precipProbability: 70,
     });
     expect(wet).toContain('70 percent chance of precipitation');
 
     const dry = phraseWeatherToday({
-      location: 'X', currentTemp: 60, feelsLike: 60, description: 'Sun', high: 65, low: 55, precipProbability: 10,
+      location: 'X',
+      currentTemp: 60,
+      feelsLike: 60,
+      description: 'Sun',
+      high: 65,
+      low: 55,
+      precipProbability: 10,
     });
     expect(dry).not.toContain('precipitation');
   });
@@ -199,8 +213,9 @@ describe('phraseBusStatus', () => {
   });
 
   it('mentions student name when scoped + empty', () => {
-    expect(phraseBusStatus([], { student: 'Emma' }))
-      .toBe('No bus routes are scheduled for Emma today.');
+    expect(phraseBusStatus([], { student: 'Emma' })).toBe(
+      'No bus routes are scheduled for Emma today.'
+    );
   });
 
   it('renders ETA for in-transit', () => {
@@ -211,15 +226,24 @@ describe('phraseBusStatus', () => {
   });
 
   it('renders at_stop / at_school', () => {
-    expect(phraseBusStatus([mk({ prediction: { status: 'at_stop', etaMinutes: null, lastCheckpointName: null } })]))
-      .toContain('arrived at the stop');
-    expect(phraseBusStatus([mk({ prediction: { status: 'at_school', etaMinutes: null, lastCheckpointName: null } })]))
-      .toContain('arrived at school');
+    expect(
+      phraseBusStatus([
+        mk({ prediction: { status: 'at_stop', etaMinutes: null, lastCheckpointName: null } }),
+      ])
+    ).toContain('arrived at the stop');
+    expect(
+      phraseBusStatus([
+        mk({ prediction: { status: 'at_school', etaMinutes: null, lastCheckpointName: null } }),
+      ])
+    ).toContain('arrived at school');
   });
 
   it('falls back when no live data yet', () => {
-    expect(phraseBusStatus([mk({ prediction: { status: 'cold_start', etaMinutes: null, lastCheckpointName: null } })]))
-      .toContain('no live data yet');
+    expect(
+      phraseBusStatus([
+        mk({ prediction: { status: 'cold_start', etaMinutes: null, lastCheckpointName: null } }),
+      ])
+    ).toContain('no live data yet');
   });
 });
 
@@ -236,19 +260,23 @@ describe('phraseUpcomingBirthdays', () => {
   });
 
   it('renders a single birthday with turning age', () => {
-    const out = phraseUpcomingBirthdays([
-      { name: 'Emma', eventType: 'birthday', next: at(2), turning: 8 },
-    ], now);
+    const out = phraseUpcomingBirthdays(
+      [{ name: 'Emma', eventType: 'birthday', next: at(2), turning: 8 }],
+      now
+    );
     expect(out).toMatch(/Coming up: Emma's birthday on/);
     expect(out).toContain('turning 8');
   });
 
   it('joins multiple with Oxford comma', () => {
-    const out = phraseUpcomingBirthdays([
-      { name: 'Emma', eventType: 'birthday', next: at(2), turning: null },
-      { name: 'Sophie', eventType: 'birthday', next: at(10), turning: null },
-      { name: 'Alex', eventType: 'birthday', next: at(20), turning: null },
-    ], now);
+    const out = phraseUpcomingBirthdays(
+      [
+        { name: 'Emma', eventType: 'birthday', next: at(2), turning: null },
+        { name: 'Sophie', eventType: 'birthday', next: at(10), turning: null },
+        { name: 'Alex', eventType: 'birthday', next: at(20), turning: null },
+      ],
+      now
+    );
     expect(out).toContain(', and ');
   });
 });
@@ -259,16 +287,19 @@ describe('phraseTodayMeals', () => {
   });
 
   it('renders a single meal', () => {
-    expect(phraseTodayMeals([{ name: 'Tacos', mealType: 'dinner' }]))
-      .toBe("Today's plan is dinner: Tacos.");
+    expect(phraseTodayMeals([{ name: 'Tacos', mealType: 'dinner' }])).toBe(
+      "Today's plan is dinner: Tacos."
+    );
   });
 
   it('joins multiple meals', () => {
-    expect(phraseTodayMeals([
-      { name: 'Oatmeal', mealType: 'breakfast' },
-      { name: 'Salad', mealType: 'lunch' },
-      { name: 'Tacos', mealType: 'dinner' },
-    ])).toBe("Today's meals: breakfast: Oatmeal, lunch: Salad, and dinner: Tacos.");
+    expect(
+      phraseTodayMeals([
+        { name: 'Oatmeal', mealType: 'breakfast' },
+        { name: 'Salad', mealType: 'lunch' },
+        { name: 'Tacos', mealType: 'dinner' },
+      ])
+    ).toBe("Today's meals: breakfast: Oatmeal, lunch: Salad, and dinner: Tacos.");
   });
 });
 
@@ -282,18 +313,19 @@ describe('phraseTodayChores', () => {
   });
 
   it('handles a single chore (anonymous)', () => {
-    expect(phraseTodayChores(['Take out trash']))
-      .toBe('You have one chore today: Take out trash.');
+    expect(phraseTodayChores(['Take out trash'])).toBe('You have one chore today: Take out trash.');
   });
 
   it('handles a single chore (named)', () => {
-    expect(phraseTodayChores(['Feed the dog'], 'Emma'))
-      .toBe('Emma has one chore today: Feed the dog.');
+    expect(phraseTodayChores(['Feed the dog'], 'Emma')).toBe(
+      'Emma has one chore today: Feed the dog.'
+    );
   });
 
   it('counts and joins multiple chores', () => {
-    expect(phraseTodayChores(['A', 'B', 'C'], 'Emma'))
-      .toBe('Emma has 3 chores today: A, B, and C.');
+    expect(phraseTodayChores(['A', 'B', 'C'], 'Emma')).toBe(
+      'Emma has 3 chores today: A, B, and C.'
+    );
   });
 });
 
@@ -312,7 +344,7 @@ describe('phraseRecentMessages', () => {
   it('renders a single message', () => {
     const out = phraseRecentMessages(
       [{ message: 'soccer at 4', authorName: 'Alex', createdAt: at(0) }],
-      now,
+      now
     );
     expect(out).toBe('Latest message from Alex today: soccer at 4.');
   });
@@ -320,7 +352,7 @@ describe('phraseRecentMessages', () => {
   it('falls back when authorName is null', () => {
     const out = phraseRecentMessages(
       [{ message: 'hello', authorName: null, createdAt: at(0) }],
-      now,
+      now
     );
     expect(out).toBe('Latest message from today: hello.');
   });
@@ -331,7 +363,7 @@ describe('phraseRecentMessages', () => {
         { message: 'first', authorName: 'Alex', createdAt: at(0) },
         { message: 'second', authorName: 'Jordan', createdAt: at(1) },
       ],
-      now,
+      now
     );
     expect(out).toBe('Recent messages: Alex today: first and Jordan yesterday: second.');
   });

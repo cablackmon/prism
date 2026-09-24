@@ -38,13 +38,13 @@ export function RemovedItemsManager({
         {description && <CardDescription>{description}</CardDescription>}
       </CardHeader>
       <CardContent>
-        <ul className="space-y-2 list-none m-0 p-0">
+        <ul className="m-0 list-none space-y-2 p-0">
           {items.map((item) => (
             <li
               key={item.id}
               className="flex items-center justify-between gap-3 rounded-md border border-border/50 px-3 py-2"
             >
-              <span className="text-sm truncate min-w-0 flex-1">{item.name}</span>
+              <span className="min-w-0 flex-1 truncate text-sm">{item.name}</span>
               <Button
                 variant="outline"
                 size="sm"
@@ -52,7 +52,7 @@ export function RemovedItemsManager({
                 disabled={restoringId === item.id}
                 onClick={() => onRestore(item.id)}
               >
-                <RotateCcw className="h-4 w-4 mr-1.5" />
+                <RotateCcw className="mr-1.5 h-4 w-4" />
                 {restoringId === item.id ? 'Restoring…' : 'Restore'}
               </Button>
             </li>

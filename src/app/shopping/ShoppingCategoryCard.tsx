@@ -76,23 +76,22 @@ export function ShoppingCategoryCard({
       onTouchMove={!isMobile ? onTouchMove : undefined}
       onTouchEnd={!isMobile ? onTouchEnd : undefined}
       className={cn(
-        'border-2 rounded-lg overflow-hidden bg-card/90 backdrop-blur-sm',
+        'overflow-hidden rounded-lg border-2 bg-card/90 backdrop-blur-sm',
         'flex flex-col transition-all',
-        !isMobile && 'cursor-grab active:cursor-grabbing touch-none',
-        isDragging && 'opacity-50 scale-95 ring-4 ring-primary/50'
+        !isMobile && 'cursor-grab touch-none active:cursor-grabbing',
+        isDragging && 'scale-95 opacity-50 ring-4 ring-primary/50'
       )}
       style={{ borderColor: categoryColor }}
     >
       <div
-        className="px-2 py-1 flex items-center gap-1 select-none"
+        className="flex select-none items-center gap-1 px-2 py-1"
         style={{ backgroundColor: categoryColor + '20' }}
       >
-        <GripVertical className="h-4 w-4 text-muted-foreground/50 shrink-0 hidden md:block" />
-        <span className="text-xl"><Emoji e={categoryEmoji} /></span>
-        <h3
-          className="text-base font-bold capitalize"
-          style={{ color: categoryColor }}
-        >
+        <GripVertical className="hidden h-4 w-4 shrink-0 text-muted-foreground/50 md:block" />
+        <span className="text-xl">
+          <Emoji e={categoryEmoji} />
+        </span>
+        <h3 className="text-base font-bold capitalize" style={{ color: categoryColor }}>
           {category}
         </h3>
         <Badge variant="outline" className="ml-auto text-xs">
@@ -126,17 +125,19 @@ export function ShoppingCategoryCard({
         ))}
 
         <div
-          className="border-b border-muted-foreground/30 py-1 px-2"
+          className="border-b border-muted-foreground/30 px-2 py-1"
           style={{ borderColor: categoryColor + '40' }}
         >
           <Input
-            ref={(el) => { inputRefs.current[category] = el; }}
+            ref={(el) => {
+              inputRefs.current[category] = el;
+            }}
             value={inlineInputValue}
             onChange={(e) => onInlineInputChange(category, e.target.value)}
             onKeyDown={(e) => onInlineKeyDown(e, category)}
             onBlur={(e) => onInlineBlur(e, category)}
             placeholder="Add item..."
-            className="h-7 border-none bg-transparent shadow-none focus-visible:ring-0 placeholder:text-muted-foreground/50"
+            className="h-7 border-none bg-transparent shadow-none placeholder:text-muted-foreground/50 focus-visible:ring-0"
           />
         </div>
 

@@ -27,9 +27,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(result);
   } catch (error) {
     console.error('CalDAV test error:', error);
-    return NextResponse.json(
-      { success: false, error: 'Connection test failed' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: 'Connection test failed' }, { status: 500 });
   }
 }

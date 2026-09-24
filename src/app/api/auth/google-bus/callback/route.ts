@@ -29,7 +29,9 @@ export async function GET(request: Request) {
     try {
       const parsed = JSON.parse(state);
       returnSection = parsed.returnSection || 'bus';
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }
   const anchor = returnSection === 'integrations' ? '#google-bus' : '';
 
@@ -39,14 +41,21 @@ export async function GET(request: Request) {
 
     if (error) {
       logError('Gmail OAuth error:', error);
-      return NextResponse.redirect(`${BASE_URL}/settings?section=${returnSection}&error=gmail_auth_denied${anchor}`);
+      return NextResponse.redirect(
+        `${BASE_URL}/settings?section=${returnSection}&error=gmail_auth_denied${anchor}`
+      );
     }
 
     if (!code) {
-      return NextResponse.redirect(`${BASE_URL}/settings?section=${returnSection}&error=missing_code${anchor}`);
+      return NextResponse.redirect(
+        `${BASE_URL}/settings?section=${returnSection}&error=missing_code${anchor}`
+      );
     }
 
-    const tokens = await exchangeGmailCodeForTokens(code, resolveRedirectUri(request, '/api/auth/google-bus/callback')); // dynamic redirect URI per request (#124)
+    const tokens = await exchangeGmailCodeForTokens(
+      code,
+      resolveRedirectUri(request, '/api/auth/google-bus/callback')
+    ); // dynamic redirect URI per request (#124)
     const expiresAt = new Date(Date.now() + tokens.expires_in * 1000);
 
     // Which Gmail account this is, for the "Connected as <email>" label (#100).
@@ -65,12 +74,15 @@ export async function GET(request: Request) {
     });
 
     if (existing) {
-      await db.update(apiCredentials).set({
-        encryptedCredentials: JSON.stringify(credentials),
-        expiresAt,
-        accountEmail: accountEmail ?? undefined,
-        updatedAt: new Date(),
-      }).where(eq(apiCredentials.id, existing.id));
+      await db
+        .update(apiCredentials)
+        .set({
+          encryptedCredentials: JSON.stringify(credentials),
+          expiresAt,
+          accountEmail: accountEmail ?? undefined,
+          updatedAt: new Date(),
+        })
+        .where(eq(apiCredentials.id, existing.id));
     } else {
       await db.insert(apiCredentials).values({
         service: 'gmail-bus',
@@ -87,9 +99,13 @@ export async function GET(request: Request) {
       summary: 'Connected Gmail for bus tracking',
     });
 
-    return NextResponse.redirect(`${BASE_URL}/settings?section=${returnSection}&success=gmail_connected${anchor}`);
+    return NextResponse.redirect(
+      `${BASE_URL}/settings?section=${returnSection}&success=gmail_connected${anchor}`
+    );
   } catch (error) {
     logError('Gmail OAuth callback error:', error);
-    return NextResponse.redirect(`${BASE_URL}/settings?section=${returnSection}&error=gmail_auth_failed${anchor}`);
+    return NextResponse.redirect(
+      `${BASE_URL}/settings?section=${returnSection}&error=gmail_auth_failed${anchor}`
+    );
   }
 }

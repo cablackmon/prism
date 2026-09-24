@@ -7,10 +7,7 @@ import { listFolders, refreshAccessToken } from '@/lib/integrations/onedrive';
 import { decrypt, encrypt } from '@/lib/utils/crypto';
 import { logError } from '@/lib/utils/logError';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 

@@ -105,7 +105,7 @@ export function CalDAVConnectDialog({
     setConnecting(true);
     setConnectError(null);
     try {
-      const selectedCalendars = calendars.filter(c => selected.has(c.href));
+      const selectedCalendars = calendars.filter((c) => selected.has(c.href));
       const res = await fetch('/api/caldav/connect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -119,7 +119,11 @@ export function CalDAVConnectDialog({
       });
       // Try to parse JSON either way — the API returns { error } on failure.
       let data: { success?: boolean; sourceIds?: string[]; error?: string } = {};
-      try { data = await res.json(); } catch { /* non-JSON response */ }
+      try {
+        data = await res.json();
+      } catch {
+        /* non-JSON response */
+      }
 
       if (res.ok && data.success) {
         setConnectedCount(data.sourceIds?.length || selectedCalendars.length);
@@ -136,7 +140,7 @@ export function CalDAVConnectDialog({
   };
 
   const toggleCalendar = (href: string) => {
-    setSelected(prev => {
+    setSelected((prev) => {
       const next = new Set(prev);
       if (next.has(href)) next.delete(href);
       else next.add(href);
@@ -145,7 +149,13 @@ export function CalDAVConnectDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o) reset(); onOpenChange(o); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) reset();
+        onOpenChange(o);
+      }}
+    >
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -155,8 +165,9 @@ export function CalDAVConnectDialog({
             {step === 'done' && 'Connected!'}
           </DialogTitle>
           <DialogDescription>
-            {step === 'credentials' && 'Works with Apple iCloud, Nextcloud, Radicale, Baikal, Synology, and other CalDAV servers.'}
-            {step === 'calendars' && 'Choose which calendars to sync with Prism.'}
+            {step === 'credentials' &&
+              'Works with Apple iCloud, Nextcloud, Radicale, Baikal, Synology, and other CalDAV servers.'}
+            {step === 'calendars' && 'Choose which calendars to sync with KYST.'}
             {step === 'done' && `${connectedCount} calendar(s) connected and syncing.`}
           </DialogDescription>
         </DialogHeader>
@@ -168,24 +179,45 @@ export function CalDAVConnectDialog({
               <Input
                 id="caldav-url"
                 value={serverUrl}
-                onChange={e => setServerUrl(e.target.value)}
+                onChange={(e) => setServerUrl(e.target.value)}
                 placeholder="https://caldav.icloud.com"
               />
-              <div className="text-xs text-muted-foreground space-y-0.5">
+              <div className="space-y-0.5 text-xs text-muted-foreground">
                 <p className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => setServerUrl('https://caldav.icloud.com')}
-                    className="text-primary hover:underline font-medium"
+                    className="font-medium text-primary hover:underline"
                   >
                     Use Apple iCloud
                   </button>
                 </p>
-                <p><strong>Apple iCloud:</strong> <code>https://caldav.icloud.com</code> — username is your Apple ID email; password is a 16-char app-specific password from <a href="https://appleid.apple.com" target="_blank" rel="noreferrer" className="text-primary hover:underline">appleid.apple.com</a> (Sign-In and Security → App-Specific Passwords), <em>not</em> your real Apple ID password.</p>
-                <p><strong>Nextcloud:</strong> <code>https://your-server/remote.php/dav</code></p>
-                <p><strong>Radicale:</strong> <code>https://your-server/</code></p>
-                <p><strong>Baikal:</strong> <code>https://your-server/dav.php</code></p>
-                <p><strong>Synology:</strong> <code>https://your-nas:5001/caldav/</code></p>
+                <p>
+                  <strong>Apple iCloud:</strong> <code>https://caldav.icloud.com</code> — username
+                  is your Apple ID email; password is a 16-char app-specific password from{' '}
+                  <a
+                    href="https://appleid.apple.com"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-primary hover:underline"
+                  >
+                    appleid.apple.com
+                  </a>{' '}
+                  (Sign-In and Security → App-Specific Passwords), <em>not</em> your real Apple ID
+                  password.
+                </p>
+                <p>
+                  <strong>Nextcloud:</strong> <code>https://your-server/remote.php/dav</code>
+                </p>
+                <p>
+                  <strong>Radicale:</strong> <code>https://your-server/</code>
+                </p>
+                <p>
+                  <strong>Baikal:</strong> <code>https://your-server/dav.php</code>
+                </p>
+                <p>
+                  <strong>Synology:</strong> <code>https://your-nas:5001/caldav/</code>
+                </p>
               </div>
             </div>
             <div className="space-y-2">
@@ -193,7 +225,7 @@ export function CalDAVConnectDialog({
               <Input
                 id="caldav-user"
                 value={username}
-                onChange={e => setUsername(e.target.value)}
+                onChange={(e) => setUsername(e.target.value)}
                 placeholder="you@icloud.com"
                 autoComplete="username"
               />
@@ -204,36 +236,59 @@ export function CalDAVConnectDialog({
                 id="caldav-pass"
                 type="password"
                 value={password}
-                onChange={e => setPassword(e.target.value)}
+                onChange={(e) => setPassword(e.target.value)}
                 placeholder="xxxx-xxxx-xxxx-xxxx for iCloud"
                 autoComplete="current-password"
               />
               <p className="text-xs text-muted-foreground">
-                For Apple iCloud: paste the 16-character app-specific password including the hyphens. Other providers: your normal account password (or whatever app-token they require).
+                For Apple iCloud: paste the 16-character app-specific password including the
+                hyphens. Other providers: your normal account password (or whatever app-token they
+                require).
               </p>
             </div>
 
             {testResult && (
-              <div className={cn(
-                'flex items-center gap-2 p-3 rounded-lg text-sm',
-                testResult.success
-                  ? 'bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400'
-                  : 'bg-destructive/10 text-destructive'
-              )}>
-                {testResult.success ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <AlertCircle className="h-4 w-4 shrink-0" />}
+              <div
+                className={cn(
+                  'flex items-center gap-2 rounded-lg p-3 text-sm',
+                  testResult.success
+                    ? 'bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400'
+                    : 'bg-destructive/10 text-destructive'
+                )}
+              >
+                {testResult.success ? (
+                  <CheckCircle2 className="h-4 w-4 shrink-0" />
+                ) : (
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                )}
                 {testResult.success ? 'Connection successful!' : testResult.error}
               </div>
             )}
 
             <DialogFooter>
-              <Button variant="outline" onClick={handleTest} disabled={!serverUrl || !username || !password || testing}>
-                {testing ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Testing...</> : 'Test Connection'}
-              </Button>
               <Button
-                onClick={handleDiscover}
-                disabled={!testResult?.success || discovering}
+                variant="outline"
+                onClick={handleTest}
+                disabled={!serverUrl || !username || !password || testing}
               >
-                {discovering ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Discovering...</> : 'Find Calendars'}
+                {testing ? (
+                  <>
+                    <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                    Testing...
+                  </>
+                ) : (
+                  'Test Connection'
+                )}
+              </Button>
+              <Button onClick={handleDiscover} disabled={!testResult?.success || discovering}>
+                {discovering ? (
+                  <>
+                    <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                    Discovering...
+                  </>
+                ) : (
+                  'Find Calendars'
+                )}
               </Button>
             </DialogFooter>
           </div>
@@ -241,11 +296,11 @@ export function CalDAVConnectDialog({
 
         {step === 'calendars' && (
           <div className="space-y-4">
-            <div className="space-y-2 max-h-64 overflow-auto">
-              {calendars.map(cal => (
+            <div className="max-h-64 space-y-2 overflow-auto">
+              {calendars.map((cal) => (
                 <label
                   key={cal.href}
-                  className="flex items-center gap-3 p-2 rounded-lg border border-border hover:bg-accent cursor-pointer"
+                  className="flex cursor-pointer items-center gap-3 rounded-lg border border-border p-2 hover:bg-accent"
                 >
                   <input
                     type="checkbox"
@@ -254,46 +309,61 @@ export function CalDAVConnectDialog({
                     className="rounded"
                   />
                   <div
-                    className="w-3 h-3 rounded-full shrink-0"
+                    className="h-3 w-3 shrink-0 rounded-full"
                     style={{ backgroundColor: cal.color || '#6366f1' }}
                   />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{cal.displayName}</p>
-                    {cal.description && <p className="text-xs text-muted-foreground truncate">{cal.description}</p>}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{cal.displayName}</p>
+                    {cal.description && (
+                      <p className="truncate text-xs text-muted-foreground">{cal.description}</p>
+                    )}
                   </div>
                 </label>
               ))}
               {calendars.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-4">No calendars found on this server.</p>
+                <p className="py-4 text-center text-sm text-muted-foreground">
+                  No calendars found on this server.
+                </p>
               )}
             </div>
 
-            <label className="flex items-start gap-3 p-3 rounded-lg border border-border hover:bg-accent cursor-pointer">
+            <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border p-3 hover:bg-accent">
               <input
                 type="checkbox"
                 checked={syncContactBirthdays}
-                onChange={e => setSyncContactBirthdays(e.target.checked)}
+                onChange={(e) => setSyncContactBirthdays(e.target.checked)}
                 className="mt-0.5 rounded"
               />
-              <div className="flex-1 min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium">Also import birthdays from contacts</p>
                 <p className="text-xs text-muted-foreground">
-                  Pulls BDAY fields from your address book via CardDAV (using the same login) and adds them to the birthdays widget. Reminders and notes are not supported by Apple over CalDAV — this is birthdays only.
+                  Pulls BDAY fields from your address book via CardDAV (using the same login) and
+                  adds them to the birthdays widget. Reminders and notes are not supported by Apple
+                  over CalDAV — this is birthdays only.
                 </p>
               </div>
             </label>
 
             {connectError && (
-              <div className="flex items-start gap-2 p-3 rounded-lg text-sm bg-destructive/10 text-destructive">
-                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+              <div className="flex items-start gap-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                 <div className="flex-1">{connectError}</div>
               </div>
             )}
 
             <DialogFooter>
-              <Button variant="outline" onClick={() => setStep('credentials')}>Back</Button>
+              <Button variant="outline" onClick={() => setStep('credentials')}>
+                Back
+              </Button>
               <Button onClick={handleConnect} disabled={selected.size === 0 || connecting}>
-                {connecting ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Connecting...</> : `Connect ${selected.size} Calendar${selected.size !== 1 ? 's' : ''}`}
+                {connecting ? (
+                  <>
+                    <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                    Connecting...
+                  </>
+                ) : (
+                  `Connect ${selected.size} Calendar${selected.size !== 1 ? 's' : ''}`
+                )}
               </Button>
             </DialogFooter>
           </div>
@@ -301,7 +371,14 @@ export function CalDAVConnectDialog({
 
         {step === 'done' && (
           <DialogFooter>
-            <Button onClick={() => { reset(); onOpenChange(false); }}>Done</Button>
+            <Button
+              onClick={() => {
+                reset();
+                onOpenChange(false);
+              }}
+            >
+              Done
+            </Button>
           </DialogFooter>
         )}
       </DialogContent>

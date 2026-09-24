@@ -36,7 +36,9 @@ jest.mock('@/lib/db/schema', () => ({ settings: { key: 'key', value: 'value' } }
 jest.mock('drizzle-orm', () => ({ eq: jest.fn() }));
 jest.mock('@/lib/utils/crypto', () => ({ encrypt: (v: string) => `enc(${v})` }));
 jest.mock('@/lib/utils/logError', () => ({ logError: (...a: unknown[]) => mockLogError(...a) }));
-jest.mock('@/lib/services/auditLog', () => ({ logActivity: (...a: unknown[]) => mockLogActivity(...a) }));
+jest.mock('@/lib/services/auditLog', () => ({
+  logActivity: (...a: unknown[]) => mockLogActivity(...a),
+}));
 jest.mock('@/lib/integrations/credentialStore', () => ({
   getGoogleCredentials: (...a: unknown[]) => mockGetCreds(...a),
 }));
@@ -130,7 +132,12 @@ describe('POST /api/integrations/google/manual-token — validation & mapping', 
   });
 
   it('409 when a different client is already configured and no overwrite', async () => {
-    mockGetCreds.mockResolvedValue({ clientId: 'other.apps.googleusercontent.com', clientSecret: 'x', redirectUri: '', gmailRedirectUri: '' });
+    mockGetCreds.mockResolvedValue({
+      clientId: 'other.apps.googleusercontent.com',
+      clientSecret: 'x',
+      redirectUri: '',
+      gmailRedirectUri: '',
+    });
     const res = await POST(req(goodBody));
     const body = await res.json();
     expect(res.status).toBe(409);
@@ -139,7 +146,12 @@ describe('POST /api/integrations/google/manual-token — validation & mapping', 
   });
 
   it('proceeds when overwriteCredentials confirms the replacement', async () => {
-    mockGetCreds.mockResolvedValue({ clientId: 'other.apps.googleusercontent.com', clientSecret: 'x', redirectUri: '', gmailRedirectUri: '' });
+    mockGetCreds.mockResolvedValue({
+      clientId: 'other.apps.googleusercontent.com',
+      clientSecret: 'x',
+      redirectUri: '',
+      gmailRedirectUri: '',
+    });
     const res = await POST(req({ ...goodBody, overwriteCredentials: true }));
     expect(res.status).toBe(200);
   });
@@ -165,7 +177,12 @@ describe('POST /api/integrations/google/manual-token — validation & mapping', 
   // it covers ANY supported capability (Calendar, Tasks or Gmail), so the
   // failure case is now "covers none of them". See #310.
   it('400 no_supported_scope when the token covers none of the supported APIs', async () => {
-    mockRefresh.mockResolvedValue({ access_token: 'at', expires_in: 3600, scope: 'openid email', token_type: 'Bearer' });
+    mockRefresh.mockResolvedValue({
+      access_token: 'at',
+      expires_in: 3600,
+      scope: 'openid email',
+      token_type: 'Bearer',
+    });
     const res = await POST(req(goodBody));
     const body = await res.json();
     expect(res.status).toBe(400);
@@ -198,7 +215,9 @@ describe('POST /api/integrations/google/manual-token — success', () => {
     expect(mockStore.mock.calls[0][0].tokens.refreshToken).toBe(TOKEN);
 
     // Client creds persisted encrypted — never in plaintext.
-    const stored = valuesSpy.mock.calls[0]?.[0] as { value: { clientId: string; clientSecret: string } };
+    const stored = valuesSpy.mock.calls[0]?.[0] as {
+      value: { clientId: string; clientSecret: string };
+    };
     // encrypt() is applied to both (the real impl is AES-GCM; the mock echoes
     // inside enc(…), so we assert the wrapper was called rather than absence of
     // the plaintext — real ciphertext never contains it).
@@ -219,7 +238,13 @@ describe('POST /api/integrations/google/manual-token — success', () => {
     });
     mockStore.mockImplementation(() => {
       order.push('store');
-      return Promise.resolve({ calendarCount: 1, inserted: 1, updated: 0, skippedDismissed: 0, accountEmail: null });
+      return Promise.resolve({
+        calendarCount: 1,
+        inserted: 1,
+        updated: 0,
+        skippedDismissed: 0,
+        accountEmail: null,
+      });
     });
     await POST(req(goodBody));
     expect(order).toEqual(['creds', 'store']);

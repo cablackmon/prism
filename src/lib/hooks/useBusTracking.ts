@@ -91,10 +91,10 @@ function getPollingInterval(routes: BusRouteStatus[]): number {
   }
 
   if (!hasCheckpoint) return 60_000; // 60s — no checkpoint yet
-  if (minEta <= 3) return 5_000;     // 5s  — ETA ≤ 3 min
-  if (minEta <= 5) return 10_000;    // 10s — ETA 3-5 min
-  if (minEta <= 10) return 15_000;   // 15s — ETA 5-10 min
-  return 30_000;                      // 30s — in transit, ETA > 10 min
+  if (minEta <= 3) return 5_000; // 5s  — ETA ≤ 3 min
+  if (minEta <= 5) return 10_000; // 10s — ETA 3-5 min
+  if (minEta <= 10) return 15_000; // 15s — ETA 5-10 min
+  return 30_000; // 30s — in transit, ETA > 10 min
 }
 
 export function useBusTracking() {

@@ -75,35 +75,34 @@ export async function getCommunityLayout(file: string): Promise<CommunityLayoutD
  * Filter community layouts by criteria (client-side).
  */
 export async function filterCommunityLayouts(
-  filters: CommunityFilterOptions = {},
+  filters: CommunityFilterOptions = {}
 ): Promise<CommunityIndexEntry[]> {
   const index = await getCommunityIndex();
   let layouts = index.layouts;
 
   if (filters.mode) {
-    layouts = layouts.filter(l => l.mode === filters.mode);
+    layouts = layouts.filter((l) => l.mode === filters.mode);
   }
 
   if (filters.screenSize) {
-    layouts = layouts.filter(l => l.screenSizes.includes(filters.screenSize!));
+    layouts = layouts.filter((l) => l.screenSizes.includes(filters.screenSize!));
   }
 
   if (filters.orientation) {
-    layouts = layouts.filter(l => l.orientation === filters.orientation);
+    layouts = layouts.filter((l) => l.orientation === filters.orientation);
   }
 
   if (filters.tags && filters.tags.length > 0) {
-    layouts = layouts.filter(l =>
-      filters.tags!.some(tag => l.tags.includes(tag))
-    );
+    layouts = layouts.filter((l) => filters.tags!.some((tag) => l.tags.includes(tag)));
   }
 
   if (filters.search) {
     const searchLower = filters.search.toLowerCase();
-    layouts = layouts.filter(l =>
-      l.name.toLowerCase().includes(searchLower) ||
-      l.description.toLowerCase().includes(searchLower) ||
-      l.tags.some(t => t.toLowerCase().includes(searchLower))
+    layouts = layouts.filter(
+      (l) =>
+        l.name.toLowerCase().includes(searchLower) ||
+        l.description.toLowerCase().includes(searchLower) ||
+        l.tags.some((t) => t.toLowerCase().includes(searchLower))
     );
   }
 

@@ -17,7 +17,6 @@
 import { Suspense } from 'react';
 import { MealsView } from './MealsView';
 
-
 /**
  * PAGE METADATA
  */
@@ -25,7 +24,6 @@ export const metadata = {
   title: 'Meal Planner',
   description: 'Plan your weekly meals and track recipes.',
 };
-
 
 /**
  * MEALS PAGE COMPONENT
@@ -40,35 +38,34 @@ export default function MealsPage() {
   );
 }
 
-
 /**
  * MEALS SKELETON
  */
 function MealsSkeleton() {
   return (
-    <div className="h-screen flex flex-col p-4">
+    <div className="flex h-screen flex-col p-4">
       {/* Header skeleton */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="h-8 w-32 bg-muted rounded animate-pulse" />
+      <div className="mb-6 flex items-center justify-between">
+        <div className="h-8 w-32 animate-pulse rounded bg-muted" />
         <div className="flex gap-2">
-          <div className="h-10 w-32 bg-muted rounded animate-pulse" />
-          <div className="h-10 w-24 bg-muted rounded animate-pulse" />
+          <div className="h-10 w-32 animate-pulse rounded bg-muted" />
+          <div className="h-10 w-24 animate-pulse rounded bg-muted" />
         </div>
       </div>
 
       {/* Week navigation skeleton */}
-      <div className="flex gap-2 mb-4 justify-center">
-        <div className="h-10 w-10 bg-muted rounded animate-pulse" />
-        <div className="h-10 w-48 bg-muted rounded animate-pulse" />
-        <div className="h-10 w-10 bg-muted rounded animate-pulse" />
+      <div className="mb-4 flex justify-center gap-2">
+        <div className="h-10 w-10 animate-pulse rounded bg-muted" />
+        <div className="h-10 w-48 animate-pulse rounded bg-muted" />
+        <div className="h-10 w-10 animate-pulse rounded bg-muted" />
       </div>
 
       {/* Week grid skeleton */}
       <div className="space-y-4">
         {Array.from({ length: 7 }).map((_, i) => (
           <div key={i} className="space-y-2">
-            <div className="h-6 w-24 bg-muted rounded animate-pulse" />
-            <div className="h-16 bg-muted/50 rounded animate-pulse" />
+            <div className="h-6 w-24 animate-pulse rounded bg-muted" />
+            <div className="h-16 animate-pulse rounded bg-muted/50" />
           </div>
         ))}
       </div>

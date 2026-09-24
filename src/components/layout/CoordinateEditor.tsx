@@ -3,7 +3,11 @@
 import * as React from 'react';
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { WIDGET_COLORS } from './LayoutPreview';
-import { WIDGET_REGISTRY, ALL_WIDGET_TYPES, SCREENSAVER_WIDGETS } from '@/components/widgets/widgetRegistry';
+import {
+  WIDGET_REGISTRY,
+  ALL_WIDGET_TYPES,
+  SCREENSAVER_WIDGETS,
+} from '@/components/widgets/widgetRegistry';
 import type { WidgetConfig } from '@/lib/hooks/useLayouts';
 import { findNextFreeSlot } from '@/lib/utils/widgetPlacement';
 
@@ -14,19 +18,26 @@ interface CoordinateEditorProps {
   onFocusedWidgetChange?: (widgetId: string | null) => void;
 }
 
-export function CoordinateEditor({ widgets, onWidgetsChange, mode, onFocusedWidgetChange }: CoordinateEditorProps) {
+export function CoordinateEditor({
+  widgets,
+  onWidgetsChange,
+  mode,
+  onFocusedWidgetChange,
+}: CoordinateEditorProps) {
   const [focusedWidget, setFocusedWidget] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const addRef = useRef<HTMLDivElement>(null);
 
-  const handleFocusChange = useCallback((widgetId: string | null) => {
-    setFocusedWidget(widgetId);
-    onFocusedWidgetChange?.(widgetId);
-  }, [onFocusedWidgetChange]);
+  const handleFocusChange = useCallback(
+    (widgetId: string | null) => {
+      setFocusedWidget(widgetId);
+      onFocusedWidgetChange?.(widgetId);
+    },
+    [onFocusedWidgetChange]
+  );
 
-  const allWidgetIds = mode === 'screensaver'
-    ? SCREENSAVER_WIDGETS.map(w => w.id)
-    : ALL_WIDGET_TYPES;
+  const allWidgetIds =
+    mode === 'screensaver' ? SCREENSAVER_WIDGETS.map((w) => w.id) : ALL_WIDGET_TYPES;
 
   // Split into visible and hidden, both sorted alphabetically by label so
   // the "Add widget" picker and the "currently visible" table follow the
@@ -39,22 +50,23 @@ export function CoordinateEditor({ widgets, onWidgetsChange, mode, onFocusedWidg
     return aLabel.localeCompare(bLabel);
   };
 
-  const visibleIds = useMemo(() =>
-    allWidgetIds
-      .filter(id => {
-        const w = widgets.find(w => w.i === id);
-        return w && w.visible !== false;
-      })
-      .sort(byLabel),
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  [allWidgetIds, widgets]);
+  const visibleIds = useMemo(
+    () =>
+      allWidgetIds
+        .filter((id) => {
+          const w = widgets.find((w) => w.i === id);
+          return w && w.visible !== false;
+        })
+        .sort(byLabel),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [allWidgetIds, widgets]
+  );
 
-  const hiddenIds = useMemo(() =>
-    allWidgetIds
-      .filter(id => !visibleIds.includes(id))
-      .sort(byLabel),
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  [allWidgetIds, visibleIds]);
+  const hiddenIds = useMemo(
+    () => allWidgetIds.filter((id) => !visibleIds.includes(id)).sort(byLabel),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [allWidgetIds, visibleIds]
+  );
 
   // Close add dropdown on outside click
   useEffect(() => {
@@ -68,52 +80,55 @@ export function CoordinateEditor({ widgets, onWidgetsChange, mode, onFocusedWidg
     return () => document.removeEventListener('mousedown', handler);
   }, [addOpen]);
 
-  const handleAddWidget = useCallback((widgetId: string) => {
-    const exists = widgets.find(w => w.i === widgetId);
-    if (exists) {
-      onWidgetsChange(widgets.map(w =>
-        w.i === widgetId ? { ...w, visible: true } : w
-      ));
-    } else {
-      const reg = WIDGET_REGISTRY[widgetId];
-      if (!reg) return;
-      // Find the first free slot row-by-row, columns inside each row — slots
-      // a new widget into top-row gaps before falling through to the bottom.
-      const { x, y } = findNextFreeSlot(widgets, reg.defaultW, reg.defaultH);
-      onWidgetsChange([
-        ...widgets,
-        { i: widgetId, x, y, w: reg.defaultW, h: reg.defaultH, visible: true },
-      ]);
-    }
-  }, [widgets, onWidgetsChange]);
+  const handleAddWidget = useCallback(
+    (widgetId: string) => {
+      const exists = widgets.find((w) => w.i === widgetId);
+      if (exists) {
+        onWidgetsChange(widgets.map((w) => (w.i === widgetId ? { ...w, visible: true } : w)));
+      } else {
+        const reg = WIDGET_REGISTRY[widgetId];
+        if (!reg) return;
+        // Find the first free slot row-by-row, columns inside each row — slots
+        // a new widget into top-row gaps before falling through to the bottom.
+        const { x, y } = findNextFreeSlot(widgets, reg.defaultW, reg.defaultH);
+        onWidgetsChange([
+          ...widgets,
+          { i: widgetId, x, y, w: reg.defaultW, h: reg.defaultH, visible: true },
+        ]);
+      }
+    },
+    [widgets, onWidgetsChange]
+  );
 
-  const handleRemoveWidget = useCallback((widgetId: string) => {
-    onWidgetsChange(widgets.map(w =>
-      w.i === widgetId ? { ...w, visible: false } : w
-    ));
-  }, [widgets, onWidgetsChange]);
+  const handleRemoveWidget = useCallback(
+    (widgetId: string) => {
+      onWidgetsChange(widgets.map((w) => (w.i === widgetId ? { ...w, visible: false } : w)));
+    },
+    [widgets, onWidgetsChange]
+  );
 
-  const handleUpdateWidget = useCallback((widgetId: string, field: 'x' | 'y' | 'w' | 'h', value: number) => {
-    onWidgetsChange(widgets.map(w =>
-      w.i === widgetId ? { ...w, [field]: value } : w
-    ));
-  }, [widgets, onWidgetsChange]);
+  const handleUpdateWidget = useCallback(
+    (widgetId: string, field: 'x' | 'y' | 'w' | 'h', value: number) => {
+      onWidgetsChange(widgets.map((w) => (w.i === widgetId ? { ...w, [field]: value } : w)));
+    },
+    [widgets, onWidgetsChange]
+  );
 
   return (
     <div className="space-y-1.5">
-      <table className="text-xs w-full">
+      <table className="w-full text-xs">
         <thead>
-          <tr className="text-xs text-muted-foreground border-b border-border">
-            <th className="text-left py-1 px-1">Widget</th>
-            <th className="text-center py-1 px-0.5 w-11">X</th>
-            <th className="text-center py-1 px-0.5 w-11">Y</th>
-            <th className="text-center py-1 px-0.5 w-11">W</th>
-            <th className="text-center py-1 px-0.5 w-11">H</th>
+          <tr className="border-b border-border text-xs text-muted-foreground">
+            <th className="px-1 py-1 text-left">Widget</th>
+            <th className="w-11 px-0.5 py-1 text-center">X</th>
+            <th className="w-11 px-0.5 py-1 text-center">Y</th>
+            <th className="w-11 px-0.5 py-1 text-center">W</th>
+            <th className="w-11 px-0.5 py-1 text-center">H</th>
           </tr>
         </thead>
         <tbody>
-          {visibleIds.map(widgetId => {
-            const widget = widgets.find(w => w.i === widgetId);
+          {visibleIds.map((widgetId) => {
+            const widget = widgets.find((w) => w.i === widgetId);
             if (!widget || widget.visible === false) return null;
             const reg = WIDGET_REGISTRY[widgetId];
             const color = WIDGET_COLORS[widgetId] || '#6B7280';
@@ -126,10 +141,10 @@ export function CoordinateEditor({ widgets, onWidgetsChange, mode, onFocusedWidg
                   isFocused ? 'bg-primary/5' : ''
                 }`}
               >
-                <td className="py-1 px-1">
+                <td className="px-1 py-1">
                   <button
                     onClick={() => handleRemoveWidget(widgetId)}
-                    className="w-full text-left text-xs px-1.5 py-0.5 rounded transition-colors whitespace-nowrap text-white"
+                    className="w-full whitespace-nowrap rounded px-1.5 py-0.5 text-left text-xs text-white transition-colors"
                     style={{
                       backgroundColor: color,
                       border: `1px solid ${color}`,
@@ -139,42 +154,42 @@ export function CoordinateEditor({ widgets, onWidgetsChange, mode, onFocusedWidg
                     {reg?.label || widgetId}
                   </button>
                 </td>
-                <td className="py-1 px-0.5">
+                <td className="px-0.5 py-1">
                   <CoordInput
                     value={widget.x}
                     min={0}
                     max={47}
-                    onChange={v => handleUpdateWidget(widgetId, 'x', v)}
+                    onChange={(v) => handleUpdateWidget(widgetId, 'x', v)}
                     onFocus={() => handleFocusChange(widgetId)}
                     onBlur={() => handleFocusChange(null)}
                   />
                 </td>
-                <td className="py-1 px-0.5">
+                <td className="px-0.5 py-1">
                   <CoordInput
                     value={widget.y}
                     min={0}
                     max={119}
-                    onChange={v => handleUpdateWidget(widgetId, 'y', v)}
+                    onChange={(v) => handleUpdateWidget(widgetId, 'y', v)}
                     onFocus={() => handleFocusChange(widgetId)}
                     onBlur={() => handleFocusChange(null)}
                   />
                 </td>
-                <td className="py-1 px-0.5">
+                <td className="px-0.5 py-1">
                   <CoordInput
                     value={widget.w}
                     min={reg?.minW ?? 1}
                     max={48}
-                    onChange={v => handleUpdateWidget(widgetId, 'w', v)}
+                    onChange={(v) => handleUpdateWidget(widgetId, 'w', v)}
                     onFocus={() => handleFocusChange(widgetId)}
                     onBlur={() => handleFocusChange(null)}
                   />
                 </td>
-                <td className="py-1 px-0.5">
+                <td className="px-0.5 py-1">
                   <CoordInput
                     value={widget.h}
                     min={reg?.minH ?? 1}
                     max={120}
-                    onChange={v => handleUpdateWidget(widgetId, 'h', v)}
+                    onChange={(v) => handleUpdateWidget(widgetId, 'h', v)}
                     onFocus={() => handleFocusChange(widgetId)}
                     onBlur={() => handleFocusChange(null)}
                   />
@@ -188,8 +203,8 @@ export function CoordinateEditor({ widgets, onWidgetsChange, mode, onFocusedWidg
       {hiddenIds.length > 0 && (
         <div className="relative" ref={addRef}>
           <button
-            onClick={() => setAddOpen(prev => !prev)}
-            className="px-2 py-1 text-xs bg-muted border border-border rounded-md hover:bg-accent transition-colors flex items-center gap-1"
+            onClick={() => setAddOpen((prev) => !prev)}
+            className="flex items-center gap-1 rounded-md border border-border bg-muted px-2 py-1 text-xs transition-colors hover:bg-accent"
           >
             + Add widget
             <svg
@@ -208,18 +223,20 @@ export function CoordinateEditor({ widgets, onWidgetsChange, mode, onFocusedWidg
             </svg>
           </button>
           {addOpen && (
-            <div className="mt-1 border border-border rounded-md py-1 max-h-[40vh] overflow-auto">
-              {hiddenIds.map(id => {
+            <div className="mt-1 max-h-[40vh] overflow-auto rounded-md border border-border py-1">
+              {hiddenIds.map((id) => {
                 const reg = WIDGET_REGISTRY[id];
                 const color = WIDGET_COLORS[id] || '#6B7280';
                 return (
                   <button
                     key={id}
-                    onClick={() => { handleAddWidget(id); }}
-                    className="w-full text-left px-3 py-1 text-xs hover:bg-accent transition-colors flex items-center gap-2"
+                    onClick={() => {
+                      handleAddWidget(id);
+                    }}
+                    className="flex w-full items-center gap-2 px-3 py-1 text-left text-xs transition-colors hover:bg-accent"
                   >
                     <span
-                      className="inline-block w-2 h-2 rounded-full flex-shrink-0"
+                      className="inline-block h-2 w-2 flex-shrink-0 rounded-full"
                       style={{ backgroundColor: color }}
                     />
                     {reg?.label || id}
@@ -255,13 +272,13 @@ function CoordInput({
       value={value}
       min={min}
       max={max}
-      onChange={e => {
+      onChange={(e) => {
         const v = parseInt(e.target.value, 10);
         if (!isNaN(v)) onChange(Math.max(min, Math.min(max, v)));
       }}
       onFocus={onFocus}
       onBlur={onBlur}
-      className="w-full text-center text-xs px-1 py-0.5 rounded border transition-colors bg-muted border-border text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+      className="w-full rounded border border-border bg-muted px-1 py-0.5 text-center text-xs text-foreground transition-colors focus:outline-none focus:ring-1 focus:ring-primary"
     />
   );
 }

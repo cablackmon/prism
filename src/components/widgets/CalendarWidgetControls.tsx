@@ -80,7 +80,11 @@ export function CalendarWidgetControls({
     // data-screensaver-keep: taps on these controls must NOT dismiss the
     // screensaver overlay, so the view can be changed in place. useIdleDetection
     // checks for this attribute before dismissing on pointer-down.
-    <div className="flex items-stretch gap-1" data-screensaver-keep onClick={(e) => e.stopPropagation()}>
+    <div
+      className="flex items-stretch gap-1"
+      data-screensaver-keep
+      onClick={(e) => e.stopPropagation()}
+    >
       {/* Navigation (hidden in agenda-only mode) */}
       {availableViews.length > 1 && resolvedView !== 'agenda' && (
         <>
@@ -95,16 +99,28 @@ export function CalendarWidgetControls({
               // Without an explicit foreground color, "Today" renders white-
               // on-white in transparent mode. Force a contrasting fill.
               transparentMode
-                ? 'bg-transparent border-current/30 text-current hover:bg-current/10'
-                : 'bg-background text-foreground hover:bg-accent',
+                ? 'border-current/30 hover:bg-current/10 bg-transparent text-current'
+                : 'bg-background text-foreground hover:bg-accent'
             )}
           >
             Today
           </Button>
-          <Button variant="outline" size="icon" onClick={goToPrevious} aria-label="Previous" className="h-8 w-8">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={goToPrevious}
+            aria-label="Previous"
+            className="h-8 w-8"
+          >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <Button variant="outline" size="icon" onClick={goToNext} aria-label="Next" className="h-8 w-8">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={goToNext}
+            aria-label="Next"
+            className="h-8 w-8"
+          >
             <ChevronRight className="h-4 w-4" />
           </Button>
         </>
@@ -186,22 +202,27 @@ function ViewPopover({
     // on the triangle stack guarantees the trigger and stack share the same
     // top AND bottom edges exactly. Same pattern as the calendar page's
     // ViewMenu, scaled down for the widget toolbar.
-    <div className="inline-flex items-stretch gap-1 h-8">
+    <div className="inline-flex h-8 items-stretch gap-1">
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <button
             type="button"
             aria-label="Calendar view"
             className={cn(
-              'inline-flex items-center justify-center gap-1 h-full w-24 px-2 text-xs rounded border border-input bg-background hover:opacity-90',
-              transparentMode && 'bg-transparent border-current/20',
+              'inline-flex h-full w-24 items-center justify-center gap-1 rounded border border-input bg-background px-2 text-xs hover:opacity-90',
+              transparentMode && 'border-current/20 bg-transparent'
             )}
           >
             <span className="truncate">{activeOpt.label}</span>
-            <ChevronDown className="h-3 w-3 opacity-60 shrink-0" />
+            <ChevronDown className="h-3 w-3 shrink-0 opacity-60" />
           </button>
         </PopoverTrigger>
-        <PopoverContent align="end" className="w-32 p-1 z-[10000]" data-screensaver-keep>
+        <PopoverContent
+          aria-label="Calendar view"
+          align="end"
+          className="z-[10000] w-32 p-1"
+          data-screensaver-keep
+        >
           {VIEW_OPTIONS.map((opt) => {
             const isActive = opt.value === viewType;
             const isAvailable = availableViews.includes(opt.value);
@@ -216,9 +237,9 @@ function ViewPopover({
                 }}
                 className={cn(
                   'flex w-full items-center gap-2 rounded-md px-2 py-1 text-xs',
-                  'hover:bg-accent hover:text-accent-foreground transition-colors',
-                  isActive ? 'bg-accent/60 text-foreground font-medium' : 'text-muted-foreground',
-                  !isAvailable && 'opacity-40 cursor-not-allowed',
+                  'transition-colors hover:bg-accent hover:text-accent-foreground',
+                  isActive ? 'bg-accent/60 font-medium text-foreground' : 'text-muted-foreground',
+                  !isAvailable && 'cursor-not-allowed opacity-40'
                 )}
               >
                 <span className="flex-1 text-left">{opt.label}</span>
@@ -227,13 +248,13 @@ function ViewPopover({
           })}
         </PopoverContent>
       </Popover>
-      <div className="grid grid-rows-2 gap-0.5 w-7 h-full">
+      <div className="grid h-full w-7 grid-rows-2 gap-0.5">
         <button
           type="button"
           aria-label="Previous view"
           title="Previous view"
           onClick={() => cycle(-1)}
-          className="rounded border border-input hover:bg-accent inline-flex items-center justify-center min-h-0"
+          className="inline-flex min-h-0 items-center justify-center rounded border border-input hover:bg-accent"
         >
           <span className="block text-[10px] leading-none">▲</span>
         </button>
@@ -242,7 +263,7 @@ function ViewPopover({
           aria-label="Next view"
           title="Next view"
           onClick={() => cycle(1)}
-          className="rounded border border-input hover:bg-accent inline-flex items-center justify-center min-h-0"
+          className="inline-flex min-h-0 items-center justify-center rounded border border-input hover:bg-accent"
         >
           <span className="block text-[10px] leading-none">▼</span>
         </button>

@@ -23,6 +23,7 @@
  */
 
 'use client';
+import { useBoardTheme } from '@/components/theme/KystTheme';
 
 import * as React from 'react';
 import { formatDistanceToNow } from 'date-fns';
@@ -30,7 +31,6 @@ import { MessageSquare, Pin, Plus, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { WidgetContainer, WidgetEmpty } from './WidgetContainer';
 import { Button, UserAvatar } from '@/components/ui';
-
 
 /**
  * FAMILY MESSAGE TYPE
@@ -50,7 +50,6 @@ export interface FamilyMessage {
   important: boolean;
   expiresAt?: Date | null;
 }
-
 
 /**
  * MESSAGES WIDGET PROPS
@@ -74,7 +73,6 @@ export interface MessagesWidgetProps {
   className?: string;
 }
 
-
 /**
  * MESSAGES WIDGET COMPONENT
  * Displays the family message board.
@@ -95,6 +93,7 @@ export const MessagesWidget = React.memo(function MessagesWidget({
   onDeleteClick,
   className,
 }: MessagesWidgetProps) {
+  const nox = useBoardTheme() === 'nox';
   // Use provided messages (no demo data fallback in production)
   const allMessages = externalMessages || [];
 
@@ -106,7 +105,7 @@ export const MessagesWidget = React.memo(function MessagesWidget({
   });
 
   // Limit messages
-  const displayMessages = sortedMessages.slice(0, maxMessages);
+  const displayMessages = nox ? sortedMessages : sortedMessages.slice(0, maxMessages);
 
   return (
     <WidgetContainer
@@ -146,7 +145,7 @@ export const MessagesWidget = React.memo(function MessagesWidget({
           }
         />
       ) : (
-        <div className="overflow-auto h-full -mr-2 pr-2">
+        <div className="-mr-2 h-full overflow-auto pr-2">
           <div className="space-y-3">
             {displayMessages.map((message) => (
               <MessageItem
@@ -159,7 +158,7 @@ export const MessagesWidget = React.memo(function MessagesWidget({
           </div>
 
           {/* Show remaining count */}
-          {allMessages.length > maxMessages && (
+          {!nox && allMessages.length > maxMessages && (
             <div className="mt-3 text-center text-xs text-muted-foreground">
               +{allMessages.length - maxMessages} more messages
             </div>
@@ -169,7 +168,6 @@ export const MessagesWidget = React.memo(function MessagesWidget({
     </WidgetContainer>
   );
 });
-
 
 /**
  * MESSAGE ITEM
@@ -189,15 +187,15 @@ function MessageItem({
   return (
     <div
       className={cn(
-        'w-full text-left p-2 rounded-lg group',
-        'hover:bg-accent/50 transition-colors',
+        'group w-full rounded-lg p-2 text-left',
+        'transition-colors hover:bg-accent/50',
         'touch-action-manipulation',
-        message.important && 'bg-destructive/10 border border-destructive/20'
+        message.important && 'border border-destructive/20 bg-destructive/10'
       )}
     >
       {/* Header: Author and time */}
-      <div className="flex items-center justify-between mb-1">
-        <button onClick={onClick} className="flex items-center gap-2 flex-1">
+      <div className="mb-1 flex items-center justify-between">
+        <button onClick={onClick} className="flex flex-1 items-center gap-2">
           <UserAvatar
             name={message.author.name}
             color={message.author.color}
@@ -205,27 +203,20 @@ function MessageItem({
             size="sm"
             className="h-5 w-5 text-[10px]"
           />
-          <span
-            className="text-xs font-medium"
-            style={{ color: message.author.color }}
-          >
+          <span className="text-xs font-medium" style={{ color: message.author.color }}>
             {message.author.name}
           </span>
-          {message.pinned && (
-            <Pin className="h-3 w-3 text-muted-foreground" />
-          )}
+          {message.pinned && <Pin className="h-3 w-3 text-muted-foreground" />}
         </button>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">
-            {timeAgo}
-          </span>
+          <span className="text-xs text-muted-foreground">{timeAgo}</span>
           {onDelete && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete();
               }}
-              className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-destructive/20 transition-opacity"
+              className="rounded p-1 opacity-0 transition-opacity hover:bg-destructive/20 group-hover:opacity-100"
               title="Delete message"
               aria-label="Delete message"
             >
@@ -237,9 +228,7 @@ function MessageItem({
 
       {/* Message content */}
       <button onClick={onClick} className="w-full text-left">
-        <p className="text-sm text-foreground">
-          {message.message}
-        </p>
+        <p className="text-sm text-foreground">{message.message}</p>
       </button>
     </div>
   );

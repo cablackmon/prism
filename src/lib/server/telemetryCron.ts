@@ -22,7 +22,7 @@ async function tick() {
     const result = await runCheckIn();
     if (result.sent) {
       console.log(
-        `[telemetry] checked in${result.latestVersion ? ` (latest: ${result.latestVersion})` : ''}`,
+        `[telemetry] checked in${result.latestVersion ? ` (latest: ${result.latestVersion})` : ''}`
       );
     }
     // A skipped check-in (disabled / no endpoint) is intentionally silent.
@@ -50,7 +50,5 @@ export function startTelemetryCron(): void {
     setInterval(() => void tick(), INTERVAL_MS);
   }, INITIAL_DELAY_MS);
 
-  console.log(
-    `[telemetry] scheduled weekly (first run in ${INITIAL_DELAY_MS / 1000}s)`,
-  );
+  console.log(`[telemetry] scheduled weekly (first run in ${INITIAL_DELAY_MS / 1000}s)`);
 }

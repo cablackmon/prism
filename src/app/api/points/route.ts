@@ -14,62 +14,66 @@ export async function GET() {
   }
 
   try {
-    const data = await getCached('points:summary', async () => {
-      const [wso] = await db.select().from(settings).where(eq(settings.key, 'weekStartsOn'));
-      const weekStartsOn: 0 | 1 = wso?.value === '1' ? 1 : 0;
+    const data = await getCached(
+      'points:summary',
+      async () => {
+        const [wso] = await db.select().from(settings).where(eq(settings.key, 'weekStartsOn'));
+        const weekStartsOn: 0 | 1 = wso?.value === '1' ? 1 : 0;
 
-      const children = await db
-        .select({ id: users.id, name: users.name, color: users.color })
-        .from(users)
-        .where(eq(users.role, 'child'));
+        const children = await db
+          .select({ id: users.id, name: users.name, color: users.color })
+          .from(users)
+          .where(eq(users.role, 'child'));
 
-      const now = new Date();
-      const weekStart = startOfWeek(now, { weekStartsOn });
-      const monthStart = startOfMonth(now);
-      const yearStart = startOfYear(now);
+        const now = new Date();
+        const weekStart = startOfWeek(now, { weekStartsOn });
+        const monthStart = startOfMonth(now);
+        const yearStart = startOfYear(now);
 
-      const summaries = await Promise.all(
-        children.map(async (child) => {
-          const completions = await db
-            .select({
-              pointsAwarded: choreCompletions.pointsAwarded,
-              completedAt: choreCompletions.completedAt,
-            })
-            .from(choreCompletions)
-            .where(
-              and(
-                eq(choreCompletions.completedBy, child.id),
-                isNotNull(choreCompletions.approvedBy)
-              )
-            );
+        const summaries = await Promise.all(
+          children.map(async (child) => {
+            const completions = await db
+              .select({
+                pointsAwarded: choreCompletions.pointsAwarded,
+                completedAt: choreCompletions.completedAt,
+              })
+              .from(choreCompletions)
+              .where(
+                and(
+                  eq(choreCompletions.completedBy, child.id),
+                  isNotNull(choreCompletions.approvedBy)
+                )
+              );
 
-          let weekly = 0;
-          let monthly = 0;
-          let yearly = 0;
-          let allTime = 0;
+            let weekly = 0;
+            let monthly = 0;
+            let yearly = 0;
+            let allTime = 0;
 
-          for (const c of completions) {
-            const pts = c.pointsAwarded ?? 0;
-            allTime += pts;
-            if (c.completedAt >= yearStart) yearly += pts;
-            if (c.completedAt >= monthStart) monthly += pts;
-            if (c.completedAt >= weekStart) weekly += pts;
-          }
+            for (const c of completions) {
+              const pts = c.pointsAwarded ?? 0;
+              allTime += pts;
+              if (c.completedAt >= yearStart) yearly += pts;
+              if (c.completedAt >= monthStart) monthly += pts;
+              if (c.completedAt >= weekStart) weekly += pts;
+            }
 
-          return {
-            userId: child.id,
-            name: child.name,
-            color: child.color,
-            weekly,
-            monthly,
-            yearly,
-            allTime,
-          };
-        })
-      );
+            return {
+              userId: child.id,
+              name: child.name,
+              color: child.color,
+              weekly,
+              monthly,
+              yearly,
+              allTime,
+            };
+          })
+        );
 
-      return summaries;
-    }, 120);
+        return summaries;
+      },
+      120
+    );
 
     return NextResponse.json({ points: data });
   } catch (error) {

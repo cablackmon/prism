@@ -19,8 +19,8 @@ export interface ScreenSafeZones {
 // --- Config types (stored in localStorage) ---
 
 export interface ScreenZoneConfig {
-  name: string;   // e.g. "16:9 (1080p)", "4:3 (iPad)"
-  width: number;  // resolution width in pixels
+  name: string; // e.g. "16:9 (1080p)", "4:3 (iPad)"
+  width: number; // resolution width in pixels
   height: number; // resolution height in pixels
   color: string;
 }
@@ -36,11 +36,11 @@ export const DEFAULT_SCREENS: ScreenZoneConfig[] = [
 ];
 
 export const RESOLUTION_PRESETS: { label: string; width: number; height: number }[] = [
-  { label: '16:9 (1080p)',    width: 1920, height: 1080 },
-  { label: '16:9 (4K)',       width: 3840, height: 2160 },
-  { label: '3:2 (Surface)',   width: 1500, height: 1000 },
+  { label: '16:9 (1080p)', width: 1920, height: 1080 },
+  { label: '16:9 (4K)', width: 3840, height: 2160 },
+  { label: '3:2 (Surface)', width: 1500, height: 1000 },
   { label: '16:10 (MacBook)', width: 2560, height: 1600 },
-  { label: '4:3 (iPad)',      width: 2048, height: 1536 },
+  { label: '4:3 (iPad)', width: 2048, height: 1536 },
 ];
 
 // --- Storage ---
@@ -66,14 +66,12 @@ export function computeZones(
   screens: ScreenZoneConfig[],
   orientation: 'landscape' | 'portrait'
 ): ScreenSafeZone[] {
-  return screens.map(s => {
+  return screens.map((s) => {
     // In landscape, width = wider dimension; in portrait, width = narrower dimension
-    const w = orientation === 'landscape'
-      ? Math.max(s.width, s.height)
-      : Math.min(s.width, s.height);
-    const h = orientation === 'landscape'
-      ? Math.min(s.width, s.height)
-      : Math.max(s.width, s.height);
+    const w =
+      orientation === 'landscape' ? Math.max(s.width, s.height) : Math.min(s.width, s.height);
+    const h =
+      orientation === 'landscape' ? Math.min(s.width, s.height) : Math.max(s.width, s.height);
     const cols = getBreakpointCols(w);
     return {
       name: s.name,
@@ -81,7 +79,7 @@ export function computeZones(
       // Cap at 64 = the canonical 9:16 portrait canvas (36×64). A lower cap
       // truncated the guide so 9:16 portrait templates (rows 50–64) spilled past
       // the blue perimeter markers in the editor.
-      rows: Math.min(Math.round(cols * h / w), 64),
+      rows: Math.min(Math.round((cols * h) / w), 64),
       color: s.color,
     };
   });
@@ -110,7 +108,9 @@ function loadScreens(): ScreenZoneConfig[] {
         return config.screens;
       }
     }
-  } catch { /* use defaults */ }
+  } catch {
+    /* use defaults */
+  }
   return DEFAULT_SCREENS;
 }
 
@@ -147,8 +147,12 @@ export function useScreenSafeZones() {
     try {
       const config: ScreenSafeZonesConfig = { screens: newScreens };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
-      window.dispatchEvent(new CustomEvent('prism:screen-safe-zones-change', { detail: newScreens }));
-    } catch { /* ignore storage errors */ }
+      window.dispatchEvent(
+        new CustomEvent('prism:screen-safe-zones-change', { detail: newScreens })
+      );
+    } catch {
+      /* ignore storage errors */
+    }
   }, []);
 
   const resetToDefaults = useCallback(() => {
@@ -156,15 +160,16 @@ export function useScreenSafeZones() {
   }, [setScreens]);
 
   // Compute zones from screens (aspect-ratio-based, no reference needed)
-  const zones: ScreenSafeZones = useMemo(() => ({
-    landscape: computeZones(screens, 'landscape'),
-    portrait: computeZones(screens, 'portrait'),
-  }), [screens]);
+  const zones: ScreenSafeZones = useMemo(
+    () => ({
+      landscape: computeZones(screens, 'landscape'),
+      portrait: computeZones(screens, 'portrait'),
+    }),
+    [screens]
+  );
 
   // All zone names (for toggle buttons in layout designer)
-  const allSizeNames = useMemo(() =>
-    screens.map(s => s.name),
-  [screens]);
+  const allSizeNames = useMemo(() => screens.map((s) => s.name), [screens]);
 
   return { zones, screens, setScreens, resetToDefaults, allSizeNames };
 }

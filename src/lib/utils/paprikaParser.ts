@@ -110,9 +110,10 @@ function extractText(html: string): string {
  */
 function parseRecipeSection(html: string): PaprikaRecipe | null {
   // Try to find recipe name
-  const nameMatch = html.match(/<h1[^>]*class="[^"]*title[^"]*"[^>]*>([\s\S]*?)<\/h1>/i) ||
-                    html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i) ||
-                    html.match(/<title>([\s\S]*?)<\/title>/i);
+  const nameMatch =
+    html.match(/<h1[^>]*class="[^"]*title[^"]*"[^>]*>([\s\S]*?)<\/h1>/i) ||
+    html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i) ||
+    html.match(/<title>([\s\S]*?)<\/title>/i);
 
   const nameContent = nameMatch?.[1];
   const name = nameContent ? extractText(nameContent) : 'Untitled Recipe';
@@ -134,8 +135,9 @@ function parseRecipeSection(html: string): PaprikaRecipe | null {
   }
 
   // Ingredients - look for ingredient list/section
-  const ingredientsMatch = html.match(/<div[^>]*class="[^"]*ingredients?[^"]*"[^>]*>([\s\S]*?)<\/div>/i) ||
-                           html.match(/<section[^>]*class="[^"]*ingredients?[^"]*"[^>]*>([\s\S]*?)<\/section>/i);
+  const ingredientsMatch =
+    html.match(/<div[^>]*class="[^"]*ingredients?[^"]*"[^>]*>([\s\S]*?)<\/div>/i) ||
+    html.match(/<section[^>]*class="[^"]*ingredients?[^"]*"[^>]*>([\s\S]*?)<\/section>/i);
 
   const ingredientHtml = ingredientsMatch?.[1];
   if (ingredientHtml) {
@@ -143,22 +145,32 @@ function parseRecipeSection(html: string): PaprikaRecipe | null {
     const ingredientLines = ingredientHtml
       .split(/<li[^>]*>/i)
       .map(extractText)
-      .filter(line => line.trim().length > 0);
+      .filter((line) => line.trim().length > 0);
 
-    recipe.ingredients = ingredientLines.map(text => ({ text }));
+    recipe.ingredients = ingredientLines.map((text) => ({ text }));
   } else {
     // Fallback: look for lines after "Ingredients" heading
-    const afterIngredients = html.match(/ingredients[:\s]*<\/h\d>[\s\S]*?(<ul[^>]*>[\s\S]*?<\/ul>)/i);
+    const afterIngredients = html.match(
+      /ingredients[:\s]*<\/h\d>[\s\S]*?(<ul[^>]*>[\s\S]*?<\/ul>)/i
+    );
     const ulContent = afterIngredients?.[1];
     if (ulContent) {
-      const items = ulContent.split(/<li[^>]*>/i).map(extractText).filter(Boolean);
-      recipe.ingredients = items.map(text => ({ text }));
+      const items = ulContent
+        .split(/<li[^>]*>/i)
+        .map(extractText)
+        .filter(Boolean);
+      recipe.ingredients = items.map((text) => ({ text }));
     }
   }
 
   // Instructions/Directions
-  const instructionsMatch = html.match(/<div[^>]*class="[^"]*(?:instructions?|directions?)[^"]*"[^>]*>([\s\S]*?)<\/div>/i) ||
-                            html.match(/<section[^>]*class="[^"]*(?:instructions?|directions?)[^"]*"[^>]*>([\s\S]*?)<\/section>/i);
+  const instructionsMatch =
+    html.match(
+      /<div[^>]*class="[^"]*(?:instructions?|directions?)[^"]*"[^>]*>([\s\S]*?)<\/div>/i
+    ) ||
+    html.match(
+      /<section[^>]*class="[^"]*(?:instructions?|directions?)[^"]*"[^>]*>([\s\S]*?)<\/section>/i
+    );
 
   const instructionsContent = instructionsMatch?.[1];
   if (instructionsContent) {
@@ -208,14 +220,15 @@ function parseRecipeSection(html: string): PaprikaRecipe | null {
   if (categoriesContent) {
     recipe.categories = categoriesContent
       .split(/[,;]/)
-      .map(c => c.trim())
+      .map((c) => c.trim())
       .filter(Boolean);
   }
 
   // Image
-  const imageMatch = html.match(/<img[^>]*class="[^"]*recipe[^"]*"[^>]*src="([^"]+)"/i) ||
-                     html.match(/<img[^>]*src="([^"]+)"[^>]*class="[^"]*recipe[^"]*"/i) ||
-                     html.match(/<img[^>]*src="(data:image[^"]+)"/i);
+  const imageMatch =
+    html.match(/<img[^>]*class="[^"]*recipe[^"]*"[^>]*src="([^"]+)"/i) ||
+    html.match(/<img[^>]*src="([^"]+)"[^>]*class="[^"]*recipe[^"]*"/i) ||
+    html.match(/<img[^>]*src="(data:image[^"]+)"/i);
   if (imageMatch?.[1]) {
     recipe.imageUrl = imageMatch[1];
   }
@@ -228,8 +241,8 @@ function parseRecipeSection(html: string): PaprikaRecipe | null {
   }
 
   // Rating
-  const ratingMatch = html.match(/rating[:\s]*([^<]+)/i) ||
-                      html.match(/class="[^"]*rating[^"]*"[^>]*>([^<]+)/i);
+  const ratingMatch =
+    html.match(/rating[:\s]*([^<]+)/i) || html.match(/class="[^"]*rating[^"]*"[^>]*>([^<]+)/i);
   if (ratingMatch?.[1]) {
     recipe.rating = parseRating(ratingMatch[1]);
   }

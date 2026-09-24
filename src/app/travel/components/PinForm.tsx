@@ -2,7 +2,17 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Emoji } from '@/components/ui/Emoji';
-import { Search, X, Loader2, Star, MapPin, Plus, TreePine, ChevronDown, ChevronUp } from 'lucide-react';
+import {
+  Search,
+  X,
+  Loader2,
+  Star,
+  MapPin,
+  Plus,
+  TreePine,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -43,7 +53,16 @@ interface PinFormProps {
   onCancel: () => void;
 }
 
-export function PinForm({ pin, initialLatLng, parentId, pinType = 'location', childPins = [], hideHeader, onSave, onCancel }: PinFormProps) {
+export function PinForm({
+  pin,
+  initialLatLng,
+  parentId,
+  pinType = 'location',
+  childPins = [],
+  hideHeader,
+  onSave,
+  onCancel,
+}: PinFormProps) {
   const isChildPin = !!(parentId || pin?.parentId);
   const effectivePinType = pin?.pinType ?? pinType;
   const isNP = effectivePinType === 'national_park';
@@ -99,7 +118,10 @@ export function PinForm({ pin, initialLatLng, parentId, pinType = 'location', ch
   const hasLocation = lat !== 0 || lng !== 0;
 
   const searchLocation = useCallback(async (q: string) => {
-    if (q.trim().length < 2) { setSearchResults([]); return; }
+    if (q.trim().length < 2) {
+      setSearchResults([]);
+      return;
+    }
     setSearching(true);
     try {
       const res = await fetch(`/api/travel/geocode?q=${encodeURIComponent(q)}`);
@@ -112,9 +134,14 @@ export function PinForm({ pin, initialLatLng, parentId, pinType = 'location', ch
 
   useEffect(() => {
     if (searchTimer.current) clearTimeout(searchTimer.current);
-    if (hasLocation) { setSearchResults([]); return; }
+    if (hasLocation) {
+      setSearchResults([]);
+      return;
+    }
     searchTimer.current = setTimeout(() => searchLocation(inputValue), 350);
-    return () => { if (searchTimer.current) clearTimeout(searchTimer.current); };
+    return () => {
+      if (searchTimer.current) clearTimeout(searchTimer.current);
+    };
   }, [inputValue, hasLocation, searchLocation]);
 
   useEffect(() => {
@@ -126,7 +153,10 @@ export function PinForm({ pin, initialLatLng, parentId, pinType = 'location', ch
   // Stop geocode search
   useEffect(() => {
     if (stopTimer.current) clearTimeout(stopTimer.current);
-    if (stopQuery.trim().length < 2) { setStopResults([]); return; }
+    if (stopQuery.trim().length < 2) {
+      setStopResults([]);
+      return;
+    }
     stopTimer.current = setTimeout(async () => {
       setStopSearching(true);
       try {
@@ -137,13 +167,16 @@ export function PinForm({ pin, initialLatLng, parentId, pinType = 'location', ch
         setStopSearching(false);
       }
     }, 350);
-    return () => { if (stopTimer.current) clearTimeout(stopTimer.current); };
+    return () => {
+      if (stopTimer.current) clearTimeout(stopTimer.current);
+    };
   }, [stopQuery]);
 
   const selectResult = (result: GeocodeResult) => {
     const shortName = result.displayName.split(',')[0]?.trim() ?? result.displayName;
     // Always update name when editing unless user has typed a custom name that differs from any previous geocode result
-    if (!inputValue || !pin || inputValue === placeName.split(',')[0]?.trim()) setInputValue(shortName);
+    if (!inputValue || !pin || inputValue === placeName.split(',')[0]?.trim())
+      setInputValue(shortName);
     setLat(result.latitude);
     setLng(result.longitude);
     setPlaceName(result.displayName);
@@ -166,7 +199,12 @@ export function PinForm({ pin, initialLatLng, parentId, pinType = 'location', ch
 
   const selectStopResult = (result: GeocodeResult) => {
     const name = result.displayName.split(',')[0]?.trim() ?? result.displayName;
-    const stop: PendingStop = { name, latitude: result.latitude, longitude: result.longitude, placeName: result.displayName };
+    const stop: PendingStop = {
+      name,
+      latitude: result.latitude,
+      longitude: result.longitude,
+      placeName: result.displayName,
+    };
     if (!pendingStops.some((s) => s.name === name)) {
       setPendingStops((prev) => [...prev, stop]);
     }
@@ -190,13 +228,24 @@ export function PinForm({ pin, initialLatLng, parentId, pinType = 'location', ch
     // Optimistically add, then fill in coordinates from geocode
     setPendingParks((prev) => [...prev, { name, latitude: 0, longitude: 0 }]);
     try {
-      const res = await fetch(`/api/travel/geocode?q=${encodeURIComponent(name + ' National Park')}`);
+      const res = await fetch(
+        `/api/travel/geocode?q=${encodeURIComponent(name + ' National Park')}`
+      );
       const data = await res.json();
       const first = data.results?.[0];
       if (first) {
-        setPendingParks((prev) => prev.map((p) =>
-          p.name === name ? { name, latitude: first.latitude, longitude: first.longitude, placeName: first.fullName } : p
-        ));
+        setPendingParks((prev) =>
+          prev.map((p) =>
+            p.name === name
+              ? {
+                  name,
+                  latitude: first.latitude,
+                  longitude: first.longitude,
+                  placeName: first.fullName,
+                }
+              : p
+          )
+        );
       }
     } catch {
       // keep with no location — user can set it from the detail view
@@ -207,9 +256,7 @@ export function PinForm({ pin, initialLatLng, parentId, pinType = 'location', ch
     u.name.toLowerCase().includes(parkSearch.toLowerCase())
   );
 
-  const filteredNP = NPS_UNITS.filter((u) =>
-    u.name.toLowerCase().includes(npSearch.toLowerCase())
-  );
+  const filteredNP = NPS_UNITS.filter((u) => u.name.toLowerCase().includes(npSearch.toLowerCase()));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -219,14 +266,17 @@ export function PinForm({ pin, initialLatLng, parentId, pinType = 'location', ch
     setSaving(true);
     setSaveError(null);
     try {
-      const tags = tagInput.split(',').map((t) => t.trim()).filter(Boolean);
+      const tags = tagInput
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean);
       await onSave(
         {
           name: nameToSave,
           description: description.trim() || null,
           status,
           isBucketList: isChildPin ? false : isBucketList,
-          tripLabel: isChildPin ? null : (tripLabel.trim() || null),
+          tripLabel: isChildPin ? null : tripLabel.trim() || null,
           latitude: lat,
           longitude: lng,
           placeName: placeName.trim() || null,
@@ -239,12 +289,16 @@ export function PinForm({ pin, initialLatLng, parentId, pinType = 'location', ch
           parentId: pin?.parentId ?? parentId ?? null,
           pinType: effectivePinType,
         },
-        (pendingStops.length > 0 || pendingParks.length > 0) ? { stops: pendingStops, parks: pendingParks } : undefined
+        pendingStops.length > 0 || pendingParks.length > 0
+          ? { stops: pendingStops, parks: pendingParks }
+          : undefined
       );
     } catch (err) {
-      setSaveError(err instanceof Error && err.name === 'TravelAuthError'
-        ? 'Log in to make changes'
-        : 'Something went wrong — please try again');
+      setSaveError(
+        err instanceof Error && err.name === 'TravelAuthError'
+          ? 'Log in to make changes'
+          : 'Something went wrong — please try again'
+      );
     } finally {
       setSaving(false);
     }
@@ -255,13 +309,19 @@ export function PinForm({ pin, initialLatLng, parentId, pinType = 'location', ch
     : `Add ${isNP ? 'National Park' : effectivePinType === 'stop' ? 'Stop' : 'Place'}`;
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col h-full">
+    <form onSubmit={handleSubmit} className="flex h-full flex-col">
       {/* ── Non-scrolling header ── */}
-      <div className="px-4 pt-4 pb-3 border-b border-border shrink-0 flex flex-col gap-3">
+      <div className="flex shrink-0 flex-col gap-3 border-b border-border px-4 pb-3 pt-4">
         {!hideHeader && (
           <div className="flex items-center justify-between">
             <h3 className="font-semibold">{title}</h3>
-            <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={onCancel}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={onCancel}
+            >
               <X className="h-4 w-4" />
             </Button>
           </div>
@@ -271,8 +331,8 @@ export function PinForm({ pin, initialLatLng, parentId, pinType = 'location', ch
         {isNP && (
           <div className="space-y-1">
             <Label>National Park / Monument *</Label>
-            <div className="border border-border rounded-md overflow-hidden">
-              <div className="p-2 border-b border-border">
+            <div className="overflow-hidden rounded-md border border-border">
+              <div className="border-b border-border p-2">
                 <Input
                   placeholder="Search parks…"
                   value={npSearch}
@@ -286,16 +346,24 @@ export function PinForm({ pin, initialLatLng, parentId, pinType = 'location', ch
                   const sel = selectedPark === u.name;
                   return (
                     <li key={u.name}>
-                      <button type="button" onClick={() => selectNP(u.name)}
-                        className={cn('w-full text-left px-3 py-1.5 text-sm flex items-center gap-2 transition-colors',
-                          sel ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'hover:bg-muted')}
+                      <button
+                        type="button"
+                        onClick={() => selectNP(u.name)}
+                        className={cn(
+                          'flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition-colors',
+                          sel ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'hover:bg-muted'
+                        )}
                       >
-                        <span className={cn('h-4 w-4 rounded border flex items-center justify-center shrink-0',
-                          sel ? 'bg-emerald-600 border-emerald-600' : 'border-border')}>
-                          {sel && <span className="text-white text-[10px] leading-none">✓</span>}
+                        <span
+                          className={cn(
+                            'flex h-4 w-4 shrink-0 items-center justify-center rounded border',
+                            sel ? 'border-emerald-600 bg-emerald-600' : 'border-border'
+                          )}
+                        >
+                          {sel && <span className="text-[10px] leading-none text-white">✓</span>}
                         </span>
                         <span className="flex-1 truncate">{u.name}</span>
-                        <span className="text-[10px] text-muted-foreground uppercase shrink-0">
+                        <span className="shrink-0 text-[10px] uppercase text-muted-foreground">
                           {u.type === 'monument' ? 'NM' : 'NP'}
                         </span>
                       </button>
@@ -303,7 +371,9 @@ export function PinForm({ pin, initialLatLng, parentId, pinType = 'location', ch
                   );
                 })}
                 {filteredNP.length === 0 && (
-                  <li className="px-3 py-3 text-sm text-muted-foreground text-center">No matches</li>
+                  <li className="px-3 py-3 text-center text-sm text-muted-foreground">
+                    No matches
+                  </li>
                 )}
               </ul>
             </div>
@@ -313,16 +383,22 @@ export function PinForm({ pin, initialLatLng, parentId, pinType = 'location', ch
         {/* Combined name + location search */}
         <div className="space-y-1">
           <Label htmlFor="place-input">
-            {isNP ? 'Park location' : effectivePinType === 'stop' ? 'Stop name & location *' : 'Place name & location *'}
+            {isNP
+              ? 'Park location'
+              : effectivePinType === 'stop'
+                ? 'Stop name & location *'
+                : 'Place name & location *'}
           </Label>
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               id="place-input"
               placeholder={
-                isNP ? 'Search for park location…' :
-                effectivePinType === 'stop' ? 'e.g. Kauai, Rome, Banff' :
-                'Search for a city, park, or place…'
+                isNP
+                  ? 'Search for park location…'
+                  : effectivePinType === 'stop'
+                    ? 'e.g. Kauai, Rome, Banff'
+                    : 'Search for a city, park, or place…'
               }
               className="pl-8"
               value={inputValue}
@@ -333,16 +409,20 @@ export function PinForm({ pin, initialLatLng, parentId, pinType = 'location', ch
               autoFocus={!pin && !isNP}
               required
             />
-            {searching && <Loader2 className="absolute right-2.5 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />}
+            {searching && (
+              <Loader2 className="absolute right-2.5 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />
+            )}
             {searchResults.length > 0 && (
-              <ul className="absolute z-50 top-full left-0 right-0 bg-popover border border-border rounded-md shadow-lg mt-1 overflow-hidden max-h-52 overflow-y-auto">
+              <ul className="absolute left-0 right-0 top-full z-50 mt-1 max-h-52 overflow-hidden overflow-y-auto rounded-md border border-border bg-popover shadow-lg">
                 {searchResults.map((r) => (
                   <li key={r.placeId}>
-                    <button type="button" onClick={() => selectResult(r)}
-                      className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors"
+                    <button
+                      type="button"
+                      onClick={() => selectResult(r)}
+                      className="w-full px-3 py-2 text-left text-sm transition-colors hover:bg-accent"
                     >
                       <div className="font-medium">{r.displayName.split(',')[0]?.trim()}</div>
-                      <div className="text-xs text-muted-foreground truncate">{r.fullName}</div>
+                      <div className="truncate text-xs text-muted-foreground">{r.fullName}</div>
                     </button>
                   </li>
                 ))}
@@ -351,9 +431,16 @@ export function PinForm({ pin, initialLatLng, parentId, pinType = 'location', ch
           </div>
           {hasLocation ? (
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <MapPin className="h-3 w-3 text-primary shrink-0" />
-              <span className="truncate">{placeName || `${lat.toFixed(4)}, ${lng.toFixed(4)}`}</span>
-              <button type="button" onClick={clearLocation} className="ml-auto shrink-0 hover:text-destructive" title="Clear location">
+              <MapPin className="h-3 w-3 shrink-0 text-primary" />
+              <span className="truncate">
+                {placeName || `${lat.toFixed(4)}, ${lng.toFixed(4)}`}
+              </span>
+              <button
+                type="button"
+                onClick={clearLocation}
+                className="ml-auto shrink-0 hover:text-destructive"
+                title="Clear location"
+              >
                 <X className="h-3 w-3" />
               </button>
             </div>
@@ -366,19 +453,25 @@ export function PinForm({ pin, initialLatLng, parentId, pinType = 'location', ch
       </div>
 
       {/* ── Scrollable body ── */}
-      <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-4 min-h-0">
-
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-3">
         {/* Status + Bucket list */}
-        <div className="flex gap-2 items-end">
+        <div className="flex items-end gap-2">
           <div className="flex-1 space-y-1">
             <Label>Status</Label>
             <Select value={status} onValueChange={(v) => setStatus(v as PinStatus)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
-                {(Object.entries(STATUS_CONFIG) as [PinStatus, typeof STATUS_CONFIG[PinStatus]][]).map(([key, cfg]) => (
+                {(
+                  Object.entries(STATUS_CONFIG) as [PinStatus, (typeof STATUS_CONFIG)[PinStatus]][]
+                ).map(([key, cfg]) => (
                   <SelectItem key={key} value={key}>
                     <span className="flex items-center gap-2">
-                      <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: cfg.color }} />
+                      <span
+                        className="inline-block h-2 w-2 rounded-full"
+                        style={{ backgroundColor: cfg.color }}
+                      />
                       {cfg.label}
                     </span>
                   </SelectItem>
@@ -387,11 +480,14 @@ export function PinForm({ pin, initialLatLng, parentId, pinType = 'location', ch
             </Select>
           </div>
           {!isChildPin && (
-            <button type="button" onClick={() => setIsBucketList((v) => !v)}
-              className={cn('flex items-center gap-1.5 px-3 py-2 rounded-md border text-sm font-medium transition-colors h-10 shrink-0',
+            <button
+              type="button"
+              onClick={() => setIsBucketList((v) => !v)}
+              className={cn(
+                'flex h-10 shrink-0 items-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium transition-colors',
                 isBucketList
-                  ? 'bg-amber-50 border-amber-300 text-amber-700 dark:bg-amber-900/30 dark:border-amber-600 dark:text-amber-400'
-                  : 'border-border text-muted-foreground hover:text-foreground hover:bg-muted'
+                  ? 'border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-600 dark:bg-amber-900/30 dark:text-amber-400'
+                  : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground'
               )}
             >
               <Star className={cn('h-4 w-4', isBucketList && 'fill-amber-500 text-amber-500')} />
@@ -404,38 +500,52 @@ export function PinForm({ pin, initialLatLng, parentId, pinType = 'location', ch
         {!isChildPin && (
           <div className="space-y-1">
             <Label htmlFor="trip-label">Trip label</Label>
-            <Input id="trip-label" placeholder="e.g. Spring Break 2026, Summer Family Trip"
-              value={tripLabel} onChange={(e) => setTripLabel(e.target.value)} />
+            <Input
+              id="trip-label"
+              placeholder="e.g. Spring Break 2026, Summer Family Trip"
+              value={tripLabel}
+              onChange={(e) => setTripLabel(e.target.value)}
+            />
           </div>
         )}
 
         {/* Stops section (all root pins) */}
         {showChildSections && (
           <div className="space-y-1.5">
-            <button type="button" onClick={() => setShowStops((v) => !v)}
-              className="flex items-center gap-2 text-sm font-medium text-left w-full"
+            <button
+              type="button"
+              onClick={() => setShowStops((v) => !v)}
+              className="flex w-full items-center gap-2 text-left text-sm font-medium"
             >
               <MapPin className="h-4 w-4 text-violet-500" />
               <span>Stops</span>
-              {(childPins.filter(c => c.pinType === 'stop').length + pendingStops.length) > 0 && (
-                <Badge variant="outline" className="text-xs text-violet-600 border-violet-400 ml-1">
-                  {childPins.filter(c => c.pinType === 'stop').length + pendingStops.length}
+              {childPins.filter((c) => c.pinType === 'stop').length + pendingStops.length > 0 && (
+                <Badge variant="outline" className="ml-1 border-violet-400 text-xs text-violet-600">
+                  {childPins.filter((c) => c.pinType === 'stop').length + pendingStops.length}
                 </Badge>
               )}
-              {showStops
-                ? <ChevronUp className="h-3.5 w-3.5 ml-auto text-muted-foreground" />
-                : <ChevronDown className="h-3.5 w-3.5 ml-auto text-muted-foreground" />}
+              {showStops ? (
+                <ChevronUp className="ml-auto h-3.5 w-3.5 text-muted-foreground" />
+              ) : (
+                <ChevronDown className="ml-auto h-3.5 w-3.5 text-muted-foreground" />
+              )}
             </button>
             {showStops && (
               <div className="space-y-2">
                 {/* Existing stops (edit mode) */}
-                {childPins.filter(c => c.pinType === 'stop').length > 0 && (
+                {childPins.filter((c) => c.pinType === 'stop').length > 0 && (
                   <div className="flex flex-wrap gap-1">
-                    {childPins.filter(c => c.pinType === 'stop').map((s) => (
-                      <Badge key={s.id} variant="secondary" className="text-violet-700 bg-violet-50 dark:bg-violet-900/20 text-xs">
-                        <Emoji e="📍" /> {s.name}
-                      </Badge>
-                    ))}
+                    {childPins
+                      .filter((c) => c.pinType === 'stop')
+                      .map((s) => (
+                        <Badge
+                          key={s.id}
+                          variant="secondary"
+                          className="bg-violet-50 text-xs text-violet-700 dark:bg-violet-900/20"
+                        >
+                          <Emoji e="📍" /> {s.name}
+                        </Badge>
+                      ))}
                   </div>
                 )}
                 {/* Geocode search for new stops */}
@@ -445,19 +555,30 @@ export function PinForm({ pin, initialLatLng, parentId, pinType = 'location', ch
                     placeholder="Search for a stop, city, or island…"
                     value={stopQuery}
                     onChange={(e) => setStopQuery(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addStopByName(); } }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addStopByName();
+                      }
+                    }}
                     className="pl-8 pr-8 text-sm"
                   />
-                  {stopSearching && <Loader2 className="absolute right-2.5 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />}
+                  {stopSearching && (
+                    <Loader2 className="absolute right-2.5 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />
+                  )}
                   {stopResults.length > 0 && (
-                    <ul className="absolute z-50 top-full left-0 right-0 bg-popover border border-border rounded-md shadow-lg mt-1 overflow-hidden max-h-44 overflow-y-auto">
+                    <ul className="absolute left-0 right-0 top-full z-50 mt-1 max-h-44 overflow-hidden overflow-y-auto rounded-md border border-border bg-popover shadow-lg">
                       {stopResults.map((r) => (
                         <li key={r.placeId}>
-                          <button type="button" onClick={() => selectStopResult(r)}
-                            className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors"
+                          <button
+                            type="button"
+                            onClick={() => selectStopResult(r)}
+                            className="w-full px-3 py-2 text-left text-sm transition-colors hover:bg-accent"
                           >
                             <div className="font-medium">{r.displayName.split(',')[0]?.trim()}</div>
-                            <div className="text-xs text-muted-foreground truncate">{r.fullName}</div>
+                            <div className="truncate text-xs text-muted-foreground">
+                              {r.fullName}
+                            </div>
                           </button>
                         </li>
                       ))}
@@ -468,16 +589,19 @@ export function PinForm({ pin, initialLatLng, parentId, pinType = 'location', ch
                 {pendingStops.length > 0 && (
                   <div className="flex flex-wrap gap-1">
                     {pendingStops.map((s) => (
-                      <Badge key={s.name} variant="secondary"
-                        className="gap-1 pr-1 text-violet-700 bg-violet-50 dark:bg-violet-900/20"
+                      <Badge
+                        key={s.name}
+                        variant="secondary"
+                        className="gap-1 bg-violet-50 pr-1 text-violet-700 dark:bg-violet-900/20"
                       >
                         <Emoji e="📍" /> {s.name}
                         {s.latitude === 0 && s.longitude === 0 && (
-                          <span className="text-[10px] text-amber-500 ml-0.5">no location</span>
+                          <span className="ml-0.5 text-[10px] text-amber-500">no location</span>
                         )}
-                        <button type="button"
+                        <button
+                          type="button"
                           onClick={() => setPendingStops((p) => p.filter((x) => x.name !== s.name))}
-                          className="hover:text-destructive ml-0.5"
+                          className="ml-0.5 hover:text-destructive"
                         >
                           <X className="h-3 w-3" />
                         </button>
@@ -493,49 +617,78 @@ export function PinForm({ pin, initialLatLng, parentId, pinType = 'location', ch
         {/* National parks section (all root pins) */}
         {showChildSections && (
           <div className="space-y-1.5">
-            <button type="button" onClick={() => setShowParkPicker((v) => !v)}
-              className="flex items-center gap-2 text-sm font-medium text-left w-full"
+            <button
+              type="button"
+              onClick={() => setShowParkPicker((v) => !v)}
+              className="flex w-full items-center gap-2 text-left text-sm font-medium"
             >
               <TreePine className="h-4 w-4 text-emerald-700" />
               <span>National Parks</span>
-              {(childPins.filter(c => c.pinType === 'national_park').length + pendingParks.length) > 0 && (
-                <Badge variant="outline" className="text-xs text-emerald-700 border-emerald-600 ml-1">
-                  {childPins.filter(c => c.pinType === 'national_park').length + pendingParks.length}
+              {childPins.filter((c) => c.pinType === 'national_park').length + pendingParks.length >
+                0 && (
+                <Badge
+                  variant="outline"
+                  className="ml-1 border-emerald-600 text-xs text-emerald-700"
+                >
+                  {childPins.filter((c) => c.pinType === 'national_park').length +
+                    pendingParks.length}
                 </Badge>
               )}
-              {showParkPicker
-                ? <ChevronUp className="h-3.5 w-3.5 ml-auto text-muted-foreground" />
-                : <ChevronDown className="h-3.5 w-3.5 ml-auto text-muted-foreground" />}
+              {showParkPicker ? (
+                <ChevronUp className="ml-auto h-3.5 w-3.5 text-muted-foreground" />
+              ) : (
+                <ChevronDown className="ml-auto h-3.5 w-3.5 text-muted-foreground" />
+              )}
             </button>
             {showParkPicker && (
-              <div className="border border-border rounded-md overflow-hidden">
+              <div className="overflow-hidden rounded-md border border-border">
                 {/* Existing parks (edit mode) */}
-                {childPins.filter(c => c.pinType === 'national_park').length > 0 && (
-                  <div className="p-2 border-b border-border flex flex-wrap gap-1">
-                    {childPins.filter(c => c.pinType === 'national_park').map((p) => (
-                      <Badge key={p.id} className="bg-emerald-700 text-white text-xs"><Emoji e="🌲" /> {p.name}</Badge>
-                    ))}
+                {childPins.filter((c) => c.pinType === 'national_park').length > 0 && (
+                  <div className="flex flex-wrap gap-1 border-b border-border p-2">
+                    {childPins
+                      .filter((c) => c.pinType === 'national_park')
+                      .map((p) => (
+                        <Badge key={p.id} className="bg-emerald-700 text-xs text-white">
+                          <Emoji e="🌲" /> {p.name}
+                        </Badge>
+                      ))}
                   </div>
                 )}
-                <div className="p-2 border-b border-border">
-                  <Input placeholder="Filter parks…" value={parkSearch}
-                    onChange={(e) => setParkSearch(e.target.value)} className="h-8 text-sm" />
+                <div className="border-b border-border p-2">
+                  <Input
+                    placeholder="Filter parks…"
+                    value={parkSearch}
+                    onChange={(e) => setParkSearch(e.target.value)}
+                    className="h-8 text-sm"
+                  />
                 </div>
                 <ul className="max-h-40 overflow-y-auto">
                   {filteredParks.map((u) => {
                     const selected = pendingParks.some((p) => p.name === u.name);
                     return (
                       <li key={u.name}>
-                        <button type="button" onClick={() => { void togglePendingPark(u.name); }}
-                          className={cn('w-full text-left px-3 py-1.5 text-sm flex items-center gap-2 transition-colors',
-                            selected ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'hover:bg-muted')}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            void togglePendingPark(u.name);
+                          }}
+                          className={cn(
+                            'flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition-colors',
+                            selected ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'hover:bg-muted'
+                          )}
                         >
-                          <span className={cn('h-4 w-4 rounded border flex items-center justify-center shrink-0',
-                            selected ? 'bg-emerald-600 border-emerald-600' : 'border-border')}>
-                            {selected && <span className="text-white text-[10px] leading-none">✓</span>}
+                          <span
+                            className={cn(
+                              'flex h-4 w-4 shrink-0 items-center justify-center rounded border',
+                              selected ? 'border-emerald-600 bg-emerald-600' : 'border-border'
+                            )}
+                          >
+                            {selected && (
+                              <span className="text-[10px] leading-none text-white">✓</span>
+                            )}
                           </span>
                           <span className="flex-1 truncate">{u.name}</span>
-                          <span className="text-[10px] text-muted-foreground uppercase shrink-0">
+                          <span className="shrink-0 text-[10px] uppercase text-muted-foreground">
                             {u.type === 'monument' ? 'NM' : 'NP'}
                           </span>
                         </button>
@@ -543,7 +696,9 @@ export function PinForm({ pin, initialLatLng, parentId, pinType = 'location', ch
                     );
                   })}
                   {filteredParks.length === 0 && (
-                    <li className="px-3 py-3 text-sm text-muted-foreground text-center">No matches</li>
+                    <li className="px-3 py-3 text-center text-sm text-muted-foreground">
+                      No matches
+                    </li>
                   )}
                 </ul>
               </div>
@@ -551,12 +706,18 @@ export function PinForm({ pin, initialLatLng, parentId, pinType = 'location', ch
             {pendingParks.length > 0 && !showParkPicker && (
               <div className="flex flex-wrap gap-1">
                 {pendingParks.map((p) => (
-                  <Badge key={p.name} className="bg-emerald-700 text-white gap-1 pr-1 text-xs">
+                  <Badge key={p.name} className="gap-1 bg-emerald-700 pr-1 text-xs text-white">
                     <Emoji e="🌲" /> {p.name}
                     {p.latitude === 0 && p.longitude === 0 && (
-                      <span className="text-[10px] text-emerald-200 ml-0.5">locating…</span>
+                      <span className="ml-0.5 text-[10px] text-emerald-200">locating…</span>
                     )}
-                    <button type="button" onClick={() => { void togglePendingPark(p.name); }} className="hover:opacity-75">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void togglePendingPark(p.name);
+                      }}
+                      className="hover:opacity-75"
+                    >
                       <X className="h-3 w-3" />
                     </button>
                   </Badge>
@@ -575,13 +736,23 @@ export function PinForm({ pin, initialLatLng, parentId, pinType = 'location', ch
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
             <Label htmlFor="visit-start">{status === 'been_there' ? 'From' : 'Planned date'}</Label>
-            <Input id="visit-start" type="date" value={visitedDate} onChange={(e) => setVisitedDate(e.target.value)} />
+            <Input
+              id="visit-start"
+              type="date"
+              value={visitedDate}
+              onChange={(e) => setVisitedDate(e.target.value)}
+            />
           </div>
           {status === 'been_there' && (
             <div className="space-y-1">
               <Label htmlFor="visit-end">To</Label>
-              <Input id="visit-end" type="date" value={visitedEndDate}
-                onChange={(e) => setVisitedEndDate(e.target.value)} min={visitedDate} />
+              <Input
+                id="visit-end"
+                type="date"
+                value={visitedEndDate}
+                onChange={(e) => setVisitedEndDate(e.target.value)}
+                min={visitedDate}
+              />
             </div>
           )}
         </div>
@@ -589,27 +760,40 @@ export function PinForm({ pin, initialLatLng, parentId, pinType = 'location', ch
         {/* Tags */}
         <div className="space-y-1">
           <Label htmlFor="pin-tags">Tags</Label>
-          <Input id="pin-tags" placeholder="beach, hiking, food — comma-separated"
-            value={tagInput} onChange={(e) => setTagInput(e.target.value)} />
+          <Input
+            id="pin-tags"
+            placeholder="beach, hiking, food — comma-separated"
+            value={tagInput}
+            onChange={(e) => setTagInput(e.target.value)}
+          />
         </div>
 
         {/* Notes */}
         <div className="space-y-1">
           <Label htmlFor="pin-desc">Notes</Label>
-          <Textarea id="pin-desc" placeholder="Memories, tips, highlights…"
-            value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
+          <Textarea
+            id="pin-desc"
+            placeholder="Memories, tips, highlights…"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={3}
+          />
         </div>
       </div>
 
       {/* ── Footer ── */}
-      <div className="px-4 py-3 border-t border-border flex flex-col gap-2 shrink-0">
-        {saveError && (
-          <p className="text-xs text-destructive text-center">{saveError}</p>
-        )}
+      <div className="flex shrink-0 flex-col gap-2 border-t border-border px-4 py-3">
+        {saveError && <p className="text-center text-xs text-destructive">{saveError}</p>}
         <div className="flex gap-2">
-          <Button type="button" variant="outline" onClick={onCancel} className="flex-1">Cancel</Button>
-          <Button type="submit" disabled={saving || !inputValue.trim() || (isNP && !selectedPark && !pin)} className="flex-1">
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : (pin ? 'Save' : 'Add')}
+          <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            disabled={saving || !inputValue.trim() || (isNP && !selectedPark && !pin)}
+            className="flex-1"
+          >
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : pin ? 'Save' : 'Add'}
           </Button>
         </div>
       </div>

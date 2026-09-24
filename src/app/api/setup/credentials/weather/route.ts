@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
   if (forbidden) return forbidden;
 
   try {
-    const body = await request.json() as { apiKey?: string };
+    const body = (await request.json()) as { apiKey?: string };
     const { apiKey } = body;
     if (!apiKey?.trim()) {
       return NextResponse.json({ error: 'apiKey is required' }, { status: 400 });
@@ -24,7 +24,10 @@ export async function POST(request: NextRequest) {
 
     const value = { apiKey: encrypt(apiKey.trim()) };
 
-    const existing = await db.select().from(settings).where(eq(settings.key, 'credentials.weather'));
+    const existing = await db
+      .select()
+      .from(settings)
+      .where(eq(settings.key, 'credentials.weather'));
     if (existing.length > 0) {
       await db.update(settings).set({ value }).where(eq(settings.key, 'credentials.weather'));
     } else {

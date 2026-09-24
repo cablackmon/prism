@@ -1,7 +1,13 @@
 import { NextResponse } from 'next/server';
 import { getDisplayAuth } from '@/lib/auth';
 import { db } from '@/lib/db/client';
-import { calendarSources, taskSources, shoppingListSources, photoSources, apiCredentials } from '@/lib/db/schema';
+import {
+  calendarSources,
+  taskSources,
+  shoppingListSources,
+  photoSources,
+  apiCredentials,
+} from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { logError } from '@/lib/utils/logError';
 
@@ -36,7 +42,7 @@ export async function GET() {
     const lastSyncedDates = googleSources
       .map((s) => s.lastSynced)
       .filter(Boolean)
-      .sort((a, b) => (b!.getTime() - a!.getTime()));
+      .sort((a, b) => b!.getTime() - a!.getTime());
 
     // Google Tasks: check task_sources with provider='google_tasks'
     const googleTaskSources = await db
@@ -59,7 +65,12 @@ export async function GET() {
 
     // OneDrive: check photo_sources with type='onedrive'
     const onedriveSources = await db
-      .select({ id: photoSources.id, name: photoSources.name, lastSynced: photoSources.lastSynced, accountEmail: photoSources.accountEmail })
+      .select({
+        id: photoSources.id,
+        name: photoSources.name,
+        lastSynced: photoSources.lastSynced,
+        accountEmail: photoSources.accountEmail,
+      })
       .from(photoSources)
       .where(eq(photoSources.type, 'onedrive'));
 
@@ -112,9 +123,6 @@ export async function GET() {
     });
   } catch (error) {
     logError('Error fetching integration status:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch integration status' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch integration status' }, { status: 500 });
   }
 }

@@ -73,11 +73,26 @@ export function NoteEditor({
   }, [save]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'b') { e.preventDefault(); document.execCommand('bold'); }
-    if ((e.ctrlKey || e.metaKey) && e.key === 'i') { e.preventDefault(); document.execCommand('italic'); }
-    if ((e.ctrlKey || e.metaKey) && e.key === 'u') { e.preventDefault(); document.execCommand('underline'); }
-    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'S') { e.preventDefault(); document.execCommand('strikeThrough'); }
-    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'L') { e.preventDefault(); document.execCommand('insertUnorderedList'); }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+      e.preventDefault();
+      document.execCommand('bold');
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
+      e.preventDefault();
+      document.execCommand('italic');
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'u') {
+      e.preventDefault();
+      document.execCommand('underline');
+    }
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'S') {
+      e.preventDefault();
+      document.execCommand('strikeThrough');
+    }
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'L') {
+      e.preventDefault();
+      document.execCommand('insertUnorderedList');
+    }
   }, []);
 
   const handleBeforeInput = useCallback((e: React.FormEvent<HTMLDivElement>) => {
@@ -105,8 +120,9 @@ export function NoteEditor({
       onBeforeInput={editable ? handleBeforeInput : undefined}
       className={cn(
         'text-sm outline-none',
-        editable && 'empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground/40 empty:before:pointer-events-none',
-        className,
+        editable &&
+          'empty:before:pointer-events-none empty:before:text-muted-foreground/40 empty:before:content-[attr(data-placeholder)]',
+        className
       )}
       data-placeholder={editable ? placeholder : undefined}
     />

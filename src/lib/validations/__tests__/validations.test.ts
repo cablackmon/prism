@@ -111,7 +111,9 @@ describe('createChoreSchema', () => {
   });
 
   it('rejects invalid category', () => {
-    expect(createChoreSchema.safeParse({ ...validChore, category: 'swimming' }).success).toBe(false);
+    expect(createChoreSchema.safeParse({ ...validChore, category: 'swimming' }).success).toBe(
+      false
+    );
   });
 
   it('rejects invalid frequency', () => {
@@ -125,7 +127,16 @@ describe('createChoreSchema', () => {
   });
 
   it('accepts all valid frequencies', () => {
-    for (const freq of ['daily', 'weekly', 'biweekly', 'monthly', 'quarterly', 'semi-annually', 'annually', 'custom']) {
+    for (const freq of [
+      'daily',
+      'weekly',
+      'biweekly',
+      'monthly',
+      'quarterly',
+      'semi-annually',
+      'annually',
+      'custom',
+    ]) {
       expect(createChoreSchema.safeParse({ ...validChore, frequency: freq }).success).toBe(true);
     }
   });
@@ -282,7 +293,9 @@ describe('createLayoutSchema', () => {
   });
 
   it('rejects invalid slug characters', () => {
-    expect(createLayoutSchema.safeParse({ ...validLayout, slug: 'My Kitchen!' }).success).toBe(false);
+    expect(createLayoutSchema.safeParse({ ...validLayout, slug: 'My Kitchen!' }).success).toBe(
+      false
+    );
   });
 
   it('accepts valid slug', () => {

@@ -19,7 +19,7 @@ import { formatDisplayTime, toDisplayDate } from '@/lib/utils/timeFormat';
 /**
  * Deletes-only review (#171 Stage 3). Lists events the sync found removed from
  * their source and held instead of deleting. The user Deletes (remove from
- * Prism too) or Keeps (retain as a local event) the selected ones.
+ * KYST too) or Keeps (retain as a local event) the selected ones.
  */
 export function PendingDeletionsModal({
   pending,
@@ -55,7 +55,7 @@ export function PendingDeletionsModal({
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-lg max-h-[85vh] flex flex-col">
+      <DialogContent className="flex max-h-[85vh] max-w-lg flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-amber-500" />
@@ -63,18 +63,19 @@ export function PendingDeletionsModal({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-3 py-1 flex-1 min-h-0 flex flex-col">
+        <div className="flex min-h-0 flex-1 flex-col space-y-3 py-1">
           <p className="text-sm text-muted-foreground">
             These events were removed from their source calendar and held for review.{' '}
-            <span className="font-medium text-foreground">Delete</span> removes them from Prism too.{' '}
+            <span className="font-medium text-foreground">Delete</span> removes them from KYST too.{' '}
             <span className="font-medium text-foreground">Keep</span> transfers each one to your{' '}
             <span className="inline-flex items-center gap-1 font-medium text-foreground">
-              <Home className="h-3 w-3" />local calendar
+              <Home className="h-3 w-3" />
+              local calendar
             </span>{' '}
             — it stops syncing and stays put.
           </p>
 
-          <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground px-1">
+          <label className="flex items-center gap-2 px-1 text-xs font-medium text-muted-foreground">
             <Checkbox
               checked={allSelected}
               onCheckedChange={() =>
@@ -86,32 +87,40 @@ export function PendingDeletionsModal({
 
           {/* Native scroll (not Radix ScrollArea) so the list drag-scrolls on
               touch wall displays and can't clip when the list is long. */}
-          <div className="flex-1 min-h-0 overflow-y-auto pr-3 -mr-1">
+          <div className="-mr-1 min-h-0 flex-1 overflow-y-auto pr-3">
             <div className="space-y-1">
               {pending.map((p) => (
                 <label
                   key={p.id}
-                  className="flex items-start gap-2 rounded px-1 py-1 hover:bg-muted/50 cursor-pointer"
+                  className="flex cursor-pointer items-start gap-2 rounded px-1 py-1 hover:bg-muted/50"
                 >
-                  <Checkbox checked={selected.has(p.id)} onCheckedChange={() => toggle(p.id)} className="mt-0.5" />
-                  <span className="text-sm flex-1 min-w-0">
+                  <Checkbox
+                    checked={selected.has(p.id)}
+                    onCheckedChange={() => toggle(p.id)}
+                    className="mt-0.5"
+                  />
+                  <span className="min-w-0 flex-1 text-sm">
                     <span className="font-medium">{p.title}</span>
                     <span className="block text-xs text-muted-foreground">
                       {p.allDay
-                        ? format(toDisplayDate(parseISO(p.startTime), displayTimezone), 'EEE, MMM d')
+                        ? format(
+                            toDisplayDate(parseISO(p.startTime), displayTimezone),
+                            'EEE, MMM d'
+                          )
                         : `${format(toDisplayDate(parseISO(p.startTime), displayTimezone), 'EEE, MMM d')} · ${formatDisplayTime(parseISO(p.startTime), timeFormat, {}, displayTimezone)}`}
                     </span>
-                    <span className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap">
-                      <span className="inline-flex items-center gap-1 min-w-0">
+                    <span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                      <span className="inline-flex min-w-0 items-center gap-1">
                         <span
-                          className="h-2 w-2 rounded-full shrink-0"
+                          className="h-2 w-2 shrink-0 rounded-full"
                           style={{ backgroundColor: p.color || 'var(--muted-foreground)' }}
                         />
                         <span className="truncate">{p.sourceCalendar}</span>
                       </span>
-                      <ArrowRight className="h-3 w-3 opacity-60 shrink-0" />
-                      <span className="inline-flex items-center gap-1 shrink-0">
-                        <Home className="h-3 w-3" />Local (if kept)
+                      <ArrowRight className="h-3 w-3 shrink-0 opacity-60" />
+                      <span className="inline-flex shrink-0 items-center gap-1">
+                        <Home className="h-3 w-3" />
+                        Local (if kept)
                       </span>
                     </span>
                   </span>
@@ -125,11 +134,19 @@ export function PendingDeletionsModal({
           <Button variant="outline" onClick={onClose} disabled={busy}>
             Cancel
           </Button>
-          <Button variant="outline" onClick={() => act('keep')} disabled={busy || selected.size === 0}>
-            <Home className="h-4 w-4 mr-1.5" />
+          <Button
+            variant="outline"
+            onClick={() => act('keep')}
+            disabled={busy || selected.size === 0}
+          >
+            <Home className="mr-1.5 h-4 w-4" />
             Keep {selected.size} in Local
           </Button>
-          <Button variant="destructive" onClick={() => act('delete')} disabled={busy || selected.size === 0}>
+          <Button
+            variant="destructive"
+            onClick={() => act('delete')}
+            disabled={busy || selected.size === 0}
+          >
             Delete {selected.size}
           </Button>
         </DialogFooter>

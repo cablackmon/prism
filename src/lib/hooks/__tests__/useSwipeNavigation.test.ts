@@ -11,13 +11,7 @@ let onSwipeLeftFn: jest.Mock;
 let onSwipeRightFn: jest.Mock;
 let containerEl: HTMLDivElement | null = null;
 
-function TestComponent({
-  threshold,
-  enabled,
-}: {
-  threshold?: number;
-  enabled?: boolean;
-}) {
+function TestComponent({ threshold, enabled }: { threshold?: number; enabled?: boolean }) {
   const ref = useSwipeNavigation<HTMLDivElement>({
     onSwipeLeft: onSwipeLeftFn,
     onSwipeRight: onSwipeRightFn,
@@ -35,20 +29,30 @@ function TestComponent({
   });
 }
 
-function simulateSwipe(el: HTMLElement, startX: number, startY: number, endX: number, endY: number) {
-  el.dispatchEvent(new TouchEvent('touchstart', {
-    bubbles: true,
-    touches: [
-      { clientX: startX, clientY: startY, identifier: 0, target: el } as unknown as Touch,
-    ],
-  }));
+function simulateSwipe(
+  el: HTMLElement,
+  startX: number,
+  startY: number,
+  endX: number,
+  endY: number
+) {
+  el.dispatchEvent(
+    new TouchEvent('touchstart', {
+      bubbles: true,
+      touches: [
+        { clientX: startX, clientY: startY, identifier: 0, target: el } as unknown as Touch,
+      ],
+    })
+  );
 
-  el.dispatchEvent(new TouchEvent('touchend', {
-    bubbles: true,
-    changedTouches: [
-      { clientX: endX, clientY: endY, identifier: 0, target: el } as unknown as Touch,
-    ],
-  }));
+  el.dispatchEvent(
+    new TouchEvent('touchend', {
+      bubbles: true,
+      changedTouches: [
+        { clientX: endX, clientY: endY, identifier: 0, target: el } as unknown as Touch,
+      ],
+    })
+  );
 }
 
 describe('useSwipeNavigation', () => {
@@ -85,21 +89,25 @@ describe('useSwipeNavigation', () => {
   it('ignores swipe that takes too long (> 500ms)', () => {
     render(React.createElement(TestComponent, { threshold: 50 }));
 
-    containerEl!.dispatchEvent(new TouchEvent('touchstart', {
-      bubbles: true,
-      touches: [
-        { clientX: 200, clientY: 100, identifier: 0, target: containerEl } as unknown as Touch,
-      ],
-    }));
+    containerEl!.dispatchEvent(
+      new TouchEvent('touchstart', {
+        bubbles: true,
+        touches: [
+          { clientX: 200, clientY: 100, identifier: 0, target: containerEl } as unknown as Touch,
+        ],
+      })
+    );
 
     jest.advanceTimersByTime(600);
 
-    containerEl!.dispatchEvent(new TouchEvent('touchend', {
-      bubbles: true,
-      changedTouches: [
-        { clientX: 50, clientY: 100, identifier: 0, target: containerEl } as unknown as Touch,
-      ],
-    }));
+    containerEl!.dispatchEvent(
+      new TouchEvent('touchend', {
+        bubbles: true,
+        changedTouches: [
+          { clientX: 50, clientY: 100, identifier: 0, target: containerEl } as unknown as Touch,
+        ],
+      })
+    );
 
     expect(onSwipeLeftFn).not.toHaveBeenCalled();
   });

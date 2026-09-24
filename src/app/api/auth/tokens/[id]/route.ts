@@ -12,25 +12,22 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  return withAuth(async () => {
-    try {
-      const { id } = await params;
-      const deleted = await revokeApiToken(id);
+  return withAuth(
+    async () => {
+      try {
+        const { id } = await params;
+        const deleted = await revokeApiToken(id);
 
-      if (!deleted) {
-        return NextResponse.json(
-          { error: 'Token not found' },
-          { status: 404 }
-        );
+        if (!deleted) {
+          return NextResponse.json({ error: 'Token not found' }, { status: 404 });
+        }
+
+        return NextResponse.json({ success: true });
+      } catch (error) {
+        logError('Error revoking API token:', error);
+        return NextResponse.json({ error: 'Failed to revoke API token' }, { status: 500 });
       }
-
-      return NextResponse.json({ success: true });
-    } catch (error) {
-      logError('Error revoking API token:', error);
-      return NextResponse.json(
-        { error: 'Failed to revoke API token' },
-        { status: 500 }
-      );
-    }
-  }, { permission: 'canModifySettings' });
+    },
+    { permission: 'canModifySettings' }
+  );
 }

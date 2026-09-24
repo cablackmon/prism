@@ -27,13 +27,15 @@ export async function register() {
     if (keyProblem) {
       console.error(
         '\n' +
-        '='.repeat(72) + '\n' +
-        '  PRISM CONFIGURATION PROBLEM\n\n' +
-        `  ${keyProblem}\n\n` +
-        '  Prism will start, but anything that stores a credential will fail:\n' +
-        '  Google Calendar, iCloud/CalDAV, bus tracking and photo sources.\n' +
-        '  Set the key, then recreate the container.\n' +
-        '='.repeat(72) + '\n',
+          '='.repeat(72) +
+          '\n' +
+          '  PRISM CONFIGURATION PROBLEM\n\n' +
+          `  ${keyProblem}\n\n` +
+          '  Prism will start, but anything that stores a credential will fail:\n' +
+          '  Google Calendar, iCloud/CalDAV, bus tracking and photo sources.\n' +
+          '  Set the key, then recreate the container.\n' +
+          '='.repeat(72) +
+          '\n'
       );
     }
 

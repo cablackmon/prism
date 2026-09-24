@@ -43,7 +43,13 @@ export async function GET() {
       .orderBy(events.startTime);
 
     const providerLabel = (p: string | null) =>
-      p === 'google' ? 'Google' : p === 'caldav' ? 'iCloud/CalDAV' : p === 'ical' ? 'iCal feed' : (p ?? 'source');
+      p === 'google'
+        ? 'Google'
+        : p === 'caldav'
+          ? 'iCloud/CalDAV'
+          : p === 'ical'
+            ? 'iCal feed'
+            : (p ?? 'source');
 
     return NextResponse.json({
       pending: rows.map((r) => ({
@@ -72,15 +78,23 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const eventIds: string[] = Array.isArray(body.eventIds) ? body.eventIds.filter((x: unknown) => typeof x === 'string') : [];
+    const eventIds: string[] = Array.isArray(body.eventIds)
+      ? body.eventIds.filter((x: unknown) => typeof x === 'string')
+      : [];
     const action = body.action === 'keep' ? 'keep' : body.action === 'delete' ? 'delete' : null;
 
-    if (!action) return NextResponse.json({ error: "action must be 'delete' or 'keep'." }, { status: 400 });
-    if (eventIds.length === 0) return NextResponse.json({ error: 'No events selected.' }, { status: 400 });
+    if (!action)
+      return NextResponse.json({ error: "action must be 'delete' or 'keep'." }, { status: 400 });
+    if (eventIds.length === 0)
+      return NextResponse.json({ error: 'No events selected.' }, { status: 400 });
 
     // Only act on events that are actually pending (guard against stale ids).
     const targets = await db
-      .select({ id: events.id, calendarSourceId: events.calendarSourceId, externalEventId: events.externalEventId })
+      .select({
+        id: events.id,
+        calendarSourceId: events.calendarSourceId,
+        externalEventId: events.externalEventId,
+      })
       .from(events)
       .where(and(inArray(events.id, eventIds), isNotNull(events.pendingDeletion)));
 
@@ -94,14 +108,24 @@ export async function POST(request: NextRequest) {
             .onConflictDoNothing();
         }
       }
-      await db.delete(events).where(inArray(events.id, targets.map((t) => t.id)));
+      await db.delete(events).where(
+        inArray(
+          events.id,
+          targets.map((t) => t.id)
+        )
+      );
     } else {
       // Keep: detach from the source (drop externalEventId) so it becomes a
       // permanent local event the sync never touches again, and clear the flag.
       await db
         .update(events)
         .set({ pendingDeletion: null, externalEventId: null, lastSynced: null })
-        .where(inArray(events.id, targets.map((t) => t.id)));
+        .where(
+          inArray(
+            events.id,
+            targets.map((t) => t.id)
+          )
+        );
     }
 
     await invalidateEntity('events');

@@ -28,9 +28,9 @@ export interface Photo {
 /** Parse usage string into array of tags */
 export function parseUsageTags(usage: string): PhotoUsageTag[] {
   if (!usage) return [];
-  return usage.split(',').filter((t): t is PhotoUsageTag =>
-    ['wallpaper', 'gallery', 'screensaver'].includes(t)
-  );
+  return usage
+    .split(',')
+    .filter((t): t is PhotoUsageTag => ['wallpaper', 'gallery', 'screensaver'].includes(t));
 }
 
 /** Check if photo has a specific usage tag */
@@ -45,7 +45,7 @@ export function getResolutionQuality(
   width: number | null,
   height: number | null,
   targetWidth = 1920,
-  targetHeight = 1080,
+  targetHeight = 1080
 ): 'green' | 'yellow' | 'red' {
   if (!width || !height) return 'red';
   const targetPixels = targetWidth * targetHeight;
@@ -110,38 +110,41 @@ export function usePhotos(options: UsePhotosOptions = {}): UsePhotosResult {
   const [total, setTotal] = useState(() => cached?.total ?? 0);
   const offsetRef = useRef(0);
 
-  const fetchPhotos = useCallback(async (requestOffset = 0, append = false) => {
-    try {
-      setError(null);
-      // Only show spinner on true cache misses — skip for SWR background refresh
-      if (!append && !navCacheGet(cacheKey)) setLoading(true);
-      const params = new URLSearchParams();
-      if (sourceId) params.set('sourceId', sourceId);
-      if (favorite !== undefined) params.set('favorite', String(favorite));
-      if (usage) params.set('usage', usage);
-      if (orientation) params.set('orientation', orientation);
-      if (belowHd) params.set('belowHd', 'true');
-      params.set('sort', sort);
-      params.set('limit', String(limit));
-      params.set('offset', String(requestOffset));
+  const fetchPhotos = useCallback(
+    async (requestOffset = 0, append = false) => {
+      try {
+        setError(null);
+        // Only show spinner on true cache misses — skip for SWR background refresh
+        if (!append && !navCacheGet(cacheKey)) setLoading(true);
+        const params = new URLSearchParams();
+        if (sourceId) params.set('sourceId', sourceId);
+        if (favorite !== undefined) params.set('favorite', String(favorite));
+        if (usage) params.set('usage', usage);
+        if (orientation) params.set('orientation', orientation);
+        if (belowHd) params.set('belowHd', 'true');
+        params.set('sort', sort);
+        params.set('limit', String(limit));
+        params.set('offset', String(requestOffset));
 
-      const response = await fetch(`/api/photos?${params}`);
-      if (!response.ok) throw new Error('Failed to fetch photos');
+        const response = await fetch(`/api/photos?${params}`);
+        if (!response.ok) throw new Error('Failed to fetch photos');
 
-      const data = await response.json();
-      if (append) {
-        setPhotos((prev) => [...prev, ...data.photos]);
-      } else {
-        navCacheSet(cacheKey, { photos: data.photos, total: data.total });
-        setPhotos(data.photos);
+        const data = await response.json();
+        if (append) {
+          setPhotos((prev) => [...prev, ...data.photos]);
+        } else {
+          navCacheSet(cacheKey, { photos: data.photos, total: data.total });
+          setPhotos(data.photos);
+        }
+        setTotal(data.total);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch photos');
+      } finally {
+        setLoading(false);
       }
-      setTotal(data.total);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch photos');
-    } finally {
-      setLoading(false);
-    }
-  }, [sourceId, favorite, usage, orientation, belowHd, sort, limit, cacheKey]);
+    },
+    [sourceId, favorite, usage, orientation, belowHd, sort, limit, cacheKey]
+  );
 
   const loadMore = useCallback(() => {
     const newOffset = offsetRef.current + limit;
@@ -162,9 +165,7 @@ export function usePhotos(options: UsePhotosOptions = {}): UsePhotosResult {
         body: JSON.stringify({ favorite: fav }),
       });
       if (!response.ok) throw new Error('Failed to update photo');
-      setPhotos((prev) =>
-        prev.map((p) => (p.id === photoId ? { ...p, favorite: fav } : p))
-      );
+      setPhotos((prev) => prev.map((p) => (p.id === photoId ? { ...p, favorite: fav } : p)));
     } catch (err) {
       console.error('Error toggling favorite:', err);
     }
@@ -178,9 +179,7 @@ export function usePhotos(options: UsePhotosOptions = {}): UsePhotosResult {
         body: JSON.stringify({ usage: newUsage }),
       });
       if (!response.ok) throw new Error('Failed to update photo');
-      setPhotos((prev) =>
-        prev.map((p) => (p.id === photoId ? { ...p, usage: newUsage } : p))
-      );
+      setPhotos((prev) => prev.map((p) => (p.id === photoId ? { ...p, usage: newUsage } : p)));
     } catch (err) {
       console.error('Error updating usage:', err);
     }
@@ -192,7 +191,9 @@ export function usePhotos(options: UsePhotosOptions = {}): UsePhotosResult {
   }, [fetchPhotos]);
 
   // Stable wrapper so useVisibilityPolling gets a memoized callback
-  const pollPhotos = useCallback(() => { fetchPhotos(0, false); }, [fetchPhotos]);
+  const pollPhotos = useCallback(() => {
+    fetchPhotos(0, false);
+  }, [fetchPhotos]);
 
   // Periodic refresh — pauses when tab is hidden
   useVisibilityPolling(pollPhotos, refreshInterval);

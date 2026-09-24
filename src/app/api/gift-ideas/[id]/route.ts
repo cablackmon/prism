@@ -61,7 +61,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     // Remove undefined values
-    Object.keys(updateData).forEach(key => {
+    Object.keys(updateData).forEach((key) => {
       if (updateData[key] === undefined) delete updateData[key];
     });
 

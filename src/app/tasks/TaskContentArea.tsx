@@ -19,8 +19,20 @@ interface TaskContentAreaProps {
   groupMode: GroupMode;
   tasksByUser: { user: { id: string; name: string; color: string } | null; tasks: Task[] }[] | null;
   tasksByList: { list: { id: string; name: string; color: string } | null; tasks: Task[] }[] | null;
-  tasksByPersonThenList: { member: { id: string; name: string; color: string } | null; tasks: Task[]; subGroups: { key: string; label: string; color: string; tasks: Task[] }[] }[] | null;
-  tasksByListThenPerson: { list: { id: string; name: string; color: string } | null; tasks: Task[]; subGroups: { key: string; label: string; color: string; tasks: Task[] }[] }[] | null;
+  tasksByPersonThenList:
+    | {
+        member: { id: string; name: string; color: string } | null;
+        tasks: Task[];
+        subGroups: { key: string; label: string; color: string; tasks: Task[] }[];
+      }[]
+    | null;
+  tasksByListThenPerson:
+    | {
+        list: { id: string; name: string; color: string } | null;
+        tasks: Task[];
+        subGroups: { key: string; label: string; color: string; tasks: Task[] }[];
+      }[]
+    | null;
   inlineTask: string;
   setInlineTask: (v: string) => void;
   inlineTaskByUser: Record<string, string>;
@@ -65,7 +77,7 @@ export function TaskContentArea({
 }: TaskContentAreaProps) {
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
+      <div className="flex h-full items-center justify-center">
         <PageLoader label="Loading tasks..." />
       </div>
     );
@@ -73,22 +85,30 @@ export function TaskContentArea({
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-destructive">
-        <AlertCircle className="h-12 w-12 mb-4 opacity-50" /><p>{error}</p>
-        <Button variant="outline" size="sm" className="mt-4" onClick={() => refreshTasks()}>Try Again</Button>
+      <div className="flex h-full flex-col items-center justify-center text-destructive">
+        <AlertCircle className="mb-4 h-12 w-12 opacity-50" />
+        <p>{error}</p>
+        <Button variant="outline" size="sm" className="mt-4" onClick={() => refreshTasks()}>
+          Try Again
+        </Button>
       </div>
     );
   }
 
-  const isPersonGrouped = (groupMode === 'person' && !!tasksByUser?.length) ||
+  const isPersonGrouped =
+    (groupMode === 'person' && !!tasksByUser?.length) ||
     (groupMode === 'person_then_list' && !!tasksByPersonThenList?.length);
   if (filteredTasks.length === 0 && !isPersonGrouped) {
     return (
-      <div className="flex items-center justify-center h-full">
+      <div className="flex h-full items-center justify-center">
         <EmptyState
           icon={<CheckSquare />}
           title="No tasks found"
-          action={<Button variant="outline" size="sm" onClick={handleAddWithAuth}>Add your first task</Button>}
+          action={
+            <Button variant="outline" size="sm" onClick={handleAddWithAuth}>
+              Add your first task
+            </Button>
+          }
         />
       </div>
     );
@@ -101,10 +121,15 @@ export function TaskContentArea({
           key: user?.id || 'unassigned',
           label: user?.name || 'Unassigned',
           color: user?.color || '#6B7280',
-          avatar: user ? <UserAvatar name={user.name} color={user.color} size="sm" className="h-7 w-7" /> : <CheckSquare className="h-5 w-5 text-muted-foreground" />,
+          avatar: user ? (
+            <UserAvatar name={user.name} color={user.color} size="sm" className="h-7 w-7" />
+          ) : (
+            <CheckSquare className="h-5 w-5 text-muted-foreground" />
+          ),
           tasks,
-          inlineValue: user ? (inlineTaskByUser[user.id] || '') : inlineTask,
-          onInlineChange: (v) => user ? setInlineTaskByUser(prev => ({ ...prev, [user.id]: v })) : setInlineTask(v),
+          inlineValue: user ? inlineTaskByUser[user.id] || '' : inlineTask,
+          onInlineChange: (v) =>
+            user ? setInlineTaskByUser((prev) => ({ ...prev, [user.id]: v })) : setInlineTask(v),
           onInlineSubmit: () => handleInlineAdd(user?.id),
           celebrationTarget: user ? { id: user.id, name: user.name } : undefined,
         }))}
@@ -127,8 +152,9 @@ export function TaskContentArea({
           color: list?.color || '#6B7280',
           avatar: <List className="h-5 w-5" style={{ color: list?.color || '#6B7280' }} />,
           tasks,
-          inlineValue: list ? (inlineTaskByList[list.id] || '') : inlineTask,
-          onInlineChange: (v) => list ? setInlineTaskByList(prev => ({ ...prev, [list.id]: v })) : setInlineTask(v),
+          inlineValue: list ? inlineTaskByList[list.id] || '' : inlineTask,
+          onInlineChange: (v) =>
+            list ? setInlineTaskByList((prev) => ({ ...prev, [list.id]: v })) : setInlineTask(v),
           onInlineSubmit: () => handleInlineAdd(undefined, list?.id),
         }))}
         toggleTask={toggleTask}
@@ -148,13 +174,18 @@ export function TaskContentArea({
           key: member?.id || 'unassigned',
           label: member?.name || 'Unassigned',
           color: member?.color || '#6B7280',
-          avatar: member
-            ? <UserAvatar name={member.name} color={member.color} size="sm" className="h-7 w-7" />
-            : <CheckSquare className="h-5 w-5 text-muted-foreground" />,
+          avatar: member ? (
+            <UserAvatar name={member.name} color={member.color} size="sm" className="h-7 w-7" />
+          ) : (
+            <CheckSquare className="h-5 w-5 text-muted-foreground" />
+          ),
           tasks,
           subGroups,
-          inlineValue: member ? (inlineTaskByUser[member.id] || '') : inlineTask,
-          onInlineChange: (v) => member ? setInlineTaskByUser(prev => ({ ...prev, [member.id]: v })) : setInlineTask(v),
+          inlineValue: member ? inlineTaskByUser[member.id] || '' : inlineTask,
+          onInlineChange: (v) =>
+            member
+              ? setInlineTaskByUser((prev) => ({ ...prev, [member.id]: v }))
+              : setInlineTask(v),
           onInlineSubmit: () => handleInlineAdd(member?.id),
           celebrationTarget: member ? { id: member.id, name: member.name } : undefined,
         }))}
@@ -177,8 +208,9 @@ export function TaskContentArea({
           avatar: <List className="h-5 w-5" style={{ color: list?.color || '#6B7280' }} />,
           tasks,
           subGroups,
-          inlineValue: list ? (inlineTaskByList[list.id] || '') : inlineTask,
-          onInlineChange: (v) => list ? setInlineTaskByList(prev => ({ ...prev, [list.id]: v })) : setInlineTask(v),
+          inlineValue: list ? inlineTaskByList[list.id] || '' : inlineTask,
+          onInlineChange: (v) =>
+            list ? setInlineTaskByList((prev) => ({ ...prev, [list.id]: v })) : setInlineTask(v),
           onInlineSubmit: () => handleInlineAdd(undefined, list?.id),
         }))}
         toggleTask={toggleTask}
@@ -192,7 +224,7 @@ export function TaskContentArea({
 
   // Flat (no grouping) view
   return (
-    <div className="space-y-1 max-w-4xl mx-auto">
+    <div className="mx-auto max-w-4xl space-y-1">
       <Input
         placeholder="Add a task..."
         value={inlineTask}
@@ -203,7 +235,7 @@ export function TaskContentArea({
             handleInlineAdd();
           }
         }}
-        className="h-9 mb-2"
+        className="mb-2 h-9"
       />
       {filteredTasks.map((task) => (
         <TaskRow

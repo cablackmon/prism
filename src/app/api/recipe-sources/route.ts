@@ -50,16 +50,25 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const provider = typeof body.provider === 'string' && isSupportedProvider(body.provider) ? body.provider : null;
+    const provider =
+      typeof body.provider === 'string' && isSupportedProvider(body.provider)
+        ? body.provider
+        : null;
     const serverUrl = typeof body.serverUrl === 'string' ? body.serverUrl.trim() : '';
     const token = typeof body.token === 'string' ? body.token.trim() : '';
     const name = typeof body.name === 'string' ? body.name.trim() : '';
 
     if (!provider) {
-      return NextResponse.json({ error: 'Supported providers are Tandoor and Mealie.' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Supported providers are Tandoor and Mealie.' },
+        { status: 400 }
+      );
     }
     if (!serverUrl || !token) {
-      return NextResponse.json({ error: 'Server URL and API token are required.' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Server URL and API token are required.' },
+        { status: 400 }
+      );
     }
 
     // Verify the server + token before storing anything.

@@ -31,7 +31,8 @@ export function GeneralSection() {
 }
 
 function LocationCard() {
-  const { query, setQuery, savedName, candidates, searching, saving, select, clear } = useLocationSearch();
+  const { query, setQuery, savedName, candidates, searching, saving, select, clear } =
+    useLocationSearch();
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -61,10 +62,14 @@ function LocationCard() {
       </CardHeader>
       <CardContent className="space-y-3">
         {savedName && (
-          <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-muted text-sm">
-            <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          <div className="flex items-center gap-2 rounded-md bg-muted px-3 py-2 text-sm">
+            <MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
             <span className="flex-1 truncate">{savedName}</span>
-            <button onClick={clear} disabled={saving} className="text-muted-foreground hover:text-foreground transition-colors">
+            <button
+              onClick={clear}
+              disabled={saving}
+              className="text-muted-foreground transition-colors hover:text-foreground"
+            >
               <X className="h-3.5 w-3.5" />
             </button>
           </div>
@@ -72,13 +77,13 @@ function LocationCard() {
 
         <div ref={wrapperRef} className="relative">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-            {searching
-              ? <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground animate-spin" />
-              : null}
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            {searching ? (
+              <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+            ) : null}
             <Input
               value={query}
-              onChange={e => setQuery(e.target.value)}
+              onChange={(e) => setQuery(e.target.value)}
               onFocus={() => candidates.length > 0 && setOpen(true)}
               placeholder={savedName ? 'Search to change location…' : 'Search city or postal code…'}
               className="pl-9"
@@ -87,14 +92,18 @@ function LocationCard() {
           </div>
 
           {open && candidates.length > 0 && (
-            <div className="absolute z-50 top-full mt-1 w-full rounded-md border border-border bg-popover shadow-md overflow-hidden">
+            <div className="absolute top-full z-50 mt-1 w-full overflow-hidden rounded-md border border-border bg-popover shadow-md">
               {candidates.map((c, i) => (
                 <button
                   key={i}
-                  onMouseDown={e => { e.preventDefault(); setOpen(false); select(c); }}
-                  className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-left hover:bg-accent transition-colors"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    setOpen(false);
+                    select(c);
+                  }}
+                  className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm transition-colors hover:bg-accent"
                 >
-                  <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                   {c.displayName}
                 </button>
               ))}
@@ -121,7 +130,7 @@ function TimezoneCard() {
         <CardTitle>Time Zone</CardTitle>
         <CardDescription>
           The household timezone used for scheduling, calendar sync, and—by default—times shown
-          throughout Prism.
+          throughout KYST.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -150,12 +159,8 @@ function TimezoneCard() {
 }
 
 function DisplayTimezoneCard() {
-  const {
-    householdTimezone,
-    deviceTimezone,
-    displayTimezoneMode,
-    setDisplayTimezoneMode,
-  } = useTimeFormat();
+  const { householdTimezone, deviceTimezone, displayTimezoneMode, setDisplayTimezoneMode } =
+    useTimeFormat();
 
   const options: Array<{
     value: DisplayTimezoneMode;
@@ -167,7 +172,7 @@ function DisplayTimezoneCard() {
       value: 'household',
       label: 'Household',
       timezone: householdTimezone,
-      description: 'Keeps appointments and clocks consistent on every Prism display.',
+      description: 'Keeps appointments and clocks consistent on every KYST display.',
     },
     {
       value: 'device',
@@ -204,7 +209,7 @@ function DisplayTimezoneCard() {
                 'min-h-11 rounded-sm px-3 py-1.5 text-sm transition-colors',
                 displayTimezoneMode === option.value
                   ? 'bg-primary text-primary-foreground'
-                  : 'hover:bg-accent',
+                  : 'hover:bg-accent'
               )}
             >
               {option.label}
@@ -225,16 +230,19 @@ function TimeFormatCard() {
   const { timeFormat, setTimeFormat } = useTimeFormat();
   const [saving, setSaving] = useState(false);
 
-  const save = useCallback(async (next: TimeFormat) => {
-    setSaving(true);
-    try {
-      await setTimeFormat(next);
-    } catch {
-      // The provider rolls back the optimistic change on failure.
-    } finally {
-      setSaving(false);
-    }
-  }, [setTimeFormat]);
+  const save = useCallback(
+    async (next: TimeFormat) => {
+      setSaving(true);
+      try {
+        await setTimeFormat(next);
+      } catch {
+        // The provider rolls back the optimistic change on failure.
+      } finally {
+        setSaving(false);
+      }
+    },
+    [setTimeFormat]
+  );
 
   return (
     <Card>
@@ -245,7 +253,11 @@ function TimeFormatCard() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="inline-flex rounded-md border border-input p-0.5" role="radiogroup" aria-label="Time format">
+        <div
+          className="inline-flex rounded-md border border-input p-0.5"
+          role="radiogroup"
+          aria-label="Time format"
+        >
           {(['12h', '24h'] as const).map((value) => (
             <button
               key={value}
@@ -255,8 +267,8 @@ function TimeFormatCard() {
               disabled={saving}
               onClick={() => save(value)}
               className={cn(
-                'min-h-11 px-3 py-1.5 text-sm rounded-sm transition-colors',
-                timeFormat === value ? 'bg-primary text-primary-foreground' : 'hover:bg-accent',
+                'min-h-11 rounded-sm px-3 py-1.5 text-sm transition-colors',
+                timeFormat === value ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
               )}
             >
               {value === '12h' ? '12-hour (2:30 PM)' : '24-hour (14:30)'}
@@ -284,9 +296,9 @@ function WeekStartCard() {
           <button
             onClick={() => setWeekStartsOn(0)}
             className={cn(
-              'px-4 py-2 rounded-l-md text-sm font-medium border transition-colors',
+              'rounded-l-md border px-4 py-2 text-sm font-medium transition-colors',
               weekStartsOn === 0
-                ? 'bg-primary text-primary-foreground border-primary'
+                ? 'border-primary bg-primary text-primary-foreground'
                 : 'border-border hover:bg-accent'
             )}
           >
@@ -295,9 +307,9 @@ function WeekStartCard() {
           <button
             onClick={() => setWeekStartsOn(1)}
             className={cn(
-              'px-4 py-2 rounded-r-md text-sm font-medium border border-l-0 transition-colors',
+              'rounded-r-md border border-l-0 px-4 py-2 text-sm font-medium transition-colors',
               weekStartsOn === 1
-                ? 'bg-primary text-primary-foreground border-primary'
+                ? 'border-primary bg-primary text-primary-foreground'
                 : 'border-border hover:bg-accent'
             )}
           >

@@ -32,7 +32,7 @@ export async function syncCardDAVBirthdays(): Promise<SyncResult> {
   const enabledSources = await db.query.calendarSources.findMany({
     where: and(
       eq(calendarSources.provider, 'caldav'),
-      sql`(${calendarSources.providerConfig}->>'contactBirthdaysEnabled')::boolean = true`,
+      sql`(${calendarSources.providerConfig}->>'contactBirthdaysEnabled')::boolean = true`
     ),
   });
 
@@ -61,7 +61,9 @@ export async function syncCardDAVBirthdays(): Promise<SyncResult> {
     try {
       password = decrypt(source.accessToken);
     } catch (err) {
-      result.errors.push(`CardDAV sync: failed to decrypt password for ${username} — ${err instanceof Error ? err.message : err}`);
+      result.errors.push(
+        `CardDAV sync: failed to decrypt password for ${username} — ${err instanceof Error ? err.message : err}`
+      );
       continue;
     }
 
@@ -90,7 +92,9 @@ export async function syncCardDAVBirthdays(): Promise<SyncResult> {
       });
       result.synced++;
     } catch (err) {
-      result.errors.push(`Upsert failed for "${c.name}": ${err instanceof Error ? err.message : err}`);
+      result.errors.push(
+        `Upsert failed for "${c.name}": ${err instanceof Error ? err.message : err}`
+      );
     }
   }
 

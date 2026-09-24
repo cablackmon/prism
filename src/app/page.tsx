@@ -25,8 +25,12 @@ export default async function HomePage() {
 
   return (
     <main className="min-h-screen bg-background">
-      <div id="ssr-placeholder" className="h-screen flex items-center justify-center" aria-hidden="true">
-        <h1 className="text-4xl font-bold text-muted-foreground/20">Prism</h1>
+      <div
+        id="ssr-placeholder"
+        className="flex h-screen items-center justify-center"
+        aria-hidden="true"
+      >
+        <h1 className="text-4xl font-bold text-muted-foreground/20">KYST</h1>
       </div>
       <div style={fontScale !== 100 ? { zoom: fontScale / 100 } : undefined}>
         <DashboardClient />

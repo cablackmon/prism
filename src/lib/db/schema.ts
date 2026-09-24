@@ -14,181 +14,195 @@ import {
 } from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
 
+export const users = pgTable(
+  'users',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
 
-export const users = pgTable('users', {
-  id: uuid('id').defaultRandom().primaryKey(),
+    name: varchar('name', { length: 100 }).notNull(),
 
-  name: varchar('name', { length: 100 }).notNull(),
+    role: varchar('role', { length: 20 }).notNull().$type<'parent' | 'child' | 'guest'>(),
 
-  role: varchar('role', { length: 20 }).notNull()
-    .$type<'parent' | 'child' | 'guest'>(),
+    // Color for calendar/task display (hex format: "#3B82F6")
+    color: varchar('color', { length: 7 }).notNull(),
 
-  // Color for calendar/task display (hex format: "#3B82F6")
-  color: varchar('color', { length: 7 }).notNull(),
+    // Nullable because guests don't have PINs
+    pin: varchar('pin', { length: 255 }),
 
-  // Nullable because guests don't have PINs
-  pin: varchar('pin', { length: 255 }),
+    // Per-member PIN length (4/5/6) — each member's PIN pad requires exactly
+    // this many digits. Defaults to 4; new installs' family-wide "PIN length"
+    // setting seeds this value when a member is created.
+    pinLength: integer('pin_length').default(4).notNull(),
 
-  // Per-member PIN length (4/5/6) — each member's PIN pad requires exactly
-  // this many digits. Defaults to 4; new installs' family-wide "PIN length"
-  // setting seeds this value when a member is created.
-  pinLength: integer('pin_length').default(4).notNull(),
+    email: varchar('email', { length: 255 }),
 
-  email: varchar('email', { length: 255 }),
+    avatarUrl: text('avatar_url'),
 
-  avatarUrl: text('avatar_url'),
+    // Flexible schema for future additions
+    preferences: jsonb('preferences').default({}).notNull(),
 
-  // Flexible schema for future additions
-  preferences: jsonb('preferences').default({}).notNull(),
+    // Display order in the PIN login pad and profile lists (lower = first)
+    sortOrder: integer('sort_order').default(0).notNull(),
 
-  // Display order in the PIN login pad and profile lists (lower = first)
-  sortOrder: integer('sort_order').default(0).notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    emailIdx: index('users_email_idx').on(table.email),
+  })
+);
 
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-}, (table) => ({
-  emailIdx: index('users_email_idx').on(table.email),
-}));
+export const calendarGroups = pgTable(
+  'calendar_groups',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
 
+    name: varchar('name', { length: 255 }).notNull(),
 
-export const calendarGroups = pgTable('calendar_groups', {
-  id: uuid('id').defaultRandom().primaryKey(),
+    color: varchar('color', { length: 7 }).notNull().default('#3B82F6'),
 
-  name: varchar('name', { length: 255 }).notNull(),
+    // Type: 'user' (auto-created for a user) or 'custom' (manually created)
+    type: varchar('type', { length: 20 }).notNull().default('custom'),
 
-  color: varchar('color', { length: 7 }).notNull().default('#3B82F6'),
+    // If type='user', link to the user
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
 
-  // Type: 'user' (auto-created for a user) or 'custom' (manually created)
-  type: varchar('type', { length: 20 }).notNull().default('custom'),
+    sortOrder: integer('sort_order').default(0).notNull(),
 
-  // If type='user', link to the user
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    typeIdx: index('calendar_groups_type_idx').on(table.type),
+  })
+);
 
-  sortOrder: integer('sort_order').default(0).notNull(),
+export const calendarSources = pgTable(
+  'calendar_sources',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
 
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-}, (table) => ({
-  typeIdx: index('calendar_groups_type_idx').on(table.type),
-}));
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
 
+    // Calendar provider ("google", "apple", "microsoft", "caldav")
+    provider: varchar('provider', { length: 50 }).notNull(),
 
-export const calendarSources = pgTable('calendar_sources', {
-  id: uuid('id').defaultRandom().primaryKey(),
+    // ID of the calendar in the external system
+    sourceCalendarId: varchar('source_calendar_id', { length: 255 }).notNull(),
 
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
+    // Dashboard calendar name this maps to (e.g., "Alex's Calendar", "Family Calendar")
+    dashboardCalendarName: varchar('dashboard_calendar_name', { length: 255 }).notNull(),
 
-  // Calendar provider ("google", "apple", "microsoft", "caldav")
-  provider: varchar('provider', { length: 50 }).notNull(),
+    displayName: varchar('display_name', { length: 255 }),
 
-  // ID of the calendar in the external system
-  sourceCalendarId: varchar('source_calendar_id', { length: 255 }).notNull(),
+    // Override color (if different from user color)
+    color: varchar('color', { length: 7 }),
 
-  // Dashboard calendar name this maps to (e.g., "Alex's Calendar", "Family Calendar")
-  dashboardCalendarName: varchar('dashboard_calendar_name', { length: 255 }).notNull(),
+    enabled: boolean('enabled').default(true).notNull(),
 
-  displayName: varchar('display_name', { length: 255 }),
+    // Whether this calendar appears in the "Add Event" modal for creating events
+    // Subscription/read-only calendars should have this set to false
+    showInEventModal: boolean('show_in_event_modal').default(true).notNull(),
 
-  // Override color (if different from user color)
-  color: varchar('color', { length: 7 }),
+    // Whether this is a family-shared calendar (vs personal or unassigned)
+    isFamily: boolean('is_family').default(false).notNull(),
 
-  enabled: boolean('enabled').default(true).notNull(),
+    groupId: uuid('group_id').references(() => calendarGroups.id, { onDelete: 'set null' }),
 
-  // Whether this calendar appears in the "Add Event" modal for creating events
-  // Subscription/read-only calendars should have this set to false
-  showInEventModal: boolean('show_in_event_modal').default(true).notNull(),
+    // OAuth tokens (encrypted in application layer)
+    accessToken: text('access_token'),
+    refreshToken: text('refresh_token'),
+    tokenExpiresAt: timestamp('token_expires_at'),
 
-  // Whether this is a family-shared calendar (vs personal or unassigned)
-  isFamily: boolean('is_family').default(false).notNull(),
+    // OAuth account email this source is wired to (from the id_token "email"
+    // claim at token exchange; null for non-OAuth sources like CalDAV/iCal).
+    // Surfaced as "Connected as <email>" in the Integrations cards. See #100.
+    accountEmail: varchar('account_email', { length: 320 }),
 
-  groupId: uuid('group_id').references(() => calendarGroups.id, { onDelete: 'set null' }),
+    // iCal subscription URL (used when provider='ical'; null otherwise)
+    icalUrl: text('ical_url'),
 
-  // OAuth tokens (encrypted in application layer)
-  accessToken: text('access_token'),
-  refreshToken: text('refresh_token'),
-  tokenExpiresAt: timestamp('token_expires_at'),
+    lastSynced: timestamp('last_synced'),
+    // syncErrors carries actual error state ({ needsReauth, lastError, timestamp })
+    // for Google + similar OAuth flows. Historically also stored CalDAV
+    // connection config (server URL, username, supportsEvents/Tasks,
+    // taskListId, contactBirthdaysEnabled) which was semantically muddy.
+    // Migrated to providerConfig in v1.8.4. See feat/caldav-followups.
+    syncErrors: jsonb('sync_errors'),
+    // Stable per-provider configuration: serverUrl + username for CalDAV,
+    // supportsEvents/supportsTasks/taskListId/contactBirthdaysEnabled flags,
+    // anything else that's "what this source is" rather than "what went
+    // wrong recently". Read at sync time; never mutated by error handlers.
+    providerConfig: jsonb('provider_config'),
 
-  // OAuth account email this source is wired to (from the id_token "email"
-  // claim at token exchange; null for non-OAuth sources like CalDAV/iCal).
-  // Surfaced as "Connected as <email>" in the Integrations cards. See #100.
-  accountEmail: varchar('account_email', { length: 320 }),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: index('calendar_sources_user_id_idx').on(table.userId),
+    enabledIdx: index('calendar_sources_enabled_idx').on(table.enabled),
+  })
+);
 
-  // iCal subscription URL (used when provider='ical'; null otherwise)
-  icalUrl: text('ical_url'),
+export const events = pgTable(
+  'events',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
 
-  lastSynced: timestamp('last_synced'),
-  // syncErrors carries actual error state ({ needsReauth, lastError, timestamp })
-  // for Google + similar OAuth flows. Historically also stored CalDAV
-  // connection config (server URL, username, supportsEvents/Tasks,
-  // taskListId, contactBirthdaysEnabled) which was semantically muddy.
-  // Migrated to providerConfig in v1.8.4. See feat/caldav-followups.
-  syncErrors: jsonb('sync_errors'),
-  // Stable per-provider configuration: serverUrl + username for CalDAV,
-  // supportsEvents/supportsTasks/taskListId/contactBirthdaysEnabled flags,
-  // anything else that's "what this source is" rather than "what went
-  // wrong recently". Read at sync time; never mutated by error handlers.
-  providerConfig: jsonb('provider_config'),
+    calendarSourceId: uuid('calendar_source_id').references(() => calendarSources.id, {
+      onDelete: 'cascade',
+    }),
 
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-}, (table) => ({
-  userIdIdx: index('calendar_sources_user_id_idx').on(table.userId),
-  enabledIdx: index('calendar_sources_enabled_idx').on(table.enabled),
-}));
+    // ID from external system (for sync tracking)
+    externalEventId: varchar('external_event_id', { length: 255 }),
 
+    title: varchar('title', { length: 255 }).notNull(),
+    description: text('description'),
+    location: text('location'),
 
-export const events = pgTable('events', {
-  id: uuid('id').defaultRandom().primaryKey(),
+    startTime: timestamp('start_time').notNull(),
+    endTime: timestamp('end_time').notNull(),
+    allDay: boolean('all_day').default(false).notNull(),
 
-  calendarSourceId: uuid('calendar_source_id')
-    .references(() => calendarSources.id, { onDelete: 'cascade' }),
+    recurring: boolean('recurring').default(false).notNull(),
+    recurrenceRule: text('recurrence_rule'), // iCal RRULE format
 
-  // ID from external system (for sync tracking)
-  externalEventId: varchar('external_event_id', { length: 255 }),
+    // Who created this event (for locally-created events)
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
 
-  title: varchar('title', { length: 255 }).notNull(),
-  description: text('description'),
-  location: text('location'),
+    // Display color (inherits from calendar if not set)
+    color: varchar('color', { length: 7 }),
 
-  startTime: timestamp('start_time').notNull(),
-  endTime: timestamp('end_time').notNull(),
-  allDay: boolean('all_day').default(false).notNull(),
+    reminderMinutes: integer('reminder_minutes'),
 
-  recurring: boolean('recurring').default(false).notNull(),
-  recurrenceRule: text('recurrence_rule'), // iCal RRULE format
+    lastSynced: timestamp('last_synced'),
 
-  // Who created this event (for locally-created events)
-  createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    // Set when sync finds this synced event gone from its source. Instead of
+    // deleting silently, it's flagged pending so the user reviews the removal
+    // (deletes-only review). Null = not pending.
+    pendingDeletion: timestamp('pending_deletion'),
 
-  // Display color (inherits from calendar if not set)
-  color: varchar('color', { length: 7 }),
+    // CalDAV calendar-object href + ETag, captured at sync time. A CalDAV DELETE
+    // targets the object by href (not UID), so we need it to propagate a local
+    // delete upstream to the source server (single-event scope; recurring events
+    // share one parent object and are excluded from write-back).
+    caldavHref: varchar('caldav_href', { length: 1024 }),
+    caldavEtag: varchar('caldav_etag', { length: 255 }),
 
-  reminderMinutes: integer('reminder_minutes'),
-
-  lastSynced: timestamp('last_synced'),
-
-  // Set when sync finds this synced event gone from its source. Instead of
-  // deleting silently, it's flagged pending so the user reviews the removal
-  // (deletes-only review). Null = not pending.
-  pendingDeletion: timestamp('pending_deletion'),
-
-  // CalDAV calendar-object href + ETag, captured at sync time. A CalDAV DELETE
-  // targets the object by href (not UID), so we need it to propagate a local
-  // delete upstream to the source server (single-event scope; recurring events
-  // share one parent object and are excluded from write-back).
-  caldavHref: varchar('caldav_href', { length: 1024 }),
-  caldavEtag: varchar('caldav_etag', { length: 255 }),
-
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-}, (table) => ({
-  startTimeIdx: index('events_start_time_idx').on(table.startTime),
-  endTimeIdx: index('events_end_time_idx').on(table.endTime),
-  calendarSourceIdx: index('events_calendar_source_idx').on(table.calendarSourceId),
-  // Unique constraint to prevent duplicate synced events
-  sourceExternalUnique: uniqueIndex('events_source_external_unique')
-    .on(table.calendarSourceId, table.externalEventId),
-}));
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    startTimeIdx: index('events_start_time_idx').on(table.startTime),
+    endTimeIdx: index('events_end_time_idx').on(table.endTime),
+    calendarSourceIdx: index('events_calendar_source_idx').on(table.calendarSourceId),
+    // Unique constraint to prevent duplicate synced events
+    sourceExternalUnique: uniqueIndex('events_source_external_unique').on(
+      table.calendarSourceId,
+      table.externalEventId
+    ),
+  })
+);
 
 /**
  * Tombstones for synced events the user deleted locally. A one-way pull sync
@@ -196,18 +210,23 @@ export const events = pgTable('events', {
  * any (calendarSourceId, externalEventId) listed here. Cascade-deletes with the
  * source. (Google deletes propagate upstream too; CalDAV/iCal rely on this.)
  */
-export const dismissedEvents = pgTable('dismissed_events', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  calendarSourceId: uuid('calendar_source_id')
-    .notNull()
-    .references(() => calendarSources.id, { onDelete: 'cascade' }),
-  externalEventId: varchar('external_event_id', { length: 255 }).notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-}, (table) => ({
-  dismissedSourceExternalUnique: uniqueIndex('dismissed_events_source_external_unique')
-    .on(table.calendarSourceId, table.externalEventId),
-}));
-
+export const dismissedEvents = pgTable(
+  'dismissed_events',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    calendarSourceId: uuid('calendar_source_id')
+      .notNull()
+      .references(() => calendarSources.id, { onDelete: 'cascade' }),
+    externalEventId: varchar('external_event_id', { length: 255 }).notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    dismissedSourceExternalUnique: uniqueIndex('dismissed_events_source_external_unique').on(
+      table.calendarSourceId,
+      table.externalEventId
+    ),
+  })
+);
 
 export const taskLists = pgTable('task_lists', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -224,219 +243,257 @@ export const taskLists = pgTable('task_lists', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+export const taskSources = pgTable(
+  'task_sources',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
 
-export const taskSources = pgTable('task_sources', {
-  id: uuid('id').defaultRandom().primaryKey(),
+    // Which user connected this source
+    userId: uuid('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
 
-  // Which user connected this source
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    // Provider: "microsoft_todo", "todoist", "apple_reminders", etc.
+    provider: varchar('provider', { length: 50 }).notNull(),
 
-  // Provider: "microsoft_todo", "todoist", "apple_reminders", etc.
-  provider: varchar('provider', { length: 50 }).notNull(),
+    // External list ID in the provider's system
+    externalListId: varchar('external_list_id', { length: 255 }).notNull(),
 
-  // External list ID in the provider's system
-  externalListId: varchar('external_list_id', { length: 255 }).notNull(),
+    // External list name (for display/debugging)
+    externalListName: varchar('external_list_name', { length: 255 }),
 
-  // External list name (for display/debugging)
-  externalListName: varchar('external_list_name', { length: 255 }),
+    // Which Prism task list this syncs to
+    taskListId: uuid('task_list_id')
+      .references(() => taskLists.id, { onDelete: 'cascade' })
+      .notNull(),
 
-  // Which Prism task list this syncs to
-  taskListId: uuid('task_list_id').references(() => taskLists.id, { onDelete: 'cascade' }).notNull(),
+    // Sync enabled/disabled
+    syncEnabled: boolean('sync_enabled').default(true).notNull(),
 
-  // Sync enabled/disabled
-  syncEnabled: boolean('sync_enabled').default(true).notNull(),
+    // OAuth tokens (encrypted in application layer)
+    accessToken: text('access_token'),
+    refreshToken: text('refresh_token'),
+    tokenExpiresAt: timestamp('token_expires_at'),
 
-  // OAuth tokens (encrypted in application layer)
-  accessToken: text('access_token'),
-  refreshToken: text('refresh_token'),
-  tokenExpiresAt: timestamp('token_expires_at'),
+    // OAuth account email this source is wired to. See #100.
+    accountEmail: varchar('account_email', { length: 320 }),
 
-  // OAuth account email this source is wired to. See #100.
-  accountEmail: varchar('account_email', { length: 320 }),
+    lastSyncAt: timestamp('last_sync_at'),
+    lastSyncError: text('last_sync_error'),
 
-  lastSyncAt: timestamp('last_sync_at'),
-  lastSyncError: text('last_sync_error'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    userProviderIdx: index('task_sources_user_provider_idx').on(table.userId, table.provider),
+    taskListIdx: index('task_sources_task_list_idx').on(table.taskListId),
+  })
+);
 
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-}, (table) => ({
-  userProviderIdx: index('task_sources_user_provider_idx').on(table.userId, table.provider),
-  taskListIdx: index('task_sources_task_list_idx').on(table.taskListId),
-}));
+export const tasks = pgTable(
+  'tasks',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
 
+    title: varchar('title', { length: 255 }).notNull(),
+    description: text('description'),
 
-export const tasks = pgTable('tasks', {
-  id: uuid('id').defaultRandom().primaryKey(),
+    // Which list this task belongs to (null = default/inbox)
+    listId: uuid('list_id').references(() => taskLists.id, { onDelete: 'cascade' }),
 
-  title: varchar('title', { length: 255 }).notNull(),
-  description: text('description'),
+    assignedTo: uuid('assigned_to').references(() => users.id, { onDelete: 'set null' }),
 
-  // Which list this task belongs to (null = default/inbox)
-  listId: uuid('list_id').references(() => taskLists.id, { onDelete: 'cascade' }),
+    dueDate: timestamp('due_date'),
 
-  assignedTo: uuid('assigned_to').references(() => users.id, { onDelete: 'set null' }),
+    priority: varchar('priority', { length: 20 }).$type<'high' | 'medium' | 'low'>(),
 
-  dueDate: timestamp('due_date'),
+    category: varchar('category', { length: 100 }),
 
-  priority: varchar('priority', { length: 20 })
-    .$type<'high' | 'medium' | 'low'>(),
+    completed: boolean('completed').default(false).notNull(),
+    completedAt: timestamp('completed_at'),
+    completedBy: uuid('completed_by').references(() => users.id, { onDelete: 'set null' }),
 
-  category: varchar('category', { length: 100 }),
+    // External sync tracking
+    taskSourceId: uuid('task_source_id').references(() => taskSources.id, { onDelete: 'set null' }),
+    externalId: varchar('external_id', { length: 255 }),
+    externalUpdatedAt: timestamp('external_updated_at'),
+    lastSynced: timestamp('last_synced'),
 
-  completed: boolean('completed').default(false).notNull(),
-  completedAt: timestamp('completed_at'),
-  completedBy: uuid('completed_by').references(() => users.id, { onDelete: 'set null' }),
+    /**
+     * Set when the remote dropped this task and the deletion is awaiting the
+     * user's decision. The task stays visible meanwhile. Mirrors
+     * events.pendingDeletion — see the pending-deletions review route.
+     */
+    pendingDeletion: timestamp('pending_deletion'),
 
-  // External sync tracking
-  taskSourceId: uuid('task_source_id').references(() => taskSources.id, { onDelete: 'set null' }),
-  externalId: varchar('external_id', { length: 255 }),
-  externalUpdatedAt: timestamp('external_updated_at'),
-  lastSynced: timestamp('last_synced'),
+    /**
+     * The user chose to keep this task after the remote deleted it, so the
+     * reconciler must ignore it in both directions.
+     *
+     * Detaching alone is not enough: the reconciler pushes any local task in a
+     * synced list with no external id to the provider, which would recreate a
+     * kept task on the remote it was just deleted from.
+     */
+    syncExempt: boolean('sync_exempt').default(false).notNull(),
 
-  /**
-   * Set when the remote dropped this task and the deletion is awaiting the
-   * user's decision. The task stays visible meanwhile. Mirrors
-   * events.pendingDeletion — see the pending-deletions review route.
-   */
-  pendingDeletion: timestamp('pending_deletion'),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    listIdIdx: index('tasks_list_id_idx').on(table.listId),
+    assignedToIdx: index('tasks_assigned_to_idx').on(table.assignedTo),
+    dueDateIdx: index('tasks_due_date_idx').on(table.dueDate),
+    completedIdx: index('tasks_completed_idx').on(table.completed),
+    taskSourceIdx: index('tasks_task_source_idx').on(table.taskSourceId),
+    externalIdIdx: index('tasks_external_id_idx').on(table.externalId),
+  })
+);
 
-  /**
-   * The user chose to keep this task after the remote deleted it, so the
-   * reconciler must ignore it in both directions.
-   *
-   * Detaching alone is not enough: the reconciler pushes any local task in a
-   * synced list with no external id to the provider, which would recreate a
-   * kept task on the remote it was just deleted from.
-   */
-  syncExempt: boolean('sync_exempt').default(false).notNull(),
+export const chores = pgTable(
+  'chores',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
 
-  createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-}, (table) => ({
-  listIdIdx: index('tasks_list_id_idx').on(table.listId),
-  assignedToIdx: index('tasks_assigned_to_idx').on(table.assignedTo),
-  dueDateIdx: index('tasks_due_date_idx').on(table.dueDate),
-  completedIdx: index('tasks_completed_idx').on(table.completed),
-  taskSourceIdx: index('tasks_task_source_idx').on(table.taskSourceId),
-  externalIdIdx: index('tasks_external_id_idx').on(table.externalId),
-}));
+    title: varchar('title', { length: 255 }).notNull(),
+    description: text('description'),
 
+    category: varchar('category', { length: 50 })
+      .notNull()
+      .$type<'cleaning' | 'laundry' | 'dishes' | 'yard' | 'pets' | 'trash' | 'other'>(),
 
-export const chores = pgTable('chores', {
-  id: uuid('id').defaultRandom().primaryKey(),
+    // Null = anyone can do it
+    assignedTo: uuid('assigned_to').references(() => users.id, { onDelete: 'set null' }),
 
-  title: varchar('title', { length: 255 }).notNull(),
-  description: text('description'),
+    frequency: varchar('frequency', { length: 20 })
+      .notNull()
+      .$type<
+        | 'daily'
+        | 'weekly'
+        | 'biweekly'
+        | 'monthly'
+        | 'quarterly'
+        | 'semi-annually'
+        | 'annually'
+        | 'custom'
+      >(),
 
-  category: varchar('category', { length: 50 }).notNull()
-    .$type<'cleaning' | 'laundry' | 'dishes' | 'yard' | 'pets' | 'trash' | 'other'>(),
+    // For custom frequencies: number of days between occurrences
+    customIntervalDays: integer('custom_interval_days'),
 
-  // Null = anyone can do it
-  assignedTo: uuid('assigned_to').references(() => users.id, { onDelete: 'set null' }),
+    // Start day override: 0=Sunday, 1=Monday, ..., 6=Saturday
+    // For weekly: which day of the week the chore resets
+    // For monthly: 1-28 (day of month)
+    // For annually: MM-DD string (e.g., "03-15" for March 15)
+    startDay: varchar('start_day', { length: 10 }),
 
-  frequency: varchar('frequency', { length: 20 }).notNull()
-    .$type<'daily' | 'weekly' | 'biweekly' | 'monthly' | 'quarterly' | 'semi-annually' | 'annually' | 'custom'>(),
+    lastCompleted: timestamp('last_completed'),
+    nextDue: date('next_due'),
+    // Optional time-of-day for the chore (HH:mm). Null = "top of day" / floats.
+    // Used by time-grid calendar views to place the chore at a specific hour.
+    nextDueTime: varchar('next_due_time', { length: 5 }),
 
-  // For custom frequencies: number of days between occurrences
-  customIntervalDays: integer('custom_interval_days'),
+    pointValue: integer('point_value').default(0).notNull(),
 
-  // Start day override: 0=Sunday, 1=Monday, ..., 6=Saturday
-  // For weekly: which day of the week the chore resets
-  // For monthly: 1-28 (day of month)
-  // For annually: MM-DD string (e.g., "03-15" for March 15)
-  startDay: varchar('start_day', { length: 10 }),
+    requiresApproval: boolean('requires_approval').default(false).notNull(),
 
-  lastCompleted: timestamp('last_completed'),
-  nextDue: date('next_due'),
-  // Optional time-of-day for the chore (HH:mm). Null = "top of day" / floats.
-  // Used by time-grid calendar views to place the chore at a specific hour.
-  nextDueTime: varchar('next_due_time', { length: 5 }),
+    enabled: boolean('enabled').default(true).notNull(),
 
-  pointValue: integer('point_value').default(0).notNull(),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    nextDueIdx: index('chores_next_due_idx').on(table.nextDue),
+    assignedToIdx: index('chores_assigned_to_idx').on(table.assignedTo),
+  })
+);
 
-  requiresApproval: boolean('requires_approval').default(false).notNull(),
+export const choreCompletions = pgTable(
+  'chore_completions',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
 
-  enabled: boolean('enabled').default(true).notNull(),
+    choreId: uuid('chore_id')
+      .references(() => chores.id, { onDelete: 'cascade' })
+      .notNull(),
 
-  createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-}, (table) => ({
-  nextDueIdx: index('chores_next_due_idx').on(table.nextDue),
-  assignedToIdx: index('chores_assigned_to_idx').on(table.assignedTo),
-}));
+    completedBy: uuid('completed_by')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
 
+    completedAt: timestamp('completed_at').defaultNow().notNull(),
 
-export const choreCompletions = pgTable('chore_completions', {
-  id: uuid('id').defaultRandom().primaryKey(),
+    approvedBy: uuid('approved_by').references(() => users.id, { onDelete: 'set null' }),
+    approvedAt: timestamp('approved_at'),
 
-  choreId: uuid('chore_id')
-    .references(() => chores.id, { onDelete: 'cascade' })
-    .notNull(),
+    // Points awarded (might differ from chore default)
+    pointsAwarded: integer('points_awarded'),
 
-  completedBy: uuid('completed_by')
-    .references(() => users.id, { onDelete: 'cascade' })
-    .notNull(),
+    photoUrl: text('photo_url'),
 
-  completedAt: timestamp('completed_at').defaultNow().notNull(),
+    notes: text('notes'),
+  },
+  (table) => ({
+    choreIdIdx: index('chore_completions_chore_id_idx').on(table.choreId),
+    completedAtIdx: index('chore_completions_completed_at_idx').on(table.completedAt),
+    approvedByIdx: index('chore_completions_approved_by_idx').on(table.approvedBy),
+    choreApprovedByIdx: index('chore_completions_chore_approved_by_idx').on(
+      table.choreId,
+      table.approvedBy
+    ),
+  })
+);
 
-  approvedBy: uuid('approved_by').references(() => users.id, { onDelete: 'set null' }),
-  approvedAt: timestamp('approved_at'),
+export const shoppingListSources = pgTable(
+  'shopping_list_sources',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
 
-  // Points awarded (might differ from chore default)
-  pointsAwarded: integer('points_awarded'),
+    // Which user connected this source
+    userId: uuid('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
 
-  photoUrl: text('photo_url'),
+    // Provider: "microsoft_todo", "todoist", etc.
+    provider: varchar('provider', { length: 50 }).notNull(),
 
-  notes: text('notes'),
-}, (table) => ({
-  choreIdIdx: index('chore_completions_chore_id_idx').on(table.choreId),
-  completedAtIdx: index('chore_completions_completed_at_idx').on(table.completedAt),
-  approvedByIdx: index('chore_completions_approved_by_idx').on(table.approvedBy),
-  choreApprovedByIdx: index('chore_completions_chore_approved_by_idx').on(table.choreId, table.approvedBy),
-}));
+    // External list ID in the provider's system
+    externalListId: varchar('external_list_id', { length: 255 }).notNull(),
 
+    // External list name (for display/debugging)
+    externalListName: varchar('external_list_name', { length: 255 }),
 
-export const shoppingListSources = pgTable('shopping_list_sources', {
-  id: uuid('id').defaultRandom().primaryKey(),
+    // Which Prism shopping list this syncs to
+    shoppingListId: uuid('shopping_list_id')
+      .references(() => shoppingLists.id, { onDelete: 'cascade' })
+      .notNull(),
 
-  // Which user connected this source
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    // Sync enabled/disabled
+    syncEnabled: boolean('sync_enabled').default(true).notNull(),
 
-  // Provider: "microsoft_todo", "todoist", etc.
-  provider: varchar('provider', { length: 50 }).notNull(),
+    // OAuth tokens (encrypted in application layer)
+    accessToken: text('access_token'),
+    refreshToken: text('refresh_token'),
+    tokenExpiresAt: timestamp('token_expires_at'),
 
-  // External list ID in the provider's system
-  externalListId: varchar('external_list_id', { length: 255 }).notNull(),
+    // OAuth account email this source is wired to. See #100.
+    accountEmail: varchar('account_email', { length: 320 }),
 
-  // External list name (for display/debugging)
-  externalListName: varchar('external_list_name', { length: 255 }),
+    lastSyncAt: timestamp('last_sync_at'),
+    lastSyncError: text('last_sync_error'),
 
-  // Which Prism shopping list this syncs to
-  shoppingListId: uuid('shopping_list_id').references(() => shoppingLists.id, { onDelete: 'cascade' }).notNull(),
-
-  // Sync enabled/disabled
-  syncEnabled: boolean('sync_enabled').default(true).notNull(),
-
-  // OAuth tokens (encrypted in application layer)
-  accessToken: text('access_token'),
-  refreshToken: text('refresh_token'),
-  tokenExpiresAt: timestamp('token_expires_at'),
-
-  // OAuth account email this source is wired to. See #100.
-  accountEmail: varchar('account_email', { length: 320 }),
-
-  lastSyncAt: timestamp('last_sync_at'),
-  lastSyncError: text('last_sync_error'),
-
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-}, (table) => ({
-  userProviderIdx: index('shopping_list_sources_user_provider_idx').on(table.userId, table.provider),
-  shoppingListIdx: index('shopping_list_sources_shopping_list_idx').on(table.shoppingListId),
-}));
-
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    userProviderIdx: index('shopping_list_sources_user_provider_idx').on(
+      table.userId,
+      table.provider
+    ),
+    shoppingListIdx: index('shopping_list_sources_shopping_list_idx').on(table.shoppingListId),
+  })
+);
 
 export const shoppingLists = pgTable('shopping_lists', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -450,7 +507,9 @@ export const shoppingLists = pgTable('shopping_lists', {
   color: varchar('color', { length: 7 }),
 
   // List type: 'grocery' | 'hardware' | 'general' | 'other' - determines layout style
-  listType: varchar('list_type', { length: 20 }).default('grocery').notNull()
+  listType: varchar('list_type', { length: 20 })
+    .default('grocery')
+    .notNull()
     .$type<'grocery' | 'hardware' | 'general' | 'other'>(),
 
   sortOrder: integer('sort_order').default(0).notNull(),
@@ -466,52 +525,57 @@ export const shoppingLists = pgTable('shopping_lists', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+export const shoppingItems = pgTable(
+  'shopping_items',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
 
-export const shoppingItems = pgTable('shopping_items', {
-  id: uuid('id').defaultRandom().primaryKey(),
+    listId: uuid('list_id')
+      .references(() => shoppingLists.id, { onDelete: 'cascade' })
+      .notNull(),
 
-  listId: uuid('list_id')
-    .references(() => shoppingLists.id, { onDelete: 'cascade' })
-    .notNull(),
+    name: varchar('name', { length: 255 }).notNull(),
+    quantity: integer('quantity'),
+    unit: varchar('unit', { length: 50 }), // "lbs", "oz", "gallon", "count"
+    category: varchar('category', { length: 50 }),
 
-  name: varchar('name', { length: 255 }).notNull(),
-  quantity: integer('quantity'),
-  unit: varchar('unit', { length: 50 }), // "lbs", "oz", "gallon", "count"
-  category: varchar('category', { length: 50 }),
+    checked: boolean('checked').default(false).notNull(),
 
-  checked: boolean('checked').default(false).notNull(),
+    // Source tracking (for sync)
+    source: varchar('source', { length: 50 }).default('internal').notNull(),
+    sourceId: varchar('source_id', { length: 255 }),
 
-  // Source tracking (for sync)
-  source: varchar('source', { length: 50 }).default('internal').notNull(),
-  sourceId: varchar('source_id', { length: 255 }),
+    recurring: boolean('recurring').default(false).notNull(),
+    recurrenceInterval: varchar('recurrence_interval', { length: 20 }), // "weekly", "monthly"
 
-  recurring: boolean('recurring').default(false).notNull(),
-  recurrenceInterval: varchar('recurrence_interval', { length: 20 }), // "weekly", "monthly"
+    addedBy: uuid('added_by').references(() => users.id, { onDelete: 'set null' }),
 
-  addedBy: uuid('added_by').references(() => users.id, { onDelete: 'set null' }),
+    notes: text('notes'),
 
-  notes: text('notes'),
+    // External sync tracking
+    shoppingListSourceId: uuid('shopping_list_source_id').references(() => shoppingListSources.id, {
+      onDelete: 'set null',
+    }),
+    externalId: varchar('external_id', { length: 255 }),
+    externalUpdatedAt: timestamp('external_updated_at'),
+    lastSynced: timestamp('last_synced'),
 
-  // External sync tracking
-  shoppingListSourceId: uuid('shopping_list_source_id').references(() => shoppingListSources.id, { onDelete: 'set null' }),
-  externalId: varchar('external_id', { length: 255 }),
-  externalUpdatedAt: timestamp('external_updated_at'),
-  lastSynced: timestamp('last_synced'),
+    // Cached Kroger productId from the last time this item was sent to the
+    // Kroger cart — pre-selects the same SKU on subsequent sends so weekly
+    // staples become one-tap.
+    krogerProductId: varchar('kroger_product_id', { length: 50 }),
 
-  // Cached Kroger productId from the last time this item was sent to the
-  // Kroger cart — pre-selects the same SKU on subsequent sends so weekly
-  // staples become one-tap.
-  krogerProductId: varchar('kroger_product_id', { length: 50 }),
-
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-}, (table) => ({
-  listIdIdx: index('shopping_items_list_id_idx').on(table.listId),
-  categoryIdx: index('shopping_items_category_idx').on(table.category),
-  checkedIdx: index('shopping_items_checked_idx').on(table.checked),
-  shoppingListSourceIdx: index('shopping_items_source_idx').on(table.shoppingListSourceId),
-  externalIdIdx: index('shopping_items_external_id_idx').on(table.externalId),
-}));
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    listIdIdx: index('shopping_items_list_id_idx').on(table.listId),
+    categoryIdx: index('shopping_items_category_idx').on(table.category),
+    checkedIdx: index('shopping_items_checked_idx').on(table.checked),
+    shoppingListSourceIdx: index('shopping_items_source_idx').on(table.shoppingListSourceId),
+    externalIdIdx: index('shopping_items_external_id_idx').on(table.externalId),
+  })
+);
 
 // ============================================================================
 // KROGER CART INTEGRATION
@@ -524,29 +588,32 @@ export const shoppingItems = pgTable('shopping_items', {
  *
  * Tokens are encrypted at the application layer with ENCRYPTION_KEY.
  */
-export const userKrogerConnections = pgTable('user_kroger_connections', {
-  id: uuid('id').defaultRandom().primaryKey(),
+export const userKrogerConnections = pgTable(
+  'user_kroger_connections',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
 
-  userId: uuid('user_id')
-    .references(() => users.id, { onDelete: 'cascade' })
-    .notNull()
-    .unique(),
+    userId: uuid('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull()
+      .unique(),
 
-  accessToken: text('access_token').notNull(),
-  refreshToken: text('refresh_token'),
-  tokenExpiresAt: timestamp('token_expires_at'),
+    accessToken: text('access_token').notNull(),
+    refreshToken: text('refresh_token'),
+    tokenExpiresAt: timestamp('token_expires_at'),
 
-  // Optional — Kroger's "favorite store" id if the user picked one. Lets us
-  // search products with location-specific pricing.
-  preferredLocationId: varchar('preferred_location_id', { length: 50 }),
-  preferredLocationName: varchar('preferred_location_name', { length: 255 }),
+    // Optional — Kroger's "favorite store" id if the user picked one. Lets us
+    // search products with location-specific pricing.
+    preferredLocationId: varchar('preferred_location_id', { length: 50 }),
+    preferredLocationName: varchar('preferred_location_name', { length: 255 }),
 
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-}, (table) => ({
-  userIdIdx: index('user_kroger_connections_user_id_idx').on(table.userId),
-}));
-
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: index('user_kroger_connections_user_id_idx').on(table.userId),
+  })
+);
 
 /**
  * A connected recipe server (Tandoor / Mealie). Recipes pulled from it carry
@@ -554,197 +621,221 @@ export const userKrogerConnections = pgTable('user_kroger_connections', {
  * update, and (opt-in) remove them. The API token is encrypted at the app
  * layer (AES-256-GCM via lib/utils/crypto), like other source credentials.
  */
-export const recipeSources = pgTable('recipe_sources', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  provider: varchar('provider', { length: 50 }).notNull()
-    .$type<'tandoor' | 'mealie'>(),
-  name: varchar('name', { length: 255 }),
-  serverUrl: text('server_url').notNull(),
-  accessToken: text('access_token'),
-  enabled: boolean('enabled').default(true).notNull(),
-  lastSynced: timestamp('last_synced'),
-  syncErrors: jsonb('sync_errors'),
-  providerConfig: jsonb('provider_config'),
-  createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-}, (table) => ({
-  enabledIdx: index('recipe_sources_enabled_idx').on(table.enabled),
-}));
+export const recipeSources = pgTable(
+  'recipe_sources',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    provider: varchar('provider', { length: 50 }).notNull().$type<'tandoor' | 'mealie'>(),
+    name: varchar('name', { length: 255 }),
+    serverUrl: text('server_url').notNull(),
+    accessToken: text('access_token'),
+    enabled: boolean('enabled').default(true).notNull(),
+    lastSynced: timestamp('last_synced'),
+    syncErrors: jsonb('sync_errors'),
+    providerConfig: jsonb('provider_config'),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    enabledIdx: index('recipe_sources_enabled_idx').on(table.enabled),
+  })
+);
 
-export const recipes = pgTable('recipes', {
-  id: uuid('id').defaultRandom().primaryKey(),
+export const recipes = pgTable(
+  'recipes',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
 
-  name: varchar('name', { length: 255 }).notNull(),
-  description: text('description'),
+    name: varchar('name', { length: 255 }).notNull(),
+    description: text('description'),
 
-  // Source URL (for scraped recipes)
-  url: text('url'),
+    // Source URL (for scraped recipes)
+    url: text('url'),
 
-  // Where did this recipe come from?
-  sourceType: varchar('source_type', { length: 50 }).default('manual').notNull()
-    .$type<'manual' | 'url_import' | 'paprika_import' | 'tandoor_import'>(),
+    // Where did this recipe come from?
+    sourceType: varchar('source_type', { length: 50 })
+      .default('manual')
+      .notNull()
+      .$type<'manual' | 'url_import' | 'paprika_import' | 'tandoor_import'>(),
 
-  // Sync-source linkage (for recipes pulled from a Tandoor/Mealie source).
-  // (sourceId, externalId) keys the review-and-approve sync; externalUpdatedAt
-  // is the remote's last-modified time, used for last-write-wins. All null for
-  // locally-created recipes.
-  sourceId: uuid('source_id').references(() => recipeSources.id, { onDelete: 'set null' }),
-  externalId: varchar('external_id', { length: 255 }),
-  externalUpdatedAt: timestamp('external_updated_at'),
+    // Sync-source linkage (for recipes pulled from a Tandoor/Mealie source).
+    // (sourceId, externalId) keys the review-and-approve sync; externalUpdatedAt
+    // is the remote's last-modified time, used for last-write-wins. All null for
+    // locally-created recipes.
+    sourceId: uuid('source_id').references(() => recipeSources.id, { onDelete: 'set null' }),
+    externalId: varchar('external_id', { length: 255 }),
+    externalUpdatedAt: timestamp('external_updated_at'),
 
-  // Structured ingredients (JSON array of {name, amount, unit, notes})
-  ingredients: jsonb('ingredients').default([]).notNull(),
+    // Structured ingredients (JSON array of {name, amount, unit, notes})
+    ingredients: jsonb('ingredients').default([]).notNull(),
 
-  // Instructions (can be plain text or JSON array of steps)
-  instructions: text('instructions'),
+    // Instructions (can be plain text or JSON array of steps)
+    instructions: text('instructions'),
 
-  prepTime: integer('prep_time'), // minutes
-  cookTime: integer('cook_time'), // minutes
-  servings: integer('servings'),
+    prepTime: integer('prep_time'), // minutes
+    cookTime: integer('cook_time'), // minutes
+    servings: integer('servings'),
 
-  // Categorization
-  tags: jsonb('tags').default([]).notNull(), // ["quick", "vegetarian", "kid-friendly"]
-  cuisine: varchar('cuisine', { length: 100 }), // "Italian", "Mexican", etc.
-  category: varchar('category', { length: 100 }), // "Main Dish", "Dessert", etc.
+    // Categorization
+    tags: jsonb('tags').default([]).notNull(), // ["quick", "vegetarian", "kid-friendly"]
+    cuisine: varchar('cuisine', { length: 100 }), // "Italian", "Mexican", etc.
+    category: varchar('category', { length: 100 }), // "Main Dish", "Dessert", etc.
 
-  // Image (URL or local path)
-  imageUrl: text('image_url'),
+    // Image (URL or local path)
+    imageUrl: text('image_url'),
 
-  // Ratings and notes
-  rating: integer('rating'), // 1-5 stars
-  notes: text('notes'),
+    // Ratings and notes
+    rating: integer('rating'), // 1-5 stars
+    notes: text('notes'),
 
-  // How often we've made this
-  timesMade: integer('times_made').default(0).notNull(),
-  lastMadeAt: timestamp('last_made_at'),
+    // How often we've made this
+    timesMade: integer('times_made').default(0).notNull(),
+    lastMadeAt: timestamp('last_made_at'),
 
-  // Favorite for quick access
-  isFavorite: boolean('is_favorite').default(false).notNull(),
+    // Favorite for quick access
+    isFavorite: boolean('is_favorite').default(false).notNull(),
 
-  createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-}, (table) => ({
-  nameIdx: index('recipes_name_idx').on(table.name),
-  favoriteIdx: index('recipes_favorite_idx').on(table.isFavorite),
-  sourceTypeIdx: index('recipes_source_type_idx').on(table.sourceType),
-  // Upsert/match key for synced recipes. (null, null) local rows don't collide
-  // — Postgres treats NULLs as distinct in a unique index.
-  sourceExternalUnique: uniqueIndex('recipes_source_external_unique').on(table.sourceId, table.externalId),
-}));
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    nameIdx: index('recipes_name_idx').on(table.name),
+    favoriteIdx: index('recipes_favorite_idx').on(table.isFavorite),
+    sourceTypeIdx: index('recipes_source_type_idx').on(table.sourceType),
+    // Upsert/match key for synced recipes. (null, null) local rows don't collide
+    // — Postgres treats NULLs as distinct in a unique index.
+    sourceExternalUnique: uniqueIndex('recipes_source_external_unique').on(
+      table.sourceId,
+      table.externalId
+    ),
+  })
+);
 
+export const meals = pgTable(
+  'meals',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
 
-export const meals = pgTable('meals', {
-  id: uuid('id').defaultRandom().primaryKey(),
+    name: varchar('name', { length: 255 }).notNull(),
 
-  name: varchar('name', { length: 255 }).notNull(),
+    description: text('description'),
 
-  description: text('description'),
+    // Link to a saved recipe (optional - can also have inline recipe data)
+    recipeId: uuid('recipe_id').references(() => recipes.id, { onDelete: 'set null' }),
 
-  // Link to a saved recipe (optional - can also have inline recipe data)
-  recipeId: uuid('recipe_id').references(() => recipes.id, { onDelete: 'set null' }),
+    // Inline recipe data (for quick entries or when not using saved recipes)
+    recipe: text('recipe'),
+    recipeUrl: text('recipe_url'),
 
-  // Inline recipe data (for quick entries or when not using saved recipes)
-  recipe: text('recipe'),
-  recipeUrl: text('recipe_url'),
+    prepTime: integer('prep_time'), // minutes
+    cookTime: integer('cook_time'), // minutes
+    servings: integer('servings'),
 
-  prepTime: integer('prep_time'), // minutes
-  cookTime: integer('cook_time'), // minutes
-  servings: integer('servings'),
+    ingredients: text('ingredients'),
 
-  ingredients: text('ingredients'),
+    weekOf: date('week_of').notNull(),
 
-  weekOf: date('week_of').notNull(),
+    // Absolute calendar date of this meal. `(week_of, day_of_week)` is a
+    // week-RELATIVE key that shifts when the user changes their "week starts on"
+    // preference — which orphaned whole meal plans (they became unfindable under
+    // the new week boundary). `date` is the stable identity the week views now
+    // query by (a 7-day date range), so toggling the preference only re-windows.
+    // week_of is retained and kept in sync for backward compatibility.
+    date: date('date').notNull(),
 
-  // Absolute calendar date of this meal. `(week_of, day_of_week)` is a
-  // week-RELATIVE key that shifts when the user changes their "week starts on"
-  // preference — which orphaned whole meal plans (they became unfindable under
-  // the new week boundary). `date` is the stable identity the week views now
-  // query by (a 7-day date range), so toggling the preference only re-windows.
-  // week_of is retained and kept in sync for backward compatibility.
-  date: date('date').notNull(),
+    dayOfWeek: varchar('day_of_week', { length: 20 })
+      .notNull()
+      .$type<'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday'>(),
 
-  dayOfWeek: varchar('day_of_week', { length: 20 }).notNull()
-    .$type<'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday'>(),
+    mealType: varchar('meal_type', { length: 20 })
+      .notNull()
+      .$type<'breakfast' | 'lunch' | 'dinner' | 'snack'>(),
 
-  mealType: varchar('meal_type', { length: 20 }).notNull()
-    .$type<'breakfast' | 'lunch' | 'dinner' | 'snack'>(),
+    // Optional time-of-day (HH:mm) for time-grid calendar placement. When null,
+    // the UI substitutes a default based on mealType (breakfast 07:00, lunch
+    // 12:00, snack 15:00, dinner 18:00). Stored separately so a user-set time
+    // survives mealType changes.
+    mealTime: varchar('meal_time', { length: 5 }),
 
-  // Optional time-of-day (HH:mm) for time-grid calendar placement. When null,
-  // the UI substitutes a default based on mealType (breakfast 07:00, lunch
-  // 12:00, snack 15:00, dinner 18:00). Stored separately so a user-set time
-  // survives mealType changes.
-  mealTime: varchar('meal_time', { length: 5 }),
+    cookedAt: timestamp('cooked_at'),
+    cookedBy: uuid('cooked_by').references(() => users.id, { onDelete: 'set null' }),
 
-  cookedAt: timestamp('cooked_at'),
-  cookedBy: uuid('cooked_by').references(() => users.id, { onDelete: 'set null' }),
+    // Source tracking (for Paprika sync)
+    source: varchar('source', { length: 50 }).default('internal').notNull(),
+    sourceId: varchar('source_id', { length: 255 }),
 
-  // Source tracking (for Paprika sync)
-  source: varchar('source', { length: 50 }).default('internal').notNull(),
-  sourceId: varchar('source_id', { length: 255 }),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    weekOfIdx: index('meals_week_of_idx').on(table.weekOf),
+    dayOfWeekIdx: index('meals_day_of_week_idx').on(table.dayOfWeek),
+    dateIdx: index('meals_date_idx').on(table.date),
+  })
+);
 
-  createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-}, (table) => ({
-  weekOfIdx: index('meals_week_of_idx').on(table.weekOf),
-  dayOfWeekIdx: index('meals_day_of_week_idx').on(table.dayOfWeek),
-  dateIdx: index('meals_date_idx').on(table.date),
-}));
+export const familyMessages = pgTable(
+  'family_messages',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
 
+    message: text('message').notNull(),
 
-export const familyMessages = pgTable('family_messages', {
-  id: uuid('id').defaultRandom().primaryKey(),
+    authorId: uuid('author_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
 
-  message: text('message').notNull(),
+    pinned: boolean('pinned').default(false).notNull(),
 
-  authorId: uuid('author_id')
-    .references(() => users.id, { onDelete: 'cascade' })
-    .notNull(),
+    important: boolean('important').default(false).notNull(),
 
-  pinned: boolean('pinned').default(false).notNull(),
+    // When should this message auto-delete? (null = never)
+    expiresAt: timestamp('expires_at'),
 
-  important: boolean('important').default(false).notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    createdAtIdx: index('family_messages_created_at_idx').on(table.createdAt),
+    expiresAtIdx: index('family_messages_expires_at_idx').on(table.expiresAt),
+  })
+);
 
-  // When should this message auto-delete? (null = never)
-  expiresAt: timestamp('expires_at'),
+export const maintenanceReminders = pgTable(
+  'maintenance_reminders',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
 
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-}, (table) => ({
-  createdAtIdx: index('family_messages_created_at_idx').on(table.createdAt),
-  expiresAtIdx: index('family_messages_expires_at_idx').on(table.expiresAt),
-}));
+    title: varchar('title', { length: 255 }).notNull(),
+    category: varchar('category', { length: 50 })
+      .notNull()
+      .$type<'car' | 'home' | 'appliance' | 'yard' | 'other'>(),
 
+    description: text('description'),
 
-export const maintenanceReminders = pgTable('maintenance_reminders', {
-  id: uuid('id').defaultRandom().primaryKey(),
+    schedule: varchar('schedule', { length: 20 })
+      .notNull()
+      .$type<'monthly' | 'quarterly' | 'annually' | 'custom'>(),
+    customIntervalDays: integer('custom_interval_days'),
 
-  title: varchar('title', { length: 255 }).notNull(),
-  category: varchar('category', { length: 50 }).notNull()
-    .$type<'car' | 'home' | 'appliance' | 'yard' | 'other'>(),
+    lastCompleted: timestamp('last_completed'),
+    nextDue: date('next_due').notNull(),
 
-  description: text('description'),
+    assignedTo: uuid('assigned_to').references(() => users.id, { onDelete: 'set null' }),
 
-  schedule: varchar('schedule', { length: 20 }).notNull()
-    .$type<'monthly' | 'quarterly' | 'annually' | 'custom'>(),
-  customIntervalDays: integer('custom_interval_days'),
+    notes: text('notes'),
 
-  lastCompleted: timestamp('last_completed'),
-  nextDue: date('next_due').notNull(),
-
-  assignedTo: uuid('assigned_to').references(() => users.id, { onDelete: 'set null' }),
-
-  notes: text('notes'),
-
-  createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-}, (table) => ({
-  nextDueIdx: index('maintenance_reminders_next_due_idx').on(table.nextDue),
-}));
-
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    nextDueIdx: index('maintenance_reminders_next_due_idx').on(table.nextDue),
+  })
+);
 
 export const maintenanceCompletions = pgTable('maintenance_completions', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -761,32 +852,35 @@ export const maintenanceCompletions = pgTable('maintenance_completions', {
   notes: text('notes'),
 });
 
+export const birthdays = pgTable(
+  'birthdays',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
 
-export const birthdays = pgTable('birthdays', {
-  id: uuid('id').defaultRandom().primaryKey(),
+    name: varchar('name', { length: 100 }).notNull(),
 
-  name: varchar('name', { length: 100 }).notNull(),
+    // Birth date (year for age calculation, or just month/day)
+    birthDate: date('birth_date').notNull(),
 
-  // Birth date (year for age calculation, or just month/day)
-  birthDate: date('birth_date').notNull(),
+    eventType: varchar('event_type', { length: 20 }).default('birthday').notNull(),
 
-  eventType: varchar('event_type', { length: 20 }).default('birthday').notNull(),
+    // Link to family member (if applicable)
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
 
-  // Link to family member (if applicable)
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+    giftIdeas: text('gift_ideas'),
 
-  giftIdeas: text('gift_ideas'),
+    // How many days before to remind about sending card
+    sendCardDaysBefore: integer('send_card_days_before').default(7),
 
-  // How many days before to remind about sending card
-  sendCardDaysBefore: integer('send_card_days_before').default(7),
+    // Null = manually created
+    googleCalendarSource: varchar('google_calendar_source', { length: 50 }),
 
-  // Null = manually created
-  googleCalendarSource: varchar('google_calendar_source', { length: 50 }),
-
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-}, (table) => ({
-  nameEventTypeIdx: uniqueIndex('birthdays_name_event_type_idx').on(table.name, table.eventType),
-}));
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    nameEventTypeIdx: uniqueIndex('birthdays_name_event_type_idx').on(table.name, table.eventType),
+  })
+);
 
 /**
  * Tombstones for detected birthdays the user deleted. Detection re-reads every
@@ -809,33 +903,46 @@ export const birthdays = pgTable('birthdays', {
  *
  * Same shape and purpose as [dismissedEvents] on the calendar side.
  */
-export const dismissedTasks = pgTable('dismissed_tasks', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  taskSourceId: uuid('task_source_id')
-    .notNull()
-    .references(() => taskSources.id, { onDelete: 'cascade' }),
-  externalTaskId: varchar('external_task_id', { length: 255 }).notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-}, (table) => ({
-  dismissedTasksSourceExternalUnique: uniqueIndex('dismissed_tasks_source_external_unique')
-    .on(table.taskSourceId, table.externalTaskId),
-}));
+export const dismissedTasks = pgTable(
+  'dismissed_tasks',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    taskSourceId: uuid('task_source_id')
+      .notNull()
+      .references(() => taskSources.id, { onDelete: 'cascade' }),
+    externalTaskId: varchar('external_task_id', { length: 255 }).notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    dismissedTasksSourceExternalUnique: uniqueIndex('dismissed_tasks_source_external_unique').on(
+      table.taskSourceId,
+      table.externalTaskId
+    ),
+  })
+);
 
-export const dismissedBirthdays = pgTable('dismissed_birthdays', {
-  id: uuid('id').defaultRandom().primaryKey(),
+export const dismissedBirthdays = pgTable(
+  'dismissed_birthdays',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
 
-  /** Lowercased, punctuation-stripped name — matches normalize() in birthday-merge.ts */
-  normalizedName: varchar('normalized_name', { length: 100 }).notNull(),
-  birthMonth: integer('birth_month').notNull(),
-  birthDay: integer('birth_day').notNull(),
-  eventType: varchar('event_type', { length: 20 }).default('birthday').notNull(),
+    /** Lowercased, punctuation-stripped name — matches normalize() in birthday-merge.ts */
+    normalizedName: varchar('normalized_name', { length: 100 }).notNull(),
+    birthMonth: integer('birth_month').notNull(),
+    birthDay: integer('birth_day').notNull(),
+    eventType: varchar('event_type', { length: 20 }).default('birthday').notNull(),
 
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-}, (table) => ({
-  dismissedBirthdayUnique: uniqueIndex('dismissed_birthdays_name_day_type_unique')
-    .on(table.normalizedName, table.birthMonth, table.birthDay, table.eventType),
-}));
-
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    dismissedBirthdayUnique: uniqueIndex('dismissed_birthdays_name_day_type_unique').on(
+      table.normalizedName,
+      table.birthMonth,
+      table.birthDay,
+      table.eventType
+    ),
+  })
+);
 
 export const settings = pgTable('settings', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -848,29 +955,32 @@ export const settings = pgTable('settings', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+export const babysitterInfo = pgTable(
+  'babysitter_info',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
 
-export const babysitterInfo = pgTable('babysitter_info', {
-  id: uuid('id').defaultRandom().primaryKey(),
+    // Section type: 'emergency_contact' | 'house_info' | 'child_info' | 'house_rule'
+    section: varchar('section', { length: 50 })
+      .notNull()
+      .$type<'emergency_contact' | 'house_info' | 'child_info' | 'house_rule'>(),
 
-  // Section type: 'emergency_contact' | 'house_info' | 'child_info' | 'house_rule'
-  section: varchar('section', { length: 50 }).notNull()
-    .$type<'emergency_contact' | 'house_info' | 'child_info' | 'house_rule'>(),
+    sortOrder: integer('sort_order').default(0).notNull(),
 
-  sortOrder: integer('sort_order').default(0).notNull(),
+    // Content varies by section type (JSON object)
+    content: jsonb('content').notNull(),
 
-  // Content varies by section type (JSON object)
-  content: jsonb('content').notNull(),
+    // Sensitive items require PIN to view on public babysitter page
+    isSensitive: boolean('is_sensitive').default(false).notNull(),
 
-  // Sensitive items require PIN to view on public babysitter page
-  isSensitive: boolean('is_sensitive').default(false).notNull(),
-
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-}, (table) => ({
-  sectionIdx: index('babysitter_info_section_idx').on(table.section),
-  sortOrderIdx: index('babysitter_info_sort_order_idx').on(table.sortOrder),
-}));
-
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    sectionIdx: index('babysitter_info_section_idx').on(table.section),
+    sortOrderIdx: index('babysitter_info_sort_order_idx').on(table.sortOrder),
+  })
+);
 
 export const layouts = pgTable('layouts', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -902,30 +1012,32 @@ export const layouts = pgTable('layouts', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+export const apiTokens = pgTable(
+  'api_tokens',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
 
-export const apiTokens = pgTable('api_tokens', {
-  id: uuid('id').defaultRandom().primaryKey(),
+    name: varchar('name', { length: 100 }).notNull(),
 
-  name: varchar('name', { length: 100 }).notNull(),
+    // SHA-256 hex of the raw token (for fast lookup)
+    tokenHash: varchar('token_hash', { length: 64 }).notNull(),
 
-  // SHA-256 hex of the raw token (for fast lookup)
-  tokenHash: varchar('token_hash', { length: 64 }).notNull(),
+    createdBy: uuid('created_by')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
 
-  createdBy: uuid('created_by')
-    .references(() => users.id, { onDelete: 'cascade' })
-    .notNull(),
+    // Scopes limit what resources a token can access. ['*'] = full parent access.
+    scopes: jsonb('scopes').$type<string[]>().default(['*']).notNull(),
 
-  // Scopes limit what resources a token can access. ['*'] = full parent access.
-  scopes: jsonb('scopes').$type<string[]>().default(['*']).notNull(),
+    lastUsedAt: timestamp('last_used_at'),
 
-  lastUsedAt: timestamp('last_used_at'),
-
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-}, (table) => ({
-  tokenHashIdx: uniqueIndex('api_tokens_token_hash_idx').on(table.tokenHash),
-  createdByIdx: index('api_tokens_created_by_idx').on(table.createdBy),
-}));
-
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    tokenHashIdx: uniqueIndex('api_tokens_token_hash_idx').on(table.tokenHash),
+    createdByIdx: index('api_tokens_created_by_idx').on(table.createdBy),
+  })
+);
 
 export const apiCredentials = pgTable('api_credentials', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -947,22 +1059,24 @@ export const apiCredentials = pgTable('api_credentials', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
-
-export const auditLogs = pgTable('audit_logs', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
-  action: varchar('action', { length: 50 }).notNull(),
-  entityType: varchar('entity_type', { length: 50 }).notNull(),
-  entityId: varchar('entity_id', { length: 255 }),
-  summary: varchar('summary', { length: 500 }).notNull(),
-  metadata: jsonb('metadata'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-}, (table) => ({
-  createdAtIdx: index('audit_logs_created_at_idx').on(table.createdAt),
-  userIdIdx: index('audit_logs_user_id_idx').on(table.userId),
-  entityTypeIdx: index('audit_logs_entity_type_idx').on(table.entityType),
-}));
-
+export const auditLogs = pgTable(
+  'audit_logs',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+    action: varchar('action', { length: 50 }).notNull(),
+    entityType: varchar('entity_type', { length: 50 }).notNull(),
+    entityId: varchar('entity_id', { length: 255 }),
+    summary: varchar('summary', { length: 500 }).notNull(),
+    metadata: jsonb('metadata'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    createdAtIdx: index('audit_logs_created_at_idx').on(table.createdAt),
+    userIdIdx: index('audit_logs_user_id_idx').on(table.userId),
+    entityTypeIdx: index('audit_logs_entity_type_idx').on(table.entityType),
+  })
+);
 
 // Relations define relationships for Drizzle's relation queries.
 // These don't affect the database schema - they're for TypeScript types.
@@ -1167,68 +1281,78 @@ export const familyMessagesRelations = relations(familyMessages, ({ one }) => ({
   }),
 }));
 
+export const goals = pgTable(
+  'goals',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
 
-export const goals = pgTable('goals', {
-  id: uuid('id').defaultRandom().primaryKey(),
+    name: varchar('name', { length: 255 }).notNull(),
+    description: text('description'),
 
-  name: varchar('name', { length: 255 }).notNull(),
-  description: text('description'),
+    pointCost: integer('point_cost').notNull(),
 
-  pointCost: integer('point_cost').notNull(),
+    emoji: varchar('emoji', { length: 10 }),
 
-  emoji: varchar('emoji', { length: 10 }),
+    // Priority order (1 = highest). Points fill goals in ascending priority order.
+    priority: integer('priority').notNull().default(0),
 
-  // Priority order (1 = highest). Points fill goals in ascending priority order.
-  priority: integer('priority').notNull().default(0),
+    // Recurring goals reset each period; non-recurring accumulate until manually reset.
+    recurring: boolean('recurring').notNull().default(false),
 
-  // Recurring goals reset each period; non-recurring accumulate until manually reset.
-  recurring: boolean('recurring').notNull().default(false),
+    // 'weekly' | 'monthly' | 'yearly' — only used when recurring = true
+    recurrencePeriod: varchar('recurrence_period', { length: 20 }).$type<
+      'weekly' | 'monthly' | 'yearly'
+    >(),
 
-  // 'weekly' | 'monthly' | 'yearly' — only used when recurring = true
-  recurrencePeriod: varchar('recurrence_period', { length: 20 })
-    .$type<'weekly' | 'monthly' | 'yearly'>(),
+    active: boolean('active').default(true).notNull(),
 
-  active: boolean('active').default(true).notNull(),
+    // For non-recurring goals: when the parent last reset the goal after full achievement.
+    // Progress is only counted from completions after this timestamp.
+    lastResetAt: timestamp('last_reset_at').defaultNow().notNull(),
 
-  // For non-recurring goals: when the parent last reset the goal after full achievement.
-  // Progress is only counted from completions after this timestamp.
-  lastResetAt: timestamp('last_reset_at').defaultNow().notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    activeIdx: index('goals_active_idx').on(table.active),
+    activePriorityIdx: index('goals_active_priority_idx').on(table.active, table.priority),
+  })
+);
 
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-}, (table) => ({
-  activeIdx: index('goals_active_idx').on(table.active),
-  activePriorityIdx: index('goals_active_priority_idx').on(table.active, table.priority),
-}));
+export const goalAchievements = pgTable(
+  'goal_achievements',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
 
+    goalId: uuid('goal_id')
+      .references(() => goals.id, { onDelete: 'cascade' })
+      .notNull(),
 
-export const goalAchievements = pgTable('goal_achievements', {
-  id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
 
-  goalId: uuid('goal_id')
-    .references(() => goals.id, { onDelete: 'cascade' })
-    .notNull(),
+    // For recurring: period start date. For non-recurring: lastResetAt date.
+    periodStart: date('period_start').notNull(),
 
-  userId: uuid('user_id')
-    .references(() => users.id, { onDelete: 'cascade' })
-    .notNull(),
-
-  // For recurring: period start date. For non-recurring: lastResetAt date.
-  periodStart: date('period_start').notNull(),
-
-  achievedAt: timestamp('achieved_at').defaultNow().notNull(),
-}, (table) => ({
-  goalUserPeriodIdx: uniqueIndex('goal_achievements_goal_user_period_idx')
-    .on(table.goalId, table.userId, table.periodStart),
-  userIdIdx: index('goal_achievements_user_id_idx').on(table.userId),
-  goalIdIdx: index('goal_achievements_goal_id_idx').on(table.goalId),
-}));
-
+    achievedAt: timestamp('achieved_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    goalUserPeriodIdx: uniqueIndex('goal_achievements_goal_user_period_idx').on(
+      table.goalId,
+      table.userId,
+      table.periodStart
+    ),
+    userIdIdx: index('goal_achievements_user_id_idx').on(table.userId),
+    goalIdIdx: index('goal_achievements_goal_id_idx').on(table.goalId),
+  })
+);
 
 export const photoSources = pgTable('photo_sources', {
   id: uuid('id').defaultRandom().primaryKey(),
 
-  type: varchar('type', { length: 20 }).notNull()
+  type: varchar('type', { length: 20 })
+    .notNull()
     .$type<'local' | 'onedrive' | 'immich' | 'icloud_shared'>(),
 
   name: varchar('name', { length: 255 }).notNull(),
@@ -1265,64 +1389,67 @@ export const photoSources = pgTable('photo_sources', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+export const photos = pgTable(
+  'photos',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
 
-export const photos = pgTable('photos', {
-  id: uuid('id').defaultRandom().primaryKey(),
+    sourceId: uuid('source_id')
+      .references(() => photoSources.id, { onDelete: 'cascade' })
+      .notNull(),
 
-  sourceId: uuid('source_id')
-    .references(() => photoSources.id, { onDelete: 'cascade' })
-    .notNull(),
+    filename: varchar('filename', { length: 255 }).notNull(),
+    originalFilename: varchar('original_filename', { length: 255 }).notNull(),
+    mimeType: varchar('mime_type', { length: 50 }).notNull(),
+    width: integer('width'),
+    height: integer('height'),
+    sizeBytes: integer('size_bytes'),
 
-  filename: varchar('filename', { length: 255 }).notNull(),
-  originalFilename: varchar('original_filename', { length: 255 }).notNull(),
-  mimeType: varchar('mime_type', { length: 50 }).notNull(),
-  width: integer('width'),
-  height: integer('height'),
-  sizeBytes: integer('size_bytes'),
+    // When the photo was taken (from EXIF or file date)
+    takenAt: timestamp('taken_at'),
 
-  // When the photo was taken (from EXIF or file date)
-  takenAt: timestamp('taken_at'),
+    // External ID for synced photos (e.g., OneDrive item ID)
+    externalId: varchar('external_id', { length: 255 }),
 
-  // External ID for synced photos (e.g., OneDrive item ID)
-  externalId: varchar('external_id', { length: 255 }),
+    thumbnailPath: varchar('thumbnail_path', { length: 255 }),
 
-  thumbnailPath: varchar('thumbnail_path', { length: 255 }),
+    favorite: boolean('favorite').default(false).notNull(),
 
-  favorite: boolean('favorite').default(false).notNull(),
+    // Orientation: auto-detected from dimensions
+    orientation: varchar('orientation', { length: 20 }).$type<
+      'landscape' | 'portrait' | 'square'
+    >(),
 
-  // Orientation: auto-detected from dimensions
-  orientation: varchar('orientation', { length: 20 })
-    .$type<'landscape' | 'portrait' | 'square'>(),
+    // Comma-separated display contexts (e.g., "wallpaper,screensaver")
+    usage: varchar('usage', { length: 100 }).default('wallpaper,gallery,screensaver').notNull(),
 
-  // Comma-separated display contexts (e.g., "wallpaper,screensaver")
-  usage: varchar('usage', { length: 100 }).default('wallpaper,gallery,screensaver').notNull(),
+    // GPS coordinates extracted from EXIF (for travel map auto-linking)
+    latitude: decimal('latitude', { precision: 9, scale: 6 }),
+    longitude: decimal('longitude', { precision: 10, scale: 6 }),
 
-  // GPS coordinates extracted from EXIF (for travel map auto-linking)
-  latitude: decimal('latitude', { precision: 9, scale: 6 }),
-  longitude: decimal('longitude', { precision: 10, scale: 6 }),
+    // When true: no local file — served by proxying through OneDrive on demand.
+    // filename stores the OneDrive item ID. Used for camera-roll sources where we
+    // record GPS metadata without downloading every photo.
+    isExternal: boolean('is_external').default(false).notNull(),
 
-  // When true: no local file — served by proxying through OneDrive on demand.
-  // filename stores the OneDrive item ID. Used for camera-roll sources where we
-  // record GPS metadata without downloading every photo.
-  isExternal: boolean('is_external').default(false).notNull(),
+    // Cross-source dedup key: `${takenAt-to-the-second}_${width}x${height}`.
+    // Two photos with an identical key are treated as the same shot pulled
+    // from different sources (e.g. the same picture backed up to both
+    // OneDrive and iCloud). Null when the photo lacks EXIF capture time +
+    // dimensions — those are never deduped. Computed at sync time. Read-time
+    // dedup groups by this key and keeps the lowest source.priority copy.
+    dedupeKey: varchar('dedupe_key', { length: 120 }),
 
-  // Cross-source dedup key: `${takenAt-to-the-second}_${width}x${height}`.
-  // Two photos with an identical key are treated as the same shot pulled
-  // from different sources (e.g. the same picture backed up to both
-  // OneDrive and iCloud). Null when the photo lacks EXIF capture time +
-  // dimensions — those are never deduped. Computed at sync time. Read-time
-  // dedup groups by this key and keeps the lowest source.priority copy.
-  dedupeKey: varchar('dedupe_key', { length: 120 }),
-
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-}, (table) => ({
-  sourceIdIdx: index('photos_source_id_idx').on(table.sourceId),
-  takenAtIdx: index('photos_taken_at_idx').on(table.takenAt),
-  favoriteIdx: index('photos_favorite_idx').on(table.favorite),
-  usageIdx: index('photos_usage_idx').on(table.usage),
-  dedupeKeyIdx: index('photos_dedupe_key_idx').on(table.dedupeKey),
-}));
-
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    sourceIdIdx: index('photos_source_id_idx').on(table.sourceId),
+    takenAtIdx: index('photos_taken_at_idx').on(table.takenAt),
+    favoriteIdx: index('photos_favorite_idx').on(table.favorite),
+    usageIdx: index('photos_usage_idx').on(table.usage),
+    dedupeKeyIdx: index('photos_dedupe_key_idx').on(table.dedupeKey),
+  })
+);
 
 /**
  * Tombstones for synced photos the user removed from Prism. Photo sources are a
@@ -1332,18 +1459,23 @@ export const photos = pgTable('photos', {
  * Cascade-deletes with the source. Only synced photos (those with an externalId)
  * are tombstoned; local uploads have no remote to boomerang from.
  */
-export const excludedPhotos = pgTable('excluded_photos', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  sourceId: uuid('source_id')
-    .notNull()
-    .references(() => photoSources.id, { onDelete: 'cascade' }),
-  externalId: varchar('external_id', { length: 255 }).notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-}, (table) => ({
-  excludedSourceExternalUnique: uniqueIndex('excluded_photos_source_external_unique')
-    .on(table.sourceId, table.externalId),
-}));
-
+export const excludedPhotos = pgTable(
+  'excluded_photos',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    sourceId: uuid('source_id')
+      .notNull()
+      .references(() => photoSources.id, { onDelete: 'cascade' }),
+    externalId: varchar('external_id', { length: 255 }).notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    excludedSourceExternalUnique: uniqueIndex('excluded_photos_source_external_unique').on(
+      table.sourceId,
+      table.externalId
+    ),
+  })
+);
 
 export const photoSourcesRelations = relations(photoSources, ({ many }) => ({
   photos: many(photos),
@@ -1385,41 +1517,46 @@ export const goalAchievementsRelations = relations(goalAchievements, ({ one }) =
   }),
 }));
 
+export const wishItems = pgTable(
+  'wish_items',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
 
-export const wishItems = pgTable('wish_items', {
-  id: uuid('id').defaultRandom().primaryKey(),
+    // Whose wish list this item belongs to
+    memberId: uuid('member_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
 
-  // Whose wish list this item belongs to
-  memberId: uuid('member_id')
-    .references(() => users.id, { onDelete: 'cascade' })
-    .notNull(),
+    name: varchar('name', { length: 255 }).notNull(),
+    url: text('url'),
+    notes: text('notes'),
 
-  name: varchar('name', { length: 255 }).notNull(),
-  url: text('url'),
-  notes: text('notes'),
+    sortOrder: integer('sort_order').default(0).notNull(),
 
-  sortOrder: integer('sort_order').default(0).notNull(),
+    // Claim tracking (hidden from the list owner for gift surprises)
+    claimed: boolean('claimed').default(false).notNull(),
+    claimedBy: uuid('claimed_by').references(() => users.id, { onDelete: 'set null' }),
+    claimedAt: timestamp('claimed_at'),
 
-  // Claim tracking (hidden from the list owner for gift surprises)
-  claimed: boolean('claimed').default(false).notNull(),
-  claimedBy: uuid('claimed_by').references(() => users.id, { onDelete: 'set null' }),
-  claimedAt: timestamp('claimed_at'),
+    addedBy: uuid('added_by').references(() => users.id, { onDelete: 'set null' }),
 
-  addedBy: uuid('added_by').references(() => users.id, { onDelete: 'set null' }),
+    // External sync tracking
+    wishItemSourceId: uuid('wish_item_source_id').references(() => wishItemSources.id, {
+      onDelete: 'set null',
+    }),
+    externalId: varchar('external_id', { length: 255 }),
+    externalUpdatedAt: timestamp('external_updated_at'),
 
-  // External sync tracking
-  wishItemSourceId: uuid('wish_item_source_id').references(() => wishItemSources.id, { onDelete: 'set null' }),
-  externalId: varchar('external_id', { length: 255 }),
-  externalUpdatedAt: timestamp('external_updated_at'),
-
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-}, (table) => ({
-  memberIdIdx: index('wish_items_member_id_idx').on(table.memberId),
-  claimedIdx: index('wish_items_claimed_idx').on(table.claimed),
-  wishItemSourceIdx: index('wish_items_source_idx').on(table.wishItemSourceId),
-  externalIdIdx: index('wish_items_external_id_idx').on(table.externalId),
-}));
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    memberIdIdx: index('wish_items_member_id_idx').on(table.memberId),
+    claimedIdx: index('wish_items_claimed_idx').on(table.claimed),
+    wishItemSourceIdx: index('wish_items_source_idx').on(table.wishItemSourceId),
+    externalIdIdx: index('wish_items_external_id_idx').on(table.externalId),
+  })
+);
 
 export const wishItemsRelations = relations(wishItems, ({ one }) => ({
   member: one(users, {
@@ -1443,36 +1580,39 @@ export const wishItemsRelations = relations(wishItems, ({ one }) => ({
   }),
 }));
 
+export const giftIdeas = pgTable(
+  'gift_ideas',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
 
-export const giftIdeas = pgTable('gift_ideas', {
-  id: uuid('id').defaultRandom().primaryKey(),
+    // Who created this gift idea
+    createdBy: uuid('created_by')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
 
-  // Who created this gift idea
-  createdBy: uuid('created_by')
-    .references(() => users.id, { onDelete: 'cascade' })
-    .notNull(),
+    // Who this gift idea is for
+    forUserId: uuid('for_user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
 
-  // Who this gift idea is for
-  forUserId: uuid('for_user_id')
-    .references(() => users.id, { onDelete: 'cascade' })
-    .notNull(),
+    name: varchar('name', { length: 255 }).notNull(),
+    url: text('url'),
+    notes: text('notes'),
+    price: decimal('price', { precision: 10, scale: 2 }),
 
-  name: varchar('name', { length: 255 }).notNull(),
-  url: text('url'),
-  notes: text('notes'),
-  price: decimal('price', { precision: 10, scale: 2 }),
+    purchased: boolean('purchased').default(false).notNull(),
+    purchasedAt: timestamp('purchased_at'),
 
-  purchased: boolean('purchased').default(false).notNull(),
-  purchasedAt: timestamp('purchased_at'),
+    sortOrder: integer('sort_order').default(0).notNull(),
 
-  sortOrder: integer('sort_order').default(0).notNull(),
-
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-}, (table) => ({
-  createdByIdx: index('gift_ideas_created_by_idx').on(table.createdBy),
-  forUserIdx: index('gift_ideas_for_user_idx').on(table.forUserId),
-}));
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    createdByIdx: index('gift_ideas_created_by_idx').on(table.createdBy),
+    forUserIdx: index('gift_ideas_for_user_idx').on(table.forUserId),
+  })
+);
 
 export const giftIdeasRelations = relations(giftIdeas, ({ one }) => ({
   creator: one(users, {
@@ -1487,134 +1627,157 @@ export const giftIdeasRelations = relations(giftIdeas, ({ one }) => ({
   }),
 }));
 
+export const wishItemSources = pgTable(
+  'wish_item_sources',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
 
-export const wishItemSources = pgTable('wish_item_sources', {
-  id: uuid('id').defaultRandom().primaryKey(),
+    // Which user connected this source
+    userId: uuid('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
 
-  // Which user connected this source
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    // Provider: "microsoft_todo", etc.
+    provider: varchar('provider', { length: 50 }).notNull(),
 
-  // Provider: "microsoft_todo", etc.
-  provider: varchar('provider', { length: 50 }).notNull(),
+    // External list ID in the provider's system
+    externalListId: varchar('external_list_id', { length: 255 }).notNull(),
 
-  // External list ID in the provider's system
-  externalListId: varchar('external_list_id', { length: 255 }).notNull(),
+    // External list name (for display/debugging)
+    externalListName: varchar('external_list_name', { length: 255 }),
 
-  // External list name (for display/debugging)
-  externalListName: varchar('external_list_name', { length: 255 }),
+    // Which family member's wish list this syncs to
+    memberId: uuid('member_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
 
-  // Which family member's wish list this syncs to
-  memberId: uuid('member_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    // Sync enabled/disabled
+    syncEnabled: boolean('sync_enabled').default(true).notNull(),
 
-  // Sync enabled/disabled
-  syncEnabled: boolean('sync_enabled').default(true).notNull(),
+    // OAuth tokens (encrypted in application layer)
+    accessToken: text('access_token'),
+    refreshToken: text('refresh_token'),
+    tokenExpiresAt: timestamp('token_expires_at'),
 
-  // OAuth tokens (encrypted in application layer)
-  accessToken: text('access_token'),
-  refreshToken: text('refresh_token'),
-  tokenExpiresAt: timestamp('token_expires_at'),
+    // OAuth account email this source is wired to. See #100.
+    accountEmail: varchar('account_email', { length: 320 }),
 
-  // OAuth account email this source is wired to. See #100.
-  accountEmail: varchar('account_email', { length: 320 }),
+    lastSyncAt: timestamp('last_sync_at'),
+    lastSyncError: text('last_sync_error'),
 
-  lastSyncAt: timestamp('last_sync_at'),
-  lastSyncError: text('last_sync_error'),
-
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-}, (table) => ({
-  userProviderIdx: index('wish_item_sources_user_provider_idx').on(table.userId, table.provider),
-  memberIdx: index('wish_item_sources_member_idx').on(table.memberId),
-}));
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    userProviderIdx: index('wish_item_sources_user_provider_idx').on(table.userId, table.provider),
+    memberIdx: index('wish_item_sources_member_idx').on(table.memberId),
+  })
+);
 
 // Bus Tracking
 
-export const busRoutes = pgTable('bus_routes', {
-  id: uuid('id').defaultRandom().primaryKey(),
+export const busRoutes = pgTable(
+  'bus_routes',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
 
-  studentName: varchar('student_name', { length: 100 }).notNull(),
+    studentName: varchar('student_name', { length: 100 }).notNull(),
 
-  // Optional link to a family member
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+    // Optional link to a family member
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
 
-  // FirstView trip ID (e.g., "28-C")
-  tripId: varchar('trip_id', { length: 50 }).notNull(),
+    // FirstView trip ID (e.g., "28-C")
+    tripId: varchar('trip_id', { length: 50 }).notNull(),
 
-  direction: varchar('direction', { length: 10 }).notNull()
-    .$type<'AM' | 'PM'>(),
+    direction: varchar('direction', { length: 10 }).notNull().$type<'AM' | 'PM'>(),
 
-  // Human-readable label (e.g., "Emma Morning Pickup")
-  label: varchar('label', { length: 255 }).notNull(),
+    // Human-readable label (e.g., "Emma Morning Pickup")
+    label: varchar('label', { length: 255 }).notNull(),
 
-  // Expected arrival time (HH:mm format)
-  scheduledTime: varchar('scheduled_time', { length: 5 }).notNull(),
+    // Expected arrival time (HH:mm format)
+    scheduledTime: varchar('scheduled_time', { length: 5 }).notNull(),
 
-  // Days of the week this route is active (1=Mon, 5=Fri)
-  activeDays: jsonb('active_days').default([1, 2, 3, 4, 5]).notNull()
-    .$type<number[]>(),
+    // Days of the week this route is active (1=Mon, 5=Fri)
+    activeDays: jsonb('active_days').default([1, 2, 3, 4, 5]).notNull().$type<number[]>(),
 
-  // Ordered geofence checkpoint labels (configured in settings)
-  checkpoints: jsonb('checkpoints').default([]).notNull()
-    .$type<{ name: string; sortOrder: number }[]>(),
+    // Ordered geofence checkpoint labels (configured in settings)
+    checkpoints: jsonb('checkpoints')
+      .default([])
+      .notNull()
+      .$type<{ name: string; sortOrder: number }[]>(),
 
-  // Final implicit checkpoints
-  stopName: varchar('stop_name', { length: 255 }),
-  schoolName: varchar('school_name', { length: 255 }),
+    // Final implicit checkpoints
+    stopName: varchar('stop_name', { length: 255 }),
+    schoolName: varchar('school_name', { length: 255 }),
 
-  enabled: boolean('enabled').default(true).notNull(),
-  sortOrder: integer('sort_order').default(0).notNull(),
+    enabled: boolean('enabled').default(true).notNull(),
+    sortOrder: integer('sort_order').default(0).notNull(),
 
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-}, (table) => ({
-  tripDirectionIdx: uniqueIndex('bus_routes_trip_direction_idx').on(table.tripId, table.direction),
-  enabledIdx: index('bus_routes_enabled_idx').on(table.enabled),
-}));
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    tripDirectionIdx: uniqueIndex('bus_routes_trip_direction_idx').on(
+      table.tripId,
+      table.direction
+    ),
+    enabledIdx: index('bus_routes_enabled_idx').on(table.enabled),
+  })
+);
 
+export const busGeofenceLog = pgTable(
+  'bus_geofence_log',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
 
-export const busGeofenceLog = pgTable('bus_geofence_log', {
-  id: uuid('id').defaultRandom().primaryKey(),
+    routeId: uuid('route_id')
+      .references(() => busRoutes.id, { onDelete: 'cascade' })
+      .notNull(),
 
-  routeId: uuid('route_id')
-    .references(() => busRoutes.id, { onDelete: 'cascade' })
-    .notNull(),
+    eventType: varchar('event_type', { length: 30 })
+      .notNull()
+      .$type<'distance_based' | 'arrived_at_stop' | 'arrived_at_school'>(),
 
-  eventType: varchar('event_type', { length: 30 }).notNull()
-    .$type<'distance_based' | 'arrived_at_stop' | 'arrived_at_school'>(),
+    checkpointName: varchar('checkpoint_name', { length: 255 }).notNull(),
+    checkpointIndex: integer('checkpoint_index').notNull(),
 
-  checkpointName: varchar('checkpoint_name', { length: 255 }).notNull(),
-  checkpointIndex: integer('checkpoint_index').notNull(),
+    eventTime: timestamp('event_time').notNull(),
+    dayOfWeek: integer('day_of_week').notNull(), // 0=Sun, 6=Sat
+    tripDate: date('trip_date').notNull(),
 
-  eventTime: timestamp('event_time').notNull(),
-  dayOfWeek: integer('day_of_week').notNull(), // 0=Sun, 6=Sat
-  tripDate: date('trip_date').notNull(),
+    // Gmail message ID for deduplication
+    gmailMessageId: varchar('gmail_message_id', { length: 255 }).notNull(),
 
-  // Gmail message ID for deduplication
-  gmailMessageId: varchar('gmail_message_id', { length: 255 }).notNull(),
+    // Raw parsed data for debugging
+    rawData: jsonb('raw_data'),
 
-  // Raw parsed data for debugging
-  rawData: jsonb('raw_data'),
-
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-}, (table) => ({
-  routeIdIdx: index('bus_geofence_log_route_id_idx').on(table.routeId),
-  gmailMessageIdIdx: uniqueIndex('bus_geofence_log_gmail_message_id_idx').on(table.gmailMessageId),
-  tripDateIdx: index('bus_geofence_log_trip_date_idx').on(table.tripDate),
-  eventTimeIdx: index('bus_geofence_log_event_time_idx').on(table.eventTime),
-}));
-
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    routeIdIdx: index('bus_geofence_log_route_id_idx').on(table.routeId),
+    gmailMessageIdIdx: uniqueIndex('bus_geofence_log_gmail_message_id_idx').on(
+      table.gmailMessageId
+    ),
+    tripDateIdx: index('bus_geofence_log_trip_date_idx').on(table.tripDate),
+    eventTimeIdx: index('bus_geofence_log_event_time_idx').on(table.eventTime),
+  })
+);
 
 // ─── CALENDAR NOTES ────────────────────────────────────────────────
-export const calendarNotes = pgTable('calendar_notes', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  date: date('date').notNull(),
-  content: text('content').notNull().default(''),
-  createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-}, (table) => ({
-  dateIdx: uniqueIndex('calendar_notes_date_idx').on(table.date),
-}));
+export const calendarNotes = pgTable(
+  'calendar_notes',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    date: date('date').notNull(),
+    content: text('content').notNull().default(''),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    dateIdx: uniqueIndex('calendar_notes_date_idx').on(table.date),
+  })
+);
 
 export const calendarNotesRelations = relations(calendarNotes, ({ one }) => ({
   creator: one(users, {
@@ -1622,7 +1785,6 @@ export const calendarNotesRelations = relations(calendarNotes, ({ one }) => ({
     references: [users.id],
   }),
 }));
-
 
 export const busRoutesRelations = relations(busRoutes, ({ one, many }) => ({
   user: one(users, {
@@ -1639,7 +1801,6 @@ export const busGeofenceLogRelations = relations(busGeofenceLog, ({ one }) => ({
   }),
 }));
 
-
 export const wishItemSourcesRelations = relations(wishItemSources, ({ one, many }) => ({
   user: one(users, {
     fields: [wishItemSources.userId],
@@ -1653,142 +1814,152 @@ export const wishItemSourcesRelations = relations(wishItemSources, ({ one, many 
   items: many(wishItems),
 }));
 
-
 // ─── TRAVEL MAP ────────────────────────────────────────────────────────────────
 
 // A trip groups multiple pin stops into a single journey.
 // Hub/spoke trips designate one stop as the home base (isHub=true on the pin).
 // Route/loop trips draw a polyline through stops in sortOrder order.
-export const travelTrips = pgTable('travel_trips', {
-  id: uuid('id').defaultRandom().primaryKey(),
+export const travelTrips = pgTable(
+  'travel_trips',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
 
-  name: varchar('name', { length: 255 }).notNull(),
-  description: text('description'),
+    name: varchar('name', { length: 255 }).notNull(),
+    description: text('description'),
 
-  // How stops are connected on the map
-  tripStyle: varchar('trip_style', { length: 20 }).notNull()
-    .$type<'route' | 'loop' | 'hub'>(),
+    // How stops are connected on the map
+    tripStyle: varchar('trip_style', { length: 20 }).notNull().$type<'route' | 'loop' | 'hub'>(),
 
-  status: varchar('status', { length: 20 }).notNull().default('want_to_go')
-    .$type<'want_to_go' | 'been_there'>(),
+    status: varchar('status', { length: 20 })
+      .notNull()
+      .default('want_to_go')
+      .$type<'want_to_go' | 'been_there'>(),
 
-  isBucketList: boolean('is_bucket_list').default(false).notNull(),
+    isBucketList: boolean('is_bucket_list').default(false).notNull(),
 
-  color: varchar('color', { length: 7 }),
-  emoji: varchar('emoji', { length: 10 }),
+    color: varchar('color', { length: 7 }),
+    emoji: varchar('emoji', { length: 10 }),
 
-  visitedDate: date('visited_date'),
-  visitedEndDate: date('visited_end_date'),
-  year: integer('year'),
+    visitedDate: date('visited_date'),
+    visitedEndDate: date('visited_end_date'),
+    year: integer('year'),
 
-  memberIds: jsonb('member_ids').default([]).notNull().$type<string[]>(),
-  tags: jsonb('tags').default([]).notNull().$type<string[]>(),
+    memberIds: jsonb('member_ids').default([]).notNull().$type<string[]>(),
+    tags: jsonb('tags').default([]).notNull().$type<string[]>(),
 
-  sortOrder: integer('sort_order').default(0).notNull(),
+    sortOrder: integer('sort_order').default(0).notNull(),
 
-  createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-}, (table) => ({
-  yearIdx: index('travel_trips_year_idx').on(table.year),
-}));
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    yearIdx: index('travel_trips_year_idx').on(table.year),
+  })
+);
 
+export const travelPins = pgTable(
+  'travel_pins',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
 
-export const travelPins = pgTable('travel_pins', {
-  id: uuid('id').defaultRandom().primaryKey(),
+    name: varchar('name', { length: 255 }).notNull(),
+    description: text('description'),
 
-  name: varchar('name', { length: 255 }).notNull(),
-  description: text('description'),
+    // Geographic coordinates
+    latitude: decimal('latitude', { precision: 9, scale: 6 }).notNull(),
+    longitude: decimal('longitude', { precision: 10, scale: 6 }).notNull(),
 
-  // Geographic coordinates
-  latitude: decimal('latitude', { precision: 9, scale: 6 }).notNull(),
-  longitude: decimal('longitude', { precision: 10, scale: 6 }).notNull(),
+    // Human-readable location name (from Nominatim or manual entry)
+    placeName: varchar('place_name', { length: 255 }),
 
-  // Human-readable location name (from Nominatim or manual entry)
-  placeName: varchar('place_name', { length: 255 }),
+    // Pin status
+    status: varchar('status', { length: 20 })
+      .notNull()
+      .default('want_to_go')
+      .$type<'want_to_go' | 'been_there'>(),
 
-  // Pin status
-  status: varchar('status', { length: 20 }).notNull().default('want_to_go')
-    .$type<'want_to_go' | 'been_there'>(),
+    // Star flag — bucket list item (works on either status)
+    isBucketList: boolean('is_bucket_list').default(false).notNull(),
 
-  // Star flag — bucket list item (works on either status)
-  isBucketList: boolean('is_bucket_list').default(false).notNull(),
+    // Optional trip label (e.g. "Spring Break 2026", "Summer Family Trip 2025")
+    tripLabel: varchar('trip_label', { length: 255 }),
 
-  // Optional trip label (e.g. "Spring Break 2026", "Summer Family Trip 2025")
-  tripLabel: varchar('trip_label', { length: 255 }),
+    // Optional color override (hex). Falls back to status default.
+    color: varchar('color', { length: 7 }),
 
-  // Optional color override (hex). Falls back to status default.
-  color: varchar('color', { length: 7 }),
+    // Trip dates
+    visitedDate: date('visited_date'),
+    visitedEndDate: date('visited_end_date'),
 
-  // Trip dates
-  visitedDate: date('visited_date'),
-  visitedEndDate: date('visited_end_date'),
+    // Year for quick filtering (derived from visitedDate on creation)
+    year: integer('year'),
 
-  // Year for quick filtering (derived from visitedDate on creation)
-  year: integer('year'),
+    // Free-form tags (e.g. "Road Trip", "National Park", "Beach")
+    tags: jsonb('tags').default([]).notNull().$type<string[]>(),
 
-  // Free-form tags (e.g. "Road Trip", "National Park", "Beach")
-  tags: jsonb('tags').default([]).notNull()
-    .$type<string[]>(),
+    // Key stops within a multi-location trip (e.g. ["Kauaʻi", "Hawaiʻi Island"])
+    stops: jsonb('stops').$type<string[]>().default([]).notNull(),
 
-  // Key stops within a multi-location trip (e.g. ["Kauaʻi", "Hawaiʻi Island"])
-  stops: jsonb('stops').$type<string[]>().default([]).notNull(),
+    // National Parks / Monuments visited at this location
+    nationalParks: jsonb('national_parks').$type<string[]>().default([]).notNull(),
 
-  // National Parks / Monuments visited at this location
-  nationalParks: jsonb('national_parks').$type<string[]>().default([]).notNull(),
+    // Parent pin (for NP/attraction sub-pins only); FK enforced in migration
+    parentId: uuid('parent_id'),
 
-  // Parent pin (for NP/attraction sub-pins only); FK enforced in migration
-  parentId: uuid('parent_id'),
+    // Trip this stop belongs to (route/loop/hub trips); null = standalone pin
+    tripId: uuid('trip_id').references(() => travelTrips.id, { onDelete: 'cascade' }),
 
-  // Trip this stop belongs to (route/loop/hub trips); null = standalone pin
-  tripId: uuid('trip_id').references(() => travelTrips.id, { onDelete: 'cascade' }),
+    // True on the home-base stop in a hub-style trip
+    isHub: boolean('is_hub').default(false).notNull(),
 
-  // True on the home-base stop in a hub-style trip
-  isHub: boolean('is_hub').default(false).notNull(),
+    // Pin kind: 'location' (root), 'stop' (child of parent or trip stop), 'national_park'
+    pinType: varchar('pin_type', { length: 20 })
+      .notNull()
+      .default('location')
+      .$type<'location' | 'stop' | 'national_park'>(),
 
-  // Pin kind: 'location' (root), 'stop' (child of parent or trip stop), 'national_park'
-  pinType: varchar('pin_type', { length: 20 }).notNull().default('location')
-    .$type<'location' | 'stop' | 'national_park'>(),
+    // Radius in km for auto-linking photos by GPS proximity
+    photoRadiusKm: decimal('photo_radius_km', { precision: 6, scale: 2 }).default('50'),
 
-  // Radius in km for auto-linking photos by GPS proximity
-  photoRadiusKm: decimal('photo_radius_km', { precision: 6, scale: 2 }).default('50'),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
 
-  createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    sortOrder: integer('sort_order').default(0).notNull(),
 
-  sortOrder: integer('sort_order').default(0).notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    yearIdx: index('travel_pins_year_idx').on(table.year),
+    parentIdIdx: index('travel_pins_parent_id_idx').on(table.parentId),
+    tripIdIdx: index('travel_pins_trip_id_idx').on(table.tripId),
+  })
+);
 
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-}, (table) => ({
-  yearIdx: index('travel_pins_year_idx').on(table.year),
-  parentIdIdx: index('travel_pins_parent_id_idx').on(table.parentId),
-  tripIdIdx: index('travel_pins_trip_id_idx').on(table.tripId),
-}));
+export const travelPinPhotos = pgTable(
+  'travel_pin_photos',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
 
+    pinId: uuid('pin_id')
+      .references(() => travelPins.id, { onDelete: 'cascade' })
+      .notNull(),
 
-export const travelPinPhotos = pgTable('travel_pin_photos', {
-  id: uuid('id').defaultRandom().primaryKey(),
+    photoId: uuid('photo_id')
+      .references(() => photos.id, { onDelete: 'cascade' })
+      .notNull(),
 
-  pinId: uuid('pin_id')
-    .references(() => travelPins.id, { onDelete: 'cascade' })
-    .notNull(),
+    // Whether the user manually linked this (vs auto-linked by GPS proximity)
+    linkedManually: boolean('linked_manually').default(false).notNull(),
 
-  photoId: uuid('photo_id')
-    .references(() => photos.id, { onDelete: 'cascade' })
-    .notNull(),
-
-  // Whether the user manually linked this (vs auto-linked by GPS proximity)
-  linkedManually: boolean('linked_manually').default(false).notNull(),
-
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-}, (table) => ({
-  pinPhotoUnique: uniqueIndex('travel_pin_photos_pin_photo_idx').on(table.pinId, table.photoId),
-  pinIdIdx: index('travel_pin_photos_pin_id_idx').on(table.pinId),
-  photoIdIdx: index('travel_pin_photos_photo_id_idx').on(table.photoId),
-}));
-
-
-
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    pinPhotoUnique: uniqueIndex('travel_pin_photos_pin_photo_idx').on(table.pinId, table.photoId),
+    pinIdIdx: index('travel_pin_photos_pin_id_idx').on(table.pinId),
+    photoIdIdx: index('travel_pin_photos_photo_id_idx').on(table.photoId),
+  })
+);
 
 export const travelTripsRelations = relations(travelTrips, ({ one, many }) => ({
   createdByUser: one(users, {
@@ -1829,59 +2000,70 @@ export const travelPinPhotosRelations = relations(travelPinPhotos, ({ one }) => 
 
 // ── Weekend Ideas ─────────────────────────────────────────────────────────────
 
-export const weekendPlaces = pgTable('weekend_places', {
-  id: uuid('id').defaultRandom().primaryKey(),
+export const weekendPlaces = pgTable(
+  'weekend_places',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
 
-  name: varchar('name', { length: 255 }).notNull(),
-  description: text('description'),
+    name: varchar('name', { length: 255 }).notNull(),
+    description: text('description'),
 
-  latitude: decimal('latitude', { precision: 9, scale: 6 }),
-  longitude: decimal('longitude', { precision: 10, scale: 6 }),
-  placeName: varchar('place_name', { length: 255 }),
-  address: varchar('address', { length: 500 }),
-  url: varchar('url', { length: 1000 }),
+    latitude: decimal('latitude', { precision: 9, scale: 6 }),
+    longitude: decimal('longitude', { precision: 10, scale: 6 }),
+    placeName: varchar('place_name', { length: 255 }),
+    address: varchar('address', { length: 500 }),
+    url: varchar('url', { length: 1000 }),
 
-  status: varchar('status', { length: 20 }).notNull().default('backlog')
-    .$type<'backlog' | 'visited'>(),
-  isFavorite: boolean('is_favorite').default(false).notNull(),
-  rating: integer('rating'),
+    status: varchar('status', { length: 20 })
+      .notNull()
+      .default('backlog')
+      .$type<'backlog' | 'visited'>(),
+    isFavorite: boolean('is_favorite').default(false).notNull(),
+    rating: integer('rating'),
 
-  notes: text('notes'),
-  tags: jsonb('tags').default([]).notNull().$type<string[]>(),
+    notes: text('notes'),
+    tags: jsonb('tags').default([]).notNull().$type<string[]>(),
 
-  sourceProvider: varchar('source_provider', { length: 20 })
-    .$type<'mapbox' | 'nominatim' | 'manual'>(),
-  sourceId: varchar('source_id', { length: 100 }),
+    sourceProvider: varchar('source_provider', { length: 20 }).$type<
+      'mapbox' | 'nominatim' | 'manual'
+    >(),
+    sourceId: varchar('source_id', { length: 100 }),
 
-  // Denormalized from weekend_visits for fast sorting/display
-  lastVisitedDate: varchar('last_visited_date', { length: 10 }),
-  visitCount: integer('visit_count').default(0).notNull(),
+    // Denormalized from weekend_visits for fast sorting/display
+    lastVisitedDate: varchar('last_visited_date', { length: 10 }),
+    visitCount: integer('visit_count').default(0).notNull(),
 
-  createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-}, (table) => ({
-  statusIdx: index('weekend_places_status_idx').on(table.status),
-  favoriteIdx: index('weekend_places_favorite_idx').on(table.isFavorite),
-  lastVisitedIdx: index('weekend_places_last_visited_idx').on(table.lastVisitedDate),
-}));
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    statusIdx: index('weekend_places_status_idx').on(table.status),
+    favoriteIdx: index('weekend_places_favorite_idx').on(table.isFavorite),
+    lastVisitedIdx: index('weekend_places_last_visited_idx').on(table.lastVisitedDate),
+  })
+);
 
-export const weekendVisits = pgTable('weekend_visits', {
-  id: uuid('id').defaultRandom().primaryKey(),
+export const weekendVisits = pgTable(
+  'weekend_visits',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
 
-  placeId: uuid('place_id')
-    .references(() => weekendPlaces.id, { onDelete: 'cascade' })
-    .notNull(),
-  visitedBy: uuid('visited_by').references(() => users.id, { onDelete: 'set null' }),
+    placeId: uuid('place_id')
+      .references(() => weekendPlaces.id, { onDelete: 'cascade' })
+      .notNull(),
+    visitedBy: uuid('visited_by').references(() => users.id, { onDelete: 'set null' }),
 
-  visitedOn: varchar('visited_on', { length: 10 }).notNull(),
-  rating: integer('rating'),
-  notes: text('notes'),
+    visitedOn: varchar('visited_on', { length: 10 }).notNull(),
+    rating: integer('rating'),
+    notes: text('notes'),
 
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-}, (table) => ({
-  placeVisitIdx: index('weekend_visits_place_id_idx').on(table.placeId, table.visitedOn),
-}));
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    placeVisitIdx: index('weekend_visits_place_id_idx').on(table.placeId, table.visitedOn),
+  })
+);
 
 export const weekendPlacesRelations = relations(weekendPlaces, ({ one, many }) => ({
   createdByUser: one(users, {
@@ -1901,4 +2083,3 @@ export const weekendVisitsRelations = relations(weekendVisits, ({ one }) => ({
     references: [users.id],
   }),
 }));
-

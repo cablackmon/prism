@@ -11,10 +11,7 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -24,21 +21,13 @@ export async function DELETE(
   const { id } = await params;
 
   try {
-    const [source] = await db
-      .select()
-      .from(wishItemSources)
-      .where(eq(wishItemSources.id, id));
+    const [source] = await db.select().from(wishItemSources).where(eq(wishItemSources.id, id));
 
     if (!source) {
-      return NextResponse.json(
-        { error: 'Wish item source not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Wish item source not found' }, { status: 404 });
     }
 
-    await db
-      .delete(wishItemSources)
-      .where(eq(wishItemSources.id, id));
+    await db.delete(wishItemSources).where(eq(wishItemSources.id, id));
 
     await invalidateEntity('wish-item-sources');
     await invalidateEntity('wish-items');
@@ -54,17 +43,11 @@ export async function DELETE(
     return NextResponse.json({ success: true });
   } catch (error) {
     logError('Error deleting wish item source:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete wish item source' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to delete wish item source' }, { status: 500 });
   }
 }
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -76,16 +59,10 @@ export async function PATCH(
   try {
     const body = await request.json();
 
-    const [source] = await db
-      .select()
-      .from(wishItemSources)
-      .where(eq(wishItemSources.id, id));
+    const [source] = await db.select().from(wishItemSources).where(eq(wishItemSources.id, id));
 
     if (!source) {
-      return NextResponse.json(
-        { error: 'Wish item source not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Wish item source not found' }, { status: 404 });
     }
 
     const updates: Record<string, unknown> = {
@@ -134,9 +111,6 @@ export async function PATCH(
     });
   } catch (error) {
     logError('Error updating wish item source:', error);
-    return NextResponse.json(
-      { error: 'Failed to update wish item source' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to update wish item source' }, { status: 500 });
   }
 }

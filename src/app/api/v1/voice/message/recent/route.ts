@@ -16,43 +16,46 @@ import { logError } from '@/lib/utils/logError';
  * Auth: token with 'voice' scope. Rate-limited per caller.
  */
 export async function GET(request: NextRequest) {
-  return withAuth(async () => {
-    try {
-      const url = new URL(request.url);
-      const raw = parseInt(url.searchParams.get('count') ?? '3', 10);
-      const count = Number.isFinite(raw) ? Math.min(10, Math.max(1, raw)) : 3;
+  return withAuth(
+    async () => {
+      try {
+        const url = new URL(request.url);
+        const raw = parseInt(url.searchParams.get('count') ?? '3', 10);
+        const count = Number.isFinite(raw) ? Math.min(10, Math.max(1, raw)) : 3;
 
-      const now = new Date();
-      const rows = await db
-        .select({
-          id: familyMessages.id,
-          message: familyMessages.message,
-          createdAt: familyMessages.createdAt,
-          authorName: users.name,
-        })
-        .from(familyMessages)
-        .leftJoin(users, eq(familyMessages.authorId, users.id))
-        .where(or(isNull(familyMessages.expiresAt), gt(familyMessages.expiresAt, now)))
-        .orderBy(desc(familyMessages.createdAt))
-        .limit(count);
+        const now = new Date();
+        const rows = await db
+          .select({
+            id: familyMessages.id,
+            message: familyMessages.message,
+            createdAt: familyMessages.createdAt,
+            authorName: users.name,
+          })
+          .from(familyMessages)
+          .leftJoin(users, eq(familyMessages.authorId, users.id))
+          .where(or(isNull(familyMessages.expiresAt), gt(familyMessages.expiresAt, now)))
+          .orderBy(desc(familyMessages.createdAt))
+          .limit(count);
 
-      const spoken = phraseRecentMessages(rows);
+        const spoken = phraseRecentMessages(rows);
 
-      return voiceOk(spoken, {
-        count: rows.length,
-        messages: rows.map((m) => ({
-          id: m.id,
-          message: m.message,
-          authorName: m.authorName,
-          createdAt: m.createdAt.toISOString(),
-        })),
-      });
-    } catch (error) {
-      logError('Voice API: message/recent failed', error);
-      return voiceError('Sorry, I had trouble reading the messages.', 500);
+        return voiceOk(spoken, {
+          count: rows.length,
+          messages: rows.map((m) => ({
+            id: m.id,
+            message: m.message,
+            authorName: m.authorName,
+            createdAt: m.createdAt.toISOString(),
+          })),
+        });
+      } catch (error) {
+        logError('Voice API: message/recent failed', error);
+        return voiceError('Sorry, I had trouble reading the messages.', 500);
+      }
+    },
+    {
+      tokenScope: 'voice',
+      rateLimit: { feature: 'voice-api', limit: 60, windowSeconds: 60 },
     }
-  }, {
-    tokenScope: 'voice',
-    rateLimit: { feature: 'voice-api', limit: 60, windowSeconds: 60 },
-  });
+  );
 }

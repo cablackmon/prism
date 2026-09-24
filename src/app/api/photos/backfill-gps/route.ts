@@ -37,10 +37,16 @@ export async function POST() {
       try {
         const filePath = getPhotoPath(photo.filename);
         const buffer = await fs.readFile(filePath).catch(() => null);
-        if (!buffer) { skipped++; continue; }
+        if (!buffer) {
+          skipped++;
+          continue;
+        }
 
         const gps = await extractGps(buffer);
-        if (!gps) { skipped++; continue; }
+        if (!gps) {
+          skipped++;
+          continue;
+        }
 
         await db
           .update(photos)

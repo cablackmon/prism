@@ -23,11 +23,17 @@ function transformNotes(json: unknown): CalendarNote[] {
 }
 
 export function useCalendarNotes({ from, to, enabled = true }: UseCalendarNotesOptions) {
-  const url = enabled && from && to
-    ? `/api/calendar-notes?from=${from}&to=${to}`
-    : '/api/calendar-notes?from=1970-01-01&to=1970-01-01';
+  const url =
+    enabled && from && to
+      ? `/api/calendar-notes?from=${from}&to=${to}`
+      : '/api/calendar-notes?from=1970-01-01&to=1970-01-01';
 
-  const { data: notes, loading, error, refresh } = useFetch<CalendarNote[]>({
+  const {
+    data: notes,
+    loading,
+    error,
+    refresh,
+  } = useFetch<CalendarNote[]>({
     url,
     initialData: [],
     transform: transformNotes,
@@ -46,18 +52,21 @@ export function useCalendarNotes({ from, to, enabled = true }: UseCalendarNotesO
     return map;
   }, [notes]);
 
-  const upsertNote = useCallback(async (date: string, content: string) => {
-    try {
-      await fetch('/api/calendar-notes', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date, content }),
-      });
-      refresh();
-    } catch (err) {
-      console.error('Failed to save note:', err);
-    }
-  }, [refresh]);
+  const upsertNote = useCallback(
+    async (date: string, content: string) => {
+      try {
+        await fetch('/api/calendar-notes', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ date, content }),
+        });
+        refresh();
+      } catch (err) {
+        console.error('Failed to save note:', err);
+      }
+    },
+    [refresh]
+  );
 
   return { notesByDate, loading, error, upsertNote, refresh };
 }

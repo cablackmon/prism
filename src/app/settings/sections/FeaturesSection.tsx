@@ -24,8 +24,8 @@ export function FeaturesSection() {
       <div>
         <h2 className="text-2xl font-bold">Features</h2>
         <p className="text-muted-foreground">
-          Choose which pages appear in the navigation. Hidden pages are removed
-          from all menus but can still be reached by URL.
+          Choose which pages appear in the navigation. Hidden pages are removed from all menus but
+          can still be reached by URL.
         </p>
       </div>
 

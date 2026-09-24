@@ -29,15 +29,8 @@ const STATUS_MAP: Record<ApiErrorCode, number> = {
  *
  * Response shape: { error: { code, message } }
  */
-export function apiError(
-  code: ApiErrorCode,
-  message: string,
-  status?: number
-): NextResponse {
-  return NextResponse.json(
-    { error: { code, message } },
-    { status: status ?? STATUS_MAP[code] }
-  );
+export function apiError(code: ApiErrorCode, message: string, status?: number): NextResponse {
+  return NextResponse.json({ error: { code, message } }, { status: status ?? STATUS_MAP[code] });
 }
 
 /**

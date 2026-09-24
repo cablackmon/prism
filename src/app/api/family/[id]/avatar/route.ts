@@ -13,10 +13,7 @@ import { logError } from '@/lib/utils/logError';
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -40,7 +37,10 @@ export async function POST(
     }
 
     if (!ALLOWED_TYPES.includes(file.type)) {
-      return NextResponse.json({ error: 'Invalid file type. Use JPEG, PNG, or WebP.' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Invalid file type. Use JPEG, PNG, or WebP.' },
+        { status: 400 }
+      );
     }
 
     if (file.size > MAX_FILE_SIZE) {
@@ -51,17 +51,17 @@ export async function POST(
 
     const detectedType = validateMagicBytes(buffer, ALLOWED_TYPES);
     if (!detectedType) {
-      return NextResponse.json({ error: 'File content does not match an allowed image type' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'File content does not match an allowed image type' },
+        { status: 400 }
+      );
     }
 
     await saveAvatar(buffer, id);
 
     const avatarUrl = `/api/family/${id}/avatar`;
 
-    await db
-      .update(users)
-      .set({ avatarUrl, updatedAt: new Date() })
-      .where(eq(users.id, id));
+    await db.update(users).set({ avatarUrl, updatedAt: new Date() }).where(eq(users.id, id));
 
     await invalidateEntity('family');
 
@@ -72,10 +72,7 @@ export async function POST(
   }
 }
 
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const filePath = getAvatarPath(id);
@@ -110,10 +107,7 @@ export async function DELETE(
   try {
     await deleteAvatar(id);
 
-    await db
-      .update(users)
-      .set({ avatarUrl: null, updatedAt: new Date() })
-      .where(eq(users.id, id));
+    await db.update(users).set({ avatarUrl: null, updatedAt: new Date() }).where(eq(users.id, id));
 
     await invalidateEntity('family');
 

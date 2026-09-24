@@ -7,17 +7,17 @@
 export const WIDGET_CONSTRAINTS: Record<string, { minW: number; minH: number }> = {
   // Minimum heights sized for the real design canvas (landscape 48×27,
   // portrait 36×64). Kept in sync with WIDGET_REGISTRY in widgetRegistry.ts.
-  clock:     { minW: 8, minH: 4 },
-  weather:   { minW: 8, minH: 4 },
-  calendar:  { minW: 12, minH: 8 },
-  tasks:     { minW: 8, minH: 5 },
-  messages:  { minW: 8, minH: 5 },
-  chores:    { minW: 8, minH: 5 },
-  shopping:  { minW: 8, minH: 5 },
-  meals:     { minW: 12, minH: 6 },
+  clock: { minW: 8, minH: 4 },
+  weather: { minW: 8, minH: 4 },
+  calendar: { minW: 12, minH: 8 },
+  tasks: { minW: 8, minH: 5 },
+  messages: { minW: 8, minH: 5 },
+  chores: { minW: 8, minH: 5 },
+  shopping: { minW: 8, minH: 5 },
+  meals: { minW: 12, minH: 6 },
   birthdays: { minW: 8, minH: 5 },
-  photos:      { minW: 8, minH: 8 },
-  points:      { minW: 8, minH: 8 },
+  photos: { minW: 8, minH: 8 },
+  points: { minW: 8, minH: 8 },
   busTracking: { minW: 8, minH: 6 },
 };
 
@@ -78,13 +78,27 @@ export interface ValidationOptions {
 
 // Basic profanity word list — kept minimal, catches the obvious ones
 const PROFANITY_LIST = [
-  'shit', 'fuck', 'ass', 'asshole', 'bitch', 'bastard', 'damn', 'crap',
-  'dick', 'cock', 'pussy', 'slut', 'whore', 'nigger', 'faggot', 'retard',
+  'shit',
+  'fuck',
+  'ass',
+  'asshole',
+  'bitch',
+  'bastard',
+  'damn',
+  'crap',
+  'dick',
+  'cock',
+  'pussy',
+  'slut',
+  'whore',
+  'nigger',
+  'faggot',
+  'retard',
 ];
 
 function containsProfanity(text: string): boolean {
   const lower = text.toLowerCase();
-  return PROFANITY_LIST.some(word => lower.includes(word));
+  return PROFANITY_LIST.some((word) => lower.includes(word));
 }
 
 /**
@@ -105,10 +119,7 @@ function getOccupiedCells(widget: CommunityWidget): Set<string> {
  * Compute overlap ratio between two sets of grid cells.
  * Returns the fraction of the union that is shared.
  */
-function computeOverlapRatio(
-  setA: Set<string>,
-  setB: Set<string>,
-): number {
+function computeOverlapRatio(setA: Set<string>, setB: Set<string>): number {
   let intersection = 0;
   for (const cell of setA) {
     if (setB.has(cell)) intersection++;
@@ -124,7 +135,7 @@ function computeOverlapRatio(
 function normalizeWidgets(widgets: CommunityWidget[]): string {
   const sorted = [...widgets]
     .sort((a, b) => a.i.localeCompare(b.i))
-    .map(w => ({
+    .map((w) => ({
       i: w.i,
       x: Math.round(w.x),
       y: Math.round(w.y),
@@ -143,7 +154,7 @@ function normalizeWidgets(widgets: CommunityWidget[]): string {
  */
 export function validateCommunityLayout(
   data: unknown,
-  options: ValidationOptions = {},
+  options: ValidationOptions = {}
 ): ValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
@@ -199,8 +210,12 @@ export function validateCommunityLayout(
       errors.push(`Widget at index ${idx}: missing or invalid "i" (widget ID).`);
       continue;
     }
-    if (typeof wObj.x !== 'number' || typeof wObj.y !== 'number' ||
-        typeof wObj.w !== 'number' || typeof wObj.h !== 'number') {
+    if (
+      typeof wObj.x !== 'number' ||
+      typeof wObj.y !== 'number' ||
+      typeof wObj.w !== 'number' ||
+      typeof wObj.h !== 'number'
+    ) {
       errors.push(`Widget "${wObj.i || idx}": missing numeric x, y, w, or h.`);
       continue;
     }
@@ -215,7 +230,9 @@ export function validateCommunityLayout(
 
     // Valid widget ID
     if (!VALID_WIDGET_IDS.includes(widget.i)) {
-      errors.push(`Widget "${widget.i}": unknown widget ID. Valid IDs: ${VALID_WIDGET_IDS.join(', ')}.`);
+      errors.push(
+        `Widget "${widget.i}": unknown widget ID. Valid IDs: ${VALID_WIDGET_IDS.join(', ')}.`
+      );
     }
 
     // Duplicate check
@@ -250,10 +267,14 @@ export function validateCommunityLayout(
     const constraints = WIDGET_CONSTRAINTS[widget.i];
     if (constraints) {
       if (widget.w < constraints.minW) {
-        errors.push(`Widget "${widget.i}": w (${widget.w}) is below recommended minW of ${constraints.minW}.`);
+        errors.push(
+          `Widget "${widget.i}": w (${widget.w}) is below recommended minW of ${constraints.minW}.`
+        );
       }
       if (widget.h < constraints.minH) {
-        errors.push(`Widget "${widget.i}": h (${widget.h}) is below recommended minH of ${constraints.minH}.`);
+        errors.push(
+          `Widget "${widget.i}": h (${widget.h}) is below recommended minH of ${constraints.minH}.`
+        );
       }
     }
 
@@ -266,21 +287,18 @@ export function validateCommunityLayout(
       const wa = parsedWidgets[a]!;
       const wb = parsedWidgets[b]!;
       // Check if rectangles overlap
-      if (
-        wa.x < wb.x + wb.w &&
-        wa.x + wa.w > wb.x &&
-        wa.y < wb.y + wb.h &&
-        wa.y + wa.h > wb.y
-      ) {
+      if (wa.x < wb.x + wb.w && wa.x + wa.w > wb.x && wa.y < wb.y + wb.h && wa.y + wa.h > wb.y) {
         errors.push(`Widgets "${wa.i}" and "${wb.i}" overlap.`);
       }
     }
   }
 
   // --- Warnings ---
-  const maxBottom = Math.max(0, ...parsedWidgets.map(w => w.y + w.h));
+  const maxBottom = Math.max(0, ...parsedWidgets.map((w) => w.y + w.h));
   if (maxBottom > 96) {
-    warnings.push(`Layout is very tall (extends to row ${maxBottom}). May require scrolling on most screens.`);
+    warnings.push(
+      `Layout is very tall (extends to row ${maxBottom}). May require scrolling on most screens.`
+    );
   }
 
   // --- Community submission checks ---
@@ -345,7 +363,9 @@ export function validateCommunityLayout(
         }
         const overlap = computeOverlapRatio(newCells, existingCells);
         if (overlap > 0.85) {
-          errors.push(`Too similar to existing layout "${existingEntry?.name || 'unknown'}" (${Math.round(overlap * 100)}% overlap).`);
+          errors.push(
+            `Too similar to existing layout "${existingEntry?.name || 'unknown'}" (${Math.round(overlap * 100)}% overlap).`
+          );
           break;
         }
       }

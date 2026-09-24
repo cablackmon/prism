@@ -28,15 +28,19 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { taskListId, externalListId, externalListName, newListName, newConnection, provider: requestProvider } = body;
+    const {
+      taskListId,
+      externalListId,
+      externalListName,
+      newListName,
+      newConnection,
+      provider: requestProvider,
+    } = body;
     const provider = requestProvider || 'microsoft_todo';
     const redisPrefix = provider === 'google_tasks' ? 'google-tasks-temp' : 'ms-todo-temp';
 
     if (!externalListId) {
-      return NextResponse.json(
-        { error: 'externalListId is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'externalListId is required' }, { status: 400 });
     }
 
     if (!taskListId && !newListName) {
@@ -49,23 +53,22 @@ export async function POST(request: NextRequest) {
     // Get temp tokens from Redis
     const redis = await getRedisClient();
     if (!redis) {
-      return NextResponse.json(
-        { error: 'Redis unavailable' },
-        { status: 503 }
-      );
+      return NextResponse.json({ error: 'Redis unavailable' }, { status: 503 });
     }
 
     // Try the appropriate temp key
-    const tempKey = newConnection || !taskListId
-      ? `${redisPrefix}:${auth.userId}:task:new`
-      : `${redisPrefix}:${auth.userId}:task:${taskListId}`;
+    const tempKey =
+      newConnection || !taskListId
+        ? `${redisPrefix}:${auth.userId}:task:new`
+        : `${redisPrefix}:${auth.userId}:task:${taskListId}`;
     let stored = await redis.get(tempKey);
 
     // Fallback for old MS key format (without key type segment)
     if (!stored && provider === 'microsoft_todo') {
-      const fallbackKey = newConnection || !taskListId
-        ? `ms-todo-temp:${auth.userId}:new`
-        : `ms-todo-temp:${auth.userId}:${taskListId}`;
+      const fallbackKey =
+        newConnection || !taskListId
+          ? `ms-todo-temp:${auth.userId}:new`
+          : `ms-todo-temp:${auth.userId}:${taskListId}`;
       stored = await redis.get(fallbackKey);
     }
 
@@ -84,31 +87,25 @@ export async function POST(request: NextRequest) {
 
     if (newListName && !taskListId) {
       // Create a new Prism list
-      const [newList] = await db.insert(taskLists).values({
-        name: newListName,
-        createdBy: auth.userId,
-      }).returning();
+      const [newList] = await db
+        .insert(taskLists)
+        .values({
+          name: newListName,
+          createdBy: auth.userId,
+        })
+        .returning();
 
       if (!newList) {
-        return NextResponse.json(
-          { error: 'Failed to create task list' },
-          { status: 500 }
-        );
+        return NextResponse.json({ error: 'Failed to create task list' }, { status: 500 });
       }
       finalTaskListId = newList.id;
       await invalidateEntity('task-lists');
     } else {
       // Verify the Prism task list exists
-      const [taskList] = await db
-        .select()
-        .from(taskLists)
-        .where(eq(taskLists.id, taskListId));
+      const [taskList] = await db.select().from(taskLists).where(eq(taskLists.id, taskListId));
 
       if (!taskList) {
-        return NextResponse.json(
-          { error: 'Task list not found' },
-          { status: 404 }
-        );
+        return NextResponse.json({ error: 'Task list not found' }, { status: 404 });
       }
     }
 
@@ -116,12 +113,7 @@ export async function POST(request: NextRequest) {
     const [existing] = await db
       .select()
       .from(taskSources)
-      .where(
-        and(
-          eq(taskSources.provider, provider),
-          eq(taskSources.taskListId, finalTaskListId)
-        )
-      );
+      .where(and(eq(taskSources.provider, provider), eq(taskSources.taskListId, finalTaskListId)));
 
     if (existing) {
       // Update existing source
@@ -169,9 +161,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error) {
     logError('Error finalizing MS connection:', error);
-    return NextResponse.json(
-      { error: 'Failed to complete task sync connection' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to complete task sync connection' }, { status: 500 });
   }
 }

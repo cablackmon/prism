@@ -67,10 +67,7 @@ interface AlexaRequest {
  * authoritative when present.
  */
 function extractApplicationId(req: AlexaRequest): string | undefined {
-  return (
-    req.session?.application?.applicationId ??
-    req.context?.System?.application?.applicationId
-  );
+  return req.session?.application?.applicationId ?? req.context?.System?.application?.applicationId;
 }
 
 export async function POST(request: NextRequest) {
@@ -136,7 +133,7 @@ export async function POST(request: NextRequest) {
 
   if (reqType === 'LaunchRequest') {
     return NextResponse.json(
-      speak('Welcome to Prism. Ask me about today\'s events, today\'s tasks, or your family.'),
+      speak("Welcome to KYST. Ask me about today's events, today's tasks, or your family.")
     );
   }
 
@@ -193,7 +190,9 @@ export async function POST(request: NextRequest) {
 
     case 'AMAZON.HelpIntent':
       return NextResponse.json(
-        speak("You can ask me about today's events, what's coming up, today's tasks, recent family messages, add an item to a list, complete a chore, or post a family message."),
+        speak(
+          "You can ask me about today's events, what's coming up, today's tasks, recent family messages, add an item to a list, complete a chore, or post a family message."
+        )
       );
 
     case 'AMAZON.CancelIntent':

@@ -30,16 +30,15 @@ export async function getCached<T>(
 
     return freshData;
   } catch (error) {
-    console.error('Cache error, fetching fresh:', error instanceof Error ? error.message : 'Unknown error');
+    console.error(
+      'Cache error, fetching fresh:',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
     return fetchFn();
   }
 }
 
-export async function setCache<T>(
-  key: string,
-  value: T,
-  ttlSeconds: number = 300
-): Promise<void> {
+export async function setCache<T>(key: string, value: T, ttlSeconds: number = 300): Promise<void> {
   const client = await getRedisClient();
   if (!client) return;
 
@@ -70,7 +69,10 @@ export async function invalidateCache(pattern: string): Promise<void> {
       }
     }
   } catch (error) {
-    console.error('Failed to invalidate cache:', error instanceof Error ? error.message : 'Unknown error');
+    console.error(
+      'Failed to invalidate cache:',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
   }
 }
 
@@ -81,7 +83,10 @@ export async function deleteCache(key: string): Promise<void> {
   try {
     await client.del(key);
   } catch (error) {
-    console.error('Failed to delete cache:', error instanceof Error ? error.message : 'Unknown error');
+    console.error(
+      'Failed to delete cache:',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
   }
 }
 
@@ -93,7 +98,10 @@ export async function cacheExists(key: string): Promise<boolean> {
     const exists = await client.exists(key);
     return exists === 1;
   } catch (error) {
-    console.error('Failed to check cache:', error instanceof Error ? error.message : 'Unknown error');
+    console.error(
+      'Failed to check cache:',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
     return false;
   }
 }
@@ -105,7 +113,10 @@ export async function getCacheTTL(key: string): Promise<number> {
   try {
     return await client.ttl(key);
   } catch (error) {
-    console.error('Failed to get cache TTL:', error instanceof Error ? error.message : 'Unknown error');
+    console.error(
+      'Failed to get cache TTL:',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
     return -2;
   }
 }

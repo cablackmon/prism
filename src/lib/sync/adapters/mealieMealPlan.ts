@@ -37,7 +37,10 @@ interface Payload extends NormalizedMeal {
 }
 
 async function loadWeekStartsOn(): Promise<0 | 1> {
-  const rows = await db.select().from(settings).where(inArray(settings.key, ['weekStartsOn']));
+  const rows = await db
+    .select()
+    .from(settings)
+    .where(inArray(settings.key, ['weekStartsOn']));
   return rows[0]?.value === '1' ? 1 : 0;
 }
 
@@ -61,14 +64,15 @@ function parseDateOnly(s: string): Date {
 function normalizeEntry(
   entry: MealieMealPlanEntry,
   weekStartsOn: 0 | 1,
-  importedRecipeIds: Set<string>,
+  importedRecipeIds: Set<string>
 ): Payload {
   const date = parseDateOnly(entry.date);
   const weekOf = format(startOfWeek(date, { weekStartsOn }), 'yyyy-MM-dd');
   const dayOfWeek = DAYS_OF_WEEK[date.getDay()] as DayOfWeek;
   const recipeExternalId = entry.recipeId || entry.recipe?.id || null;
   const recipeSlug = entry.recipe?.slug || null;
-  const name = (entry.recipe?.name || entry.title || entry.text || 'Planned meal').trim() || 'Planned meal';
+  const name =
+    (entry.recipe?.name || entry.title || entry.text || 'Planned meal').trim() || 'Planned meal';
   return {
     entryId: String(entry.id),
     recipeExternalId,
@@ -104,7 +108,7 @@ export const mealieMealPlanAdapter: EntitySyncAdapter<Payload> = {
     ]);
     // Which referenced recipes are already imported (for the review side-effect).
     const ids = Array.from(
-      new Set(entries.map((e) => e.recipeId || e.recipe?.id).filter((v): v is string => Boolean(v))),
+      new Set(entries.map((e) => e.recipeId || e.recipe?.id).filter((v): v is string => Boolean(v)))
     );
     const importedRecipeIds = await importedRecipeExternalIds(sourceId, ids);
 

@@ -15,7 +15,12 @@ const createSchema = z.object({
   longitude: z.number().min(-180).max(180).nullable().optional(),
   placeName: z.string().max(255).nullable().optional(),
   address: z.string().max(500).nullable().optional(),
-  url: z.string().max(1000).regex(/^https?:\/\//i, 'URL must start with http:// or https://').nullable().optional(),
+  url: z
+    .string()
+    .max(1000)
+    .regex(/^https?:\/\//i, 'URL must start with http:// or https://')
+    .nullable()
+    .optional(),
   status: z.enum(['backlog', 'visited']).default('backlog'),
   isFavorite: z.boolean().default(false),
   rating: z.number().int().min(1).max(5).nullable().optional(),
@@ -25,10 +30,12 @@ const createSchema = z.object({
   sourceId: z.string().max(100).nullable().optional(),
 });
 
-function formatPlace(row: typeof weekendPlaces.$inferSelect & {
-  createdByName: string | null;
-  createdByColor: string | null;
-}) {
+function formatPlace(
+  row: typeof weekendPlaces.$inferSelect & {
+    createdByName: string | null;
+    createdByColor: string | null;
+  }
+) {
   return {
     id: row.id,
     name: row.name,
@@ -47,7 +54,9 @@ function formatPlace(row: typeof weekendPlaces.$inferSelect & {
     sourceId: row.sourceId,
     lastVisitedDate: row.lastVisitedDate,
     visitCount: row.visitCount,
-    createdBy: row.createdBy ? { id: row.createdBy, name: row.createdByName, color: row.createdByColor } : null,
+    createdBy: row.createdBy
+      ? { id: row.createdBy, name: row.createdByName, color: row.createdByColor }
+      : null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -58,14 +67,22 @@ export async function GET() {
   if (!auth) return NextResponse.json({ places: [] });
 
   try {
-    const data = await getCached('weekend:places', async () => {
-      const rows = await db
-        .select({ ...getTableColumns(weekendPlaces), createdByName: users.name, createdByColor: users.color })
-        .from(weekendPlaces)
-        .leftJoin(users, eq(weekendPlaces.createdBy, users.id))
-        .orderBy(desc(weekendPlaces.updatedAt));
-      return rows.map(formatPlace);
-    }, 300);
+    const data = await getCached(
+      'weekend:places',
+      async () => {
+        const rows = await db
+          .select({
+            ...getTableColumns(weekendPlaces),
+            createdByName: users.name,
+            createdByColor: users.color,
+          })
+          .from(weekendPlaces)
+          .leftJoin(users, eq(weekendPlaces.createdBy, users.id))
+          .orderBy(desc(weekendPlaces.updatedAt));
+        return rows.map(formatPlace);
+      },
+      300
+    );
     return NextResponse.json({ places: data });
   } catch (err) {
     logError('GET /api/weekend/places', err);
@@ -79,28 +96,35 @@ export async function POST(req: Request) {
 
   try {
     const body = createSchema.parse(await req.json());
-    const [place] = await db.insert(weekendPlaces).values({
-      name: body.name,
-      description: body.description ?? null,
-      latitude: body.latitude != null ? String(body.latitude) : null,
-      longitude: body.longitude != null ? String(body.longitude) : null,
-      placeName: body.placeName ?? null,
-      address: body.address ?? null,
-      url: body.url ?? null,
-      status: body.status,
-      isFavorite: body.isFavorite,
-      rating: body.rating ?? null,
-      notes: body.notes ?? null,
-      tags: body.tags,
-      sourceProvider: body.sourceProvider ?? null,
-      sourceId: body.sourceId ?? null,
-      createdBy: auth.userId,
-    }).returning();
+    const [place] = await db
+      .insert(weekendPlaces)
+      .values({
+        name: body.name,
+        description: body.description ?? null,
+        latitude: body.latitude != null ? String(body.latitude) : null,
+        longitude: body.longitude != null ? String(body.longitude) : null,
+        placeName: body.placeName ?? null,
+        address: body.address ?? null,
+        url: body.url ?? null,
+        status: body.status,
+        isFavorite: body.isFavorite,
+        rating: body.rating ?? null,
+        notes: body.notes ?? null,
+        tags: body.tags,
+        sourceProvider: body.sourceProvider ?? null,
+        sourceId: body.sourceId ?? null,
+        createdBy: auth.userId,
+      })
+      .returning();
 
     await invalidateEntity('weekend');
 
     const [withUser] = await db
-      .select({ ...getTableColumns(weekendPlaces), createdByName: users.name, createdByColor: users.color })
+      .select({
+        ...getTableColumns(weekendPlaces),
+        createdByName: users.name,
+        createdByColor: users.color,
+      })
       .from(weekendPlaces)
       .leftJoin(users, eq(weekendPlaces.createdBy, users.id))
       .where(eq(weekendPlaces.id, place!.id))

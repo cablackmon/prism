@@ -31,4 +31,7 @@ export interface WeekendVisit {
   createdAt: string;
 }
 
-export type WeekendPlaceFormData = Omit<WeekendPlace, 'id' | 'visitCount' | 'lastVisitedDate' | 'createdBy' | 'createdAt' | 'updatedAt'>;
+export type WeekendPlaceFormData = Omit<
+  WeekendPlace,
+  'id' | 'visitCount' | 'lastVisitedDate' | 'createdBy' | 'createdAt' | 'updatedAt'
+>;

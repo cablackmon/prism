@@ -52,10 +52,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(sources);
   } catch (error) {
     logError('Error fetching task sources:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch task sources' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch task sources' }, { status: 500 });
   }
 }
 
@@ -77,16 +74,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify the task list exists
-    const [list] = await db
-      .select()
-      .from(taskLists)
-      .where(eq(taskLists.id, body.taskListId));
+    const [list] = await db.select().from(taskLists).where(eq(taskLists.id, body.taskListId));
 
     if (!list) {
-      return NextResponse.json(
-        { error: 'Task list not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Task list not found' }, { status: 404 });
     }
 
     // Check for duplicate source
@@ -124,10 +115,7 @@ export async function POST(request: NextRequest) {
       .returning();
 
     if (!newSource) {
-      return NextResponse.json(
-        { error: 'Failed to create task source' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to create task source' }, { status: 500 });
     }
 
     await invalidateEntity('task-sources');
@@ -141,22 +129,22 @@ export async function POST(request: NextRequest) {
     });
 
     // Don't return tokens in response
-    return NextResponse.json({
-      id: newSource.id,
-      userId: newSource.userId,
-      provider: newSource.provider,
-      externalListId: newSource.externalListId,
-      externalListName: newSource.externalListName,
-      taskListId: newSource.taskListId,
-      syncEnabled: newSource.syncEnabled,
-      lastSyncAt: newSource.lastSyncAt,
-      createdAt: newSource.createdAt,
-    }, { status: 201 });
+    return NextResponse.json(
+      {
+        id: newSource.id,
+        userId: newSource.userId,
+        provider: newSource.provider,
+        externalListId: newSource.externalListId,
+        externalListName: newSource.externalListName,
+        taskListId: newSource.taskListId,
+        syncEnabled: newSource.syncEnabled,
+        lastSyncAt: newSource.lastSyncAt,
+        createdAt: newSource.createdAt,
+      },
+      { status: 201 }
+    );
   } catch (error) {
     logError('Error creating task source:', error);
-    return NextResponse.json(
-      { error: 'Failed to create task source' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to create task source' }, { status: 500 });
   }
 }

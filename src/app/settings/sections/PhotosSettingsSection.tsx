@@ -1,7 +1,21 @@
 'use client';
 
 import * as React from 'react';
-import { Plus, RefreshCw, Trash2, Cloud, HardDrive, Pin, X, FolderOpen, MapPin, ChevronRight, ChevronUp, ChevronDown, Image as ImageIcon } from 'lucide-react';
+import {
+  Plus,
+  RefreshCw,
+  Trash2,
+  Cloud,
+  HardDrive,
+  Pin,
+  X,
+  FolderOpen,
+  MapPin,
+  ChevronRight,
+  ChevronUp,
+  ChevronDown,
+  Image as ImageIcon,
+} from 'lucide-react';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useConfirmDialog } from '@/lib/hooks/useConfirmDialog';
 import { cn } from '@/lib/utils';
@@ -87,7 +101,7 @@ export function PhotosSettingsSection() {
       ? `/api/photo-sources/${pickingFolder}/folders?parentId=${parentId}`
       : `/api/photo-sources/${pickingFolder}/folders`;
     fetch(url)
-      .then((r) => r.ok ? r.json() : { folders: [] })
+      .then((r) => (r.ok ? r.json() : { folders: [] }))
       .then((d) => setFolders(d.folders || []))
       .catch(() => setFolders([]))
       .finally(() => setFoldersLoading(false));
@@ -211,7 +225,8 @@ export function PhotosSettingsSection() {
   };
 
   const handleDelete = async (sourceId: string) => {
-    if (!await confirm('Delete this source?', 'This will delete the source and all its photos.')) return;
+    if (!(await confirm('Delete this source?', 'This will delete the source and all its photos.')))
+      return;
     try {
       await fetch(`/api/photo-sources/${sourceId}`, { method: 'DELETE' });
       await fetchSources();
@@ -247,11 +262,13 @@ export function PhotosSettingsSection() {
     try {
       await Promise.all([
         fetch(`/api/photo-sources/${a.id}`, {
-          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ priority: bPrio }),
         }),
         fetch(`/api/photo-sources/${b.id}`, {
-          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ priority: aPrio }),
         }),
       ]);
@@ -267,7 +284,10 @@ export function PhotosSettingsSection() {
 
   type DisplayContextKey = keyof typeof filters;
 
-  const toggleOrientation = (context: DisplayContextKey, orientation: 'landscape' | 'portrait' | 'square') => {
+  const toggleOrientation = (
+    context: DisplayContextKey,
+    orientation: 'landscape' | 'portrait' | 'square'
+  ) => {
     const current = filters[context].orientation;
     const updated = current.includes(orientation)
       ? current.filter((o) => o !== orientation)
@@ -298,24 +318,34 @@ export function PhotosSettingsSection() {
             <Input
               type="number"
               value={resolution.width}
-              onChange={(e) => setResolution({ ...resolution, width: parseInt(e.target.value) || 1920 })}
+              onChange={(e) =>
+                setResolution({ ...resolution, width: parseInt(e.target.value) || 1920 })
+              }
               className="w-24 text-sm"
             />
             <span className="text-muted-foreground">x</span>
             <Input
               type="number"
               value={resolution.height}
-              onChange={(e) => setResolution({ ...resolution, height: parseInt(e.target.value) || 1080 })}
+              onChange={(e) =>
+                setResolution({ ...resolution, height: parseInt(e.target.value) || 1080 })
+              }
               className="w-24 text-sm"
             />
-            <span className="text-xs text-muted-foreground ml-2">
+            <span className="ml-2 text-xs text-muted-foreground">
               Screen: {screenSize.width}x{screenSize.height}
             </span>
           </div>
           <div className="flex items-center gap-3 text-xs">
-            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-green-500" /> &ge; target</span>
-            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-yellow-500" /> &ge; 75%</span>
-            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-red-500" /> &lt; 75%</span>
+            <span className="flex items-center gap-1">
+              <span className="h-2.5 w-2.5 rounded-full bg-green-500" /> &ge; target
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="h-2.5 w-2.5 rounded-full bg-yellow-500" /> &ge; 75%
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="h-2.5 w-2.5 rounded-full bg-red-500" /> &lt; 75%
+            </span>
           </div>
         </CardContent>
       </Card>
@@ -339,9 +369,9 @@ export function PhotosSettingsSection() {
                       key={ori}
                       onClick={() => toggleOrientation(ctx, ori)}
                       className={cn(
-                        'px-3 py-1 rounded text-xs font-medium border transition-colors',
+                        'rounded border px-3 py-1 text-xs font-medium transition-colors',
                         active
-                          ? 'bg-primary text-primary-foreground border-primary'
+                          ? 'border-primary bg-primary text-primary-foreground'
                           : 'border-border text-muted-foreground hover:bg-accent'
                       )}
                     >
@@ -378,46 +408,51 @@ export function PhotosSettingsSection() {
         <CardContent className="space-y-4">
           {loading ? (
             <div className="space-y-3">
-              <div className="h-14 bg-muted animate-pulse rounded-lg" />
-              <div className="h-14 bg-muted animate-pulse rounded-lg" />
+              <div className="h-14 animate-pulse rounded-lg bg-muted" />
+              <div className="h-14 animate-pulse rounded-lg bg-muted" />
             </div>
           ) : (
             <>
               {sources.map((source) => (
                 <div key={source.id} className="space-y-0">
-                  <div className="flex items-center justify-between p-3 rounded-lg border">
-                    <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex items-center justify-between rounded-lg border p-3">
+                    <div className="flex min-w-0 items-center gap-3">
                       {source.type === 'onedrive' ? (
-                        <Cloud className="h-5 w-5 text-blue-500 shrink-0" />
+                        <Cloud className="h-5 w-5 shrink-0 text-blue-500" />
                       ) : source.type === 'immich' ? (
-                        <ImageIcon className="h-5 w-5 text-purple-500 shrink-0" />
+                        <ImageIcon className="h-5 w-5 shrink-0 text-purple-500" />
                       ) : (
-                        <HardDrive className="h-5 w-5 text-muted-foreground shrink-0" />
+                        <HardDrive className="h-5 w-5 shrink-0 text-muted-foreground" />
                       )}
                       <div className="min-w-0">
-                        <p className="font-medium text-sm truncate">{source.name}</p>
+                        <p className="truncate text-sm font-medium">{source.name}</p>
                         <p className="text-xs text-muted-foreground">
                           {source.photoCount} photos
-                          {source.lastSynced && <> · Synced {new Date(source.lastSynced).toLocaleDateString()}</>}
+                          {source.lastSynced && (
+                            <> · Synced {new Date(source.lastSynced).toLocaleDateString()}</>
+                          )}
                           {source.type === 'onedrive' && !source.onedriveFolderId && (
-                            <span className="text-amber-600 dark:text-amber-400"> · No folder selected</span>
+                            <span className="text-amber-600 dark:text-amber-400">
+                              {' '}
+                              · No folder selected
+                            </span>
                           )}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1 shrink-0 ml-2">
+                    <div className="ml-2 flex shrink-0 items-center gap-1">
                       {/* Dedup priority reorder — only meaningful with 2+
                           sources. Top of the list = preferred when the same
                           photo appears in multiple sources. */}
                       {sources.length > 1 && (
-                        <div className="flex flex-col mr-1">
+                        <div className="mr-1 flex flex-col">
                           <button
                             type="button"
                             aria-label="Higher priority"
                             title="Prefer this source for duplicate photos"
                             disabled={sources[0]?.id === source.id}
                             onClick={() => handleReorder(source.id, 'up')}
-                            className="text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-default leading-none"
+                            className="leading-none text-muted-foreground hover:text-foreground disabled:cursor-default disabled:opacity-30"
                           >
                             <ChevronUp className="h-3.5 w-3.5" />
                           </button>
@@ -427,7 +462,7 @@ export function PhotosSettingsSection() {
                             title="Prefer other sources for duplicate photos"
                             disabled={sources[sources.length - 1]?.id === source.id}
                             onClick={() => handleReorder(source.id, 'down')}
-                            className="text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-default leading-none"
+                            className="leading-none text-muted-foreground hover:text-foreground disabled:cursor-default disabled:opacity-30"
                           >
                             <ChevronDown className="h-3.5 w-3.5" />
                           </button>
@@ -442,7 +477,9 @@ export function PhotosSettingsSection() {
                           disabled={syncing === source.id}
                           title="Sync now"
                         >
-                          <RefreshCw className={cn('h-4 w-4', syncing === source.id && 'animate-spin')} />
+                          <RefreshCw
+                            className={cn('h-4 w-4', syncing === source.id && 'animate-spin')}
+                          />
                         </Button>
                       )}
                       {source.type === 'onedrive' && (
@@ -451,7 +488,7 @@ export function PhotosSettingsSection() {
                             variant="ghost"
                             size="sm"
                             onClick={() => openFolderPicker(source.id)}
-                            className="gap-1.5 text-xs h-8"
+                            className="h-8 gap-1.5 text-xs"
                           >
                             <FolderOpen className="h-3.5 w-3.5" />
                             {source.onedriveFolderId ? 'Change' : 'Select folder'}
@@ -465,14 +502,18 @@ export function PhotosSettingsSection() {
                               disabled={syncing === source.id}
                               title="Sync now"
                             >
-                              <RefreshCw className={cn('h-4 w-4', syncing === source.id && 'animate-spin')} />
+                              <RefreshCw
+                                className={cn('h-4 w-4', syncing === source.id && 'animate-spin')}
+                              />
                             </Button>
                           )}
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => { window.location.href = '/api/auth/microsoft'; }}
-                            className="text-xs h-8 text-muted-foreground"
+                            onClick={() => {
+                              window.location.href = '/api/auth/microsoft';
+                            }}
+                            className="h-8 text-xs text-muted-foreground"
                             title="Re-authenticate with Microsoft"
                           >
                             Reconnect
@@ -493,12 +534,14 @@ export function PhotosSettingsSection() {
 
                   {/* Inline folder browser */}
                   {pickingFolder === source.id && (
-                    <div className="border border-t-0 rounded-b-lg bg-muted/20">
+                    <div className="rounded-b-lg border border-t-0 bg-muted/20">
                       {/* Breadcrumb bar */}
-                      <div className="flex items-center gap-1 px-3 py-2 border-b text-xs text-muted-foreground flex-wrap">
+                      <div className="flex flex-wrap items-center gap-1 border-b px-3 py-2 text-xs text-muted-foreground">
                         <button
-                          onClick={() => { setFolderStack([]); }}
-                          className="hover:text-foreground font-medium transition-colors"
+                          onClick={() => {
+                            setFolderStack([]);
+                          }}
+                          className="font-medium transition-colors hover:text-foreground"
                         >
                           OneDrive
                         </button>
@@ -506,7 +549,7 @@ export function PhotosSettingsSection() {
                           <React.Fragment key={f.id}>
                             <ChevronRight className="h-3 w-3 shrink-0" />
                             <button
-                              className="hover:text-foreground font-medium transition-colors"
+                              className="font-medium transition-colors hover:text-foreground"
                               onClick={() => setFolderStack(folderStack.slice(0, i + 1))}
                             >
                               {f.name}
@@ -516,13 +559,13 @@ export function PhotosSettingsSection() {
                       </div>
 
                       {/* "Use this folder" row — selects the current level */}
-                      <div className="px-3 py-2 border-b flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground italic">
+                      <div className="flex items-center justify-between border-b px-3 py-2">
+                        <span className="text-xs italic text-muted-foreground">
                           {folderStack.length === 0 ? 'OneDrive root' : folderStack.at(-1)!.name}
                         </span>
                         <Button
                           size="sm"
-                          className="h-7 text-xs gap-1"
+                          className="h-7 gap-1 text-xs"
                           onClick={() => {
                             const current = folderStack.at(-1);
                             if (current) {
@@ -530,7 +573,11 @@ export function PhotosSettingsSection() {
                             }
                           }}
                           disabled={folderStack.length === 0}
-                          title={folderStack.length === 0 ? 'Navigate into a folder first' : 'Use this folder'}
+                          title={
+                            folderStack.length === 0
+                              ? 'Navigate into a folder first'
+                              : 'Use this folder'
+                          }
                         >
                           Use this folder
                         </Button>
@@ -539,28 +586,33 @@ export function PhotosSettingsSection() {
                       {/* Subfolder list — click to navigate in */}
                       <div className="max-h-56 overflow-y-auto">
                         {foldersLoading ? (
-                          <p className="text-xs text-muted-foreground p-3">Loading…</p>
+                          <p className="p-3 text-xs text-muted-foreground">Loading…</p>
                         ) : folders.length === 0 ? (
-                          <p className="text-xs text-muted-foreground p-3">No subfolders</p>
+                          <p className="p-3 text-xs text-muted-foreground">No subfolders</p>
                         ) : (
                           folders.map((f) => (
                             <button
                               key={f.id}
-                              onClick={() => setFolderStack((prev) => [...prev, { id: f.id, name: f.name }])}
-                              className="flex items-center justify-between w-full px-3 py-2 text-sm hover:bg-muted transition-colors text-left"
+                              onClick={() =>
+                                setFolderStack((prev) => [...prev, { id: f.id, name: f.name }])
+                              }
+                              className="flex w-full items-center justify-between px-3 py-2 text-left text-sm transition-colors hover:bg-muted"
                             >
                               <span className="flex items-center gap-2">
-                                <FolderOpen className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                <FolderOpen className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                                 {f.name}
                               </span>
-                              <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
                             </button>
                           ))
                         )}
                       </div>
 
-                      <div className="px-3 py-2 border-t">
-                        <button onClick={closeFolderPicker} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                      <div className="border-t px-3 py-2">
+                        <button
+                          onClick={closeFolderPicker}
+                          className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+                        >
                           Cancel
                         </button>
                       </div>
@@ -572,8 +624,10 @@ export function PhotosSettingsSection() {
               {/* Connect OneDrive CTA if no OneDrive source exists */}
               {!sources.some((s) => s.type === 'onedrive') && (
                 <button
-                  onClick={() => { window.location.href = '/api/auth/microsoft'; }}
-                  className="flex items-center gap-3 w-full p-3 rounded-lg border border-dashed hover:bg-muted/50 transition-colors text-sm text-muted-foreground hover:text-foreground"
+                  onClick={() => {
+                    window.location.href = '/api/auth/microsoft';
+                  }}
+                  className="flex w-full items-center gap-3 rounded-lg border border-dashed p-3 text-sm text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
                 >
                   <Cloud className="h-5 w-5 text-blue-500" />
                   Connect OneDrive to sync photos
@@ -584,7 +638,7 @@ export function PhotosSettingsSection() {
               {!showImmichForm && (
                 <button
                   onClick={() => setShowImmichForm(true)}
-                  className="flex items-center gap-3 w-full p-3 rounded-lg border border-dashed hover:bg-muted/50 transition-colors text-sm text-muted-foreground hover:text-foreground"
+                  className="flex w-full items-center gap-3 rounded-lg border border-dashed p-3 text-sm text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
                 >
                   <ImageIcon className="h-5 w-5 text-purple-500" />
                   Connect Immich shared album
@@ -594,14 +648,14 @@ export function PhotosSettingsSection() {
               {showImmichForm && (
                 <form
                   onSubmit={handleConnectImmich}
-                  className="rounded-lg border p-4 space-y-3 bg-muted/20"
+                  className="space-y-3 rounded-lg border bg-muted/20 p-4"
                 >
                   <div className="flex items-center gap-2 text-sm font-medium">
                     <ImageIcon className="h-4 w-4 text-purple-500" />
                     Connect Immich shared album
                   </div>
                   <div>
-                    <label className="block text-xs font-medium mb-1" htmlFor="immich-share-url">
+                    <label className="mb-1 block text-xs font-medium" htmlFor="immich-share-url">
                       Shared link URL
                     </label>
                     <Input
@@ -614,14 +668,14 @@ export function PhotosSettingsSection() {
                       disabled={immichSubmitting}
                       className="text-sm"
                     />
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="mt-1 text-xs text-muted-foreground">
                       Photos are pulled from the album each time you sync.
                     </p>
                   </div>
 
                   {immichPasswordRequired && (
                     <div>
-                      <label className="block text-xs font-medium mb-1" htmlFor="immich-password">
+                      <label className="mb-1 block text-xs font-medium" htmlFor="immich-password">
                         Password
                       </label>
                       <Input
@@ -636,9 +690,7 @@ export function PhotosSettingsSection() {
                     </div>
                   )}
 
-                  {immichError && (
-                    <p className="text-xs text-destructive">{immichError}</p>
-                  )}
+                  {immichError && <p className="text-xs text-destructive">{immichError}</p>}
 
                   <div className="flex gap-2">
                     <Button type="submit" size="sm" disabled={immichSubmitting}>
@@ -666,13 +718,15 @@ export function PhotosSettingsSection() {
 }
 
 function PinnedPhotosCard() {
-  const { pinnedId: pinnedWallpaper, setPinnedId: setPinnedWallpaper } = usePinnedPhoto('wallpaper');
-  const { pinnedId: pinnedScreensaver, setPinnedId: setPinnedScreensaver } = usePinnedPhoto('screensaver');
+  const { pinnedId: pinnedWallpaper, setPinnedId: setPinnedWallpaper } =
+    usePinnedPhoto('wallpaper');
+  const { pinnedId: pinnedScreensaver, setPinnedId: setPinnedScreensaver } =
+    usePinnedPhoto('screensaver');
   const { photos, loading } = usePhotos({ limit: 50 });
   const [selectingFor, setSelectingFor] = React.useState<'wallpaper' | 'screensaver' | null>(null);
 
-  const pinnedWallpaperPhoto = photos.find(p => p.id === pinnedWallpaper);
-  const pinnedScreensaverPhoto = photos.find(p => p.id === pinnedScreensaver);
+  const pinnedWallpaperPhoto = photos.find((p) => p.id === pinnedWallpaper);
+  const pinnedScreensaverPhoto = photos.find((p) => p.id === pinnedScreensaver);
 
   const handleSelect = (photoId: string) => {
     if (selectingFor === 'wallpaper') {
@@ -690,9 +744,7 @@ function PinnedPhotosCard() {
           <Pin className="h-4 w-4" />
           Pinned Photos
         </CardTitle>
-        <CardDescription>
-          Pin a specific photo instead of random rotation
-        </CardDescription>
+        <CardDescription>Pin a specific photo instead of random rotation</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Wallpaper Pin */}
@@ -700,24 +752,40 @@ function PinnedPhotosCard() {
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium">Dashboard Wallpaper</span>
             {pinnedWallpaper ? (
-              <Button variant="ghost" size="sm" onClick={() => setPinnedWallpaper(null)} className="h-7 gap-1 text-xs">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setPinnedWallpaper(null)}
+                className="h-7 gap-1 text-xs"
+              >
                 <X className="h-3 w-3" /> Clear
               </Button>
             ) : null}
           </div>
           {pinnedWallpaperPhoto ? (
-            <div className="flex items-center gap-3 p-2 rounded-md border">
+            <div className="flex items-center gap-3 rounded-md border p-2">
               <div
-                className="w-16 h-10 rounded bg-cover bg-center flex-shrink-0"
+                className="h-10 w-16 flex-shrink-0 rounded bg-cover bg-center"
                 style={{ backgroundImage: `url(/api/photos/${pinnedWallpaperPhoto.id}/file)` }}
               />
-              <span className="text-sm truncate flex-1">{pinnedWallpaperPhoto.originalFilename}</span>
-              <Button variant="outline" size="sm" onClick={() => setSelectingFor('wallpaper')} className="text-xs">
+              <span className="flex-1 truncate text-sm">
+                {pinnedWallpaperPhoto.originalFilename}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectingFor('wallpaper')}
+                className="text-xs"
+              >
                 Change
               </Button>
             </div>
           ) : (
-            <Button variant="outline" onClick={() => setSelectingFor('wallpaper')} className="w-full justify-start gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setSelectingFor('wallpaper')}
+              className="w-full justify-start gap-2"
+            >
               <Pin className="h-4 w-4" />
               Select a photo (uses random rotation)
             </Button>
@@ -729,24 +797,40 @@ function PinnedPhotosCard() {
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium">Screensaver Background</span>
             {pinnedScreensaver ? (
-              <Button variant="ghost" size="sm" onClick={() => setPinnedScreensaver(null)} className="h-7 gap-1 text-xs">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setPinnedScreensaver(null)}
+                className="h-7 gap-1 text-xs"
+              >
                 <X className="h-3 w-3" /> Clear
               </Button>
             ) : null}
           </div>
           {pinnedScreensaverPhoto ? (
-            <div className="flex items-center gap-3 p-2 rounded-md border">
+            <div className="flex items-center gap-3 rounded-md border p-2">
               <div
-                className="w-16 h-10 rounded bg-cover bg-center flex-shrink-0"
+                className="h-10 w-16 flex-shrink-0 rounded bg-cover bg-center"
                 style={{ backgroundImage: `url(/api/photos/${pinnedScreensaverPhoto.id}/file)` }}
               />
-              <span className="text-sm truncate flex-1">{pinnedScreensaverPhoto.originalFilename}</span>
-              <Button variant="outline" size="sm" onClick={() => setSelectingFor('screensaver')} className="text-xs">
+              <span className="flex-1 truncate text-sm">
+                {pinnedScreensaverPhoto.originalFilename}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectingFor('screensaver')}
+                className="text-xs"
+              >
                 Change
               </Button>
             </div>
           ) : (
-            <Button variant="outline" onClick={() => setSelectingFor('screensaver')} className="w-full justify-start gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setSelectingFor('screensaver')}
+              className="w-full justify-start gap-2"
+            >
               <Pin className="h-4 w-4" />
               Select a photo (uses random rotation)
             </Button>
@@ -755,33 +839,38 @@ function PinnedPhotosCard() {
 
         {/* Photo picker modal */}
         {selectingFor && (
-          <div className="mt-4 pt-4 border-t">
-            <div className="flex items-center justify-between mb-3">
+          <div className="mt-4 border-t pt-4">
+            <div className="mb-3 flex items-center justify-between">
               <span className="text-sm font-medium">
                 Select photo for {selectingFor === 'wallpaper' ? 'wallpaper' : 'screensaver'}
               </span>
-              <Button variant="ghost" size="sm" onClick={() => setSelectingFor(null)} className="h-7">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectingFor(null)}
+                className="h-7"
+              >
                 Cancel
               </Button>
             </div>
             {loading ? (
-              <div className="h-32 flex items-center justify-center text-muted-foreground">
+              <div className="flex h-32 items-center justify-center text-muted-foreground">
                 Loading photos...
               </div>
             ) : photos.length === 0 ? (
-              <div className="h-32 flex items-center justify-center text-muted-foreground">
+              <div className="flex h-32 items-center justify-center text-muted-foreground">
                 No photos available
               </div>
             ) : (
-              <div className="grid grid-cols-4 gap-2 max-h-64 overflow-y-auto">
-                {photos.map(photo => (
+              <div className="grid max-h-64 grid-cols-4 gap-2 overflow-y-auto">
+                {photos.map((photo) => (
                   <button
                     key={photo.id}
                     onClick={() => handleSelect(photo.id)}
                     className={cn(
-                      'aspect-video rounded bg-cover bg-center border-2 transition-all hover:opacity-80',
+                      'aspect-video rounded border-2 bg-cover bg-center transition-all hover:opacity-80',
                       (selectingFor === 'wallpaper' && photo.id === pinnedWallpaper) ||
-                      (selectingFor === 'screensaver' && photo.id === pinnedScreensaver)
+                        (selectingFor === 'screensaver' && photo.id === pinnedScreensaver)
                         ? 'border-primary ring-2 ring-primary/50'
                         : 'border-transparent hover:border-primary/50'
                     )}

@@ -45,12 +45,15 @@ afterEach(() => {
 
 const SEC = (ms: number) => Math.floor(ms / 1000);
 
-function daily(dt: number, overrides: Partial<{
-  icon: string;
-  temperatureHigh: number;
-  temperatureLow: number;
-  precipProbability: number;
-}> = {}) {
+function daily(
+  dt: number,
+  overrides: Partial<{
+    icon: string;
+    temperatureHigh: number;
+    temperatureLow: number;
+    precipProbability: number;
+  }> = {}
+) {
   return {
     time: dt,
     icon: overrides.icon ?? 'clear-day',
@@ -62,12 +65,15 @@ function daily(dt: number, overrides: Partial<{
   };
 }
 
-function hourly(dt: number, overrides: Partial<{
-  icon: string;
-  temperature: number;
-  precipProbability: number;
-  precipIntensity: number;
-}> = {}) {
+function hourly(
+  dt: number,
+  overrides: Partial<{
+    icon: string;
+    temperature: number;
+    precipProbability: number;
+    precipIntensity: number;
+  }> = {}
+) {
   return {
     time: dt,
     icon: overrides.icon ?? 'clear-day',
@@ -77,19 +83,21 @@ function hourly(dt: number, overrides: Partial<{
   };
 }
 
-function buildResponse(overrides: Partial<{
-  timezone: string;
-  currentIcon: string;
-  currentTemp: number;
-  currentFeelsLike: number;
-  currentHumidity: number;
-  currentWindSpeed: number;
-  currentSummary: string;
-  currentPrecipIntensity: number;
-  dailyData: ReturnType<typeof daily>[];
-  hourlyData: ReturnType<typeof hourly>[];
-  minutelyData: { time: number; precipIntensity: number; precipProbability: number }[];
-}> = {}) {
+function buildResponse(
+  overrides: Partial<{
+    timezone: string;
+    currentIcon: string;
+    currentTemp: number;
+    currentFeelsLike: number;
+    currentHumidity: number;
+    currentWindSpeed: number;
+    currentSummary: string;
+    currentPrecipIntensity: number;
+    dailyData: ReturnType<typeof daily>[];
+    hourlyData: ReturnType<typeof hourly>[];
+    minutelyData: { time: number; precipIntensity: number; precipProbability: number }[];
+  }> = {}
+) {
   const now = SEC(MOCK_NOW);
   return {
     latitude: 41.8781,
@@ -149,7 +157,7 @@ describe('URL construction', () => {
     const result = await fetchWeatherData('Springfield, IL');
 
     const url = spy.mock.calls[0]![0] as string;
-    expect(url).toContain('/41.8781,-87.6298?');   // env coords used
+    expect(url).toContain('/41.8781,-87.6298?'); // env coords used
     expect(result.location).toBe('Springfield, IL'); // string becomes display name
   });
 
@@ -169,19 +177,19 @@ describe('URL construction', () => {
 
 describe('mapIcon — icon string → WeatherCondition', () => {
   const cases: [string, string][] = [
-    ['clear-day',           'sunny'],
-    ['clear-night',         'sunny'],
-    ['partly-cloudy-day',   'partly-cloudy'],
+    ['clear-day', 'sunny'],
+    ['clear-night', 'sunny'],
+    ['partly-cloudy-day', 'partly-cloudy'],
     ['partly-cloudy-night', 'partly-cloudy'],
-    ['cloudy',              'cloudy'],
-    ['fog',                 'cloudy'],
-    ['wind',                'cloudy'],
-    ['rain',                'rainy'],
-    ['drizzle',             'rainy'],
-    ['snow',                'snowy'],
-    ['sleet',               'snowy'],
-    ['thunderstorm',        'stormy'],
-    ['unknown-icon',        'cloudy'], // default
+    ['cloudy', 'cloudy'],
+    ['fog', 'cloudy'],
+    ['wind', 'cloudy'],
+    ['rain', 'rainy'],
+    ['drizzle', 'rainy'],
+    ['snow', 'snowy'],
+    ['sleet', 'snowy'],
+    ['thunderstorm', 'stormy'],
+    ['unknown-icon', 'cloudy'], // default
   ];
 
   it.each(cases)('"%s" → "%s"', async (icon, expectedCondition) => {
@@ -243,9 +251,7 @@ describe('current conditions', () => {
 
 describe('7-day forecast', () => {
   it('caps at 7 days even when API returns more', async () => {
-    const days = Array.from({ length: 10 }, (_, i) =>
-      daily(SEC(MOCK_NOW) + i * 86400)
-    );
+    const days = Array.from({ length: 10 }, (_, i) => daily(SEC(MOCK_NOW) + i * 86400));
     mockFetch(buildResponse({ dailyData: days }));
     const { fetchWeatherData } = await import('../pirateweather');
     const result = await fetchWeatherData();
@@ -255,10 +261,12 @@ describe('7-day forecast', () => {
   it('labels each day using the response timezone, not UTC', async () => {
     // 2026-05-03 00:00 UTC = Sat 7pm in Chicago (CDT, UTC-5) → still Sat
     const saturdayUtcMidnight = SEC(Date.UTC(2026, 4, 3, 0, 0, 0));
-    mockFetch(buildResponse({
-      timezone: 'America/Chicago',
-      dailyData: [daily(saturdayUtcMidnight)],
-    }));
+    mockFetch(
+      buildResponse({
+        timezone: 'America/Chicago',
+        dailyData: [daily(saturdayUtcMidnight)],
+      })
+    );
     const { fetchWeatherData } = await import('../pirateweather');
     const result = await fetchWeatherData();
     expect(result.forecast[0]?.dayName).toBe('Sat');
@@ -266,28 +274,34 @@ describe('7-day forecast', () => {
 
   it('uses LA timezone for the same UTC midnight (still Saturday in LA)', async () => {
     const saturdayUtcMidnight = SEC(Date.UTC(2026, 4, 3, 0, 0, 0));
-    mockFetch(buildResponse({
-      timezone: 'America/Los_Angeles',
-      dailyData: [daily(saturdayUtcMidnight)],
-    }));
+    mockFetch(
+      buildResponse({
+        timezone: 'America/Los_Angeles',
+        dailyData: [daily(saturdayUtcMidnight)],
+      })
+    );
     const { fetchWeatherData } = await import('../pirateweather');
     const result = await fetchWeatherData();
     expect(result.forecast[0]?.dayName).toBe('Sat');
   });
 
   it('includes precipProbability as an integer percent', async () => {
-    mockFetch(buildResponse({
-      dailyData: [daily(SEC(MOCK_NOW), { precipProbability: 0.73 })],
-    }));
+    mockFetch(
+      buildResponse({
+        dailyData: [daily(SEC(MOCK_NOW), { precipProbability: 0.73 })],
+      })
+    );
     const { fetchWeatherData } = await import('../pirateweather');
     const result = await fetchWeatherData();
     expect(result.forecast[0]?.precipProbability).toBe(73);
   });
 
   it('maps forecast condition from the daily icon', async () => {
-    mockFetch(buildResponse({
-      dailyData: [daily(SEC(MOCK_NOW), { icon: 'rain' })],
-    }));
+    mockFetch(
+      buildResponse({
+        dailyData: [daily(SEC(MOCK_NOW), { icon: 'rain' })],
+      })
+    );
     const { fetchWeatherData } = await import('../pirateweather');
     const result = await fetchWeatherData();
     expect(result.forecast[0]?.condition).toBe('rainy');
@@ -306,15 +320,17 @@ describe('7-day forecast — day boundaries', () => {
     // Thursday midnight CDT = 2026-04-30 00:00 CDT = 2026-04-30T05:00:00Z
     const thuMidnightCdt = SEC(Date.UTC(2026, 3, 30, 5, 0, 0)); // Thu (past)
     // Friday midnight CDT = 2026-05-01 00:00 CDT = 2026-05-01T05:00:00Z
-    const friMidnightCdt = SEC(Date.UTC(2026, 4,  1, 5, 0, 0)); // Fri (today)
+    const friMidnightCdt = SEC(Date.UTC(2026, 4, 1, 5, 0, 0)); // Fri (today)
 
-    mockFetch(buildResponse({
-      timezone: 'America/Chicago',
-      dailyData: [
-        daily(thuMidnightCdt), // yesterday — must be excluded
-        daily(friMidnightCdt), // today — must be first entry
-      ],
-    }));
+    mockFetch(
+      buildResponse({
+        timezone: 'America/Chicago',
+        dailyData: [
+          daily(thuMidnightCdt), // yesterday — must be excluded
+          daily(friMidnightCdt), // today — must be first entry
+        ],
+      })
+    );
     const { fetchWeatherData } = await import('../pirateweather');
     const result = await fetchWeatherData();
 
@@ -324,15 +340,17 @@ describe('7-day forecast — day boundaries', () => {
 
   it('past-day high/low do not appear in the forecast', async () => {
     const thuMidnightCdt = SEC(Date.UTC(2026, 3, 30, 5, 0, 0));
-    const friMidnightCdt = SEC(Date.UTC(2026, 4,  1, 5, 0, 0));
+    const friMidnightCdt = SEC(Date.UTC(2026, 4, 1, 5, 0, 0));
 
-    mockFetch(buildResponse({
-      timezone: 'America/Chicago',
-      dailyData: [
-        daily(thuMidnightCdt, { temperatureHigh: 999, temperatureLow: -999 }),
-        daily(friMidnightCdt, { temperatureHigh: 75,  temperatureLow: 58  }),
-      ],
-    }));
+    mockFetch(
+      buildResponse({
+        timezone: 'America/Chicago',
+        dailyData: [
+          daily(thuMidnightCdt, { temperatureHigh: 999, temperatureLow: -999 }),
+          daily(friMidnightCdt, { temperatureHigh: 75, temperatureLow: 58 }),
+        ],
+      })
+    );
     const { fetchWeatherData } = await import('../pirateweather');
     const result = await fetchWeatherData();
 
@@ -343,10 +361,12 @@ describe('7-day forecast — day boundaries', () => {
   it('today is the first entry when the API data is current', async () => {
     const friMidnightCdt = SEC(Date.UTC(2026, 4, 1, 5, 0, 0));
 
-    mockFetch(buildResponse({
-      timezone: 'America/Chicago',
-      dailyData: [daily(friMidnightCdt)],
-    }));
+    mockFetch(
+      buildResponse({
+        timezone: 'America/Chicago',
+        dailyData: [daily(friMidnightCdt)],
+      })
+    );
     const { fetchWeatherData } = await import('../pirateweather');
     const result = await fetchWeatherData();
 
@@ -357,10 +377,12 @@ describe('7-day forecast — day boundaries', () => {
     // Eastern Daylight Time: midnight EDT = 04:00 UTC
     const friMidnightEdt = SEC(Date.UTC(2026, 4, 1, 4, 0, 0)); // Fri 00:00 EDT
 
-    mockFetch(buildResponse({
-      timezone: 'America/New_York',
-      dailyData: [daily(friMidnightEdt)],
-    }));
+    mockFetch(
+      buildResponse({
+        timezone: 'America/New_York',
+        dailyData: [daily(friMidnightEdt)],
+      })
+    );
     const { fetchWeatherData } = await import('../pirateweather');
     const result = await fetchWeatherData();
 
@@ -371,10 +393,12 @@ describe('7-day forecast — day boundaries', () => {
     // 2026-05-01 00:00 UTC = 2026-05-01 05:30 IST → Friday
     const utcMidnight = SEC(Date.UTC(2026, 4, 1, 0, 0, 0));
 
-    mockFetch(buildResponse({
-      timezone: 'Asia/Kolkata',
-      dailyData: [daily(utcMidnight)],
-    }));
+    mockFetch(
+      buildResponse({
+        timezone: 'Asia/Kolkata',
+        dailyData: [daily(utcMidnight)],
+      })
+    );
     const { fetchWeatherData } = await import('../pirateweather');
     const result = await fetchWeatherData();
 
@@ -389,23 +413,25 @@ describe('7-day forecast — day boundaries', () => {
 
 describe('hourly forecast', () => {
   it('only returns items within [now − 1 h, now + 12 h]', async () => {
-    const tooOld      = SEC(MOCK_NOW - 2 * 3_600_000);  // 2 h ago — excluded
-    const recentStart = SEC(MOCK_NOW - 30 * 60_000);     // 30 min ago — included
-    const current     = SEC(MOCK_NOW);
-    const future6h    = SEC(MOCK_NOW + 6 * 3_600_000);
-    const future12h   = SEC(MOCK_NOW + 12 * 3_600_000);  // boundary — included
-    const tooFar      = SEC(MOCK_NOW + 13 * 3_600_000);  // excluded
+    const tooOld = SEC(MOCK_NOW - 2 * 3_600_000); // 2 h ago — excluded
+    const recentStart = SEC(MOCK_NOW - 30 * 60_000); // 30 min ago — included
+    const current = SEC(MOCK_NOW);
+    const future6h = SEC(MOCK_NOW + 6 * 3_600_000);
+    const future12h = SEC(MOCK_NOW + 12 * 3_600_000); // boundary — included
+    const tooFar = SEC(MOCK_NOW + 13 * 3_600_000); // excluded
 
-    mockFetch(buildResponse({
-      hourlyData: [
-        hourly(tooOld),
-        hourly(recentStart),
-        hourly(current),
-        hourly(future6h),
-        hourly(future12h),
-        hourly(tooFar),
-      ],
-    }));
+    mockFetch(
+      buildResponse({
+        hourlyData: [
+          hourly(tooOld),
+          hourly(recentStart),
+          hourly(current),
+          hourly(future6h),
+          hourly(future12h),
+          hourly(tooFar),
+        ],
+      })
+    );
     const { fetchWeatherData } = await import('../pirateweather');
     const result = await fetchWeatherData();
 
@@ -420,14 +446,14 @@ describe('hourly forecast', () => {
     // An hourly slot that started 30 minutes ago is "active"
     const activeSlot = SEC(MOCK_NOW - 30 * 60_000);
 
-    mockFetch(buildResponse({
-      currentIcon: 'rain',
-      currentTemp: 58,
-      currentPrecipIntensity: 0.05,
-      hourlyData: [
-        hourly(activeSlot, { icon: 'clear-day', temperature: 65 }),
-      ],
-    }));
+    mockFetch(
+      buildResponse({
+        currentIcon: 'rain',
+        currentTemp: 58,
+        currentPrecipIntensity: 0.05,
+        hourlyData: [hourly(activeSlot, { icon: 'clear-day', temperature: 65 })],
+      })
+    );
     const { fetchWeatherData } = await import('../pirateweather');
     const result = await fetchWeatherData();
 
@@ -440,24 +466,28 @@ describe('hourly forecast', () => {
   it('does not patch future hourly slots', async () => {
     const futureSlot = SEC(MOCK_NOW + 2 * 3_600_000);
 
-    mockFetch(buildResponse({
-      currentIcon: 'rain',
-      currentTemp: 58,
-      hourlyData: [hourly(futureSlot, { icon: 'clear-day', temperature: 72 })],
-    }));
+    mockFetch(
+      buildResponse({
+        currentIcon: 'rain',
+        currentTemp: 58,
+        hourlyData: [hourly(futureSlot, { icon: 'clear-day', temperature: 72 })],
+      })
+    );
     const { fetchWeatherData } = await import('../pirateweather');
     const result = await fetchWeatherData();
 
     const future = result.hourly!.find((h) => h.time.getTime() === futureSlot * 1000);
-    expect(future?.condition).toBe('sunny');    // unchanged
+    expect(future?.condition).toBe('sunny'); // unchanged
     expect(future?.temp).toBe(72);
   });
 
   it('includes precipProbability and precipIntensity on hourly entries', async () => {
     const slot = SEC(MOCK_NOW + 3_600_000);
-    mockFetch(buildResponse({
-      hourlyData: [hourly(slot, { precipProbability: 0.4, precipIntensity: 0.02 })],
-    }));
+    mockFetch(
+      buildResponse({
+        hourlyData: [hourly(slot, { precipProbability: 0.4, precipIntensity: 0.02 })],
+      })
+    );
     const { fetchWeatherData } = await import('../pirateweather');
     const result = await fetchWeatherData();
 
@@ -475,11 +505,13 @@ describe('sunrise and sunset', () => {
   it('exposes sunrise and sunset from daily[0]', async () => {
     const base = SEC(MOCK_NOW);
     const sunriseTs = base + 6 * 3600;
-    const sunsetTs  = base + 19 * 3600;
+    const sunsetTs = base + 19 * 3600;
 
-    mockFetch(buildResponse({
-      dailyData: [{ ...daily(base), sunriseTime: sunriseTs, sunsetTime: sunsetTs }],
-    }));
+    mockFetch(
+      buildResponse({
+        dailyData: [{ ...daily(base), sunriseTime: sunriseTs, sunsetTime: sunsetTs }],
+      })
+    );
     const { fetchWeatherData } = await import('../pirateweather');
     const result = await fetchWeatherData();
 
@@ -554,9 +586,9 @@ describe('error handling', () => {
   });
 
   it('wraps network errors with a descriptive message', async () => {
-    jest.spyOn(global, 'fetch' as never).mockImplementation(
-      (() => Promise.reject(new Error('ECONNREFUSED'))) as never
-    );
+    jest
+      .spyOn(global, 'fetch' as never)
+      .mockImplementation((() => Promise.reject(new Error('ECONNREFUSED'))) as never);
     jest.resetModules();
     const { fetchWeatherData } = await import('../pirateweather');
     await expect(fetchWeatherData()).rejects.toThrow(/Pirate Weather network error: ECONNREFUSED/);

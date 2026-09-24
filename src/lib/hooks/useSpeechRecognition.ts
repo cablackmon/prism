@@ -16,7 +16,11 @@ interface ISpeechRecognition {
   continuous: boolean;
   interimResults: boolean;
   lang: string;
-  onresult: ((e: { results: { length: number; [i: number]: { [j: number]: { transcript: string } } } }) => void) | null;
+  onresult:
+    | ((e: {
+        results: { length: number; [i: number]: { [j: number]: { transcript: string } } };
+      }) => void)
+    | null;
   onerror: ((e: { error: string }) => void) | null;
   onend: (() => void) | null;
   start(): void;
@@ -33,9 +37,7 @@ interface SpeechRecognitionWindow {
  * To swap to cloud STT (Azure/Whisper/Deepgram) in v2: implement the same
  * SpeechRecognizer interface in a new file and update the import in useGlobalInput.tsx.
  */
-export function useSpeechRecognition(
-  onResult: (transcript: string) => void,
-): SpeechRecognizer {
+export function useSpeechRecognition(onResult: (transcript: string) => void): SpeechRecognizer {
   const [isListening, setIsListening] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const recRef = useRef<ISpeechRecognition | null>(null);
@@ -74,7 +76,7 @@ export function useSpeechRecognition(
       const messages: Record<string, string> = {
         'no-speech': 'No speech detected. Tap the mic to try again.',
         'not-allowed': 'Microphone permission denied. Check browser settings.',
-        'network': 'Speech recognition needs an internet connection.',
+        network: 'Speech recognition needs an internet connection.',
         'audio-capture': 'No microphone found.',
       };
       if (e.error !== 'aborted' && messages[e.error]) {

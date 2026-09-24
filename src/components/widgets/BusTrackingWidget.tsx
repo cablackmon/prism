@@ -20,7 +20,10 @@ export interface BusTrackingWidgetProps {
   gridH?: number;
 }
 
-export const BusTrackingWidget = React.memo(function BusTrackingWidget({ className, gridW }: BusTrackingWidgetProps) {
+export const BusTrackingWidget = React.memo(function BusTrackingWidget({
+  className,
+  gridW,
+}: BusTrackingWidgetProps) {
   const { routes, allRoutes, loading, error } = useBusTracking();
   const isCompact = !gridW || gridW < 12;
 
@@ -37,17 +40,11 @@ export const BusTrackingWidget = React.memo(function BusTrackingWidget({ classNa
       className={className}
     >
       {allRoutes.length === 0 ? (
-        <WidgetEmpty
-          icon={<Bus className="h-8 w-8" />}
-          message="No bus routes configured"
-        />
+        <WidgetEmpty icon={<Bus className="h-8 w-8" />} message="No bus routes configured" />
       ) : displayRoutes.length === 0 ? (
-        <WidgetEmpty
-          icon={<Bus className="h-8 w-8" />}
-          message="No routes active right now"
-        />
+        <WidgetEmpty icon={<Bus className="h-8 w-8" />} message="No routes active right now" />
       ) : (
-        <div className="overflow-auto h-full -mr-2 pr-2 space-y-3">
+        <div className="-mr-2 h-full space-y-3 overflow-auto pr-2">
           {displayRoutes.map((route) => (
             <RouteStatusCard key={route.id} route={route} compact={isCompact} />
           ))}
@@ -61,8 +58,8 @@ export const BusTrackingWidget = React.memo(function BusTrackingWidget({ classNa
 interface TrainNode {
   name: string;
   index: number;
-  isStop: boolean;    // square shape — the ETA target
-  isSchool: boolean;  // diamond shape — school terminal
+  isStop: boolean; // square shape — the ETA target
+  isSchool: boolean; // diamond shape — school terminal
   /**
    * True for the PM school diamond, which represents where the bus came FROM
    * rather than a checkpoint the bus will visit. FirstView does not emit a
@@ -92,10 +89,10 @@ function buildNodes(route: BusRouteStatus): TrainNode[] {
   const homeCp = checkpoints.find(isHomeCheckpoint) ?? null;
   const schoolCp = checkpoints.find(isSchoolCheckpoint) ?? null;
   const intermediates = checkpoints.filter(
-    cp => !isHomeCheckpoint(cp) && !isSchoolCheckpoint(cp),
+    (cp) => !isHomeCheckpoint(cp) && !isSchoolCheckpoint(cp)
   );
 
-  const intermediateNodes: TrainNode[] = intermediates.map(cp => ({
+  const intermediateNodes: TrainNode[] = intermediates.map((cp) => ({
     name: cp.name,
     index: cp.sortOrder,
     isStop: false,
@@ -106,20 +103,26 @@ function buildNodes(route: BusRouteStatus): TrainNode[] {
   // since a literal "Home" checkpoint is just a placeholder for the family's
   // actual stop. Index reuses the checkpoint's sortOrder when present, else a
   // synthetic position past the intermediates (legacy implicit-terminal path).
-  const homeNode: TrainNode | null = homeCp || route.stopName ? {
-    name: route.stopName ?? homeCp!.name,
-    index: homeCp ? homeCp.sortOrder : intermediates.length,
-    isStop: true,
-    isSchool: false,
-  } : null;
+  const homeNode: TrainNode | null =
+    homeCp || route.stopName
+      ? {
+          name: route.stopName ?? homeCp!.name,
+          index: homeCp ? homeCp.sortOrder : intermediates.length,
+          isStop: true,
+          isSchool: false,
+        }
+      : null;
 
   // School terminal (diamond) — labelled with schoolName when set.
-  const schoolNode: TrainNode | null = schoolCp || route.schoolName ? {
-    name: route.schoolName ?? schoolCp!.name,
-    index: schoolCp ? schoolCp.sortOrder : intermediates.length + 1,
-    isStop: false,
-    isSchool: true,
-  } : null;
+  const schoolNode: TrainNode | null =
+    schoolCp || route.schoolName
+      ? {
+          name: route.schoolName ?? schoolCp!.name,
+          index: schoolCp ? schoolCp.sortOrder : intermediates.length + 1,
+          isStop: false,
+          isSchool: true,
+        }
+      : null;
 
   // Arrange by direction:
   //   AM — bus picks up at homes and ends at school: [intermediates, home, school]
@@ -151,15 +154,15 @@ function RouteStatusCard({ route, compact }: { route: BusRouteStatus; compact: b
     <div className="space-y-1.5">
       {/* Header row: label + scheduled time */}
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium truncate">{route.label}</span>
-        <span className="text-xs text-muted-foreground flex-shrink-0 ml-2">
+        <span className="truncate text-sm font-medium">{route.label}</span>
+        <span className="ml-2 flex-shrink-0 text-xs text-muted-foreground">
           {route.scheduledTime}
         </span>
       </div>
 
       {/* Status text with color indicator */}
       <div className="flex items-center gap-2">
-        <div data-keep-bg className={cn('h-2 w-2 rounded-full flex-shrink-0', statusColor)} />
+        <div data-keep-bg className={cn('h-2 w-2 flex-shrink-0 rounded-full', statusColor)} />
         <span className="text-xs text-muted-foreground">{statusText}</span>
       </div>
 
@@ -198,8 +201,7 @@ function TrainMap({
 
   // Origin nodes (PM school diamond) light up the instant ANY event has fired,
   // since the bus came from there but FirstView doesn't emit a "left" email.
-  const isReached = (node: TrainNode) =>
-    node.isOrigin ? lastIdx >= 0 : node.index <= lastIdx;
+  const isReached = (node: TrainNode) => (node.isOrigin ? lastIdx >= 0 : node.index <= lastIdx);
 
   const isSegPassed = (from: TrainNode, to: TrainNode) => {
     if (from.isOrigin) return lastIdx >= 0;
@@ -215,7 +217,7 @@ function TrainMap({
       reached
         ? cn(statusColor, statusColor.replace('bg-', 'border-'))
         : 'border-muted-foreground/40 bg-background',
-      current && 'animate-pulse',
+      current && 'animate-pulse'
     );
     return (
       <div
@@ -224,21 +226,30 @@ function TrainMap({
         style={{ left: `${leftPct}%`, transform: 'translateX(-50%)', top: topOffset, zIndex: 1 }}
       >
         {node.isSchool ? (
-          <div data-keep-bg className={shapeBase}
+          <div
+            data-keep-bg
+            className={shapeBase}
             style={{ width: nodeSize, height: nodeSize, transform: 'rotate(45deg)', flexShrink: 0 }}
-            title={node.name} />
+            title={node.name}
+          />
         ) : node.isStop ? (
-          <div data-keep-bg className={cn(shapeBase, 'rounded-sm')}
+          <div
+            data-keep-bg
+            className={cn(shapeBase, 'rounded-sm')}
             style={{ width: nodeSize, height: nodeSize, flexShrink: 0 }}
-            title={node.name} />
+            title={node.name}
+          />
         ) : (
-          <div data-keep-bg className={cn(shapeBase, 'rounded-full')}
+          <div
+            data-keep-bg
+            className={cn(shapeBase, 'rounded-full')}
             style={{ width: nodeSize, height: nodeSize, flexShrink: 0 }}
-            title={node.name} />
+            title={node.name}
+          />
         )}
         {!compact && (
           <div
-            className="absolute text-[9px] leading-tight text-muted-foreground text-center pointer-events-none"
+            className="pointer-events-none absolute text-center text-[9px] leading-tight text-muted-foreground"
             style={{
               top: nodeSize + 3,
               left: '50%',
@@ -268,50 +279,73 @@ function TrainMap({
     const totalH = rowH * 2 + connGap;
 
     // Both rows left→right
-    const topPct = (i: number) =>
-      topNodes.length <= 1 ? 50 : (i / (topNodes.length - 1)) * 100;
-    const botPct = (i: number) =>
-      botNodes.length <= 1 ? 0 : (i / (botNodes.length - 1)) * 100;
+    const topPct = (i: number) => (topNodes.length <= 1 ? 50 : (i / (topNodes.length - 1)) * 100);
+    const botPct = (i: number) => (botNodes.length <= 1 ? 0 : (i / (botNodes.length - 1)) * 100);
 
     const connPassed = botNodes.length > 0 && botNodes[0]!.index <= lastIdx;
 
     // U-turn connector geometry
-    const connTopY = nodeSize / 2;           // centre of last top-row node
-    const connMidY = rowH + connGap / 2;     // midpoint of gap between rows
+    const connTopY = nodeSize / 2; // centre of last top-row node
+    const connMidY = rowH + connGap / 2; // midpoint of gap between rows
     const connBotY = rowH + connGap + nodeSize / 2; // centre of first bottom-row node
 
     return (
       <div className="relative w-full select-none" style={{ height: totalH }}>
         {/* Top row segments */}
-        {topNodes.map((node, i) => i < topNodes.length - 1 && (
-          <div key={`ts-${i}`} data-keep-bg
-            className={cn('absolute', isSegPassed(node, topNodes[i + 1]!) ? statusColor : 'bg-muted-foreground/25')}
-            style={{ top: trackY, height: 2,
-              left: `calc(${topPct(i)}% + ${nodeSize / 2}px)`,
-              right: `calc(${100 - topPct(i + 1)}% + ${nodeSize / 2}px)` }}
-          />
-        ))}
+        {topNodes.map(
+          (node, i) =>
+            i < topNodes.length - 1 && (
+              <div
+                key={`ts-${i}`}
+                data-keep-bg
+                className={cn(
+                  'absolute',
+                  isSegPassed(node, topNodes[i + 1]!) ? statusColor : 'bg-muted-foreground/25'
+                )}
+                style={{
+                  top: trackY,
+                  height: 2,
+                  left: `calc(${topPct(i)}% + ${nodeSize / 2}px)`,
+                  right: `calc(${100 - topPct(i + 1)}% + ${nodeSize / 2}px)`,
+                }}
+              />
+            )
+        )}
 
         {/* Bottom row segments (left→right) */}
-        {botNodes.map((node, i) => i < botNodes.length - 1 && (
-          <div key={`bs-${i}`} data-keep-bg
-            className={cn('absolute', isSegPassed(node, botNodes[i + 1]!) ? statusColor : 'bg-muted-foreground/25')}
-            style={{ top: rowH + connGap + trackY, height: 2,
-              left: `calc(${botPct(i)}% + ${nodeSize / 2}px)`,
-              right: `calc(${100 - botPct(i + 1)}% + ${nodeSize / 2}px)` }}
-          />
-        ))}
+        {botNodes.map(
+          (node, i) =>
+            i < botNodes.length - 1 && (
+              <div
+                key={`bs-${i}`}
+                data-keep-bg
+                className={cn(
+                  'absolute',
+                  isSegPassed(node, botNodes[i + 1]!) ? statusColor : 'bg-muted-foreground/25'
+                )}
+                style={{
+                  top: rowH + connGap + trackY,
+                  height: 2,
+                  left: `calc(${botPct(i)}% + ${nodeSize / 2}px)`,
+                  right: `calc(${100 - botPct(i + 1)}% + ${nodeSize / 2}px)`,
+                }}
+              />
+            )
+        )}
 
         {/* U-turn connector — 1px, 60% opacity so node labels render in front */}
-        <div data-keep-bg
+        <div
+          data-keep-bg
           className={cn('absolute', connPassed ? statusColor : 'bg-muted-foreground/25')}
           style={{ top: connTopY, right: 0, width: 1, height: connMidY - connTopY, opacity: 0.6 }}
         />
-        <div data-keep-bg
+        <div
+          data-keep-bg
           className={cn('absolute', connPassed ? statusColor : 'bg-muted-foreground/25')}
           style={{ top: connMidY, left: 0, right: 0, height: 1, opacity: 0.6 }}
         />
-        <div data-keep-bg
+        <div
+          data-keep-bg
           className={cn('absolute', connPassed ? statusColor : 'bg-muted-foreground/25')}
           style={{ top: connMidY, left: 0, width: 1, height: connBotY - connMidY, opacity: 0.6 }}
         />
@@ -325,14 +359,25 @@ function TrainMap({
   // Single-row layout (compact mode or ≤5 nodes)
   return (
     <div className="relative w-full select-none" style={{ height: nodeSize + labelHeight + 2 }}>
-      {nodes.map((node, i) => i < nodes.length - 1 && (
-        <div key={`seg-${i}`} data-keep-bg
-          className={cn('absolute', isSegPassed(node, nodes[i + 1]!) ? statusColor : 'bg-muted-foreground/25')}
-          style={{ top: trackY, height: 2,
-            left: `calc(${(i / (nodes.length - 1)) * 100}% + ${nodeSize / 2}px)`,
-            right: `calc(${(1 - (i + 1) / (nodes.length - 1)) * 100}% + ${nodeSize / 2}px)` }}
-        />
-      ))}
+      {nodes.map(
+        (node, i) =>
+          i < nodes.length - 1 && (
+            <div
+              key={`seg-${i}`}
+              data-keep-bg
+              className={cn(
+                'absolute',
+                isSegPassed(node, nodes[i + 1]!) ? statusColor : 'bg-muted-foreground/25'
+              )}
+              style={{
+                top: trackY,
+                height: 2,
+                left: `calc(${(i / (nodes.length - 1)) * 100}% + ${nodeSize / 2}px)`,
+                right: `calc(${(1 - (i + 1) / (nodes.length - 1)) * 100}% + ${nodeSize / 2}px)`,
+              }}
+            />
+          )
+      )}
       {nodes.map((node, i) =>
         renderNodeAt(node, nodes.length === 1 ? 50 : (i / (nodes.length - 1)) * 100, 0)
       )}
@@ -391,15 +436,17 @@ function getBestRoute(routes: BusRouteStatus[]): BusRouteStatus[] {
 
   const now = new Date();
 
-  const scored = routes.map(route => {
-    const parts = route.scheduledTime.split(':').map(Number);
-    const h = parts[0] ?? 0;
-    const m = parts[1] ?? 0;
-    const scheduled = new Date(now);
-    scheduled.setHours(h, m, 0, 0);
-    const diff = Math.abs(now.getTime() - scheduled.getTime());
-    return { route, diff };
-  }).sort((a, b) => a.diff - b.diff);
+  const scored = routes
+    .map((route) => {
+      const parts = route.scheduledTime.split(':').map(Number);
+      const h = parts[0] ?? 0;
+      const m = parts[1] ?? 0;
+      const scheduled = new Date(now);
+      scheduled.setHours(h, m, 0, 0);
+      const diff = Math.abs(now.getTime() - scheduled.getTime());
+      return { route, diff };
+    })
+    .sort((a, b) => a.diff - b.diff);
 
   return [scored[0]!.route];
 }

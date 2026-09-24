@@ -2,8 +2,12 @@ import { encrypt, decrypt, isEncrypted } from '../crypto';
 
 // Set a valid 32-byte hex key for tests
 const TEST_KEY = 'a'.repeat(64); // 64 hex chars = 32 bytes
-beforeAll(() => { process.env.ENCRYPTION_KEY = TEST_KEY; });
-afterAll(() => { delete process.env.ENCRYPTION_KEY; });
+beforeAll(() => {
+  process.env.ENCRYPTION_KEY = TEST_KEY;
+});
+afterAll(() => {
+  delete process.env.ENCRYPTION_KEY;
+});
 
 describe('encrypt / decrypt', () => {
   it('roundtrips a simple string', () => {
@@ -176,8 +180,12 @@ describe('getKey validation', () => {
  */
 describe('checkEncryptionKey', () => {
   const original = process.env;
-  beforeEach(() => { process.env = { ...original }; });
-  afterAll(() => { process.env = original; });
+  beforeEach(() => {
+    process.env = { ...original };
+  });
+  afterAll(() => {
+    process.env = original;
+  });
 
   const valid = 'a'.repeat(64);
 

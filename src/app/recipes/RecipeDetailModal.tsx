@@ -89,7 +89,10 @@ export function RecipeDetailModal({
         }));
       await onAddToShoppingList(listId, scaledIngredients);
       setShowListPicker(false);
-      toast({ title: `Added ${scaledIngredients.length} ingredients to shopping list!`, variant: 'success' });
+      toast({
+        title: `Added ${scaledIngredients.length} ingredients to shopping list!`,
+        variant: 'success',
+      });
     } catch (err) {
       toast({
         title: err instanceof Error ? err.message : 'Failed to add ingredients to shopping list',
@@ -102,19 +105,19 @@ export function RecipeDetailModal({
 
   return (
     <Dialog open onOpenChange={handleClose}>
-      <DialogContent className={cn(
-        'overflow-y-auto',
-        isMaximized
-          ? 'max-w-[95vw] max-h-[95vh] w-[95vw] h-[95vh]'
-          : 'max-w-2xl max-h-[90vh]'
-      )}>
+      <DialogContent
+        className={cn(
+          'overflow-y-auto',
+          isMaximized ? 'h-[95vh] max-h-[95vh] w-[95vw] max-w-[95vw]' : 'max-h-[90vh] max-w-2xl'
+        )}
+      >
         <DialogHeader>
           <div className="flex items-start justify-between pr-8">
             <DialogTitle className="text-xl">{recipe.name}</DialogTitle>
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setIsMaximized(!isMaximized)}
-                className="text-muted-foreground hover:text-foreground transition-colors p-1"
+                className="p-1 text-muted-foreground transition-colors hover:text-foreground"
                 title={isMaximized ? 'Restore' : 'Maximize'}
               >
                 {isMaximized ? (
@@ -142,7 +145,7 @@ export function RecipeDetailModal({
         </DialogHeader>
 
         {recipe.imageUrl && (
-          <div className="relative h-48 -mx-6 -mt-2 bg-muted overflow-hidden">
+          <div className="relative -mx-6 -mt-2 h-48 overflow-hidden bg-muted">
             <Image
               src={recipe.imageUrl}
               alt={recipe.name}
@@ -154,21 +157,17 @@ export function RecipeDetailModal({
         )}
 
         <div className="space-y-4">
-          {recipe.description && (
-            <p className="text-muted-foreground">{recipe.description}</p>
-          )}
+          {recipe.description && <p className="text-muted-foreground">{recipe.description}</p>}
 
-          <div className="flex flex-wrap gap-4 text-sm items-center">
+          <div className="flex flex-wrap items-center gap-4 text-sm">
             {recipe.prepTime && (
               <div>
-                <span className="text-muted-foreground">Prep:</span>{' '}
-                {recipe.prepTime} min
+                <span className="text-muted-foreground">Prep:</span> {recipe.prepTime} min
               </div>
             )}
             {recipe.cookTime && (
               <div>
-                <span className="text-muted-foreground">Cook:</span>{' '}
-                {recipe.cookTime} min
+                <span className="text-muted-foreground">Cook:</span> {recipe.cookTime} min
               </div>
             )}
             {recipe.servings && (
@@ -223,22 +222,23 @@ export function RecipeDetailModal({
                 </div>
                 {scaleFactor !== 1 && (
                   <span className="text-xs text-muted-foreground">
-                    (scaled {scaleFactor > 1 ? 'up' : 'down'} ×{scaleFactor.toFixed(scaleFactor % 1 ? 2 : 0)})
+                    (scaled {scaleFactor > 1 ? 'up' : 'down'} ×
+                    {scaleFactor.toFixed(scaleFactor % 1 ? 2 : 0)})
                   </span>
                 )}
               </div>
             )}
             {recipe.timesMade > 0 && (
               <div>
-                <span className="text-muted-foreground">Made:</span>{' '}
-                {recipe.timesMade} time{recipe.timesMade !== 1 ? 's' : ''}
+                <span className="text-muted-foreground">Made:</span> {recipe.timesMade} time
+                {recipe.timesMade !== 1 ? 's' : ''}
               </div>
             )}
           </div>
 
           {recipe.ingredients && recipe.ingredients.length > 0 && (
             <div>
-              <div className="flex items-center justify-between mb-2">
+              <div className="mb-2 flex items-center justify-between">
                 <h4 className="font-semibold">Ingredients</h4>
                 {shoppingLists.length > 0 && recipe.ingredients.length > 0 && (
                   <div className="relative">
@@ -248,17 +248,17 @@ export function RecipeDetailModal({
                       onClick={() => setShowListPicker(!showListPicker)}
                       disabled={addingToList}
                     >
-                      <ShoppingCart className="h-3 w-3 mr-1" />
+                      <ShoppingCart className="mr-1 h-3 w-3" />
                       Add to Shopping List
-                      <ChevronDown className="h-3 w-3 ml-1" />
+                      <ChevronDown className="ml-1 h-3 w-3" />
                     </Button>
                     {showListPicker && (
-                      <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-md shadow-lg z-10 min-w-[150px]">
+                      <div className="absolute right-0 top-full z-10 mt-1 min-w-[150px] rounded-md border border-border bg-card shadow-lg">
                         {shoppingLists.map((list) => (
                           <button
                             key={list.id}
                             onClick={() => handleAddToList(list.id)}
-                            className="w-full text-left px-3 py-2 text-sm hover:bg-accent first:rounded-t-md last:rounded-b-md"
+                            className="w-full px-3 py-2 text-left text-sm first:rounded-t-md last:rounded-b-md hover:bg-accent"
                           >
                             {list.name}
                           </button>
@@ -272,7 +272,7 @@ export function RecipeDetailModal({
                 {recipe.ingredients.map((ing, i) => {
                   if (ing.heading) {
                     return (
-                      <li key={i} className="text-sm font-semibold mt-3 first:mt-0">
+                      <li key={i} className="mt-3 text-sm font-semibold first:mt-0">
                         {ing.heading}
                       </li>
                     );
@@ -282,8 +282,8 @@ export function RecipeDetailModal({
                       key={i}
                       onClick={() => toggleIngredient(i)}
                       className={cn(
-                        'text-sm flex items-start gap-2 cursor-pointer select-none hover:bg-accent/50 rounded px-1 -mx-1 transition-colors',
-                        checkedIngredients.has(i) && 'line-through text-muted-foreground',
+                        '-mx-1 flex cursor-pointer select-none items-start gap-2 rounded px-1 text-sm transition-colors hover:bg-accent/50',
+                        checkedIngredients.has(i) && 'text-muted-foreground line-through'
                       )}
                     >
                       <span className="text-muted-foreground">&bull;</span>
@@ -297,14 +297,14 @@ export function RecipeDetailModal({
 
           {recipe.instructions && (
             <div>
-              <h4 className="font-semibold mb-2">Instructions</h4>
-              <div className="text-sm whitespace-pre-wrap">{recipe.instructions}</div>
+              <h4 className="mb-2 font-semibold">Instructions</h4>
+              <div className="whitespace-pre-wrap text-sm">{recipe.instructions}</div>
             </div>
           )}
 
           {recipe.notes && (
             <div>
-              <h4 className="font-semibold mb-2">Notes</h4>
+              <h4 className="mb-2 font-semibold">Notes</h4>
               <p className="text-sm text-muted-foreground">{recipe.notes}</p>
             </div>
           )}
@@ -315,7 +315,7 @@ export function RecipeDetailModal({
                 href={recipe.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm text-primary hover:underline inline-flex items-center gap-1"
+                className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
               >
                 <ExternalLink className="h-3 w-3" />
                 View original recipe
@@ -326,14 +326,14 @@ export function RecipeDetailModal({
 
         <AddToMealPlanSection recipe={recipe} />
 
-        <DialogFooter className="flex-col sm:flex-row gap-2">
-          <div className="flex gap-2 ml-auto">
+        <DialogFooter className="flex-col gap-2 sm:flex-row">
+          <div className="ml-auto flex gap-2">
             <Button variant="ghost" onClick={onDelete}>
-              <Trash2 className="h-4 w-4 mr-1" />
+              <Trash2 className="mr-1 h-4 w-4" />
               Delete
             </Button>
             <Button variant="outline" onClick={onEdit}>
-              <Edit2 className="h-4 w-4 mr-1" />
+              <Edit2 className="mr-1 h-4 w-4" />
               Edit
             </Button>
             <Button onClick={handleClose}>Close</Button>

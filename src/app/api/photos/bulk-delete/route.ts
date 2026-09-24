@@ -50,8 +50,8 @@ export async function POST(request: NextRequest) {
     await db.delete(photos).where(
       inArray(
         photos.id,
-        targets.map((t) => t.id),
-      ),
+        targets.map((t) => t.id)
+      )
     );
     await invalidateEntity('photos');
 

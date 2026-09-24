@@ -3,7 +3,12 @@ import type { TravelPin } from '../types';
 import { STATUS_CONFIG } from '../types';
 
 export function escapeHTML(s: string): string {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 export function buildTooltipHTML(
@@ -14,7 +19,9 @@ export function buildTooltipHTML(
   let dateStr = '';
   if (pin.visitedDate) {
     const start = format(parseISO(pin.visitedDate), 'MMM d, yyyy');
-    const end = pin.visitedEndDate ? ` – ${format(parseISO(pin.visitedEndDate), 'MMM d, yyyy')}` : '';
+    const end = pin.visitedEndDate
+      ? ` – ${format(parseISO(pin.visitedEndDate), 'MMM d, yyyy')}`
+      : '';
     dateStr = `${start}${end}`;
   }
   const name = escapeHTML(pin.name);
@@ -28,11 +35,12 @@ export function buildTooltipHTML(
   }
 
   if (tripContext) {
-    const stopLabel = tripContext.style === 'hub' && pin.isHub
-      ? '⌂ Home Base'
-      : tripContext.stopNumber !== undefined
-        ? `Stop ${tripContext.stopNumber}`
-        : 'Stop';
+    const stopLabel =
+      tripContext.style === 'hub' && pin.isHub
+        ? '⌂ Home Base'
+        : tripContext.stopNumber !== undefined
+          ? `Stop ${tripContext.stopNumber}`
+          : 'Stop';
     return `<div style="font-family:system-ui,sans-serif;min-width:120px;max-width:220px"><div style="font-weight:600;font-size:13px;margin-bottom:3px">${name}</div>${dateStr ? `<div style="font-size:11px;color:#6B7280;margin-bottom:2px">🗓 ${dateStr}</div>` : ''}<div style="font-size:11px;color:#9CA3AF">${stopLabel}</div></div>`;
   }
 

@@ -82,10 +82,7 @@ export const googleTasksProvider: TaskProvider = {
   displayName: 'Google Tasks',
 
   async fetchLists(tokens: TaskProviderTokens): Promise<ExternalTaskList[]> {
-    const response = await googleFetch<{ items?: GoogleTaskList[] }>(
-      '/users/@me/lists',
-      tokens
-    );
+    const response = await googleFetch<{ items?: GoogleTaskList[] }>('/users/@me/lists', tokens);
 
     return (response.items || []).map((list) => ({
       id: list.id,
@@ -114,8 +111,8 @@ export const googleTasksProvider: TaskProvider = {
 
       if (response.items) {
         // Only sync top-level tasks (skip subtasks for now)
-        const topLevel = response.items.filter(t => !t.parent);
-        allTasks.push(...topLevel.map(t => parseGoogleTask(t, listId)));
+        const topLevel = response.items.filter((t) => !t.parent);
+        allTasks.push(...topLevel.map((t) => parseGoogleTask(t, listId)));
       }
 
       pageToken = response.nextPageToken;
@@ -138,14 +135,10 @@ export const googleTasksProvider: TaskProvider = {
       body.due = task.dueDate.toISOString().split('T')[0] + 'T00:00:00.000Z';
     }
 
-    const response = await googleFetch<GoogleTask>(
-      `/lists/${task.listId}/tasks`,
-      tokens,
-      {
-        method: 'POST',
-        body: JSON.stringify(body),
-      }
-    );
+    const response = await googleFetch<GoogleTask>(`/lists/${task.listId}/tasks`, tokens, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
 
     return parseGoogleTask(response, task.listId);
   },
@@ -156,9 +149,7 @@ export const googleTasksProvider: TaskProvider = {
     updates: UpdateTaskInput
   ): Promise<ExternalTask> {
     // taskId format: "listId:taskId"
-    const [listId, actualTaskId] = taskId.includes(':')
-      ? taskId.split(':')
-      : [null, taskId];
+    const [listId, actualTaskId] = taskId.includes(':') ? taskId.split(':') : [null, taskId];
 
     if (!listId) {
       throw new Error('Task ID must include list ID (format: listId:taskId)');
@@ -202,19 +193,13 @@ export const googleTasksProvider: TaskProvider = {
   },
 
   async deleteTask(tokens: TaskProviderTokens, taskId: string): Promise<void> {
-    const [listId, actualTaskId] = taskId.includes(':')
-      ? taskId.split(':')
-      : [null, taskId];
+    const [listId, actualTaskId] = taskId.includes(':') ? taskId.split(':') : [null, taskId];
 
     if (!listId) {
       throw new Error('Task ID must include list ID (format: listId:taskId)');
     }
 
-    await googleFetch(
-      `/lists/${listId}/tasks/${actualTaskId}`,
-      tokens,
-      { method: 'DELETE' }
-    );
+    await googleFetch(`/lists/${listId}/tasks/${actualTaskId}`, tokens, { method: 'DELETE' });
   },
 
   async refreshTokens(tokens: TaskProviderTokens): Promise<TaskProviderTokens | null> {

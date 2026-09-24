@@ -46,7 +46,8 @@ export async function GET(request: NextRequest) {
       const conditions = [];
       if (sourceId) conditions.push(eq(photos.sourceId, sourceId));
       if (favorite === 'true') conditions.push(eq(photos.favorite, true));
-      if (orientation) conditions.push(eq(photos.orientation, orientation as 'landscape' | 'portrait' | 'square'));
+      if (orientation)
+        conditions.push(eq(photos.orientation, orientation as 'landscape' | 'portrait' | 'square'));
       if (usage) {
         const tag = usage.replace(/_or_all$/, '').replace(/_or_both$/, '');
         conditions.push(like(photos.usage, `%${tag}%`));
@@ -89,7 +90,8 @@ export async function GET(request: NextRequest) {
       // filtered library rather than just the loaded page.
       if (idsOnly) {
         const idQuery = db.select({ id: photos.id }).from(photos);
-        const idRows = conditions.length > 0 ? await idQuery.where(and(...conditions)) : await idQuery;
+        const idRows =
+          conditions.length > 0 ? await idQuery.where(and(...conditions)) : await idQuery;
         return { ids: idRows.map((r) => r.id), total: idRows.length };
       }
 
@@ -99,22 +101,22 @@ export async function GET(request: NextRequest) {
       const results = conditions.length > 0 ? await query.where(and(...conditions)) : await query;
 
       const totalQuery = db.select({ count: sql<number>`count(*)` }).from(photos);
-      const totalResult = conditions.length > 0
-        ? await totalQuery.where(and(...conditions))
-        : await totalQuery;
+      const totalResult =
+        conditions.length > 0 ? await totalQuery.where(and(...conditions)) : await totalQuery;
 
       return { photos: results, total: Number(totalResult[0]?.count ?? 0) };
     };
 
     // Skip caching for random sort (fresh selection each time) and idsOnly
     // (different response shape, cheap single-column scan).
-    const result = sort === 'random' || idsOnly
-      ? await runQuery()
-      : await getCached(
-          `photos:${sourceId ?? 'all'}:${favorite ?? 'any'}:${usage ?? 'all'}:${orientation ?? 'any'}:${belowHd ? 'belowhd' : 'allres'}:${sort}:${limit}:${offset}`,
-          runQuery,
-          300
-        );
+    const result =
+      sort === 'random' || idsOnly
+        ? await runQuery()
+        : await getCached(
+            `photos:${sourceId ?? 'all'}:${favorite ?? 'any'}:${usage ?? 'all'}:${orientation ?? 'any'}:${belowHd ? 'belowhd' : 'allres'}:${sort}:${limit}:${offset}`,
+            runQuery,
+            300
+          );
 
     return NextResponse.json(result);
   } catch (error) {
@@ -139,12 +141,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
-    if (!PHOTO_ALLOWED_TYPES.includes(file.type as typeof PHOTO_ALLOWED_TYPES[number])) {
+    if (!PHOTO_ALLOWED_TYPES.includes(file.type as (typeof PHOTO_ALLOWED_TYPES)[number])) {
       return NextResponse.json({ error: 'Invalid file type' }, { status: 400 });
     }
 
     if (file.size > PHOTO_MAX_SIZE_MB * 1024 * 1024) {
-      return NextResponse.json({ error: `File too large (max ${PHOTO_MAX_SIZE_MB}MB)` }, { status: 400 });
+      return NextResponse.json(
+        { error: `File too large (max ${PHOTO_MAX_SIZE_MB}MB)` },
+        { status: 400 }
+      );
     }
 
     // Ensure a local source exists
@@ -171,7 +176,10 @@ export async function POST(request: NextRequest) {
 
     const detectedType = validateMagicBytes(buffer, PHOTO_ALLOWED_TYPES);
     if (!detectedType) {
-      return NextResponse.json({ error: 'File content does not match an allowed image type' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'File content does not match an allowed image type' },
+        { status: 400 }
+      );
     }
 
     const ext = file.name.split('.').pop() || 'jpg';

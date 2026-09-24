@@ -2,13 +2,7 @@
 
 import { isPast, isToday, isTomorrow, parseISO, format } from 'date-fns';
 import { Emoji } from '@/components/ui/Emoji';
-import {
-  AlertCircle,
-  Trash2,
-  Edit2,
-  CheckCircle2,
-  Hourglass,
-} from 'lucide-react';
+import { AlertCircle, Trash2, Edit2, CheckCircle2, Hourglass } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,13 +12,20 @@ import type { Chore } from '@/types';
 
 export function getCategoryEmoji(category: string): string {
   switch (category) {
-    case 'cleaning': return '🧹';
-    case 'laundry': return '🧺';
-    case 'dishes': return '🍽️';
-    case 'yard': return '🌿';
-    case 'pets': return '🐾';
-    case 'trash': return '🗑️';
-    default: return '✨';
+    case 'cleaning':
+      return '🧹';
+    case 'laundry':
+      return '🧺';
+    case 'dishes':
+      return '🍽️';
+    case 'yard':
+      return '🌿';
+    case 'pets':
+      return '🐾';
+    case 'trash':
+      return '🗑️';
+    default:
+      return '✨';
   }
 }
 
@@ -55,22 +56,28 @@ export function ChoreItem({
 
   const formatFrequency = (frequency: string, customDays?: number | null) => {
     switch (frequency) {
-      case 'daily': return 'Daily';
-      case 'weekly': return 'Weekly';
-      case 'biweekly': return 'Every 2 weeks';
-      case 'monthly': return 'Monthly';
-      case 'custom': return customDays ? `Every ${customDays} days` : 'Custom';
-      default: return frequency;
+      case 'daily':
+        return 'Daily';
+      case 'weekly':
+        return 'Weekly';
+      case 'biweekly':
+        return 'Every 2 weeks';
+      case 'monthly':
+        return 'Monthly';
+      case 'custom':
+        return customDays ? `Every ${customDays} days` : 'Custom';
+      default:
+        return frequency;
     }
   };
 
   return (
     <div
       className={cn(
-        'flex items-center gap-4 p-4 rounded-lg border border-border bg-card/85 backdrop-blur-sm',
-        'hover:border-seasonal-accent hover:ring-2 hover:ring-seasonal-accent/50 transition-all group',
+        'flex flex-wrap items-center gap-4 rounded-lg border border-border bg-card/85 p-4 backdrop-blur-sm',
+        'group transition-all hover:border-seasonal-accent hover:ring-2 hover:ring-seasonal-accent/50',
         !chore.enabled && 'opacity-50',
-        isPendingApproval && 'bg-amber-100/85 dark:bg-amber-950/85 border-amber-500/30'
+        isPendingApproval && 'border-amber-500/30 bg-amber-100/85 dark:bg-amber-950/85'
       )}
     >
       {/* Complete button - always enabled for parents, shows pending state visually */}
@@ -80,7 +87,7 @@ export function ChoreItem({
         onClick={onComplete}
         disabled={!chore.enabled}
         className={cn(
-          'flex-shrink-0 h-9 w-9',
+          'h-9 w-9 flex-shrink-0',
           isOverdue && !isPendingApproval && 'text-destructive hover:text-destructive',
           isPendingApproval && 'text-amber-500'
         )}
@@ -94,13 +101,16 @@ export function ChoreItem({
       </Button>
 
       {/* Content */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-base"><Emoji e={categoryEmoji} /></span>
-          <span className={cn(
-            'font-medium',
-            isPendingApproval && 'text-amber-700 dark:text-amber-400'
-          )}>{chore.title}</span>
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-base">
+            <Emoji e={categoryEmoji} />
+          </span>
+          <span
+            className={cn('font-medium', isPendingApproval && 'text-amber-700 dark:text-amber-400')}
+          >
+            {chore.title}
+          </span>
 
           {chore.pointValue > 0 && (
             <Badge variant="secondary" className="text-xs">
@@ -110,13 +120,15 @@ export function ChoreItem({
 
           {/* Show pending badge if pending approval, otherwise show requires approval */}
           {isPendingApproval ? (
-            <Badge variant="default" className="text-xs bg-amber-500 hover:bg-amber-500">
+            <Badge variant="default" className="bg-amber-500 text-xs hover:bg-amber-500">
               Pending Approval
             </Badge>
-          ) : chore.requiresApproval && (
-            <Badge variant="outline" className="text-xs">
-              Requires approval
-            </Badge>
+          ) : (
+            chore.requiresApproval && (
+              <Badge variant="outline" className="text-xs">
+                Requires approval
+              </Badge>
+            )
           )}
 
           <Badge variant="outline" className="text-xs capitalize">
@@ -124,7 +136,7 @@ export function ChoreItem({
           </Badge>
         </div>
 
-        <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
+        <div className="mt-1 flex items-center gap-3 text-sm text-muted-foreground">
           {/* Show who completed it if pending approval */}
           {isPendingApproval && chore.pendingApproval && (
             <div className="flex items-center gap-1">
@@ -158,48 +170,54 @@ export function ChoreItem({
 
           {/* Show due date only if not pending */}
           {!isPendingApproval && chore.nextDue && (
-            <span className={cn(isOverdue && 'text-destructive font-medium')}>
-              {isOverdue && <AlertCircle className="h-3 w-3 inline mr-1" />}
+            <span className={cn(isOverdue && 'font-medium text-destructive')}>
+              {isOverdue && <AlertCircle className="mr-1 inline h-3 w-3" />}
               {formatDueDate(chore.nextDue)}
             </span>
           )}
         </div>
 
         {chore.description && (
-          <p className="text-sm text-muted-foreground mt-1">{chore.description}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{chore.description}</p>
         )}
       </div>
 
-      {/* Actions */}
-      <div className="flex items-center gap-1">
-        <div className="flex items-center gap-1">
-          <span className="text-xs text-muted-foreground mr-1">
-            {chore.enabled ? 'Enabled' : 'Disabled'}
-          </span>
-          <Switch
-            checked={chore.enabled}
-            onCheckedChange={onToggleEnabled}
-          />
-        </div>
-
+      {/* Edit is deliberately isolated from destructive chore controls. */}
+      <div className="mt-3 flex w-full shrink-0 flex-wrap items-center justify-end gap-14">
         <Button
-          variant="ghost"
-          size="icon"
+          variant="outline"
+          size="sm"
           onClick={onEdit}
-          className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+          className="h-14 min-w-[5.5rem] gap-2"
           aria-label="Edit chore"
         >
           <Edit2 className="h-4 w-4" />
+          Edit
         </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onDelete}
-          className="h-8 w-8 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-          aria-label="Delete chore"
+
+        <div
+          className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-1.5"
+          aria-label="Chore controls"
         >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+          <label className="flex min-h-14 items-center gap-2 rounded-md px-2 text-xs text-muted-foreground">
+            <span>{chore.enabled ? 'Enabled' : 'Disabled'}</span>
+            <Switch
+              checked={chore.enabled}
+              onCheckedChange={onToggleEnabled}
+              aria-label={`${chore.enabled ? 'Disable' : 'Enable'} ${chore.title}`}
+            />
+          </label>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onDelete}
+            className="h-14 min-w-14 gap-2 px-3 text-destructive hover:text-destructive"
+            aria-label={`Delete ${chore.title}`}
+          >
+            <Trash2 className="h-4 w-4" />
+            <span className="sr-only sm:not-sr-only">Delete</span>
+          </Button>
+        </div>
       </div>
     </div>
   );

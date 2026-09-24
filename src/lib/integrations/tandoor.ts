@@ -36,7 +36,9 @@ interface TandoorListResponse {
   next: string | null;
   results: Array<{ id: number }>;
 }
-interface TandoorNamed { name?: string | null }
+interface TandoorNamed {
+  name?: string | null;
+}
 interface TandoorIngredient {
   food?: TandoorNamed | null;
   unit?: TandoorNamed | null;
@@ -99,14 +101,16 @@ function authHeaders(token: string): Record<string, string> {
  */
 export async function testTandoorConnection(
   serverUrl: string,
-  token: string,
+  token: string
 ): Promise<{ count: number }> {
   validatePublicUrl(serverUrl);
   const res = await safeFetch(`${baseUrl(serverUrl)}/api/recipe/?page_size=1`, {
     headers: authHeaders(token),
   });
   if (res.status === 401 || res.status === 403) {
-    throw new Error('Tandoor rejected the API token — check the token and that its scope includes `read`.');
+    throw new Error(
+      'Tandoor rejected the API token — check the token and that its scope includes `read`.'
+    );
   }
   if (!res.ok) {
     throw new Error(`Could not reach Tandoor: ${res.status} ${res.statusText}`);
@@ -137,7 +141,11 @@ async function listRecipeIds(base: string, token: string): Promise<number[]> {
   return ids.slice(0, MAX_RECIPES);
 }
 
-async function fetchRecipeDetail(base: string, token: string, id: number): Promise<TandoorRecipeDetail> {
+async function fetchRecipeDetail(
+  base: string,
+  token: string,
+  id: number
+): Promise<TandoorRecipeDetail> {
   const res = await safeFetch(`${base}/api/recipe/${id}/`, { headers: authHeaders(token) });
   if (!res.ok) {
     throw new Error(`Failed to fetch Tandoor recipe ${id}: ${res.status} ${res.statusText}`);
@@ -199,7 +207,7 @@ function normalizeInstructions(steps: TandoorStep[]): string | null {
 /** Map a full Tandoor recipe detail into Prism's insert shape. */
 export function normalizeTandoorRecipe(
   detail: TandoorRecipeDetail,
-  serverUrl: string,
+  serverUrl: string
 ): NormalizedTandoorRecipe {
   const base = baseUrl(serverUrl);
   const steps = detail.steps ?? [];
@@ -242,7 +250,7 @@ export function normalizeTandoorRecipe(
  */
 export async function fetchTandoorRecipes(
   serverUrl: string,
-  token: string,
+  token: string
 ): Promise<{ recipes: NormalizedTandoorRecipe[]; total: number }> {
   validatePublicUrl(serverUrl);
   const base = baseUrl(serverUrl);
@@ -266,7 +274,7 @@ export async function fetchTandoorRecipes(
  */
 export async function fetchTandoorMealPlan(
   serverUrl: string,
-  token: string,
+  token: string
 ): Promise<TandoorMealPlanEntry[]> {
   validatePublicUrl(serverUrl);
   const base = baseUrl(serverUrl);
@@ -299,7 +307,7 @@ export async function fetchTandoorMealPlan(
 export async function fetchTandoorRecipeById(
   serverUrl: string,
   token: string,
-  id: number,
+  id: number
 ): Promise<NormalizedTandoorRecipe | null> {
   validatePublicUrl(serverUrl);
   const base = baseUrl(serverUrl);
@@ -307,7 +315,10 @@ export async function fetchTandoorRecipeById(
     const detail = await fetchRecipeDetail(base, token, id);
     if (detail && detail.name) return normalizeTandoorRecipe(detail, base);
   } catch (err) {
-    console.error(`[tandoor] failed to fetch recipe ${id}:`, err instanceof Error ? err.message : err);
+    console.error(
+      `[tandoor] failed to fetch recipe ${id}:`,
+      err instanceof Error ? err.message : err
+    );
   }
   return null;
 }

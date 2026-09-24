@@ -14,10 +14,7 @@ import { usePollingInterval } from './usePollingInterval';
  * @param callback - Function to call on each interval tick
  * @param intervalMs - Interval in milliseconds (0 or negative to disable)
  */
-export function useVisibilityPolling(
-  callback: () => void,
-  intervalMs: number
-): void {
+export function useVisibilityPolling(callback: () => void, intervalMs: number): void {
   const effectiveInterval = usePollingInterval(intervalMs);
 
   useEffect(() => {

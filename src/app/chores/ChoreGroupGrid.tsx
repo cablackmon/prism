@@ -67,7 +67,10 @@ export function ChoreGroupGrid({
     } catch {}
   }, []);
 
-  const { draggedId, getDragProps, moveUp, moveDown } = useDragReorder({ order: effectiveOrder, onReorder: saveOrder });
+  const { draggedId, getDragProps, moveUp, moveDown } = useDragReorder({
+    order: effectiveOrder,
+    onReorder: saveOrder,
+  });
 
   const sortedGroups = useMemo(() => {
     const map = new Map(choresByUser.map((g) => [g.user?.id || 'unassigned', g]));
@@ -92,116 +95,116 @@ export function ChoreGroupGrid({
   const scrollRef = useRef<HTMLDivElement>(null);
   return (
     <div className="relative h-full">
-    <div
-      ref={scrollRef}
-      className={cn(
-        // grid-rows-1 constrains the row to grid height (minmax(0, 1fr))
-        // so each column has a finite height — without this the row's
-        // height grows to fit content and the inner overflow-y-auto on
-        // the column body never engages on desktop.
-        'grid grid-rows-1 gap-2 h-full overflow-x-auto scroll-smooth',
-        isCarousel && 'snap-x snap-mandatory'
-      )}
-      style={{
-        gridTemplateColumns: `repeat(${Math.max(sortedGroups.length, 1)}, ${colTrack})`,
-      }}
-    >
-      {sortedGroups.map(({ user, chores }, idx) => {
-        const userColor = user?.color || '#6B7280';
-        const key = user?.id || 'unassigned';
-        const isDragging = draggedId === key;
-        return (
-          <div
-            key={key}
-            {...(!isTouch && !isMobile ? getDragProps(key) : {})}
-            className={cn(
-              'flex flex-col border-2 rounded-lg overflow-hidden bg-card/90 backdrop-blur-sm transition-all',
-              !isTouch && !isMobile && 'cursor-grab active:cursor-grabbing touch-none',
-              isDragging && 'opacity-50 scale-95 ring-4 ring-primary/50',
-              isCarousel && 'snap-start'
-            )}
-            style={{ borderColor: userColor }}
-          >
+      <div
+        ref={scrollRef}
+        className={cn(
+          // grid-rows-1 constrains the row to grid height (minmax(0, 1fr))
+          // so each column has a finite height — without this the row's
+          // height grows to fit content and the inner overflow-y-auto on
+          // the column body never engages on desktop.
+          'grid h-full grid-rows-1 gap-2 overflow-x-auto scroll-smooth',
+          isCarousel && 'snap-x snap-mandatory'
+        )}
+        style={{
+          gridTemplateColumns: `repeat(${Math.max(sortedGroups.length, 1)}, ${colTrack})`,
+        }}
+      >
+        {sortedGroups.map(({ user, chores }, idx) => {
+          const userColor = user?.color || '#6B7280';
+          const key = user?.id || 'unassigned';
+          const isDragging = draggedId === key;
+          return (
             <div
-              className="flex items-center gap-2 px-3 py-2 shrink-0"
-              style={{ backgroundColor: userColor + '20' }}
+              key={key}
+              {...(!isTouch && !isMobile ? getDragProps(key) : {})}
+              className={cn(
+                'flex flex-col overflow-hidden rounded-lg border-2 bg-card/90 backdrop-blur-sm transition-all',
+                !isTouch && !isMobile && 'cursor-grab touch-none active:cursor-grabbing',
+                isDragging && 'scale-95 opacity-50 ring-4 ring-primary/50',
+                isCarousel && 'snap-start'
+              )}
+              style={{ borderColor: userColor }}
             >
-              {/* Mouse: grip icon / Touch: up-down arrows */}
-              {isTouch || isMobile ? (
-                <div className="flex flex-col shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => moveUp(key)}
-                    disabled={idx === 0}
-                    className="p-0.5 text-muted-foreground/50 hover:text-foreground disabled:opacity-20 transition-colors"
-                  >
-                    <ChevronUp className="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => moveDown(key)}
-                    disabled={idx === sortedGroups.length - 1}
-                    className="p-0.5 text-muted-foreground/50 hover:text-foreground disabled:opacity-20 transition-colors"
-                  >
-                    <ChevronDown className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              ) : (
-                <GripVertical className="h-4 w-4 text-muted-foreground/50 shrink-0" />
-              )}
-              {user ? (
-                <UserAvatar name={user.name} color={user.color} size="sm" className="h-7 w-7" />
-              ) : (
-                <ClipboardList className="h-5 w-5 text-muted-foreground" />
-              )}
-              <h3 className="font-bold text-lg" style={{ color: userColor }}>
-                {user?.name || 'Unassigned'}
-              </h3>
-              <Badge variant="outline" className="ml-auto">
-                {chores.length}
-              </Badge>
-            </div>
-            <div className="flex-1 overflow-y-auto overscroll-contain p-2 space-y-1">
-              <Input
-                placeholder="Add chore..."
-                value={inlineChoreByUser[key] || ''}
-                onChange={(e) =>
-                  setInlineChoreByUser((prev) => ({ ...prev, [key]: e.target.value }))
-                }
-                onKeyDown={async (e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    const val = (inlineChoreByUser[key] || '').trim();
-                    if (!val) return;
-                    const success = await inlineAddChore(val, user?.id);
-                    if (success) setInlineChoreByUser((prev) => ({ ...prev, [key]: '' }));
+              <div
+                className="flex shrink-0 items-center gap-2 px-3 py-2"
+                style={{ backgroundColor: userColor + '20' }}
+              >
+                {/* Mouse: grip icon / Touch: up-down arrows */}
+                {isTouch || isMobile ? (
+                  <div className="flex shrink-0 flex-col">
+                    <button
+                      type="button"
+                      onClick={() => moveUp(key)}
+                      disabled={idx === 0}
+                      className="p-0.5 text-muted-foreground/50 transition-colors hover:text-foreground disabled:opacity-20"
+                    >
+                      <ChevronUp className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => moveDown(key)}
+                      disabled={idx === sortedGroups.length - 1}
+                      className="p-0.5 text-muted-foreground/50 transition-colors hover:text-foreground disabled:opacity-20"
+                    >
+                      <ChevronDown className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <GripVertical className="h-4 w-4 shrink-0 text-muted-foreground/50" />
+                )}
+                {user ? (
+                  <UserAvatar name={user.name} color={user.color} size="sm" className="h-7 w-7" />
+                ) : (
+                  <ClipboardList className="h-5 w-5 text-muted-foreground" />
+                )}
+                <h3 className="text-lg font-bold" style={{ color: userColor }}>
+                  {user?.name || 'Unassigned'}
+                </h3>
+                <Badge variant="outline" className="ml-auto">
+                  {chores.length}
+                </Badge>
+              </div>
+              <div className="flex-1 space-y-1 overflow-y-auto overscroll-contain p-2">
+                <Input
+                  placeholder="Add chore..."
+                  value={inlineChoreByUser[key] || ''}
+                  onChange={(e) =>
+                    setInlineChoreByUser((prev) => ({ ...prev, [key]: e.target.value }))
                   }
-                }}
-                onClick={(e) => e.stopPropagation()}
-                onMouseDown={(e) => e.stopPropagation()}
-                draggable={false}
-                className="h-8 text-sm mb-1"
-              />
-              {chores.map((chore) => (
-                <ChoreGroupCard
-                  key={chore.id}
-                  chore={chore}
-                  assignedUser={user}
-                  allChores={chores}
-                  onComplete={() => completeChore(chore.id)}
-                  onEdit={() => editChore(chore)}
-                  onDelete={() => deleteChore(chore.id)}
-                  setCelebratingUser={setCelebratingUser}
+                  onKeyDown={async (e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      const val = (inlineChoreByUser[key] || '').trim();
+                      if (!val) return;
+                      const success = await inlineAddChore(val, user?.id);
+                      if (success) setInlineChoreByUser((prev) => ({ ...prev, [key]: '' }));
+                    }
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  draggable={false}
+                  className="mb-1 h-8 text-sm"
                 />
-              ))}
-              {chores.length === 0 && (
-                <p className="text-center text-muted-foreground text-sm py-4">No chores</p>
-              )}
+                {chores.map((chore) => (
+                  <ChoreGroupCard
+                    key={chore.id}
+                    chore={chore}
+                    assignedUser={user}
+                    allChores={chores}
+                    onComplete={() => completeChore(chore.id)}
+                    onEdit={() => editChore(chore)}
+                    onDelete={() => deleteChore(chore.id)}
+                    setCelebratingUser={setCelebratingUser}
+                  />
+                ))}
+                {chores.length === 0 && (
+                  <p className="py-4 text-center text-sm text-muted-foreground">No chores</p>
+                )}
+              </div>
             </div>
-          </div>
-        );
-      })}
-    </div>
+          );
+        })}
+      </div>
       {isCarousel && !isMobile && <CarouselArrows scrollRef={scrollRef} />}
     </div>
   );

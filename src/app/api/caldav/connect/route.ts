@@ -24,7 +24,13 @@ export async function POST(request: NextRequest) {
   try {
     const { serverUrl, username, password, calendars, syncContactBirthdays } = await request.json();
 
-    if (!serverUrl || !username || !password || !Array.isArray(calendars) || calendars.length === 0) {
+    if (
+      !serverUrl ||
+      !username ||
+      !password ||
+      !Array.isArray(calendars) ||
+      calendars.length === 0
+    ) {
       return NextResponse.json(
         { error: 'Server URL, credentials, and at least one calendar are required' },
         { status: 400 }
@@ -34,10 +40,7 @@ export async function POST(request: NextRequest) {
     // Verify connection before storing
     const test = await testCalDAVConnection(serverUrl, username, password);
     if (!test.success) {
-      return NextResponse.json(
-        { error: test.error || 'Connection failed' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: test.error || 'Connection failed' }, { status: 400 });
     }
 
     const encryptedPassword = encrypt(password);
@@ -115,8 +118,10 @@ export async function POST(request: NextRequest) {
           await syncCalDAVCalendarSource(sourceId);
           await syncCalDAVTasks(sourceId);
         } catch (err) {
-          console.error(`Initial CalDAV sync failed for source ${sourceId}:`,
-            err instanceof Error ? err.message : err);
+          console.error(
+            `Initial CalDAV sync failed for source ${sourceId}:`,
+            err instanceof Error ? err.message : err
+          );
         }
       }
       if (syncContactBirthdays) {
@@ -124,8 +129,10 @@ export async function POST(request: NextRequest) {
           const r = await syncCardDAVBirthdays();
           if (r.errors.length) console.error('Initial CardDAV birthday sync errors:', r.errors);
         } catch (err) {
-          console.error('Initial CardDAV birthday sync failed:',
-            err instanceof Error ? err.message : err);
+          console.error(
+            'Initial CardDAV birthday sync failed:',
+            err instanceof Error ? err.message : err
+          );
         }
         await invalidateCache('birthdays:*').catch(() => {});
       }
@@ -135,16 +142,16 @@ export async function POST(request: NextRequest) {
       await invalidateCache('tasks:*').catch(() => {});
     })();
 
-    return NextResponse.json({
-      success: true,
-      message: `Connected ${created.length} calendar(s) — syncing in background`,
-      sourceIds: created,
-    }, { status: 201 });
+    return NextResponse.json(
+      {
+        success: true,
+        message: `Connected ${created.length} calendar(s) — syncing in background`,
+        sourceIds: created,
+      },
+      { status: 201 }
+    );
   } catch (error) {
     console.error('CalDAV connect error:', error);
-    return NextResponse.json(
-      { error: 'Failed to connect CalDAV calendars' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to connect CalDAV calendars' }, { status: 500 });
   }
 }

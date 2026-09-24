@@ -26,7 +26,11 @@ import { eq, and, or, gte, lte, asc, isNotNull, isNull } from 'drizzle-orm';
 import { createEventSchema, validateRequest } from '@/lib/validations';
 import { getCached } from '@/lib/cache/redis';
 import { invalidateEntity } from '@/lib/cache/cacheKeys';
-import { createCalendarEvent, refreshAccessToken, toGoogleAllDayRange } from '@/lib/integrations/google-calendar';
+import {
+  createCalendarEvent,
+  refreshAccessToken,
+  toGoogleAllDayRange,
+} from '@/lib/integrations/google-calendar';
 import { decrypt, encrypt } from '@/lib/utils/crypto';
 import { formatEventRow } from '@/lib/utils/formatters';
 import { logActivity } from '@/lib/services/auditLog';
@@ -36,9 +40,7 @@ import { MAX_CALENDAR_EVENTS } from '@/lib/utils/calendarRange';
 // Cache events for 5 minutes
 const EVENTS_CACHE_TTL = 5 * 60;
 
-
 import type { CalendarEventResponse as EventResponse } from '@/types/calendar';
-
 
 /**
  * GET /api/events
@@ -62,7 +64,13 @@ import type { CalendarEventResponse as EventResponse } from '@/types/calendar';
 export async function GET(request: NextRequest) {
   const auth = await getDisplayAuth();
   if (!auth) {
-    return NextResponse.json({ events: [], total: 0, dateRange: { start: '', end: '' }, limit: 100, offset: 0 });
+    return NextResponse.json({
+      events: [],
+      total: 0,
+      dateRange: { start: '', end: '' },
+      limit: 100,
+      offset: 0,
+    });
   }
 
   try {
@@ -76,20 +84,14 @@ export async function GET(request: NextRequest) {
 
     // Validate required date range
     if (!startDateStr || !endDateStr) {
-      return NextResponse.json(
-        { error: 'startDate and endDate are required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'startDate and endDate are required' }, { status: 400 });
     }
 
     const startDate = new Date(startDateStr);
     const endDate = new Date(endDateStr);
 
     if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-      return NextResponse.json(
-        { error: 'Invalid date format. Use ISO 8601.' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid date format. Use ISO 8601.' }, { status: 400 });
     }
 
     // Build filter conditions
@@ -119,104 +121,106 @@ export async function GET(request: NextRequest) {
     // Cache key includes query params for unique results per request
     const cacheKey = `events:${startDateStr}:${endDateStr}:${calendarId || 'all'}:${allDay || 'all'}:${limit}:${offset}`;
 
-    const data = await getCached(cacheKey, async () => {
-      // Fetch events with calendar source and user data
-      // Only include events from:
-      // 1. Enabled calendars
-      // 2. Calendars assigned to a user OR marked as family calendars
-      const results = await db
-        .select({
-          id: events.id,
-          title: events.title,
-          description: events.description,
-          location: events.location,
-          startTime: events.startTime,
-          endTime: events.endTime,
-          allDay: events.allDay,
-          recurring: events.recurring,
-          recurrenceRule: events.recurrenceRule,
-          color: events.color,
-          reminderMinutes: events.reminderMinutes,
-          createdAt: events.createdAt,
-          updatedAt: events.updatedAt,
-          // Calendar source data
-          calendarSourceId: calendarSources.id,
-          calendarSourceName: calendarSources.dashboardCalendarName,
-          calendarSourceColor: calendarSources.color,
-          calendarSourceProvider: calendarSources.provider,
-          calendarSourceEnabled: calendarSources.enabled,
-          calendarSourceIsFamily: calendarSources.isFamily,
-          calendarSourceUserId: calendarSources.userId,
-          calendarSourceGroupId: calendarSources.groupId,
-          // User data (for color)
-          userName: users.name,
-          userColor: users.color,
-          // Group data (for color)
-          groupColor: calendarGroups.color,
-          groupName: calendarGroups.name,
-        })
-        .from(events)
-        .leftJoin(calendarSources, eq(events.calendarSourceId, calendarSources.id))
-        .leftJoin(users, eq(calendarSources.userId, users.id))
-        .leftJoin(calendarGroups, eq(calendarSources.groupId, calendarGroups.id))
-        .where(and(
-          ...conditions,
-          // Only enabled calendars
-          or(
-            eq(calendarSources.enabled, true),
-            // Allow events without a calendar source (local events)
-            isNull(events.calendarSourceId)
-          ),
-          // Include events from enabled calendars (assigned, family, grouped, or with color)
-          or(
-            isNotNull(calendarSources.userId),
-            eq(calendarSources.isFamily, true),
-            isNotNull(calendarSources.groupId),
-            // Include enabled unassigned calendars (they use their source color)
-            eq(calendarSources.enabled, true),
-            // Allow events without a calendar source (local events)
-            isNull(events.calendarSourceId)
+    const data = await getCached(
+      cacheKey,
+      async () => {
+        // Fetch events with calendar source and user data
+        // Only include events from:
+        // 1. Enabled calendars
+        // 2. Calendars assigned to a user OR marked as family calendars
+        const results = await db
+          .select({
+            id: events.id,
+            title: events.title,
+            description: events.description,
+            location: events.location,
+            startTime: events.startTime,
+            endTime: events.endTime,
+            allDay: events.allDay,
+            recurring: events.recurring,
+            recurrenceRule: events.recurrenceRule,
+            color: events.color,
+            reminderMinutes: events.reminderMinutes,
+            createdAt: events.createdAt,
+            updatedAt: events.updatedAt,
+            // Calendar source data
+            calendarSourceId: calendarSources.id,
+            calendarSourceName: calendarSources.dashboardCalendarName,
+            calendarSourceColor: calendarSources.color,
+            calendarSourceProvider: calendarSources.provider,
+            calendarSourceEnabled: calendarSources.enabled,
+            calendarSourceIsFamily: calendarSources.isFamily,
+            calendarSourceUserId: calendarSources.userId,
+            calendarSourceGroupId: calendarSources.groupId,
+            // User data (for color)
+            userName: users.name,
+            userColor: users.color,
+            // Group data (for color)
+            groupColor: calendarGroups.color,
+            groupName: calendarGroups.name,
+          })
+          .from(events)
+          .leftJoin(calendarSources, eq(events.calendarSourceId, calendarSources.id))
+          .leftJoin(users, eq(calendarSources.userId, users.id))
+          .leftJoin(calendarGroups, eq(calendarSources.groupId, calendarGroups.id))
+          .where(
+            and(
+              ...conditions,
+              // Only enabled calendars
+              or(
+                eq(calendarSources.enabled, true),
+                // Allow events without a calendar source (local events)
+                isNull(events.calendarSourceId)
+              ),
+              // Include events from enabled calendars (assigned, family, grouped, or with color)
+              or(
+                isNotNull(calendarSources.userId),
+                eq(calendarSources.isFamily, true),
+                isNotNull(calendarSources.groupId),
+                // Include enabled unassigned calendars (they use their source color)
+                eq(calendarSources.enabled, true),
+                // Allow events without a calendar source (local events)
+                isNull(events.calendarSourceId)
+              )
+            )
           )
-        ))
-        .orderBy(asc(events.startTime))
-        .limit(limit)
-        .offset(offset);
+          .orderBy(asc(events.startTime))
+          .limit(limit)
+          .offset(offset);
 
-      // If a fetch fills the row ceiling, events may be silently omitted — the
-      // exact failure mode of #250. Surface it in logs rather than dropping
-      // events quietly, so the cap can be raised or the fetch paginated.
-      if (results.length >= limit) {
-        console.warn(
-          `[events] fetch hit the ${limit}-row ceiling for ${startDateStr}..${endDateStr}; some events may be omitted.`,
-        );
-      }
+        // If a fetch fills the row ceiling, events may be silently omitted — the
+        // exact failure mode of #250. Surface it in logs rather than dropping
+        // events quietly, so the cap can be raised or the fetch paginated.
+        if (results.length >= limit) {
+          console.warn(
+            `[events] fetch hit the ${limit}-row ceiling for ${startDateStr}..${endDateStr}; some events may be omitted.`
+          );
+        }
 
-      // Format response
-      // Color priority: event color > user color > calendar color > default
-      const formattedEvents: EventResponse[] = results.map((row) => formatEventRow(row));
+        // Format response
+        // Color priority: event color > user color > calendar color > default
+        const formattedEvents: EventResponse[] = results.map((row) => formatEventRow(row));
 
-      return {
-        events: formattedEvents,
-        total: formattedEvents.length,
-        dateRange: {
-          start: startDate.toISOString(),
-          end: endDate.toISOString(),
-        },
-        limit,
-        offset,
-      };
-    }, EVENTS_CACHE_TTL);
+        return {
+          events: formattedEvents,
+          total: formattedEvents.length,
+          dateRange: {
+            start: startDate.toISOString(),
+            end: endDate.toISOString(),
+          },
+          limit,
+          offset,
+        };
+      },
+      EVENTS_CACHE_TTL
+    );
 
     return NextResponse.json(data);
   } catch (error) {
     logError('Error fetching events:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch events' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch events' }, { status: 500 });
   }
 }
-
 
 /**
  * POST /api/events
@@ -306,10 +310,7 @@ export async function POST(request: NextRequest) {
         .where(eq(calendarSources.id, calendarSourceId));
 
       if (!calendar) {
-        return NextResponse.json(
-          { error: 'Calendar source not found' },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: 'Calendar source not found' }, { status: 400 });
       }
 
       calendarSource = calendar;
@@ -336,7 +337,9 @@ export async function POST(request: NextRequest) {
               .update(calendarSources)
               .set({
                 accessToken: encrypt(newTokens.access_token),
-                refreshToken: newTokens.refresh_token ? encrypt(newTokens.refresh_token) : calendar.refreshToken,
+                refreshToken: newTokens.refresh_token
+                  ? encrypt(newTokens.refresh_token)
+                  : calendar.refreshToken,
                 tokenExpiresAt: new Date(Date.now() + newTokens.expires_in * 1000),
                 updatedAt: new Date(),
               })
@@ -346,21 +349,13 @@ export async function POST(request: NextRequest) {
           const allDayRange = allDay ? toGoogleAllDayRange(startTime, endTime) : null;
 
           // Create event on Google Calendar
-          const googleEvent = await createCalendarEvent(
-            accessToken,
-            calendar.sourceCalendarId,
-            {
-              summary: title.trim(),
-              description: description?.trim() || undefined,
-              location: location?.trim() || undefined,
-              start: allDay
-                ? allDayRange!.start
-                : { dateTime: startTime.toISOString() },
-              end: allDay
-                ? allDayRange!.end
-                : { dateTime: endTime.toISOString() },
-            }
-          );
+          const googleEvent = await createCalendarEvent(accessToken, calendar.sourceCalendarId, {
+            summary: title.trim(),
+            description: description?.trim() || undefined,
+            location: location?.trim() || undefined,
+            start: allDay ? allDayRange!.start : { dateTime: startTime.toISOString() },
+            end: allDay ? allDayRange!.end : { dateTime: endTime.toISOString() },
+          });
 
           externalEventId = googleEvent.id;
         } catch (error) {
@@ -398,10 +393,7 @@ export async function POST(request: NextRequest) {
       .returning();
 
     if (!newEvent) {
-      return NextResponse.json(
-        { error: 'Failed to create event' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to create event' }, { status: 500 });
     }
 
     // Fetch with calendar source data
@@ -449,15 +441,11 @@ export async function POST(request: NextRequest) {
       summary: `Created event: ${newEvent.title}`,
     });
 
-    return NextResponse.json(
-      googleWarning ? { ...response, warning: googleWarning } : response,
-      { status: 201 }
-    );
+    return NextResponse.json(googleWarning ? { ...response, warning: googleWarning } : response, {
+      status: 201,
+    });
   } catch (error) {
     logError('Error creating event:', error);
-    return NextResponse.json(
-      { error: 'Failed to create event' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to create event' }, { status: 500 });
   }
 }

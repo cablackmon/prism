@@ -34,7 +34,7 @@ export function useShoppingInlineInput({
         name,
         category,
       });
-      setInlineInputs(prev => ({ ...prev, [category]: '' }));
+      setInlineInputs((prev) => ({ ...prev, [category]: '' }));
     } catch (err) {
       console.error('Failed to add item:', err);
       toast({ title: 'Failed to add item. Please try again.', variant: 'destructive' });
@@ -53,7 +53,7 @@ export function useShoppingInlineInput({
   };
 
   const addExtraRows = (category: string, count: number) => {
-    setExtraRows(prev => {
+    setExtraRows((prev) => {
       const current = prev[category] || 0;
       const newValue = Math.max(-BASE_EMPTY_LINES + 1, current + count);
       return { ...prev, [category]: newValue };

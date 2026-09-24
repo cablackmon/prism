@@ -174,10 +174,12 @@ describe('POST /api/recipes/import-url', () => {
       category: 'Main',
     };
     mockParseRecipeFromUrl.mockResolvedValue(parsedRecipe);
-    mockInsertReturning.mockResolvedValue([{
-      id: 'recipe-1',
-      name: 'Pasta Carbonara',
-    }]);
+    mockInsertReturning.mockResolvedValue([
+      {
+        id: 'recipe-1',
+        name: 'Pasta Carbonara',
+      },
+    ]);
 
     const res = await POST(makeRequest({ url: 'https://example.com/pasta' }));
     const data = await res.json();
@@ -197,9 +199,7 @@ describe('POST /api/recipes/import-url', () => {
   });
 
   it('returns 403 when role check fails', async () => {
-    mockRequireRole.mockReturnValue(
-      NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    );
+    mockRequireRole.mockReturnValue(NextResponse.json({ error: 'Forbidden' }, { status: 403 }));
 
     const res = await POST(makeRequest({ url: 'https://example.com/recipe' }));
     expect(res.status).toBe(403);

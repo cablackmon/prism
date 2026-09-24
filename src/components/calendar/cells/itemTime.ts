@@ -59,7 +59,7 @@ export function parseTimeOfDay(hhmm: string | null | undefined): number | null {
  */
 export function formatTimeOfDay(
   hhmm: string | null | undefined,
-  timeFormat: TimeFormat = '12h',
+  timeFormat: TimeFormat = '12h'
 ): string {
   if (!hhmm) return '';
   const m = /^(\d{2}):(\d{2})$/.exec(hhmm);

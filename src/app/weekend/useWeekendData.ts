@@ -5,7 +5,10 @@ import { useVisibilityPolling } from '@/lib/hooks/useVisibilityPolling';
 import type { WeekendPlace } from './types';
 
 export class WeekendAuthError extends Error {
-  constructor() { super('Not logged in'); this.name = 'WeekendAuthError'; }
+  constructor() {
+    super('Not logged in');
+    this.name = 'WeekendAuthError';
+  }
 }
 
 function checkResponse(res: Response, action: string): void {
@@ -33,20 +36,30 @@ export function useWeekendData() {
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
   useVisibilityPolling(load, 300_000);
 
-  const addPlace = useCallback(async (payload: Omit<WeekendPlace, 'id' | 'visitCount' | 'lastVisitedDate' | 'createdBy' | 'createdAt' | 'updatedAt'>) => {
-    const res = await fetch('/api/weekend/places', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    checkResponse(res, 'create place');
-    const place = await res.json() as WeekendPlace;
-    setPlaces((prev) => [place, ...prev]);
-    return place;
-  }, []);
+  const addPlace = useCallback(
+    async (
+      payload: Omit<
+        WeekendPlace,
+        'id' | 'visitCount' | 'lastVisitedDate' | 'createdBy' | 'createdAt' | 'updatedAt'
+      >
+    ) => {
+      const res = await fetch('/api/weekend/places', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      checkResponse(res, 'create place');
+      const place = (await res.json()) as WeekendPlace;
+      setPlaces((prev) => [place, ...prev]);
+      return place;
+    },
+    []
+  );
 
   const updatePlace = useCallback(async (id: string, payload: Partial<WeekendPlace>) => {
     const res = await fetch(`/api/weekend/places/${id}`, {
@@ -55,8 +68,8 @@ export function useWeekendData() {
       body: JSON.stringify(payload),
     });
     checkResponse(res, 'update place');
-    const updated = await res.json() as WeekendPlace;
-    setPlaces((prev) => prev.map((p) => p.id === id ? updated : p));
+    const updated = (await res.json()) as WeekendPlace;
+    setPlaces((prev) => prev.map((p) => (p.id === id ? updated : p)));
     return updated;
   }, []);
 

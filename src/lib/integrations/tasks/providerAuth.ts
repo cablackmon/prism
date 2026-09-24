@@ -32,7 +32,8 @@ export async function resolveTaskProviderAuth(sourceId: string): Promise<TaskPro
   };
 
   if (tokens.expiresAt && new Date(tokens.expiresAt) < new Date()) {
-    if (!provider.refreshTokens || !tokens.refreshToken) return { ok: false, reason: 'refresh_failed' };
+    if (!provider.refreshTokens || !tokens.refreshToken)
+      return { ok: false, reason: 'refresh_failed' };
 
     const refreshed = await provider.refreshTokens(tokens);
     if (!refreshed) return { ok: false, reason: 'refresh_failed' };
@@ -43,7 +44,9 @@ export async function resolveTaskProviderAuth(sourceId: string): Promise<TaskPro
       .update(taskSources)
       .set({
         accessToken: encrypt(refreshed.accessToken),
-        refreshToken: refreshed.refreshToken ? encrypt(refreshed.refreshToken) : source.refreshToken,
+        refreshToken: refreshed.refreshToken
+          ? encrypt(refreshed.refreshToken)
+          : source.refreshToken,
         tokenExpiresAt: refreshed.expiresAt,
         updatedAt: new Date(),
       })

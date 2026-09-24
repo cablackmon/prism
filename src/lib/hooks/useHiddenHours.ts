@@ -118,71 +118,77 @@ export function useHiddenHours() {
   }, [settings.enabled, setSettings]);
 
   // Set time range
-  const setTimeRange = useCallback((startHour: number, endHour: number) => {
-    setSettings({ startHour, endHour });
-  }, [setSettings]);
+  const setTimeRange = useCallback(
+    (startHour: number, endHour: number) => {
+      setSettings({ startHour, endHour });
+    },
+    [setSettings]
+  );
 
   const clampHour = (hour: number) => Math.min(23, Math.max(0, hour));
 
-  const getVisibleHours = useCallback((events?: CalendarEvent[], range?: { from: Date; to: Date }): number[] => {
-    const allHours = Array.from({ length: 24 }, (_, i) => i);
-    if (!settings.enabled) {
+  const getVisibleHours = useCallback(
+    (events?: CalendarEvent[], range?: { from: Date; to: Date }): number[] => {
+      const allHours = Array.from({ length: 24 }, (_, i) => i);
+      if (!settings.enabled) {
+        return allHours;
+      }
+
+      if (settings.mode === 'manual') {
+        return allHours.filter((hour) => {
+          if (settings.startHour <= settings.endHour) {
+            return hour < settings.startHour || hour >= settings.endHour;
+          }
+          return hour >= settings.endHour && hour < settings.startHour;
+        });
+      }
+
+      if (settings.mode === 'auto-fit' && events && range) {
+        const timedEvents = events.filter(
+          (event) => !event.allDay && event.endTime > range.from && event.startTime < range.to
+        );
+
+        if (timedEvents.length === 0) {
+          return allHours.filter((hour) => hour >= 8 && hour <= 18);
+        }
+
+        let minHour = 23;
+        let maxHour = 0;
+
+        for (const event of timedEvents) {
+          const eventStart = event.startTime < range.from ? range.from : event.startTime;
+          const eventEnd = event.endTime > range.to ? range.to : event.endTime;
+          const startHour = eventStart.getHours();
+
+          let endHour = eventEnd.getHours();
+          if (
+            eventEnd.getMinutes() === 0 &&
+            eventEnd.getSeconds() === 0 &&
+            eventEnd.getMilliseconds() === 0
+          ) {
+            endHour = Math.max(startHour, endHour - 1);
+          }
+
+          minHour = Math.min(minHour, startHour);
+          maxHour = Math.max(maxHour, endHour);
+        }
+
+        minHour = clampHour(minHour - settings.bufferHours);
+        maxHour = clampHour(maxHour + settings.bufferHours);
+
+        if (maxHour - minHour < 4) {
+          const center = (minHour + maxHour) / 2;
+          minHour = clampHour(Math.floor(center - 2));
+          maxHour = clampHour(Math.ceil(center + 2));
+        }
+
+        return allHours.filter((hour) => hour >= minHour && hour <= maxHour);
+      }
+
       return allHours;
-    }
-
-    if (settings.mode === 'manual') {
-      return allHours.filter((hour) => {
-        if (settings.startHour <= settings.endHour) {
-          return hour < settings.startHour || hour >= settings.endHour;
-        }
-        return hour >= settings.endHour && hour < settings.startHour;
-      });
-    }
-
-    if (settings.mode === 'auto-fit' && events && range) {
-      const timedEvents = events.filter((event) =>
-        !event.allDay && event.endTime > range.from && event.startTime < range.to
-      );
-
-      if (timedEvents.length === 0) {
-        return allHours.filter((hour) => hour >= 8 && hour <= 18);
-      }
-
-      let minHour = 23;
-      let maxHour = 0;
-
-      for (const event of timedEvents) {
-        const eventStart = event.startTime < range.from ? range.from : event.startTime;
-        const eventEnd = event.endTime > range.to ? range.to : event.endTime;
-        const startHour = eventStart.getHours();
-
-        let endHour = eventEnd.getHours();
-        if (
-          eventEnd.getMinutes() === 0 &&
-          eventEnd.getSeconds() === 0 &&
-          eventEnd.getMilliseconds() === 0
-        ) {
-          endHour = Math.max(startHour, endHour - 1);
-        }
-
-        minHour = Math.min(minHour, startHour);
-        maxHour = Math.max(maxHour, endHour);
-      }
-
-      minHour = clampHour(minHour - settings.bufferHours);
-      maxHour = clampHour(maxHour + settings.bufferHours);
-
-      if (maxHour - minHour < 4) {
-        const center = (minHour + maxHour) / 2;
-        minHour = clampHour(Math.floor(center - 2));
-        maxHour = clampHour(Math.ceil(center + 2));
-      }
-
-      return allHours.filter((hour) => hour >= minHour && hour <= maxHour);
-    }
-
-    return allHours;
-  }, [settings.enabled, settings.mode, settings.startHour, settings.endHour, settings.bufferHours]);
+    },
+    [settings.enabled, settings.mode, settings.startHour, settings.endHour, settings.bufferHours]
+  );
 
   return {
     settings,

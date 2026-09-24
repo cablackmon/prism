@@ -147,7 +147,7 @@ function mapIcon(icon: string): WeatherCondition {
  */
 export async function fetchWeatherData(
   location?: LocationParam,
-  options?: WeatherOptions,
+  options?: WeatherOptions
 ): Promise<WeatherData> {
   const config = getConfig(location);
   const units = options?.units ?? { temperature: 'F', windSpeed: 'mph', precipitation: 'in' };
@@ -242,7 +242,12 @@ export async function fetchWeatherData(
   // Use currently.precipIntensity for intensity so the label reflects reality.
   const patchedHourly = hourlyData.map((h) =>
     h.time.getTime() <= nowMs
-      ? { ...h, condition: current.condition, temp: current.temperature, precipIntensity: currently.precipIntensity }
+      ? {
+          ...h,
+          condition: current.condition,
+          temp: current.temperature,
+          precipIntensity: currently.precipIntensity,
+        }
       : h
   );
 

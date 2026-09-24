@@ -4,10 +4,25 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { format, differenceInDays, parseISO, startOfWeek } from 'date-fns';
 import Link from 'next/link';
 import {
-  Calendar, Cloud, Sun, CloudRain, CloudSnow, CloudSun,
-  MessageSquare, CheckSquare, ClipboardList, ShoppingCart,
-  UtensilsCrossed, Cake, Trophy, Heart, Bus, Clock,
-  Image as ImageIcon, ChefHat, ChevronRight,
+  Calendar,
+  Cloud,
+  Sun,
+  CloudRain,
+  CloudSnow,
+  CloudSun,
+  MessageSquare,
+  CheckSquare,
+  ClipboardList,
+  ShoppingCart,
+  UtensilsCrossed,
+  Cake,
+  Trophy,
+  Heart,
+  Bus,
+  Clock,
+  Image as ImageIcon,
+  ChefHat,
+  ChevronRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DAYS_OF_WEEK } from '@/lib/constants/days';
@@ -18,7 +33,13 @@ import { formatDisplayTime, toDisplayDate } from '@/lib/utils/timeFormat';
 
 type DashData = ReturnType<typeof useDashboardData>;
 
-function TileShell({ href, icon, title, children, accent }: {
+function TileShell({
+  href,
+  icon,
+  title,
+  children,
+  accent,
+}: {
   href?: string;
   icon: React.ReactNode;
   title: string;
@@ -26,28 +47,38 @@ function TileShell({ href, icon, title, children, accent }: {
   accent?: string; // Tailwind text color class for the summary
 }) {
   const inner = (
-    <div className="h-full bg-card/85 backdrop-blur-sm rounded-xl border border-border p-3 flex flex-col gap-2 hover:border-primary/30 transition-colors overflow-hidden">
+    <div className="flex h-full flex-col gap-2 overflow-hidden rounded-xl border border-border bg-card/85 p-3 backdrop-blur-sm transition-colors hover:border-primary/30">
       <div className="flex items-center justify-between gap-1">
-        <div className="flex items-center gap-1.5 min-w-0">
+        <div className="flex min-w-0 items-center gap-1.5">
           {icon}
-          <span className="font-semibold text-sm truncate">{title}</span>
+          <span className="truncate text-sm font-semibold">{title}</span>
         </div>
-        {href && <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
+        {href && <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
       </div>
       {children && (
-        <div className={cn('flex-1 min-h-0 flex flex-col justify-center gap-0.5', accent)}>
+        <div className={cn('flex min-h-0 flex-1 flex-col justify-center gap-0.5', accent)}>
           {children}
         </div>
       )}
     </div>
   );
-  if (href) return <Link href={href} className="block h-full">{inner}</Link>;
+  if (href)
+    return (
+      <Link href={href} className="block h-full">
+        {inner}
+      </Link>
+    );
   return inner;
 }
 
 function TileLine({ children, dim }: { children: React.ReactNode; dim?: boolean }) {
   return (
-    <p className={cn('text-xs leading-snug truncate', dim ? 'text-muted-foreground' : 'text-foreground/90')}>
+    <p
+      className={cn(
+        'truncate text-xs leading-snug',
+        dim ? 'text-muted-foreground' : 'text-foreground/90'
+      )}
+    >
       {children}
     </p>
   );
@@ -56,21 +87,31 @@ function TileLine({ children, dim }: { children: React.ReactNode; dim?: boolean 
 // ── Individual tile cards ─────────────────────────────────────────────────────
 
 export function WeatherTile({ data }: { data: DashData['weather'] }) {
-  if (data.loading || !data.data) return (
-    <TileShell icon={<Cloud className="h-4 w-4 text-sky-400" />} title="Weather">
-      <TileLine dim>Loading…</TileLine>
-    </TileShell>
-  );
+  if (data.loading || !data.data)
+    return (
+      <TileShell icon={<Cloud className="h-4 w-4 text-sky-400" />} title="Weather">
+        <TileLine dim>Loading…</TileLine>
+      </TileShell>
+    );
   const wd = data.data;
   const current = wd.current;
-  const WeatherIcon = current?.condition === 'sunny' ? Sun
-    : current?.condition === 'partly-cloudy' ? CloudSun
-    : current?.condition === 'rainy' || current?.condition === 'stormy' ? CloudRain
-    : current?.condition === 'snowy' ? CloudSnow
-    : Cloud;
+  const WeatherIcon =
+    current?.condition === 'sunny'
+      ? Sun
+      : current?.condition === 'partly-cloudy'
+        ? CloudSun
+        : current?.condition === 'rainy' || current?.condition === 'stormy'
+          ? CloudRain
+          : current?.condition === 'snowy'
+            ? CloudSnow
+            : Cloud;
   return (
     <TileShell icon={<WeatherIcon className="h-4 w-4 text-sky-400" />} title="Weather">
-      {current?.temperature != null && <TileLine>{current.temperature}°{wd.units.temperature}</TileLine>}
+      {current?.temperature != null && (
+        <TileLine>
+          {current.temperature}°{wd.units.temperature}
+        </TileLine>
+      )}
       {current?.description && <TileLine dim>{current.description}</TileLine>}
     </TileShell>
   );
@@ -95,18 +136,23 @@ export function CalendarTile({ data }: { data: DashData['calendar'] }) {
   const upcoming = useMemo(() => {
     if (!data.events) return [];
     const now = new Date();
-    return data.events
-      .filter((e) => new Date(e.endTime) >= now)
-      .slice(0, 2);
+    return data.events.filter((e) => new Date(e.endTime) >= now).slice(0, 2);
   }, [data.events]);
   return (
-    <TileShell href="/calendar" icon={<Calendar className="h-4 w-4 text-blue-500" />} title="Calendar">
-      {upcoming.length === 0
-        ? <TileLine dim>Nothing upcoming</TileLine>
-        : upcoming.map((e, i) => (
-            <TileLine key={i} dim={i > 0}>{e.title}</TileLine>
-          ))
-      }
+    <TileShell
+      href="/calendar"
+      icon={<Calendar className="h-4 w-4 text-blue-500" />}
+      title="Calendar"
+    >
+      {upcoming.length === 0 ? (
+        <TileLine dim>Nothing upcoming</TileLine>
+      ) : (
+        upcoming.map((e, i) => (
+          <TileLine key={i} dim={i > 0}>
+            {e.title}
+          </TileLine>
+        ))
+      )}
     </TileShell>
   );
 }
@@ -114,13 +160,18 @@ export function CalendarTile({ data }: { data: DashData['calendar'] }) {
 export function ChoresTile({ data }: { data: DashData['chores'] }) {
   const due = useMemo(() => {
     if (!data.chores) return 0;
-    return data.chores.filter((c: { enabled: boolean; nextDue?: string }) =>
-      c.enabled && c.nextDue && new Date(c.nextDue) <= new Date()
+    return data.chores.filter(
+      (c: { enabled: boolean; nextDue?: string }) =>
+        c.enabled && c.nextDue && new Date(c.nextDue) <= new Date()
     ).length;
   }, [data.chores]);
   return (
-    <TileShell href="/chores" icon={<ClipboardList className="h-4 w-4 text-orange-500" />} title="Chores"
-      accent={due > 0 ? 'text-orange-600 dark:text-orange-400' : undefined}>
+    <TileShell
+      href="/chores"
+      icon={<ClipboardList className="h-4 w-4 text-orange-500" />}
+      title="Chores"
+      accent={due > 0 ? 'text-orange-600 dark:text-orange-400' : undefined}
+    >
       <TileLine>{due === 0 ? 'All caught up!' : `${due} due`}</TileLine>
       {data.chores && <TileLine dim>{data.chores.length} total chores</TileLine>}
     </TileShell>
@@ -133,9 +184,20 @@ export function TasksTile({ data }: { data: DashData['tasks'] }) {
     [data.tasks]
   );
   return (
-    <TileShell href="/tasks" icon={<CheckSquare className="h-4 w-4 text-green-500" />} title="Tasks">
-      <TileLine>{incomplete.length === 0 ? 'All done!' : `${incomplete.length} remaining`}</TileLine>
-      {incomplete[0] && <TileLine dim>{(incomplete[0] as { title?: string; name?: string }).title ?? (incomplete[0] as { title?: string; name?: string }).name}</TileLine>}
+    <TileShell
+      href="/tasks"
+      icon={<CheckSquare className="h-4 w-4 text-green-500" />}
+      title="Tasks"
+    >
+      <TileLine>
+        {incomplete.length === 0 ? 'All done!' : `${incomplete.length} remaining`}
+      </TileLine>
+      {incomplete[0] && (
+        <TileLine dim>
+          {(incomplete[0] as { title?: string; name?: string }).title ??
+            (incomplete[0] as { title?: string; name?: string }).name}
+        </TileLine>
+      )}
     </TileShell>
   );
 }
@@ -149,9 +211,17 @@ export function ShoppingTile({ data }: { data: DashData['shopping'] }) {
     return { totalItems: unchecked.length, listCount: data.lists.length };
   }, [data.lists]);
   return (
-    <TileShell href="/shopping" icon={<ShoppingCart className="h-4 w-4 text-emerald-500" />} title="Shopping">
-      <TileLine>{totalItems === 0 ? 'Lists are clear' : `${totalItems} item${totalItems !== 1 ? 's' : ''}`}</TileLine>
-      <TileLine dim>{listCount} list{listCount !== 1 ? 's' : ''}</TileLine>
+    <TileShell
+      href="/shopping"
+      icon={<ShoppingCart className="h-4 w-4 text-emerald-500" />}
+      title="Shopping"
+    >
+      <TileLine>
+        {totalItems === 0 ? 'Lists are clear' : `${totalItems} item${totalItems !== 1 ? 's' : ''}`}
+      </TileLine>
+      <TileLine dim>
+        {listCount} list{listCount !== 1 ? 's' : ''}
+      </TileLine>
     </TileShell>
   );
 }
@@ -162,23 +232,37 @@ export function MealsTile({ data }: { data: DashData['meals'] }) {
     const todayDay = DAYS_OF_WEEK[new Date().getDay()];
     const currentWeekOf = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
     const thisWeek = data.meals.filter((m) => m.weekOf === currentWeekOf);
-    return thisWeek.find((m) => m.dayOfWeek === todayDay && m.mealType === 'dinner')
-      ?? thisWeek.find((m) => m.dayOfWeek === todayDay)
-      ?? null;
+    return (
+      thisWeek.find((m) => m.dayOfWeek === todayDay && m.mealType === 'dinner') ??
+      thisWeek.find((m) => m.dayOfWeek === todayDay) ??
+      null
+    );
   }, [data.meals]);
   return (
-    <TileShell href="/meals" icon={<UtensilsCrossed className="h-4 w-4 text-pink-500" />} title="Meals">
-      {todayMeal
-        ? <><TileLine>Tonight:</TileLine><TileLine dim>{todayMeal.name ?? todayMeal.recipe ?? 'Planned'}</TileLine></>
-        : <TileLine dim>No meal planned</TileLine>
-      }
+    <TileShell
+      href="/meals"
+      icon={<UtensilsCrossed className="h-4 w-4 text-pink-500" />}
+      title="Meals"
+    >
+      {todayMeal ? (
+        <>
+          <TileLine>Tonight:</TileLine>
+          <TileLine dim>{todayMeal.name ?? todayMeal.recipe ?? 'Planned'}</TileLine>
+        </>
+      ) : (
+        <TileLine dim>No meal planned</TileLine>
+      )}
     </TileShell>
   );
 }
 
 export function RecipesTile() {
   return (
-    <TileShell href="/recipes" icon={<ChefHat className="h-4 w-4 text-orange-500" />} title="Recipes">
+    <TileShell
+      href="/recipes"
+      icon={<ChefHat className="h-4 w-4 text-orange-500" />}
+      title="Recipes"
+    >
       <TileLine>Browse & import</TileLine>
       <TileLine dim>URL · Paprika</TileLine>
     </TileShell>
@@ -188,12 +272,20 @@ export function RecipesTile() {
 export function MessagesTile({ data }: { data: DashData['messages'] }) {
   const latest = data.messages?.[0] as { author?: { name?: string }; message?: string } | undefined;
   return (
-    <TileShell href="/messages" icon={<MessageSquare className="h-4 w-4 text-sky-500" />} title="Messages"
-      accent={data.messages?.length ? undefined : undefined}>
-      {latest
-        ? <><TileLine>{latest.author?.name}</TileLine><TileLine dim>{latest.message}</TileLine></>
-        : <TileLine dim>No messages</TileLine>
-      }
+    <TileShell
+      href="/messages"
+      icon={<MessageSquare className="h-4 w-4 text-sky-500" />}
+      title="Messages"
+      accent={data.messages?.length ? undefined : undefined}
+    >
+      {latest ? (
+        <>
+          <TileLine>{latest.author?.name}</TileLine>
+          <TileLine dim>{latest.message}</TileLine>
+        </>
+      ) : (
+        <TileLine dim>No messages</TileLine>
+      )}
     </TileShell>
   );
 }
@@ -209,10 +301,14 @@ export function BirthdaysTile({ data }: { data: DashData['birthdays'] }) {
   }, [data.birthdays]);
   return (
     <TileShell href="/calendar" icon={<Cake className="h-4 w-4 text-pink-400" />} title="Birthdays">
-      {next
-        ? <><TileLine>{next.name}</TileLine><TileLine dim>{next.label}</TileLine></>
-        : <TileLine dim>None upcoming</TileLine>
-      }
+      {next ? (
+        <>
+          <TileLine>{next.name}</TileLine>
+          <TileLine dim>{next.label}</TileLine>
+        </>
+      ) : (
+        <TileLine dim>None upcoming</TileLine>
+      )}
     </TileShell>
   );
 }
@@ -226,7 +322,9 @@ export function PointsTile({ data }: { data: DashData['points'] }) {
   return (
     <TileShell href="/goals" icon={<Trophy className="h-4 w-4 text-yellow-500" />} title="Goals">
       <TileLine>{total} pts</TileLine>
-      <TileLine dim>{activeGoals} active goal{activeGoals !== 1 ? 's' : ''}</TileLine>
+      <TileLine dim>
+        {activeGoals} active goal{activeGoals !== 1 ? 's' : ''}
+      </TileLine>
     </TileShell>
   );
 }
@@ -250,12 +348,17 @@ export function PhotosTile() {
 export function BusTrackingTile({ routes }: { routes: BusRouteStatus[] | null }) {
   const first = routes?.[0];
   const pred: BusPrediction | undefined = first?.prediction;
-  const statusLabel = !first ? 'No routes'
-    : !pred ? first.label
-    : pred.status === 'at_stop' || pred.status === 'at_school' ? 'Arrived'
-    : pred.status === 'overdue' ? 'Overdue'
-    : pred.etaMinutes != null ? `${pred.etaMinutes} min away`
-    : first.label;
+  const statusLabel = !first
+    ? 'No routes'
+    : !pred
+      ? first.label
+      : pred.status === 'at_stop' || pred.status === 'at_school'
+        ? 'Arrived'
+        : pred.status === 'overdue'
+          ? 'Overdue'
+          : pred.etaMinutes != null
+            ? `${pred.etaMinutes} min away`
+            : first.label;
   return (
     <TileShell icon={<Bus className="h-4 w-4 text-amber-500" />} title="Bus">
       <TileLine>{statusLabel}</TileLine>

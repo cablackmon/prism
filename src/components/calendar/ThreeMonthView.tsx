@@ -22,7 +22,11 @@ import type { CalendarEvent } from '@/types/calendar';
 import { seasonalPalettes } from '@/lib/themes/seasonalThemes';
 import { useTimeFormat } from '@/components/providers';
 import { InlineCalendarEvent, SpanningEventRows } from './cells';
-import { eventOccursOnDisplayDay, eventSpansMultipleDisplayDays, toDisplayDate } from '@/lib/utils/timeFormat';
+import {
+  eventOccursOnDisplayDay,
+  eventSpansMultipleDisplayDays,
+  toDisplayDate,
+} from '@/lib/utils/timeFormat';
 import { eventsOverlappingRange } from '@/lib/utils/calendarRange';
 
 // Get the accent color for a month (1-12)
@@ -84,117 +88,125 @@ function MiniMonth({
   // spanning filter and the per-day filter below iterate ~40 events, not thousands.
   const scopedEvents = eventsOverlappingRange(events, calendarStart, calendarEnd);
   const spanningEvents = scopedEvents
-    .filter((event) => eventSpansMultipleDisplayDays(
-      event.startTime,
-      event.endTime,
-      event.allDay,
-      displayTimezone,
-    ))
-    .sort((a, b) => a.startTime.getTime() - b.startTime.getTime() || a.title.localeCompare(b.title));
+    .filter((event) =>
+      eventSpansMultipleDisplayDays(event.startTime, event.endTime, event.allDay, displayTimezone)
+    )
+    .sort(
+      (a, b) => a.startTime.getTime() - b.startTime.getTime() || a.title.localeCompare(b.title)
+    );
   const spanningEventSet = new Set(spanningEvents);
 
   return (
-    <div className={cn(
-      'flex flex-col flex-1 rounded-lg overflow-hidden',
-      !transparentMode && 'bg-card/85 backdrop-blur-sm',
-      isCenter && 'ring-2 ring-primary/30'
-    )}>
+    <div
+      className={cn(
+        'flex flex-1 flex-col overflow-hidden rounded-lg',
+        !transparentMode && 'bg-card/85 backdrop-blur-sm',
+        isCenter && 'ring-2 ring-primary/30'
+      )}
+    >
       {/* Month header with themed color — compact band so the three minis
           can use more vertical space for actual day cells. */}
       <div
-        className="text-center py-1 font-semibold text-sm flex-shrink-0 text-white shadow-sm"
+        className="flex-shrink-0 py-1 text-center text-sm font-semibold text-white shadow-sm"
         style={{ backgroundColor: monthColor }}
       >
         {format(month, 'MMMM yyyy')}
       </div>
 
       {/* Day name headers */}
-      <div className="grid grid-cols-7 gap-px px-1 flex-shrink-0">
+      <div className="grid flex-shrink-0 grid-cols-7 gap-px px-1">
         {dayNames.map((name, i) => (
-          <div key={i} className="text-center text-[10px] font-medium text-muted-foreground py-1">
+          <div key={i} className="py-1 text-center text-[10px] font-medium text-muted-foreground">
             {name}
           </div>
         ))}
       </div>
 
       {/* Day grid — fills remaining space */}
-      <div className="flex-1 flex flex-col gap-px px-1 pb-1">
+      <div className="flex flex-1 flex-col gap-px px-1 pb-1">
         {weeks.map((week, weekIndex) => {
           const visibleRowDates = week.filter((date) => isSameMonth(date, month));
-          const rowSpanningEvents = spanningEvents.filter((event) => visibleRowDates.some((rowDate) =>
-            eventOccursOnDisplayDay(
-              event.startTime,
-              event.endTime,
-              event.allDay,
-              rowDate,
-              displayTimezone,
-            )));
+          const rowSpanningEvents = spanningEvents.filter((event) =>
+            visibleRowDates.some((rowDate) =>
+              eventOccursOnDisplayDay(
+                event.startTime,
+                event.endTime,
+                event.allDay,
+                rowDate,
+                displayTimezone
+              )
+            )
+          );
 
           return (
-            <div key={weekIndex} className="flex-1 grid grid-cols-7 gap-px min-h-0">
+            <div key={weekIndex} className="grid min-h-0 flex-1 grid-cols-7 gap-px">
               {week.map((date, dayIndex) => {
-              const inMonth = isSameMonth(date, month);
-              const today = isSameDay(date, displayNow);
-              const dayEvents = scopedEvents
-                .filter((event) => !spanningEventSet.has(event))
-                .filter((event) => eventOccursOnDisplayDay(
-                  event.startTime,
-                  event.endTime,
-                  event.allDay,
-                  date,
-                  displayTimezone,
-                ))
-                .sort((a, b) => {
-                  if (a.allDay && !b.allDay) return -1;
-                  if (!a.allDay && b.allDay) return 1;
-                  return a.startTime.getTime() - b.startTime.getTime();
-                });
+                const inMonth = isSameMonth(date, month);
+                const today = isSameDay(date, displayNow);
+                const dayEvents = scopedEvents
+                  .filter((event) => !spanningEventSet.has(event))
+                  .filter((event) =>
+                    eventOccursOnDisplayDay(
+                      event.startTime,
+                      event.endTime,
+                      event.allDay,
+                      date,
+                      displayTimezone
+                    )
+                  )
+                  .sort((a, b) => {
+                    if (a.allDay && !b.allDay) return -1;
+                    if (!a.allDay && b.allDay) return 1;
+                    return a.startTime.getTime() - b.startTime.getTime();
+                  });
 
-              return (
-                <div
-                  key={dayIndex}
-                  onClick={() => onDateClick(date)}
-                  className={cn(
-                    'relative flex flex-col rounded text-xs cursor-pointer overflow-visible p-0.5',
-                    bordered && 'border border-border',
-                    !inMonth && 'text-muted-foreground/40',
-                  )}
-                >
-                  <div className="flex h-4 flex-shrink-0 items-center justify-center">
-                    <span className={cn(
-                      'inline-flex h-4 min-w-4 items-center justify-center rounded-full px-0.5 text-[10px] leading-tight',
-                      today && 'bg-primary font-bold text-primary-foreground',
-                    )}>
-                      {format(date, 'd')}
-                    </span>
+                return (
+                  <div
+                    key={dayIndex}
+                    onClick={() => onDateClick(date)}
+                    className={cn(
+                      'relative flex cursor-pointer flex-col overflow-visible rounded p-0.5 text-xs',
+                      bordered && 'border border-border',
+                      !inMonth && 'text-muted-foreground/40'
+                    )}
+                  >
+                    <div className="flex h-4 flex-shrink-0 items-center justify-center">
+                      <span
+                        className={cn(
+                          'inline-flex h-4 min-w-4 items-center justify-center rounded-full px-0.5 text-[10px] leading-tight',
+                          today && 'bg-primary font-bold text-primary-foreground'
+                        )}
+                      >
+                        {format(date, 'd')}
+                      </span>
+                    </div>
+                    {inMonth && (
+                      <SpanningEventRows
+                        date={date}
+                        rowDates={visibleRowDates}
+                        events={rowSpanningEvents}
+                        onEventClick={onEventClick}
+                        compact
+                        gap="1px"
+                      />
+                    )}
+                    {/* Event list — scrollable within day cell */}
+                    {inMonth && dayEvents.length > 0 && (
+                      <ul className="scrollbar-thin m-0 mt-0.5 flex-1 list-none space-y-px overflow-y-auto p-0">
+                        {dayEvents.map((event) => (
+                          <li key={event.id}>
+                            <InlineCalendarEvent
+                              event={event}
+                              onClick={onEventClick}
+                              compact
+                              showTime={false}
+                            />
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
-                  {inMonth && (
-                    <SpanningEventRows
-                      date={date}
-                      rowDates={visibleRowDates}
-                      events={rowSpanningEvents}
-                      onEventClick={onEventClick}
-                      compact
-                      gap="1px"
-                    />
-                  )}
-                  {/* Event list — scrollable within day cell */}
-                  {inMonth && dayEvents.length > 0 && (
-                    <ul className="flex-1 overflow-y-auto space-y-px mt-0.5 scrollbar-thin list-none m-0 p-0">
-                      {dayEvents.map((event) => (
-                        <li key={event.id}>
-                          <InlineCalendarEvent
-                            event={event}
-                            onClick={onEventClick}
-                            compact
-                            showTime={false}
-                          />
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              );
+                );
               })}
             </div>
           );
@@ -217,13 +229,36 @@ export function ThreeMonthView({
   const isPortrait = orientation === 'portrait';
 
   return (
-    <div className={cn(
-      "h-full gap-2 overflow-y-auto pb-4 md:pb-20",
-      isPortrait ? "flex flex-col" : "flex flex-row"
-    )}>
-      <MiniMonth month={prevMonth} events={events} onEventClick={onEventClick} onDateClick={onDateClick} isCenter={false} bordered={bordered} />
-      <MiniMonth month={currentDate} events={events} onEventClick={onEventClick} onDateClick={onDateClick} isCenter={true} bordered={bordered} />
-      <MiniMonth month={nextMonth} events={events} onEventClick={onEventClick} onDateClick={onDateClick} isCenter={false} bordered={bordered} />
+    <div
+      className={cn(
+        'h-full gap-2 overflow-y-auto pb-4 md:pb-20',
+        isPortrait ? 'flex flex-col' : 'flex flex-row'
+      )}
+    >
+      <MiniMonth
+        month={prevMonth}
+        events={events}
+        onEventClick={onEventClick}
+        onDateClick={onDateClick}
+        isCenter={false}
+        bordered={bordered}
+      />
+      <MiniMonth
+        month={currentDate}
+        events={events}
+        onEventClick={onEventClick}
+        onDateClick={onDateClick}
+        isCenter={true}
+        bordered={bordered}
+      />
+      <MiniMonth
+        month={nextMonth}
+        events={events}
+        onEventClick={onEventClick}
+        onDateClick={onDateClick}
+        isCenter={false}
+        bordered={bordered}
+      />
     </div>
   );
 }

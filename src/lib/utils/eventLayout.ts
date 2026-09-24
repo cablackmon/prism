@@ -30,8 +30,7 @@ export function calculateEventPositions(events: LayoutEvent[]): Map<string, Even
   if (events.length === 0) return result;
 
   // Default endTime to 1 hour after start if missing
-  const getEnd = (e: LayoutEvent): Date =>
-    e.endTime ?? new Date(e.startTime.getTime() + 3600000);
+  const getEnd = (e: LayoutEvent): Date => e.endTime ?? new Date(e.startTime.getTime() + 3600000);
 
   // Sort: earliest start first, then longest duration first
   const sorted = [...events].sort((a, b) => {

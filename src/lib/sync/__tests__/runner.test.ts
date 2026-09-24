@@ -15,15 +15,31 @@ function makeAdapter(remote: RemoteItem<P>[], local: LocalItem[]) {
     entityType: 'test',
     fetchRemote: jest.fn().mockResolvedValue(remote),
     loadLocal: jest.fn().mockResolvedValue(local),
-    applyAdd: jest.fn(async (_s, c: SyncChange<P>) => { calls.add.push(c.externalId); }),
-    applyUpdate: jest.fn(async (_s, c: SyncChange<P>) => { calls.update.push(c.externalId); }),
-    applyDelete: jest.fn(async (_s, c: SyncChange<P>) => { calls.delete.push(c.externalId); }),
+    applyAdd: jest.fn(async (_s, c: SyncChange<P>) => {
+      calls.add.push(c.externalId);
+    }),
+    applyUpdate: jest.fn(async (_s, c: SyncChange<P>) => {
+      calls.update.push(c.externalId);
+    }),
+    applyDelete: jest.fn(async (_s, c: SyncChange<P>) => {
+      calls.delete.push(c.externalId);
+    }),
   };
   return { adapter, calls };
 }
 
-const r = (id: string, name = id): RemoteItem<P> => ({ externalId: id, updatedAt: new Date('2026-07-20'), label: name, payload: { name } });
-const l = (localId: string, externalId: string, name = externalId): LocalItem => ({ localId, externalId, updatedAt: new Date('2026-07-01'), label: name });
+const r = (id: string, name = id): RemoteItem<P> => ({
+  externalId: id,
+  updatedAt: new Date('2026-07-20'),
+  label: name,
+  payload: { name },
+});
+const l = (localId: string, externalId: string, name = externalId): LocalItem => ({
+  localId,
+  externalId,
+  updatedAt: new Date('2026-07-01'),
+  label: name,
+});
 
 describe('previewSync', () => {
   it('computes a diff from the adapter fetch + load', async () => {
@@ -40,9 +56,31 @@ describe('applySync', () => {
   it('dispatches each change to the matching adapter method', async () => {
     const { adapter, calls } = makeAdapter([], []);
     const changes: SyncChange<P>[] = [
-      { kind: 'add', externalId: 'a', label: 'a', payload: { name: 'a' }, reason: '', defaultChecked: true },
-      { kind: 'update', externalId: 'b', localId: 'l2', label: 'b', payload: { name: 'b' }, reason: '', defaultChecked: true },
-      { kind: 'delete', externalId: 'c', localId: 'l3', label: 'c', reason: '', defaultChecked: false },
+      {
+        kind: 'add',
+        externalId: 'a',
+        label: 'a',
+        payload: { name: 'a' },
+        reason: '',
+        defaultChecked: true,
+      },
+      {
+        kind: 'update',
+        externalId: 'b',
+        localId: 'l2',
+        label: 'b',
+        payload: { name: 'b' },
+        reason: '',
+        defaultChecked: true,
+      },
+      {
+        kind: 'delete',
+        externalId: 'c',
+        localId: 'l3',
+        label: 'c',
+        reason: '',
+        defaultChecked: false,
+      },
     ];
     const res = await applySync(adapter, 'src', changes);
     expect(res.applied).toEqual({ add: 1, update: 1, delete: 1 });
@@ -54,8 +92,23 @@ describe('applySync', () => {
     const { adapter } = makeAdapter([], []);
     (adapter.applyUpdate as jest.Mock).mockRejectedValueOnce(new Error('boom'));
     const changes: SyncChange<P>[] = [
-      { kind: 'add', externalId: 'a', label: 'a', payload: { name: 'a' }, reason: '', defaultChecked: true },
-      { kind: 'update', externalId: 'b', localId: 'l2', label: 'Broken', payload: { name: 'b' }, reason: '', defaultChecked: true },
+      {
+        kind: 'add',
+        externalId: 'a',
+        label: 'a',
+        payload: { name: 'a' },
+        reason: '',
+        defaultChecked: true,
+      },
+      {
+        kind: 'update',
+        externalId: 'b',
+        localId: 'l2',
+        label: 'Broken',
+        payload: { name: 'b' },
+        reason: '',
+        defaultChecked: true,
+      },
     ];
     const res = await applySync(adapter, 'src', changes);
     expect(res.applied).toEqual({ add: 1, update: 0, delete: 0 });

@@ -1,13 +1,37 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { ALL_DEFAULT_CATEGORIES, type ShoppingCategoryPreset } from '@/lib/constants/shoppingPresets';
+import {
+  ALL_DEFAULT_CATEGORIES,
+  type ShoppingCategoryPreset,
+} from '@/lib/constants/shoppingPresets';
 
 // Re-export shared types and helpers for consumers
 export type ShoppingCategoryDef = ShoppingCategoryPreset;
-export { GROCERY_PRESET_IDS, GENERAL_PRESET_IDS, getPresetsForListType } from '@/lib/constants/shoppingPresets';
+export {
+  GROCERY_PRESET_IDS,
+  GENERAL_PRESET_IDS,
+  getPresetsForListType,
+} from '@/lib/constants/shoppingPresets';
 
-const EMOJI_POOL = ['🧴', '🥤', '🍿', '🧀', '🥚', '🍕', '🧹', '💊', '🐾', '🎁', '🍬', '🧃', '🥜', '🫒', '🌶️', '🍯'];
+const EMOJI_POOL = [
+  '🧴',
+  '🥤',
+  '🍿',
+  '🧀',
+  '🥚',
+  '🍕',
+  '🧹',
+  '💊',
+  '🐾',
+  '🎁',
+  '🍬',
+  '🧃',
+  '🥜',
+  '🫒',
+  '🌶️',
+  '🍯',
+];
 
 const COLOR_POOL = [
   '#EC4899', // pink
@@ -38,12 +62,13 @@ export function useShoppingCategories() {
           // Filter to well-formed objects only, then backfill any missing defaults
           const valid = saved.filter(
             (c: unknown): c is ShoppingCategoryDef =>
-              typeof c === 'object' && c !== null &&
+              typeof c === 'object' &&
+              c !== null &&
               typeof (c as ShoppingCategoryDef).id === 'string' &&
               typeof (c as ShoppingCategoryDef).name === 'string'
           );
-          const savedIds = new Set(valid.map(c => c.id));
-          const missingDefaults = ALL_DEFAULT_CATEGORIES.filter(c => !savedIds.has(c.id));
+          const savedIds = new Set(valid.map((c) => c.id));
+          const missingDefaults = ALL_DEFAULT_CATEGORIES.filter((c) => !savedIds.has(c.id));
           setCategories([...missingDefaults, ...valid]);
         }
       }
@@ -71,45 +96,70 @@ export function useShoppingCategories() {
     }
   }, []);
 
-  const addCategory = useCallback(async (name: string) => {
-    const id = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-    if (categories.some(c => c.id === id)) return null;
+  const addCategory = useCallback(
+    async (name: string) => {
+      const id = name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '');
+      if (categories.some((c) => c.id === id)) return null;
 
-    // Pick next available emoji and color
-    const usedEmojis = new Set(categories.map(c => c.emoji));
-    const usedColors = new Set(categories.map(c => c.color));
-    const emoji = EMOJI_POOL.find(e => !usedEmojis.has(e)) ?? EMOJI_POOL[categories.length % EMOJI_POOL.length] ?? '🛒';
-    const color = COLOR_POOL.find(c => !usedColors.has(c)) ?? COLOR_POOL[categories.length % COLOR_POOL.length] ?? '#3B82F6';
+      // Pick next available emoji and color
+      const usedEmojis = new Set(categories.map((c) => c.emoji));
+      const usedColors = new Set(categories.map((c) => c.color));
+      const emoji =
+        EMOJI_POOL.find((e) => !usedEmojis.has(e)) ??
+        EMOJI_POOL[categories.length % EMOJI_POOL.length] ??
+        '🛒';
+      const color =
+        COLOR_POOL.find((c) => !usedColors.has(c)) ??
+        COLOR_POOL[categories.length % COLOR_POOL.length] ??
+        '#3B82F6';
 
-    const newCat: ShoppingCategoryDef = { id, name, emoji, color };
-    const updated = [...categories, newCat];
-    await saveCategories(updated);
-    return newCat;
-  }, [categories, saveCategories]);
+      const newCat: ShoppingCategoryDef = { id, name, emoji, color };
+      const updated = [...categories, newCat];
+      await saveCategories(updated);
+      return newCat;
+    },
+    [categories, saveCategories]
+  );
 
-  const updateCategory = useCallback(async (categoryId: string, updates: Partial<Omit<ShoppingCategoryDef, 'id'>>) => {
-    const updated = categories.map(c =>
-      c.id === categoryId ? { ...c, ...updates } : c
-    );
-    await saveCategories(updated);
-  }, [categories, saveCategories]);
+  const updateCategory = useCallback(
+    async (categoryId: string, updates: Partial<Omit<ShoppingCategoryDef, 'id'>>) => {
+      const updated = categories.map((c) => (c.id === categoryId ? { ...c, ...updates } : c));
+      await saveCategories(updated);
+    },
+    [categories, saveCategories]
+  );
 
-  const removeCategory = useCallback(async (categoryId: string) => {
-    const updated = categories.filter(c => c.id !== categoryId);
-    await saveCategories(updated);
-  }, [categories, saveCategories]);
+  const removeCategory = useCallback(
+    async (categoryId: string) => {
+      const updated = categories.filter((c) => c.id !== categoryId);
+      await saveCategories(updated);
+    },
+    [categories, saveCategories]
+  );
 
-  const reorderCategories = useCallback(async (newOrder: ShoppingCategoryDef[]) => {
-    await saveCategories(newOrder);
-  }, [saveCategories]);
+  const reorderCategories = useCallback(
+    async (newOrder: ShoppingCategoryDef[]) => {
+      await saveCategories(newOrder);
+    },
+    [saveCategories]
+  );
 
-  const getCategoryEmoji = useCallback((categoryId: string): string => {
-    return categories.find(c => c.id === categoryId)?.emoji || '🛒';
-  }, [categories]);
+  const getCategoryEmoji = useCallback(
+    (categoryId: string): string => {
+      return categories.find((c) => c.id === categoryId)?.emoji || '🛒';
+    },
+    [categories]
+  );
 
-  const getCategoryColor = useCallback((categoryId: string): string => {
-    return categories.find(c => c.id === categoryId)?.color || '#3B82F6';
-  }, [categories]);
+  const getCategoryColor = useCallback(
+    (categoryId: string): string => {
+      return categories.find((c) => c.id === categoryId)?.color || '#3B82F6';
+    },
+    [categories]
+  );
 
   return {
     categories,

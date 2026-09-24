@@ -8,12 +8,7 @@
  * groups, hours, iCal subscriptions).
  */
 
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { CalendarsSection } from '@/app/settings/sections/CalendarsSection';
 
 export function ManageCalendarsModal({
@@ -26,7 +21,7 @@ export function ManageCalendarsModal({
 }) {
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="w-[calc(100vw-2rem)] max-w-5xl max-h-[85vh] overflow-y-auto overflow-x-hidden">
+      <DialogContent className="max-h-[85vh] w-[calc(100vw-2rem)] max-w-5xl overflow-y-auto overflow-x-hidden">
         <DialogHeader>
           <DialogTitle>Manage calendars</DialogTitle>
         </DialogHeader>

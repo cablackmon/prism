@@ -26,9 +26,6 @@ export async function GET(request: Request) {
   } catch (error) {
     if (isOAuthNotConfigured(error)) return oauthSetupRedirect('gmail');
     logError('Failed to initiate Gmail OAuth:', error);
-    return NextResponse.json(
-      { error: 'Failed to initiate Gmail authentication' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to initiate Gmail authentication' }, { status: 500 });
   }
 }

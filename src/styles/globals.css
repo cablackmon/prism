@@ -44,6 +44,10 @@
     --seasonal-accent-foreground: 210 40% 98%;
     --seasonal-highlight: 210 40% 96%;
     --seasonal-subtle: 210 40% 98%;
+
+    --virtual-key: var(--secondary);
+    --virtual-key-action: var(--muted);
+    --virtual-key-active: var(--accent);
   }
 
   .dark {
@@ -85,6 +89,10 @@
     --seasonal-accent-foreground: 222 47% 11%;
     --seasonal-highlight: 217 33% 17%;
     --seasonal-subtle: 217 33% 17%;
+
+    --virtual-key: 217 33% 24%;
+    --virtual-key-action: 217 33% 20%;
+    --virtual-key-active: 217 33% 34%;
   }
 }
 
@@ -138,7 +146,7 @@
   }
 
   ::-webkit-scrollbar {
-    @apply w-2 h-2;
+    @apply h-2 w-2;
   }
 
   ::-webkit-scrollbar-track {
@@ -146,7 +154,7 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-muted-foreground/30 rounded-full;
+    @apply rounded-full bg-muted-foreground/30;
   }
 
   ::-webkit-scrollbar-thumb:hover {
@@ -159,16 +167,16 @@
   }
 
   button,
-  [role="button"],
-  [role="tab"],
-  [role="switch"] {
+  [role='button'],
+  [role='tab'],
+  [role='switch'] {
     -webkit-user-select: none;
     user-select: none;
   }
 
   a,
   button,
-  [role="button"] {
+  [role='button'] {
     touch-action: manipulation;
   }
 
@@ -380,18 +388,32 @@
 }
 
 @keyframes spin-fast {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes rope-wave {
-  0%, 100% { d: path("M0 10 Q10 5 20 10 Q30 15 40 10"); }
-  50% { d: path("M0 10 Q10 15 20 10 Q30 5 40 10"); }
+  0%,
+  100% {
+    d: path('M0 10 Q10 5 20 10 Q30 15 40 10');
+  }
+  50% {
+    d: path('M0 10 Q10 15 20 10 Q30 5 40 10');
+  }
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
 }
 
 .animate-plane-fly {
@@ -411,8 +433,13 @@
 }
 
 @keyframes wiggle {
-  0%, 100% { transform: rotate(-3deg); }
-  50% { transform: rotate(3deg); }
+  0%,
+  100% {
+    transform: rotate(-3deg);
+  }
+  50% {
+    transform: rotate(3deg);
+  }
 }
 
 .animate-wiggle {
@@ -448,16 +475,64 @@
 }
 
 /* Edge handles - 44px for touch targets */
-.react-resizable-handle-n { top: -22px; left: 24px; right: 24px; height: 44px; cursor: n-resize; }
-.react-resizable-handle-s { bottom: -22px; left: 24px; right: 24px; height: 44px; cursor: s-resize; }
-.react-resizable-handle-e { right: -22px; top: 24px; bottom: 24px; width: 44px; cursor: e-resize; }
-.react-resizable-handle-w { left: -22px; top: 24px; bottom: 24px; width: 44px; cursor: w-resize; }
+.react-resizable-handle-n {
+  top: -22px;
+  left: 24px;
+  right: 24px;
+  height: 44px;
+  cursor: n-resize;
+}
+.react-resizable-handle-s {
+  bottom: -22px;
+  left: 24px;
+  right: 24px;
+  height: 44px;
+  cursor: s-resize;
+}
+.react-resizable-handle-e {
+  right: -22px;
+  top: 24px;
+  bottom: 24px;
+  width: 44px;
+  cursor: e-resize;
+}
+.react-resizable-handle-w {
+  left: -22px;
+  top: 24px;
+  bottom: 24px;
+  width: 44px;
+  cursor: w-resize;
+}
 
 /* Corner handles - 48x48 */
-.react-resizable-handle-ne { top: -20px; right: -20px; width: 48px; height: 48px; cursor: ne-resize; }
-.react-resizable-handle-nw { top: -20px; left: -20px; width: 48px; height: 48px; cursor: nw-resize; }
-.react-resizable-handle-se { bottom: -20px; right: -20px; width: 48px; height: 48px; cursor: se-resize; }
-.react-resizable-handle-sw { bottom: -20px; left: -20px; width: 48px; height: 48px; cursor: sw-resize; }
+.react-resizable-handle-ne {
+  top: -20px;
+  right: -20px;
+  width: 48px;
+  height: 48px;
+  cursor: ne-resize;
+}
+.react-resizable-handle-nw {
+  top: -20px;
+  left: -20px;
+  width: 48px;
+  height: 48px;
+  cursor: nw-resize;
+}
+.react-resizable-handle-se {
+  bottom: -20px;
+  right: -20px;
+  width: 48px;
+  height: 48px;
+  cursor: se-resize;
+}
+.react-resizable-handle-sw {
+  bottom: -20px;
+  left: -20px;
+  width: 48px;
+  height: 48px;
+  cursor: sw-resize;
+}
 
 .react-resizable-handle::after {
   content: '';
@@ -526,67 +601,110 @@
 
 /* Keyboard slide animations */
 @keyframes keyboard-in {
-  from { transform: translateY(100%); }
-  to   { transform: translateY(0); }
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
 }
 @keyframes keyboard-out {
-  from { transform: translateY(0); }
-  to   { transform: translateY(100%); }
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(100%);
+  }
 }
-.animate-keyboard-in  { animation: keyboard-in  200ms ease-out forwards; }
-.animate-keyboard-out { animation: keyboard-out 200ms ease-in  forwards; }
+.animate-keyboard-in {
+  animation: keyboard-in 200ms ease-out forwards;
+}
+.animate-keyboard-out {
+  animation: keyboard-out 200ms ease-in forwards;
+}
 
 /* Scan highlight flash on shopping items */
 @keyframes scan-highlight {
-  0%   { background-color: hsl(var(--primary) / 0.25); }
-  100% { background-color: transparent; }
+  0% {
+    background-color: hsl(var(--primary) / 0.25);
+  }
+  100% {
+    background-color: transparent;
+  }
 }
-.scan-highlight { animation: scan-highlight 1.5s ease-out forwards; }
+.scan-highlight {
+  animation: scan-highlight 1.5s ease-out forwards;
+}
 
 /* Mic pulse when listening */
 @keyframes mic-pulse {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.4; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
 }
 [data-virtual-keyboard].is-listening .key-mic {
   animation: mic-pulse 1s infinite;
 }
 
-/* simple-keyboard theme — scoped to [data-virtual-keyboard] */
+/* simple-keyboard theme — scoped to [data-virtual-keyboard]
+   Selectors include .hg-theme-default so we beat the library stylesheet
+   (same 0,2,0 specificity, and that CSS is imported from VirtualKeyboard
+   so it often loads after globals.css). Without that, idle keys keep the
+   library's background:#fff while inheriting our near-white dark-mode
+   label color — solid blank keys that only show a letter while :active. */
 [data-virtual-keyboard] .hg-theme-default {
   height: 100%;
   background: hsl(var(--background));
   border-radius: 0;
   padding: 8px;
   font-family: inherit;
+  color: hsl(var(--foreground));
 }
-[data-virtual-keyboard] .hg-row {
+
+[data-virtual-keyboard] .hg-theme-default .hg-row {
   margin-bottom: 4px;
 }
-[data-virtual-keyboard] .hg-button {
+
+[data-virtual-keyboard] .hg-theme-default .hg-button,
+[data-virtual-keyboard] .hg-theme-default .hg-button span {
+  color: hsl(var(--secondary-foreground));
+  -webkit-text-fill-color: currentColor;
+}
+
+[data-virtual-keyboard] .hg-theme-default .hg-button {
   height: 52px;
   font-size: 18px;
-  background: hsl(var(--secondary));
-  color: hsl(var(--secondary-foreground));
+  background: hsl(var(--virtual-key));
   border-bottom: 2px solid hsl(var(--border));
   border-radius: 6px;
   box-shadow: none;
 }
-[data-virtual-keyboard] .hg-button:hover,
-[data-virtual-keyboard] .hg-button:active {
-  background: hsl(var(--accent));
-  color: hsl(var(--accent-foreground));
-}
-[data-virtual-keyboard] .hg-button.key-action {
-  background: hsl(var(--muted));
-  font-size: 20px;
-}
-[data-virtual-keyboard] .hg-button.key-space {
-  flex-grow: 4;
-}
-[data-virtual-keyboard] .hg-button.key-mic,
-[data-virtual-keyboard] .hg-button.key-dismiss {
-  flex-grow: 1;
+
+[data-virtual-keyboard] .hg-theme-default .hg-button.key-action {
+  background: hsl(var(--virtual-key-action));
   font-size: 20px;
 }
 
+/* Pressed: .hg-activeButton is what simple-keyboard actually toggles.
+   Keep this after .key-action so every key exposes the active state. */
+[data-virtual-keyboard] .hg-theme-default .hg-button:hover,
+[data-virtual-keyboard] .hg-theme-default .hg-button:active,
+[data-virtual-keyboard] .hg-theme-default .hg-button.hg-activeButton {
+  background: hsl(var(--virtual-key-active));
+  color: hsl(var(--foreground));
+  -webkit-text-fill-color: currentColor;
+}
+
+[data-virtual-keyboard] .hg-theme-default .hg-button.key-space {
+  flex-grow: 4;
+}
+
+[data-virtual-keyboard] .hg-theme-default .hg-button.key-mic,
+[data-virtual-keyboard] .hg-theme-default .hg-button.key-dismiss {
+  flex-grow: 1;
+  font-size: 20px;
+}

@@ -1,4 +1,13 @@
-import { startOfWeek, startOfMonth, startOfYear, isBefore, addWeeks, addMonths, addYears, format } from 'date-fns';
+import {
+  startOfWeek,
+  startOfMonth,
+  startOfYear,
+  isBefore,
+  addWeeks,
+  addMonths,
+  addYears,
+  format,
+} from 'date-fns';
 
 interface GoalDef {
   id: string;
@@ -27,19 +36,29 @@ export interface WaterfallResult {
   yearlyEarned: number;
 }
 
-function getPeriodStart(date: Date, period: 'weekly' | 'monthly' | 'yearly', weekStartsOn: 0 | 1 = 0): Date {
+function getPeriodStart(
+  date: Date,
+  period: 'weekly' | 'monthly' | 'yearly',
+  weekStartsOn: 0 | 1 = 0
+): Date {
   switch (period) {
-    case 'weekly': return startOfWeek(date, { weekStartsOn });
-    case 'monthly': return startOfMonth(date);
-    case 'yearly': return startOfYear(date);
+    case 'weekly':
+      return startOfWeek(date, { weekStartsOn });
+    case 'monthly':
+      return startOfMonth(date);
+    case 'yearly':
+      return startOfYear(date);
   }
 }
 
 function getNextPeriodStart(date: Date, period: 'weekly' | 'monthly' | 'yearly'): Date {
   switch (period) {
-    case 'weekly': return addWeeks(date, 1);
-    case 'monthly': return addMonths(date, 1);
-    case 'yearly': return addYears(date, 1);
+    case 'weekly':
+      return addWeeks(date, 1);
+    case 'monthly':
+      return addMonths(date, 1);
+    case 'yearly':
+      return addYears(date, 1);
   }
 }
 
@@ -54,7 +73,7 @@ export function computeWaterfall(
   goals: GoalDef[],
   completions: Completion[],
   now: Date = new Date(),
-  weekStartsOn: 0 | 1 = 0,
+  weekStartsOn: 0 | 1 = 0
 ): WaterfallResult {
   const sorted = [...goals].sort((a, b) => a.priority - b.priority);
 
@@ -84,8 +103,7 @@ export function computeWaterfall(
   }
 
   // Sort weeks chronologically
-  const weeks = [...weekBuckets.entries()]
-    .sort((a, b) => a[0].localeCompare(b[0]));
+  const weeks = [...weekBuckets.entries()].sort((a, b) => a[0].localeCompare(b[0]));
 
   // Track non-recurring goal accumulation
   const nonRecurringAccum: Record<string, number> = {};
@@ -150,7 +168,11 @@ export function computeWaterfall(
 /**
  * Get the period start string for a goal (used for achievement records).
  */
-export function getGoalPeriodKey(goal: GoalDef, now: Date = new Date(), weekStartsOn: 0 | 1 = 0): string {
+export function getGoalPeriodKey(
+  goal: GoalDef,
+  now: Date = new Date(),
+  weekStartsOn: 0 | 1 = 0
+): string {
   if (goal.recurring && goal.recurrencePeriod) {
     return format(getPeriodStart(now, goal.recurrencePeriod, weekStartsOn), 'yyyy-MM-dd');
   }

@@ -80,7 +80,7 @@ const Switch = React.forwardRef<
       // Transitions
       'transition-colors',
       // Touch optimization
-      'cursor-pointer touch-action-manipulation',
+      'touch-action-manipulation cursor-pointer',
       // Shrink prevention
       'shrink-0',
       className
@@ -108,7 +108,7 @@ const Switch = React.forwardRef<
         // Checked position (right side)
         'data-[state=checked]:translate-x-5',
         // Transitions (smooth slide)
-        'transition-transform ring-0'
+        'ring-0 transition-transform'
       )}
     />
   </SwitchPrimitives.Root>

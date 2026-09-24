@@ -9,8 +9,7 @@ import { cn } from '@/lib/utils';
 import { useGlobalInput } from '@/lib/hooks/useGlobalInput';
 
 export function KeyboardToggleButton() {
-  const { keyboardVisible, setKeyboardVisible, isInputFocused, isMobile } =
-    useGlobalInput();
+  const { keyboardVisible, setKeyboardVisible, isInputFocused, isMobile } = useGlobalInput();
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
   const [hasTouchScreen, setHasTouchScreen] = useState(false);
@@ -28,12 +27,7 @@ export function KeyboardToggleButton() {
   const isSetupWizard = pathname?.startsWith('/setup') ?? false;
 
   const show =
-    mounted &&
-    hasTouchScreen &&
-    !isMobile &&
-    !keyboardVisible &&
-    isInputFocused &&
-    !isSetupWizard;
+    mounted && hasTouchScreen && !isMobile && !keyboardVisible && isInputFocused && !isSetupWizard;
 
   if (!show) return null;
 
@@ -46,16 +40,16 @@ export function KeyboardToggleButton() {
         'fixed z-[8500] rounded-xl shadow-lg',
         'h-12 w-12',
         'transition-opacity duration-150',
-        show ? 'opacity-100' : 'opacity-0 pointer-events-none',
+        show ? 'opacity-100' : 'pointer-events-none opacity-0'
       )}
       style={{ bottom: '1.5rem', right: '1.5rem' }}
-      onPointerDown={e => {
+      onPointerDown={(e) => {
         e.preventDefault(); // prevent focusout on the active input
         setKeyboardVisible(true);
       }}
     >
       <Keyboard className="h-5 w-5" />
     </Button>,
-    document.body,
+    document.body
   );
 }

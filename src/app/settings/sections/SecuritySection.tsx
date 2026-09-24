@@ -122,23 +122,22 @@ export function SecuritySection() {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold">Security Settings</h2>
-        <p className="text-muted-foreground">
-          Manage authentication and access
-        </p>
+        <p className="text-muted-foreground">Manage authentication and access</p>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle>Member PINs</CardTitle>
           <CardDescription>
-            Manage PIN codes for family members. PINs are required when taking actions like posting messages or completing tasks.
+            Manage PIN codes for family members. PINs are required when taking actions like posting
+            messages or completing tasks.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           {familyMembers.map((member) => (
             <div
               key={member.id}
-              className="flex items-center justify-between p-3 rounded-md border border-border"
+              className="flex items-center justify-between rounded-md border border-border p-3"
             >
               <div className="flex items-center gap-3">
                 <UserAvatar
@@ -160,11 +159,7 @@ export function SecuritySection() {
                   </div>
                 </div>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setEditingPinMember(member)}
-              >
+              <Button variant="outline" size="sm" onClick={() => setEditingPinMember(member)}>
                 {member.hasPin ? 'Change PIN' : 'Set PIN'}
               </Button>
             </div>
@@ -176,7 +171,9 @@ export function SecuritySection() {
         <CardHeader>
           <CardTitle>API Tokens</CardTitle>
           <CardDescription>
-            Generate long-lived tokens for external integrations like Alexa skills, Home Assistant, Node-RED, or custom scripts. Pick the smallest scope that works — a leaked Voice token can&apos;t reach the rest of your data.
+            Generate long-lived tokens for external integrations like Alexa skills, Home Assistant,
+            Node-RED, or custom scripts. Pick the smallest scope that works — a leaked Voice token
+            can&apos;t reach the rest of your data.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -184,7 +181,9 @@ export function SecuritySection() {
           <div className="space-y-2">
             <div className="flex gap-2">
               <div className="flex-1">
-                <Label htmlFor="token-name" className="sr-only">Token name</Label>
+                <Label htmlFor="token-name" className="sr-only">
+                  Token name
+                </Label>
                 <Input
                   id="token-name"
                   placeholder="Token name (e.g. Alexa skill)"
@@ -195,19 +194,18 @@ export function SecuritySection() {
                 />
               </div>
               <select
-                className="border border-border rounded-md px-3 py-2 bg-background text-sm"
+                className="rounded-md border border-border bg-background px-3 py-2 text-sm"
                 value={newTokenScope}
                 onChange={(e) => setNewTokenScope(e.target.value as TokenScopeChoice)}
                 aria-label="Token scope"
               >
                 {(['voice', '*'] as const).map((scope) => (
-                  <option key={scope} value={scope}>{SCOPE_LABELS[scope]}</option>
+                  <option key={scope} value={scope}>
+                    {SCOPE_LABELS[scope]}
+                  </option>
                 ))}
               </select>
-              <Button
-                onClick={handleCreateToken}
-                disabled={!newTokenName.trim() || creating}
-              >
+              <Button onClick={handleCreateToken} disabled={!newTokenName.trim() || creating}>
                 {creating ? 'Creating...' : 'Generate Token'}
               </Button>
             </div>
@@ -216,12 +214,12 @@ export function SecuritySection() {
 
           {/* Show newly created token */}
           {createdToken && (
-            <div className="p-3 rounded-md border border-green-500/50 bg-green-50 dark:bg-green-950/20 space-y-2">
+            <div className="space-y-2 rounded-md border border-green-500/50 bg-green-50 p-3 dark:bg-green-950/20">
               <p className="text-sm font-medium text-green-700 dark:text-green-400">
                 Token created! Copy it now — it won&apos;t be shown again.
               </p>
               <div className="flex gap-2">
-                <code className="flex-1 text-xs p-2 rounded bg-background border border-border font-mono break-all select-all">
+                <code className="flex-1 select-all break-all rounded border border-border bg-background p-2 font-mono text-xs">
                   {createdToken}
                 </code>
                 <Button variant="outline" size="sm" onClick={handleCopyToken}>
@@ -245,24 +243,24 @@ export function SecuritySection() {
               {tokens.map((token) => (
                 <div
                   key={token.id}
-                  className="flex items-center justify-between p-3 rounded-md border border-border"
+                  className="flex items-center justify-between rounded-md border border-border p-3"
                 >
                   <div>
-                    <div className="font-medium flex items-center gap-2">
+                    <div className="flex items-center gap-2 font-medium">
                       {token.name}
-                      <span className={`text-xs px-1.5 py-0.5 rounded font-mono ${
-                        token.scopes.includes('*')
-                          ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400'
-                          : 'bg-blue-500/15 text-blue-700 dark:text-blue-400'
-                      }`}>
+                      <span
+                        className={`rounded px-1.5 py-0.5 font-mono text-xs ${
+                          token.scopes.includes('*')
+                            ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400'
+                            : 'bg-blue-500/15 text-blue-700 dark:text-blue-400'
+                        }`}
+                      >
                         {token.scopes.join(', ')}
                       </span>
                     </div>
                     <div className="text-xs text-muted-foreground">
                       Created {formatDate(token.createdAt)}
-                      {token.lastUsedAt && (
-                        <> &middot; Last used {formatDate(token.lastUsedAt)}</>
-                      )}
+                      {token.lastUsedAt && <> &middot; Last used {formatDate(token.lastUsedAt)}</>}
                     </div>
                   </div>
                   <Button
@@ -287,15 +285,14 @@ export function SecuritySection() {
       <Card>
         <CardHeader>
           <CardTitle>Authentication Mode</CardTitle>
-          <CardDescription>
-            How Prism handles user authentication
-          </CardDescription>
+          <CardDescription>How KYST handles user authentication</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="p-3 rounded-md bg-accent/50">
-            <div className="font-medium mb-1">View Freely, Authenticate to Act</div>
+          <div className="rounded-md bg-accent/50 p-3">
+            <div className="mb-1 font-medium">View Freely, Authenticate to Act</div>
             <p className="text-sm text-muted-foreground">
-              Anyone can view the dashboard. When taking an action (posting a message, completing a task, etc.), a PIN prompt appears to identify who is taking the action.
+              Anyone can view the dashboard. When taking an action (posting a message, completing a
+              task, etc.), a PIN prompt appears to identify who is taking the action.
             </p>
           </div>
         </CardContent>
@@ -304,12 +301,10 @@ export function SecuritySection() {
       <Card>
         <CardHeader>
           <CardTitle>Session Timeout</CardTitle>
-          <CardDescription>
-            Auto-logout after inactivity
-          </CardDescription>
+          <CardDescription>Auto-logout after inactivity</CardDescription>
         </CardHeader>
         <CardContent>
-          <select className="w-full border border-border rounded-md px-3 py-2 bg-background">
+          <select className="w-full rounded-md border border-border bg-background px-3 py-2">
             <option value="15">15 minutes</option>
             <option value="30">30 minutes</option>
             <option value="60">1 hour</option>

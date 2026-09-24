@@ -91,7 +91,11 @@ export interface TaskProvider {
   /**
    * Update an existing task in the provider.
    */
-  updateTask(tokens: TaskProviderTokens, taskId: string, updates: UpdateTaskInput): Promise<ExternalTask>;
+  updateTask(
+    tokens: TaskProviderTokens,
+    taskId: string,
+    updates: UpdateTaskInput
+  ): Promise<ExternalTask>;
 
   /**
    * Delete a task from the provider.

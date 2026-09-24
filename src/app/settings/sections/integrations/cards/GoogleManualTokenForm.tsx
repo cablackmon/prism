@@ -25,10 +25,9 @@ const PASTEABLE: Array<{ key: GoogleCapability; blurb: string; note?: React.Reac
     blurb: 'two-way sync. Both lines:',
     note: (
       <>
-        The{' '}
-        <code>{GOOGLE_CAPABILITIES.calendarReadonly.playgroundScopes.join(' ')}</code> line on its
-        own also works and gives you read-only calendars: their events show in Prism, but they are
-        not offered when you add an event.
+        The <code>{GOOGLE_CAPABILITIES.calendarReadonly.playgroundScopes.join(' ')}</code> line on
+        its own also works and gives you read-only calendars: their events show in KYST, but they
+        are not offered when you add an event.
       </>
     ),
   },
@@ -96,7 +95,7 @@ export function GoogleManualTokenForm({ onSaved }: { onSaved?: () => void }) {
         const ok = await confirm(
           'Replace existing Google client?',
           data.message ||
-            'A different Google client is already configured. Calendars connected through the browser flow will need to be re-authenticated.',
+            'A different Google client is already configured. Calendars connected through the browser flow will need to be re-authenticated.'
         );
         if (!ok) return;
         res = await submit(true);
@@ -114,12 +113,14 @@ export function GoogleManualTokenForm({ onSaved }: { onSaved?: () => void }) {
       // then wonder why no tasks appeared.
       const parts: string[] = [];
       if (data.capabilities?.includes('calendar')) {
-        parts.push(`${data.calendarCount ?? 0} calendar${data.calendarCount === 1 ? '' : 's'} imported`);
+        parts.push(
+          `${data.calendarCount ?? 0} calendar${data.calendarCount === 1 ? '' : 's'} imported`
+        );
       }
       if (data.capabilities?.includes('calendarReadonly')) {
         parts.push(
           `${data.calendarCount ?? 0} calendar${data.calendarCount === 1 ? '' : 's'} imported, ` +
-          'read-only (Prism cannot add events to them)',
+            'read-only (KYST cannot add events to them)'
         );
       }
       if (data.capabilities?.includes('gmail')) parts.push('Gmail connected for bus tracking');
@@ -175,39 +176,49 @@ export function GoogleManualTokenForm({ onSaved }: { onSaved?: () => void }) {
       </p>
 
       <p className="text-xs font-medium text-foreground">
-        Do all of this signed into a <span className="underline">single</span> Google account — the one
-        whose calendars you want — ideally in a private/incognito window, so you never mix up accounts.
+        Do all of this signed into a <span className="underline">single</span> Google account — the
+        one whose calendars you want — ideally in a private/incognito window, so you never mix up
+        accounts.
       </p>
 
-        <p className="text-xs text-muted-foreground">
-          One token can cover more than the calendar. The Playground&apos;s API list is long, so use the
-          <strong> Input your own scopes</strong> box at the top of Step 1 and paste the lines you want,
-          space-separated. Paste only what you want Prism to use:
-        </p>
-        <ul className="list-disc space-y-1.5 pl-5 text-xs text-muted-foreground">
-          {PASTEABLE.map(({ key, blurb, note }) => (
-            <li key={key}>
-              <strong>{GOOGLE_CAPABILITIES[key].label}</strong> &mdash; {blurb}
-              <code className="mt-0.5 block break-all text-[11px]">
-                {GOOGLE_CAPABILITIES[key].playgroundScopes.join(' ')}
-              </code>
-              {note ? <span className="mt-0.5 block">{note}</span> : null}
-            </li>
-          ))}
-        </ul>
-        <p className="text-xs text-muted-foreground">
-          Leave one out and Prism simply will not enable it. A token cannot gain a scope later, so to add
-          one afterwards you generate a new token with the extra scope included and paste it here again.
-        </p>
-        <ul className="list-disc space-y-1 pl-5 text-xs text-muted-foreground">
-          <li><strong>Google Calendar API v3</strong> &mdash; two-way calendar sync</li>
-          <li><strong>Tasks API v1</strong> &mdash; Google Tasks as a task source</li>
-          <li><strong>Gmail API v1</strong> &mdash; bus tracking only, which reads transport emails</li>
-        </ul>
-        <p className="text-xs text-muted-foreground">
-          Leave one out and Prism simply will not enable it. A token cannot gain a scope later, so to add
-          one afterwards you generate a new token with the extra scope ticked and paste it here again.
-        </p>
+      <p className="text-xs text-muted-foreground">
+        One token can cover more than the calendar. The Playground&apos;s API list is long, so use
+        the
+        <strong> Input your own scopes</strong> box at the top of Step 1 and paste the lines you
+        want, space-separated. Paste only what you want KYST to use:
+      </p>
+      <ul className="list-disc space-y-1.5 pl-5 text-xs text-muted-foreground">
+        {PASTEABLE.map(({ key, blurb, note }) => (
+          <li key={key}>
+            <strong>{GOOGLE_CAPABILITIES[key].label}</strong> &mdash; {blurb}
+            <code className="mt-0.5 block break-all text-[11px]">
+              {GOOGLE_CAPABILITIES[key].playgroundScopes.join(' ')}
+            </code>
+            {note ? <span className="mt-0.5 block">{note}</span> : null}
+          </li>
+        ))}
+      </ul>
+      <p className="text-xs text-muted-foreground">
+        Leave one out and KYST simply will not enable it. A token cannot gain a scope later, so to
+        add one afterwards you generate a new token with the extra scope included and paste it here
+        again.
+      </p>
+      <ul className="list-disc space-y-1 pl-5 text-xs text-muted-foreground">
+        <li>
+          <strong>Google Calendar API v3</strong> &mdash; two-way calendar sync
+        </li>
+        <li>
+          <strong>Tasks API v1</strong> &mdash; Google Tasks as a task source
+        </li>
+        <li>
+          <strong>Gmail API v1</strong> &mdash; bus tracking only, which reads transport emails
+        </li>
+      </ul>
+      <p className="text-xs text-muted-foreground">
+        Leave one out and KYST simply will not enable it. A token cannot gain a scope later, so to
+        add one afterwards you generate a new token with the extra scope ticked and paste it here
+        again.
+      </p>
 
       <ol className="list-decimal space-y-1 pl-5 text-xs text-muted-foreground">
         <li>
@@ -220,20 +231,24 @@ export function GoogleManualTokenForm({ onSaved }: { onSaved?: () => void }) {
           >
             Google Cloud Console
           </a>
-          , create a project, then enable the <span className="font-medium">Google Calendar API</span>.
+          , create a project, then enable the{' '}
+          <span className="font-medium">Google Calendar API</span>.
         </li>
         <li>
           Configure the <span className="font-medium">OAuth consent screen</span> (User type:{' '}
-          <span className="font-medium">External</span>), then <span className="font-medium">Publish</span>{' '}
-          it to <span className="font-medium">Production</span> — this is what keeps the connection from
+          <span className="font-medium">External</span>), then{' '}
+          <span className="font-medium">Publish</span> it to{' '}
+          <span className="font-medium">Production</span> — this is what keeps the connection from
           expiring after 7 days.
         </li>
         <li>
           Create an <span className="font-medium">OAuth Client ID</span> of type{' '}
           <span className="font-medium">Web application</span>, and add{' '}
-          <code className="rounded bg-muted px-1">https://developers.google.com/oauthplayground</code> to
-          its <span className="font-medium">Authorized redirect URIs</span>. Copy the Client ID and Secret
-          (the secret is shown only once).
+          <code className="rounded bg-muted px-1">
+            https://developers.google.com/oauthplayground
+          </code>{' '}
+          to its <span className="font-medium">Authorized redirect URIs</span>. Copy the Client ID
+          and Secret (the secret is shown only once).
         </li>
         <li>
           Open the{' '}
@@ -246,28 +261,29 @@ export function GoogleManualTokenForm({ onSaved }: { onSaved?: () => void }) {
             OAuth Playground
           </a>{' '}
           → gear icon → check{' '}
-          <span className="font-medium">&ldquo;Use your own OAuth credentials&rdquo;</span> → paste that
-          Client ID and Secret.
+          <span className="font-medium">&ldquo;Use your own OAuth credentials&rdquo;</span> → paste
+          that Client ID and Secret.
         </li>
         <li>
           Step 1: enter the scopes you chose above &rarr;{' '}
-          <span className="font-medium">Authorize APIs</span> → sign in → if warned the app isn&apos;t
-          verified, choose <span className="font-medium">Advanced → proceed</span> (expected for your own
-          app) → <span className="font-medium">Allow</span>.
+          <span className="font-medium">Authorize APIs</span> → sign in → if warned the app
+          isn&apos;t verified, choose <span className="font-medium">Advanced → proceed</span>{' '}
+          (expected for your own app) → <span className="font-medium">Allow</span>.
         </li>
         <li>
-          Step 2: <span className="font-medium">Exchange authorization code for tokens</span> → copy the{' '}
-          <span className="font-medium">Refresh token</span>.
+          Step 2: <span className="font-medium">Exchange authorization code for tokens</span> → copy
+          the <span className="font-medium">Refresh token</span>.
         </li>
         <li>Paste the Client ID, Client Secret, and Refresh token below.</li>
       </ol>
 
       <div className="rounded-md border border-amber-300 bg-amber-50 p-2.5 text-xs text-amber-900 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-100">
         <span className="font-medium">Keep it from expiring:</span> publish the consent screen to{' '}
-        <span className="font-medium">Production</span> (step 2). In <span className="font-medium">Testing</span>{' '}
-        mode Google expires refresh tokens after 7 days. Publishing shows a one-time &ldquo;Google
-        hasn&apos;t verified this app&rdquo; notice — click <span className="font-medium">Advanced → proceed</span>;
-        that&apos;s normal for an app you run yourself.
+        <span className="font-medium">Production</span> (step 2). In{' '}
+        <span className="font-medium">Testing</span> mode Google expires refresh tokens after 7
+        days. Publishing shows a one-time &ldquo;Google hasn&apos;t verified this app&rdquo; notice
+        — click <span className="font-medium">Advanced → proceed</span>; that&apos;s normal for an
+        app you run yourself.
       </div>
 
       <label className="block space-y-1">

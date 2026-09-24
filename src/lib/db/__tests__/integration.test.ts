@@ -59,16 +59,19 @@ describeIf('Events CRUD', () => {
     const startTime = new Date('2026-06-01T09:00:00Z');
     const endTime = new Date('2026-06-01T10:00:00Z');
 
-    const [inserted] = await db.insert(schema.events).values({
-      title: 'Integration Test Event',
-      description: 'A test event for DB integration tests',
-      location: 'Test Location',
-      startTime,
-      endTime,
-      allDay: false,
-      recurring: false,
-      color: '#3B82F6',
-    }).returning();
+    const [inserted] = await db
+      .insert(schema.events)
+      .values({
+        title: 'Integration Test Event',
+        description: 'A test event for DB integration tests',
+        location: 'Test Location',
+        startTime,
+        endTime,
+        allDay: false,
+        recurring: false,
+        color: '#3B82F6',
+      })
+      .returning();
 
     expect(inserted).toBeDefined();
     expect(inserted!.id).toBeDefined();
@@ -91,11 +94,14 @@ describeIf('Events CRUD', () => {
   });
 
   it('updates an event title and verifies the change persists', async () => {
-    const [inserted] = await db.insert(schema.events).values({
-      title: 'Original Title',
-      startTime: new Date('2026-06-02T10:00:00Z'),
-      endTime: new Date('2026-06-02T11:00:00Z'),
-    }).returning();
+    const [inserted] = await db
+      .insert(schema.events)
+      .values({
+        title: 'Original Title',
+        startTime: new Date('2026-06-02T10:00:00Z'),
+        endTime: new Date('2026-06-02T11:00:00Z'),
+      })
+      .returning();
 
     await db
       .update(schema.events)
@@ -111,18 +117,18 @@ describeIf('Events CRUD', () => {
   });
 
   it('deletes an event and verifies it no longer exists', async () => {
-    const [inserted] = await db.insert(schema.events).values({
-      title: 'To Be Deleted',
-      startTime: new Date('2026-06-03T08:00:00Z'),
-      endTime: new Date('2026-06-03T09:00:00Z'),
-    }).returning();
+    const [inserted] = await db
+      .insert(schema.events)
+      .values({
+        title: 'To Be Deleted',
+        startTime: new Date('2026-06-03T08:00:00Z'),
+        endTime: new Date('2026-06-03T09:00:00Z'),
+      })
+      .returning();
 
     await db.delete(schema.events).where(eq(schema.events.id, inserted!.id));
 
-    const results = await db
-      .select()
-      .from(schema.events)
-      .where(eq(schema.events.id, inserted!.id));
+    const results = await db.select().from(schema.events).where(eq(schema.events.id, inserted!.id));
 
     expect(results).toHaveLength(0);
   });
@@ -133,33 +139,42 @@ describeIf('Events CRUD', () => {
 describeIf('Chore completion flow', () => {
   it('creates a user and chore, inserts a completion, verifies it, then deletes it', async () => {
     // Create a family member
-    const [user] = await db.insert(schema.users).values({
-      name: 'Test Child',
-      role: 'child',
-      color: '#10B981',
-      sortOrder: 1,
-    }).returning();
+    const [user] = await db
+      .insert(schema.users)
+      .values({
+        name: 'Test Child',
+        role: 'child',
+        color: '#10B981',
+        sortOrder: 1,
+      })
+      .returning();
 
     expect(user!.id).toBeDefined();
 
     // Create a chore assigned to them
-    const [chore] = await db.insert(schema.chores).values({
-      title: 'Wash dishes',
-      category: 'dishes',
-      assignedTo: user!.id,
-      frequency: 'daily',
-      pointValue: 10,
-      requiresApproval: false,
-    }).returning();
+    const [chore] = await db
+      .insert(schema.chores)
+      .values({
+        title: 'Wash dishes',
+        category: 'dishes',
+        assignedTo: user!.id,
+        frequency: 'daily',
+        pointValue: 10,
+        requiresApproval: false,
+      })
+      .returning();
 
     expect(chore!.id).toBeDefined();
 
     // Insert a chore completion record
-    const [completion] = await db.insert(schema.choreCompletions).values({
-      choreId: chore!.id,
-      completedBy: user!.id,
-      pointsAwarded: 10,
-    }).returning();
+    const [completion] = await db
+      .insert(schema.choreCompletions)
+      .values({
+        choreId: chore!.id,
+        completedBy: user!.id,
+        pointsAwarded: 10,
+      })
+      .returning();
 
     expect(completion).toBeDefined();
     expect(completion!.choreId).toBe(chore!.id);
@@ -178,9 +193,7 @@ describeIf('Chore completion flow', () => {
     expect(fetched!.completedBy).toBe(user!.id);
 
     // Delete the completion and verify it's gone
-    await db
-      .delete(schema.choreCompletions)
-      .where(eq(schema.choreCompletions.id, completion!.id));
+    await db.delete(schema.choreCompletions).where(eq(schema.choreCompletions.id, completion!.id));
 
     const remaining = await db
       .select()
@@ -191,26 +204,35 @@ describeIf('Chore completion flow', () => {
   });
 
   it('cascade-deletes completions when the chore is deleted', async () => {
-    const [user] = await db.insert(schema.users).values({
-      name: 'Another Child',
-      role: 'child',
-      color: '#F59E0B',
-      sortOrder: 2,
-    }).returning();
+    const [user] = await db
+      .insert(schema.users)
+      .values({
+        name: 'Another Child',
+        role: 'child',
+        color: '#F59E0B',
+        sortOrder: 2,
+      })
+      .returning();
 
-    const [chore] = await db.insert(schema.chores).values({
-      title: 'Take out trash',
-      category: 'trash',
-      assignedTo: user!.id,
-      frequency: 'weekly',
-      pointValue: 5,
-      requiresApproval: false,
-    }).returning();
+    const [chore] = await db
+      .insert(schema.chores)
+      .values({
+        title: 'Take out trash',
+        category: 'trash',
+        assignedTo: user!.id,
+        frequency: 'weekly',
+        pointValue: 5,
+        requiresApproval: false,
+      })
+      .returning();
 
-    const [completion] = await db.insert(schema.choreCompletions).values({
-      choreId: chore!.id,
-      completedBy: user!.id,
-    }).returning();
+    const [completion] = await db
+      .insert(schema.choreCompletions)
+      .values({
+        choreId: chore!.id,
+        completedBy: user!.id,
+      })
+      .returning();
 
     // Deleting the chore should cascade-delete the completion
     await db.delete(schema.chores).where(eq(schema.chores.id, chore!.id));
@@ -250,20 +272,20 @@ describeIf('Auth: session lifecycle', () => {
   }
 
   it('creates a user in the DB and verifies it can be read back', async () => {
-    const [user] = await db.insert(schema.users).values({
-      name: 'Session Test Parent',
-      role: 'parent',
-      color: '#6366F1',
-      sortOrder: 0,
-    }).returning();
+    const [user] = await db
+      .insert(schema.users)
+      .values({
+        name: 'Session Test Parent',
+        role: 'parent',
+        color: '#6366F1',
+        sortOrder: 0,
+      })
+      .returning();
 
     expect(user!.id).toBeDefined();
     expect(user!.role).toBe('parent');
 
-    const [fetched] = await db
-      .select()
-      .from(schema.users)
-      .where(eq(schema.users.id, user!.id));
+    const [fetched] = await db.select().from(schema.users).where(eq(schema.users.id, user!.id));
 
     expect(fetched!.name).toBe('Session Test Parent');
     expect(fetched!.role).toBe('parent');
@@ -273,7 +295,9 @@ describeIf('Auth: session lifecycle', () => {
     const redisAvailable = await isRedisAvailable();
 
     if (!redisAvailable) {
-      console.warn('Redis not reachable from test runner (inside Docker only) — skipping session lifecycle test');
+      console.warn(
+        'Redis not reachable from test runner (inside Docker only) — skipping session lifecycle test'
+      );
       return; // graceful skip without failing
     }
 
@@ -282,14 +306,18 @@ describeIf('Auth: session lifecycle', () => {
     process.env.REDIS_URL = 'redis://localhost:6379';
 
     try {
-      const { createSession, validateSession, invalidateSession } = await import('@/lib/auth/session');
+      const { createSession, validateSession, invalidateSession } =
+        await import('@/lib/auth/session');
 
-      const [user] = await db.insert(schema.users).values({
-        name: 'Session Lifecycle User',
-        role: 'parent',
-        color: '#8B5CF6',
-        sortOrder: 0,
-      }).returning();
+      const [user] = await db
+        .insert(schema.users)
+        .values({
+          name: 'Session Lifecycle User',
+          role: 'parent',
+          color: '#8B5CF6',
+          sortOrder: 0,
+        })
+        .returning();
 
       // Create session
       const result = await createSession(user!.id, 'parent');

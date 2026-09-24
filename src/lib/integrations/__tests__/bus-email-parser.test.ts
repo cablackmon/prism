@@ -78,8 +78,7 @@ describe('parseBusEmail', () => {
 
     it('parses with US date format', () => {
       const subject = 'First View: Arrived at Stop | JANE';
-      const body =
-        "Jane's bus arrived at stop Oak & Main at 7:22 AM 3/1/2026 (Trip: 15-A).";
+      const body = "Jane's bus arrived at stop Oak & Main at 7:22 AM 3/1/2026 (Trip: 15-A).";
 
       const result = parseBusEmail(subject, body, fallbackDate);
 
@@ -90,8 +89,7 @@ describe('parseBusEmail', () => {
 
     it('handles 12 PM correctly', () => {
       const subject = 'First View: Arrived at Stop | JANE';
-      const body =
-        "Jane's bus arrived at stop Noon Stop at 12:05 PM 3/1/2026 (15-A).";
+      const body = "Jane's bus arrived at stop Noon Stop at 12:05 PM 3/1/2026 (15-A).";
 
       const result = parseBusEmail(subject, body, fallbackDate);
 
@@ -101,8 +99,7 @@ describe('parseBusEmail', () => {
 
     it('handles 12 AM correctly', () => {
       const subject = 'First View: Arrived at Stop | JANE';
-      const body =
-        "Jane's bus arrived at stop Late Stop at 12:01 AM 3/1/2026 (15-A).";
+      const body = "Jane's bus arrived at stop Late Stop at 12:01 AM 3/1/2026 (15-A).";
 
       const result = parseBusEmail(subject, body, fallbackDate);
 
@@ -153,8 +150,7 @@ describe('parseBusEmail', () => {
 
     it('extracts trip ID from "Trip: 29-D" format', () => {
       const subject = 'First View: Arrived at Stop | JANE';
-      const body =
-        "Jane's bus arrived at stop Home Stop at 3:45 PM 3/1/2026 (Trip: 29-D).";
+      const body = "Jane's bus arrived at stop Home Stop at 3:45 PM 3/1/2026 (Trip: 29-D).";
 
       const result = parseBusEmail(subject, body, fallbackDate);
       expect(result).not.toBeNull();
@@ -175,7 +171,6 @@ describe('parseBusEmail', () => {
   });
 });
 
-
 describe('matchEmailToRoute', () => {
   const routes: BusRoute[] = [
     {
@@ -195,9 +190,7 @@ describe('matchEmailToRoute', () => {
       studentName: 'Emma',
       tripId: '15-A',
       direction: 'PM',
-      checkpoints: [
-        { name: 'School Gate', sortOrder: 0 },
-      ],
+      checkpoints: [{ name: 'School Gate', sortOrder: 0 }],
       stopName: 'ELM ST & OAK AVE',
       schoolName: 'Riverside Middle School',
     },
@@ -266,10 +259,12 @@ describe('matchEmailToRoute', () => {
     };
 
     // Route uses shorthand "Elm & Oak"
-    const shortRoutes: BusRoute[] = [{
-      ...routes[0]!,
-      stopName: 'Elm & Oak',
-    }];
+    const shortRoutes: BusRoute[] = [
+      {
+        ...routes[0]!,
+        stopName: 'Elm & Oak',
+      },
+    ];
 
     const match = matchEmailToRoute(parsed, shortRoutes);
     expect(match).not.toBeNull();

@@ -44,10 +44,7 @@ interface RouteParams {
  * - 404: Chore not found or no pending completion
  * - 500: Server error
  */
-export async function POST(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const { id: choreId } = await params;
 
@@ -81,10 +78,7 @@ export async function POST(
       .where(eq(chores.id, choreId));
 
     if (!chore) {
-      return NextResponse.json(
-        { error: 'Chore not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Chore not found' }, { status: 404 });
     }
 
     // FIND PENDING COMPLETION
@@ -97,12 +91,7 @@ export async function POST(
         pointsAwarded: choreCompletions.pointsAwarded,
       })
       .from(choreCompletions)
-      .where(
-        and(
-          eq(choreCompletions.choreId, choreId),
-          isNull(choreCompletions.approvedBy)
-        )
-      );
+      .where(and(eq(choreCompletions.choreId, choreId), isNull(choreCompletions.approvedBy)));
 
     // If a specific completion ID was provided, filter by it
     if (completionId) {
@@ -199,9 +188,6 @@ export async function POST(
     });
   } catch (error) {
     logError('Error approving chore:', error);
-    return NextResponse.json(
-      { error: 'Failed to approve chore' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to approve chore' }, { status: 500 });
   }
 }

@@ -18,15 +18,17 @@ let mockCookies: Record<string, string> = {};
 let mockHeaders: Record<string, string> = {};
 
 jest.mock('next/headers', () => ({
-  cookies: () => Promise.resolve({
-    get: (name: string) => {
-      const value = mockCookies[name];
-      return value ? { value } : undefined;
-    },
-  }),
-  headers: () => Promise.resolve({
-    get: (name: string) => mockHeaders[name.toLowerCase()] ?? null,
-  }),
+  cookies: () =>
+    Promise.resolve({
+      get: (name: string) => {
+        const value = mockCookies[name];
+        return value ? { value } : undefined;
+      },
+    }),
+  headers: () =>
+    Promise.resolve({
+      get: (name: string) => mockHeaders[name.toLowerCase()] ?? null,
+    }),
 }));
 
 // Mock getRedisClient — controls Redis availability for validateSession tests

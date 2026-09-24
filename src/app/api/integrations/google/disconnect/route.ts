@@ -14,9 +14,7 @@ export async function POST() {
   if (forbidden) return forbidden;
 
   try {
-    await db
-      .delete(calendarSources)
-      .where(eq(calendarSources.provider, 'google'));
+    await db.delete(calendarSources).where(eq(calendarSources.provider, 'google'));
 
     logActivity({
       userId: auth.userId,
@@ -28,9 +26,6 @@ export async function POST() {
     return NextResponse.json({ success: true });
   } catch (error) {
     logError('Error disconnecting Google:', error);
-    return NextResponse.json(
-      { error: 'Failed to disconnect Google' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to disconnect Google' }, { status: 500 });
   }
 }

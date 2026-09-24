@@ -30,38 +30,49 @@ export function useModeToggle(options: UseModeToggleOptions): UseModeToggleResul
   const { endpoint, eventName, label, refreshInterval = 60 * 1000 } = options;
   const [toggleError, setToggleError] = useState<string | null>(null);
 
-  const { data, setData, loading, error: fetchError, refresh } = useFetch<ModeState>({
+  const {
+    data,
+    setData,
+    loading,
+    error: fetchError,
+    refresh,
+  } = useFetch<ModeState>({
     url: endpoint,
     initialData: { enabled: false, enabledAt: null, enabledBy: null },
     label,
     refreshInterval,
   });
 
-  const toggle = useCallback(async (enabled: boolean) => {
-    try {
-      setToggleError(null);
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ enabled }),
-      });
+  const toggle = useCallback(
+    async (enabled: boolean) => {
+      try {
+        setToggleError(null);
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled }),
+        });
 
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error || `Failed to toggle ${label}`);
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.error || `Failed to toggle ${label}`);
+        }
+
+        const result: ModeState = await response.json();
+        setData(result);
+      } catch (err) {
+        console.error(`Error toggling ${label}:`, err);
+        setToggleError(err instanceof Error ? err.message : `Failed to toggle ${label}`);
+        throw err;
       }
-
-      const result: ModeState = await response.json();
-      setData(result);
-    } catch (err) {
-      console.error(`Error toggling ${label}:`, err);
-      setToggleError(err instanceof Error ? err.message : `Failed to toggle ${label}`);
-      throw err;
-    }
-  }, [endpoint, label, setData]);
+    },
+    [endpoint, label, setData]
+  );
 
   useEffect(() => {
-    const handler = () => { refresh(); };
+    const handler = () => {
+      refresh();
+    };
     window.addEventListener(eventName, handler);
     return () => window.removeEventListener(eventName, handler);
   }, [eventName, refresh]);

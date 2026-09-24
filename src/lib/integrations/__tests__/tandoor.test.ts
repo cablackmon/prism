@@ -76,9 +76,7 @@ describe('normalizeTandoorRecipe', () => {
 
   it('joins step instructions into a single block', () => {
     const r = normalizeTandoorRecipe(DETAIL, 'https://tandoor.example.com');
-    expect(r.instructions).toBe(
-      'Ingredients\nSoak the beans overnight.\n\nSimmer for 30 minutes.',
-    );
+    expect(r.instructions).toBe('Ingredients\nSoak the beans overnight.\n\nSimmer for 30 minutes.');
   });
 });
 
@@ -102,14 +100,18 @@ describe('testTandoorConnection', () => {
       headers: new Headers(),
     }) as unknown as typeof fetch;
 
-    await expect(testTandoorConnection('https://tandoor.example.com', 'bad')).rejects.toThrow(/token/i);
+    await expect(testTandoorConnection('https://tandoor.example.com', 'bad')).rejects.toThrow(
+      /token/i
+    );
   });
 
   it('rejects a private serverUrl (SSRF) before making any request', async () => {
     const fetchMock = jest.fn();
     global.fetch = fetchMock as unknown as typeof fetch;
 
-    await expect(testTandoorConnection('http://10.0.0.5', 'tok')).rejects.toBeInstanceOf(UnsafeUrlError);
+    await expect(testTandoorConnection('http://10.0.0.5', 'tok')).rejects.toBeInstanceOf(
+      UnsafeUrlError
+    );
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });
@@ -135,6 +137,8 @@ describe('fetchTandoorImage', () => {
       headers: new Headers(),
     }) as unknown as typeof fetch;
 
-    expect(await fetchTandoorImage('https://tandoor.example.com/media/missing.jpg', 'tok')).toBeNull();
+    expect(
+      await fetchTandoorImage('https://tandoor.example.com/media/missing.jpg', 'tok')
+    ).toBeNull();
   });
 });

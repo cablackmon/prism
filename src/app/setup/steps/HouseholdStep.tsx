@@ -25,7 +25,8 @@ interface HouseholdStepProps {
  * setup finishes.
  */
 export function HouseholdStep({ onNext, onBack }: HouseholdStepProps) {
-  const { query, setQuery, savedName, candidates, searching, saving, select, clear } = useLocationSearch();
+  const { query, setQuery, savedName, candidates, searching, saving, select, clear } =
+    useLocationSearch();
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -55,9 +56,7 @@ export function HouseholdStep({ onNext, onBack }: HouseholdStepProps) {
           <Home className="h-5 w-5 text-primary" />
           <CardTitle>Household Basics</CardTitle>
         </div>
-        <CardDescription>
-          A few quick defaults — no accounts or API keys needed.
-        </CardDescription>
+        <CardDescription>A few quick defaults — no accounts or API keys needed.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
         {/* Location */}
@@ -66,14 +65,14 @@ export function HouseholdStep({ onNext, onBack }: HouseholdStepProps) {
           <p className="text-xs text-muted-foreground">Set your location for local weather</p>
 
           {savedName && (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-muted text-sm">
-              <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <div className="flex items-center gap-2 rounded-md bg-muted px-3 py-2 text-sm">
+              <MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
               <span className="flex-1 truncate">{savedName}</span>
               <button
                 type="button"
                 onClick={clear}
                 disabled={saving}
-                className="text-muted-foreground hover:text-foreground transition-colors"
+                className="text-muted-foreground transition-colors hover:text-foreground"
                 aria-label="Clear location"
               >
                 <X className="h-3.5 w-3.5" />
@@ -83,9 +82,9 @@ export function HouseholdStep({ onNext, onBack }: HouseholdStepProps) {
 
           <div ref={wrapperRef} className="relative">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               {searching && (
-                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground animate-spin" />
+                <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
               )}
               <Input
                 id="household-location"
@@ -99,15 +98,19 @@ export function HouseholdStep({ onNext, onBack }: HouseholdStepProps) {
             </div>
 
             {open && candidates.length > 0 && (
-              <div className="absolute z-50 top-full mt-1 w-full rounded-md border border-border bg-popover shadow-md overflow-hidden">
+              <div className="absolute top-full z-50 mt-1 w-full overflow-hidden rounded-md border border-border bg-popover shadow-md">
                 {candidates.map((c, i) => (
                   <button
                     key={i}
                     type="button"
-                    onMouseDown={(e) => { e.preventDefault(); setOpen(false); select(c); }}
-                    className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-left hover:bg-accent transition-colors"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      setOpen(false);
+                      select(c);
+                    }}
+                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm transition-colors hover:bg-accent"
                   >
-                    <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    <MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                     {c.displayName}
                   </button>
                 ))}
@@ -125,7 +128,7 @@ export function HouseholdStep({ onNext, onBack }: HouseholdStepProps) {
               value={timezone}
               disabled={tzLoading}
               onChange={(e) => setTimezone(e.target.value)}
-              className="h-9 flex-1 min-w-[14rem] rounded-md border border-border bg-background px-3 text-sm"
+              className="h-9 min-w-[14rem] flex-1 rounded-md border border-border bg-background px-3 text-sm"
             >
               {tzOptions.map((tz) => (
                 <option key={tz} value={tz}>
@@ -134,7 +137,12 @@ export function HouseholdStep({ onNext, onBack }: HouseholdStepProps) {
               ))}
             </select>
             {detected && detected !== timezone && (
-              <Button type="button" variant="outline" size="sm" onClick={() => setTimezone(detected)}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setTimezone(detected)}
+              >
                 Use detected
               </Button>
             )}
@@ -150,7 +158,7 @@ export function HouseholdStep({ onNext, onBack }: HouseholdStepProps) {
               onClick={() => setWeekStartsOn(0)}
               className={cn(
                 'flex-1 rounded-md border px-3 py-2 text-sm font-medium transition-colors',
-                weekStartsOn === 0 ? 'border-primary bg-primary/10 text-primary' : 'hover:bg-muted',
+                weekStartsOn === 0 ? 'border-primary bg-primary/10 text-primary' : 'hover:bg-muted'
               )}
             >
               Sunday
@@ -160,7 +168,7 @@ export function HouseholdStep({ onNext, onBack }: HouseholdStepProps) {
               onClick={() => setWeekStartsOn(1)}
               className={cn(
                 'flex-1 rounded-md border px-3 py-2 text-sm font-medium transition-colors',
-                weekStartsOn === 1 ? 'border-primary bg-primary/10 text-primary' : 'hover:bg-muted',
+                weekStartsOn === 1 ? 'border-primary bg-primary/10 text-primary' : 'hover:bg-muted'
               )}
             >
               Monday
@@ -169,13 +177,15 @@ export function HouseholdStep({ onNext, onBack }: HouseholdStepProps) {
         </div>
 
         <div className="flex gap-3 pt-1">
-          <Button variant="ghost" onClick={onBack} className="flex-1">Back</Button>
+          <Button variant="ghost" onClick={onBack} className="flex-1">
+            Back
+          </Button>
           <Button onClick={onNext} className="flex-1">
-            Continue <ChevronRight className="h-4 w-4 ml-1" />
+            Continue <ChevronRight className="ml-1 h-4 w-4" />
           </Button>
         </div>
 
-        <p className="text-xs text-center text-muted-foreground -mt-1">
+        <p className="-mt-1 text-center text-xs text-muted-foreground">
           <button type="button" onClick={onNext} className="hover:underline">
             Skip for now
           </button>

@@ -50,13 +50,7 @@ import { formatDisplayHour, formatDisplayTime } from '@/lib/utils/timeFormat';
  * WEATHER DATA TYPES
  */
 
-export type WeatherCondition =
-  | 'sunny'
-  | 'partly-cloudy'
-  | 'cloudy'
-  | 'rainy'
-  | 'snowy'
-  | 'stormy';
+export type WeatherCondition = 'sunny' | 'partly-cloudy' | 'cloudy' | 'rainy' | 'snowy' | 'stormy';
 
 export interface CurrentWeather {
   temperature: number;
@@ -107,7 +101,7 @@ export interface HourlyForecast {
   condition: WeatherCondition;
   temp: number; // °F
   precipProbability?: number; // 0–100
-  precipIntensity?: number;   // mm/hr
+  precipIntensity?: number; // mm/hr
 }
 
 export interface ForecastPeriod {
@@ -118,8 +112,8 @@ export interface ForecastPeriod {
 
 /** One minute of precipitation data from the minutely forecast. */
 export interface MinutelyData {
-  time: number;           // unix timestamp
-  precipIntensity: number;  // mm/hr
+  time: number; // unix timestamp
+  precipIntensity: number; // mm/hr
   precipProbability: number; // 0–1
 }
 
@@ -172,7 +166,6 @@ export interface WeatherData {
   lastUpdated: Date;
 }
 
-
 /**
  * WEATHER WIDGET PROPS
  */
@@ -194,7 +187,6 @@ export interface WeatherWidgetProps {
   gridH?: number;
   className?: string;
 }
-
 
 /**
  * MOON PHASE GLYPH GEOMETRY (shared)
@@ -233,13 +225,19 @@ function MoonGlyph({
   const c = size / 2;
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden>
-      <circle cx={c} cy={c} r={r} fill="none" stroke={color}
-        strokeOpacity={0.5} strokeWidth={0.8} />
+      <circle
+        cx={c}
+        cy={c}
+        r={r}
+        fill="none"
+        stroke={color}
+        strokeOpacity={0.5}
+        strokeWidth={0.8}
+      />
       <path d={moonPhasePath(c, c, r, phase)} fill={color} opacity={0.9} />
     </svg>
   );
 }
-
 
 /**
  * ABSOLUTE TEMPERATURE COLOR SCALE
@@ -248,14 +246,14 @@ function MoonGlyph({
  * display units — pass the raw °F value regardless of useCelsius.
  */
 const TEMP_COLOR_STOPS: Array<{ temp: number; rgb: [number, number, number] }> = [
-  { temp:  0, rgb: [147, 197, 253] }, // blue-300    — very cold
-  { temp: 32, rgb: [ 96, 165, 250] }, // blue-400    — freezing
+  { temp: 0, rgb: [147, 197, 253] }, // blue-300    — very cold
+  { temp: 32, rgb: [96, 165, 250] }, // blue-400    — freezing
   { temp: 45, rgb: [103, 232, 249] }, // cyan-300    — cold
   { temp: 55, rgb: [134, 239, 172] }, // green-300   — cool
   { temp: 65, rgb: [253, 230, 138] }, // amber-200   — mild
-  { temp: 75, rgb: [252, 211,  77] }, // amber-300   — warm
-  { temp: 85, rgb: [249, 115,  22] }, // orange-500  — hot
-  { temp: 95, rgb: [239,  68,  68] }, // red-500     — very hot
+  { temp: 75, rgb: [252, 211, 77] }, // amber-300   — warm
+  { temp: 85, rgb: [249, 115, 22] }, // orange-500  — hot
+  { temp: 95, rgb: [239, 68, 68] }, // red-500     — very hot
 ];
 
 function tempToColor(fahrenheit: number): string {
@@ -283,30 +281,31 @@ function tempToColor(fahrenheit: number): string {
   return `rgb(${r},${g},${b})`;
 }
 
-
 function formatTemp(value: number, units: WeatherUnits): string {
   return `${Math.round(value)}°${units.temperature}`;
 }
 
 /** Convert a temperature value (in either F or C) to the F scale tempToColor expects. */
 function toFahrenheitForColor(value: number, units: WeatherUnits): number {
-  return units.temperature === 'C' ? value * 9 / 5 + 32 : value;
+  return units.temperature === 'C' ? (value * 9) / 5 + 32 : value;
 }
 
 /** Normalize "City,State,Country" → "City, State" regardless of upstream format. */
 function formatLocation(location: string): string {
-  const parts = location.split(',').map((s) => s.trim()).filter(Boolean);
+  const parts = location
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
   if (parts.length >= 1) return parts[0]!;
   return location;
 }
 
 function formatTempDisplay(fahrenheit: number, useCelsius: boolean): string {
   if (useCelsius) {
-    return `${Math.round((fahrenheit - 32) * 5 / 9)}°C`;
+    return `${Math.round(((fahrenheit - 32) * 5) / 9)}°C`;
   }
   return `${Math.round(fahrenheit)}°F`;
 }
-
 
 /**
  * WEATHER WIDGET COMPONENT
@@ -335,11 +334,7 @@ export const WeatherWidget = React.memo(function WeatherWidget({
   // the thresholds are deliberately conservative so it fits even on shorter
   // (laptop-height) rows. Give it more rows in the editor to see more days.
   const autoDays =
-    gridH >= 20 ? 7 :
-    gridH >= 16 ? 5 :
-    gridH >= 13 ? 4 :
-    gridH >= 10 ? 3 :
-    gridH >= 8 ? 2 : 0;
+    gridH >= 20 ? 7 : gridH >= 16 ? 5 : gridH >= 13 ? 4 : gridH >= 10 ? 3 : gridH >= 8 ? 2 : 0;
   const resolvedDays = Math.max(0, forecastDays ?? autoDays);
   // Hourly is an extra that eats the forecast's space; only show it when the
   // widget is tall enough (matches the sun/moon arc). Below that, favor the
@@ -398,7 +393,8 @@ export const WeatherWidget = React.memo(function WeatherWidget({
   // The sun/moon arc is a nice-to-have; only show it when the widget is tall
   // enough that it doesn't squeeze the actual forecast. Below that, favor the
   // forecast (e.g. the small weather tile on School Mornings).
-  const showSunArc = !!weatherData.sunrise && !!weatherData.sunset && !showPrecipChart && gridH >= 12;
+  const showSunArc =
+    !!weatherData.sunrise && !!weatherData.sunset && !showPrecipChart && gridH >= 12;
 
   return (
     <WidgetContainer
@@ -409,8 +405,10 @@ export const WeatherWidget = React.memo(function WeatherWidget({
       error={error}
       className={className}
     >
-      <div className={cn('flex flex-col gap-3 h-full overflow-hidden', isVertical ? 'pb-2' : '')}>
-
+      <div
+        data-board-scroll
+        className={cn('flex h-full flex-col gap-3 overflow-hidden', isVertical ? 'pb-2' : '')}
+      >
         {/* CURRENT CONDITIONS */}
         <CurrentConditions
           weather={weatherData.current}
@@ -426,25 +424,25 @@ export const WeatherWidget = React.memo(function WeatherWidget({
         {/* HOURLY FORECAST */}
         {showHourly && weatherData.hourly && weatherData.hourly.length > 0 && (
           <div className="border-t border-border pt-3">
-            <HourlyTimeline hourly={weatherData.hourly} units={units} timezone={weatherData.timezone} />
+            <HourlyTimeline
+              hourly={weatherData.hourly}
+              units={units}
+              timezone={weatherData.timezone}
+            />
           </div>
         )}
 
         {/* FORECAST SECTION */}
         {showForecast && hasDays && resolvedDays > 0 && (
-          <div className="border-t border-border pt-3 flex-1 min-h-0 flex flex-col gap-3">
-
+          <div className="flex min-h-0 flex-1 flex-col gap-3 border-t border-border pt-3">
             {/* Multi-day summary — the day list fills the remaining space and
                 clips to WHOLE rows (maxDayRows) so a day is never half-cut. */}
-            <div className="flex-1 min-h-0 flex flex-col">
+            <div className="flex min-h-0 flex-1 flex-col">
               <span className="flex-shrink-0 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 {shownForecast.length}-Day Forecast
               </span>
-              <div ref={dayListRef} className="flex-1 min-h-0 overflow-hidden">
-                <DayHeader
-                  days={shownForecast}
-                  units={units}
-                />
+              <div ref={dayListRef} className="min-h-0 flex-1 overflow-hidden">
+                <DayHeader days={shownForecast} units={units} />
               </div>
             </div>
 
@@ -453,7 +451,7 @@ export const WeatherWidget = React.memo(function WeatherWidget({
                 row (CurrentConditions), so the arc renders without a
                 duplicate label strip. */}
             {showSunArc && (
-              <div className="flex-shrink-0 flex flex-col gap-1">
+              <div className="flex flex-shrink-0 flex-col gap-1">
                 <SunriseSunsetArc
                   sunrise={weatherData.sunrise!}
                   sunset={weatherData.sunset!}
@@ -469,18 +467,16 @@ export const WeatherWidget = React.memo(function WeatherWidget({
 
             {/* Precipitation chart — replaces sunrise/sunset arc when rain is coming in the next hour */}
             {showPrecipChart && (
-              <div className="flex-shrink-0 flex flex-col gap-1">
+              <div className="flex flex-shrink-0 flex-col gap-1">
                 <PrecipitationChart minutely={weatherData.minutely!} />
               </div>
             )}
-
           </div>
         )}
       </div>
     </WidgetContainer>
   );
 });
-
 
 /**
  * CURRENT CONDITIONS SECTION
@@ -506,7 +502,7 @@ function CurrentConditions({
 }) {
   const { timeFormat } = useTimeFormat();
   const t = useTranslations('weather');
-  const temp  = formatTemp(weather.temperature, units);
+  const temp = formatTemp(weather.temperature, units);
   const feels = formatTemp(weather.feelsLike, units);
 
   return (
@@ -515,17 +511,19 @@ function CurrentConditions({
       <div className="flex items-center gap-3">
         <WeatherIcon
           condition={weather.condition}
-          className="h-10 w-10 text-primary flex-shrink-0"
+          className="h-10 w-10 flex-shrink-0 text-primary"
         />
         <div>
           <div className="text-4xl font-bold leading-none">{temp}</div>
-          <div className="text-sm text-muted-foreground capitalize mt-0.5">
-            {weather.descriptionKey && typeof t.has === 'function' && t.has(`conditions.${weather.descriptionKey}`)
+          <div className="mt-0.5 text-sm capitalize text-muted-foreground">
+            {weather.descriptionKey &&
+            typeof t.has === 'function' &&
+            t.has(`conditions.${weather.descriptionKey}`)
               ? t(`conditions.${weather.descriptionKey}`)
               : weather.description}
           </div>
           {location && (
-            <div className="text-xs text-muted-foreground/70 mt-0.5 truncate max-w-[140px]">
+            <div className="mt-0.5 max-w-[140px] truncate text-xs text-muted-foreground/70">
               {formatLocation(location)}
             </div>
           )}
@@ -533,7 +531,7 @@ function CurrentConditions({
       </div>
 
       {/* Right: stats */}
-      <div className="text-right text-xs text-muted-foreground space-y-1 pt-0.5">
+      <div className="space-y-1 pt-0.5 text-right text-xs text-muted-foreground">
         <div className="text-sm">Feels like {feels}</div>
         <div className="flex items-center justify-end gap-1">
           <Droplets className="h-3 w-3" />
@@ -541,7 +539,9 @@ function CurrentConditions({
         </div>
         <div className="flex items-center justify-end gap-1">
           <Wind className="h-3 w-3" />
-          <span>{weather.windSpeed} {units.windSpeed}</span>
+          <span>
+            {weather.windSpeed} {units.windSpeed}
+          </span>
         </div>
         {moonPhase !== undefined && (
           <div className="flex items-center justify-end gap-1 pt-0.5">
@@ -570,20 +570,13 @@ function CurrentConditions({
   );
 }
 
-
 /**
  * DAY HEADER
  * Dark Sky-style row list: day name + precip %, icon, lo | range bar | hi.
  * The bar track spans the full week's min–max range so each day's segment
  * is positioned proportionally.
  */
-function DayHeader({
-  days,
-  units,
-}: {
-  days: ForecastDay[];
-  units: WeatherUnits;
-}) {
+function DayHeader({ days, units }: { days: ForecastDay[]; units: WeatherUnits }) {
   const t = useTranslations('weather');
   const locale = useLocale();
   const now = new Date();
@@ -600,7 +593,7 @@ function DayHeader({
   const colorFor = (v: number) => tempToColor(toFahrenheitForColor(v, units));
 
   return (
-    <div className="flex flex-col mt-1">
+    <div className="mt-1 flex flex-col">
       {days.map((day, i) => {
         // Provider anchors forecast.date at UTC midnight of the location's
         // calendar day; getUTC* avoids TZ slippage between server + viewer.
@@ -609,8 +602,8 @@ function DayHeader({
         const isToday = dayLocalStr === todayLocalStr;
         const label = isToday ? t('today') : localizeDayName(day.dayName, locale).toUpperCase();
 
-        const leftPct  = ((day.low  - globalMin) / span) * 100;
-        const widthPct = ((day.high - day.low)   / span) * 100;
+        const leftPct = ((day.low - globalMin) / span) * 100;
+        const widthPct = ((day.high - day.low) / span) * 100;
 
         // Moon phase for this calendar day — global (no lat/lon needed since
         // phase is the same anywhere on Earth at a given instant). Sampled at
@@ -621,15 +614,14 @@ function DayHeader({
 
         return (
           <div key={i} data-day-row className="flex items-center gap-2 py-1">
-
             {/* Day label + precip % + weather icon + moon phase glyph */}
-            <div className="flex items-center gap-1.5 w-28 flex-shrink-0">
-              <div className="w-12 flex-shrink-0 h-8 flex flex-col justify-center">
-                <div className="text-[11px] font-bold tracking-wide text-foreground leading-tight whitespace-nowrap">
+            <div className="flex w-28 flex-shrink-0 items-center gap-1.5">
+              <div className="flex h-8 w-12 flex-shrink-0 flex-col justify-center">
+                <div className="whitespace-nowrap text-[11px] font-bold leading-tight tracking-wide text-foreground">
                   {label}
                 </div>
                 {day.precipProbability !== undefined && (
-                  <div className="flex items-center gap-0.5 text-[10px] text-blue-500 leading-tight">
+                  <div className="flex items-center gap-0.5 text-[10px] leading-tight text-blue-500">
                     <Droplets className="h-2.5 w-2.5 flex-shrink-0" />
                     <span>{day.precipProbability}%</span>
                   </div>
@@ -646,13 +638,13 @@ function DayHeader({
                 same width across the week, with the colored day-range positioned
                 inside. Low and high temps sit at fixed left/right positions so
                 they line up across days too. */}
-            <div className="flex-1 flex items-center gap-1.5 min-w-0">
-              <span className="text-[11px] text-muted-foreground tabular-nums w-7 text-right flex-shrink-0">
+            <div className="flex min-w-0 flex-1 items-center gap-1.5">
+              <span className="w-7 flex-shrink-0 text-right text-[11px] tabular-nums text-muted-foreground">
                 {fmt(day.low)}°
               </span>
-              <div className="flex-1 relative h-4 rounded-full bg-black/10 dark:bg-white/15 ring-1 ring-inset ring-black/10 dark:ring-white/15 overflow-hidden min-w-0">
+              <div className="relative h-4 min-w-0 flex-1 overflow-hidden rounded-full bg-black/10 ring-1 ring-inset ring-black/10 dark:bg-white/15 dark:ring-white/15">
                 <div
-                  className="absolute top-0 bottom-0 rounded-full"
+                  className="absolute bottom-0 top-0 rounded-full"
                   style={{
                     left: `${leftPct}%`,
                     width: `${Math.max(widthPct, 4)}%`,
@@ -660,7 +652,7 @@ function DayHeader({
                   }}
                 />
               </div>
-              <span className="text-[11px] font-semibold tabular-nums w-7 text-left flex-shrink-0">
+              <span className="w-7 flex-shrink-0 text-left text-[11px] font-semibold tabular-nums">
                 {fmt(day.high)}°
               </span>
             </div>
@@ -670,7 +662,6 @@ function DayHeader({
     </div>
   );
 }
-
 
 /**
  * WEATHER ICON
@@ -683,16 +674,15 @@ function WeatherIcon({
   className?: string;
 }) {
   const icons: Record<WeatherCondition, React.ReactNode> = {
-    'sunny':         <Sun className={className} />,
+    sunny: <Sun className={className} />,
     'partly-cloudy': <CloudSun className={className} />,
-    'cloudy':        <Cloud className={className} />,
-    'rainy':         <CloudRain className={className} />,
-    'snowy':         <CloudSnow className={className} />,
-    'stormy':        <Zap className={className} />,
+    cloudy: <Cloud className={className} />,
+    rainy: <CloudRain className={className} />,
+    snowy: <CloudSnow className={className} />,
+    stormy: <Zap className={className} />,
   };
   return <>{icons[condition] ?? <Cloud className={className} />}</>;
 }
-
 
 /**
  * HOURLY FORECAST
@@ -701,14 +691,20 @@ function WeatherIcon({
  * meaningfully matters (≥10%). The first card is labeled "Now". Replaces the
  * earlier merry-timeline color strip, which read as a 1995-era band chart.
  */
-function HourlyTimeline({ hourly, units, timezone }: { hourly: HourlyForecast[]; units: WeatherUnits; timezone?: string }) {
+function HourlyTimeline({
+  hourly,
+  units,
+  timezone,
+}: {
+  hourly: HourlyForecast[];
+  units: WeatherUnits;
+  timezone?: string;
+}) {
   const { timeFormat } = useTimeFormat();
   // Start at the hour whose endTime is still in the future ("Now" card).
   // Take 8 hours so the row stays readable at the default widget width.
   const nowMs = Date.now();
-  const upcoming = hourly
-    .filter((h) => h.time.getTime() + 60 * 60_000 >= nowMs)
-    .slice(0, 8);
+  const upcoming = hourly.filter((h) => h.time.getTime() + 60 * 60_000 >= nowMs).slice(0, 8);
 
   if (upcoming.length === 0) return null;
 
@@ -729,24 +725,26 @@ function HourlyTimeline({ hourly, units, timezone }: { hourly: HourlyForecast[];
             <div
               key={h.time.toISOString()}
               className={cn(
-                'flex flex-1 min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-2 text-center',
-                isNow ? 'bg-primary/10' : 'bg-muted/40',
+                'flex min-w-0 flex-1 flex-col items-center gap-1 rounded-lg px-1 py-2 text-center',
+                isNow ? 'bg-primary/10' : 'bg-muted/40'
               )}
             >
-              <span className={cn(
-                'text-[10px] font-medium tabular-nums',
-                isNow ? 'text-primary' : 'text-muted-foreground',
-              )}>
+              <span
+                className={cn(
+                  'text-[10px] font-medium tabular-nums',
+                  isNow ? 'text-primary' : 'text-muted-foreground'
+                )}
+              >
                 {timeLabel}
               </span>
               <WeatherIcon condition={h.condition} className="h-5 w-5 text-foreground/80" />
-              <span className="text-xs font-semibold tabular-nums">
-                {Math.round(h.temp)}°
-              </span>
-              <span className={cn(
-                'text-[10px] tabular-nums',
-                showPrecip ? 'text-blue-500 font-medium' : 'text-transparent',
-              )}>
+              <span className="text-xs font-semibold tabular-nums">{Math.round(h.temp)}°</span>
+              <span
+                className={cn(
+                  'text-[10px] tabular-nums',
+                  showPrecip ? 'font-medium text-blue-500' : 'text-transparent'
+                )}
+              >
                 {showPrecip ? `${precipPct}%` : '0%'}
               </span>
             </div>
@@ -756,7 +754,6 @@ function HourlyTimeline({ hourly, units, timezone }: { hourly: HourlyForecast[];
     </div>
   );
 }
-
 
 /**
  * PRECIPITATION CHART
@@ -779,30 +776,30 @@ function PrecipitationChart({ minutely }: { minutely: MinutelyData[] }) {
     return () => ro.disconnect();
   }, []);
 
-  const PAD_LEFT  = 4;
+  const PAD_LEFT = 4;
   const PAD_RIGHT = 4;
-  const PAD_TOP   = 4;
-  const CHART_H   = 56;
-  const AXIS_H    = 14;
-  const totalH    = PAD_TOP + CHART_H + AXIS_H;
-  const chartW    = Math.max(1, width - PAD_LEFT - PAD_RIGHT);
-  const baseY     = PAD_TOP + CHART_H;
+  const PAD_TOP = 4;
+  const CHART_H = 56;
+  const AXIS_H = 14;
+  const totalH = PAD_TOP + CHART_H + AXIS_H;
+  const chartW = Math.max(1, width - PAD_LEFT - PAD_RIGHT);
+  const baseY = PAD_TOP + CHART_H;
 
   // 5 mm/hr = top of chart; heavy rain clips, common events fill lower zones
   const MAX_MM = 5;
 
   // Three equal intensity zones
-  const ZONE_H        = CHART_H / 3;
-  const HEAVY_LINE_Y  = PAD_TOP + ZONE_H;
-  const MED_LINE_Y    = PAD_TOP + ZONE_H * 2;
+  const ZONE_H = CHART_H / 3;
+  const HEAVY_LINE_Y = PAD_TOP + ZONE_H;
+  const MED_LINE_Y = PAD_TOP + ZONE_H * 2;
   const HEAVY_LABEL_Y = PAD_TOP + ZONE_H * 0.5;
-  const MED_LABEL_Y   = PAD_TOP + ZONE_H * 1.5;
+  const MED_LABEL_Y = PAD_TOP + ZONE_H * 1.5;
   const LIGHT_LABEL_Y = PAD_TOP + ZONE_H * 2.5;
 
   // One bar per minute — tight packing with a 0.5 px gap
   const n = minutely.length;
   const slotW = chartW / Math.max(n, 60);
-  const barW  = Math.max(slotW - 0.5, 0.5);
+  const barW = Math.max(slotW - 0.5, 0.5);
 
   const xTicks = [10, 20, 30, 40, 50].map((min) => ({
     min,
@@ -817,7 +814,9 @@ function PrecipitationChart({ minutely }: { minutely: MinutelyData[] }) {
     if (currentlyRaining) {
       const stopMinute = minutely.findIndex((m, i) => i > 0 && m.precipIntensity < RAIN_THRESHOLD);
       if (stopMinute === -1) return 'Raining through the hour';
-      const resumeMinute = minutely.findIndex((m, i) => i > stopMinute && m.precipIntensity >= RAIN_THRESHOLD);
+      const resumeMinute = minutely.findIndex(
+        (m, i) => i > stopMinute && m.precipIntensity >= RAIN_THRESHOLD
+      );
       return resumeMinute === -1
         ? `Stops in ${stopMinute} min`
         : `Stops in ${stopMinute} min · returns in ${resumeMinute} min`;
@@ -828,34 +827,77 @@ function PrecipitationChart({ minutely }: { minutely: MinutelyData[] }) {
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-center justify-between">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+        <span className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           <CloudRain className="h-3 w-3 text-blue-400" />
           Rain next hour
         </span>
-        <span className="text-[10px] text-blue-400 font-medium">{rainMessage}</span>
+        <span className="text-[10px] font-medium text-blue-400">{rainMessage}</span>
       </div>
       <div ref={containerRef} className="w-full">
         <svg width={width} height={totalH} style={{ display: 'block' }}>
           <defs>
             <linearGradient id="precip-bar-gradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%"   stopColor="#3B82F6" stopOpacity="0.95" />
+              <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.95" />
               <stop offset="100%" stopColor="#93C5FD" stopOpacity="0.55" />
             </linearGradient>
           </defs>
 
           {/* Zone boundary lines */}
-          <line x1={PAD_LEFT} y1={HEAVY_LINE_Y} x2={PAD_LEFT + chartW} y2={HEAVY_LINE_Y}
-            stroke="currentColor" strokeOpacity={0.25} strokeWidth={0.75} strokeDasharray="3 3" />
-          <line x1={PAD_LEFT} y1={MED_LINE_Y} x2={PAD_LEFT + chartW} y2={MED_LINE_Y}
-            stroke="currentColor" strokeOpacity={0.25} strokeWidth={0.75} strokeDasharray="3 3" />
+          <line
+            x1={PAD_LEFT}
+            y1={HEAVY_LINE_Y}
+            x2={PAD_LEFT + chartW}
+            y2={HEAVY_LINE_Y}
+            stroke="currentColor"
+            strokeOpacity={0.25}
+            strokeWidth={0.75}
+            strokeDasharray="3 3"
+          />
+          <line
+            x1={PAD_LEFT}
+            y1={MED_LINE_Y}
+            x2={PAD_LEFT + chartW}
+            y2={MED_LINE_Y}
+            stroke="currentColor"
+            strokeOpacity={0.25}
+            strokeWidth={0.75}
+            strokeDasharray="3 3"
+          />
 
           {/* Zone labels */}
-          <text x={PAD_LEFT + 4} y={HEAVY_LABEL_Y} textAnchor="start" fontSize={7.5}
-            fill="currentColor" fillOpacity={0.5} dominantBaseline="middle">HEAVY</text>
-          <text x={PAD_LEFT + 4} y={MED_LABEL_Y} textAnchor="start" fontSize={7.5}
-            fill="currentColor" fillOpacity={0.5} dominantBaseline="middle">MED</text>
-          <text x={PAD_LEFT + 4} y={LIGHT_LABEL_Y} textAnchor="start" fontSize={7.5}
-            fill="currentColor" fillOpacity={0.5} dominantBaseline="middle">LIGHT</text>
+          <text
+            x={PAD_LEFT + 4}
+            y={HEAVY_LABEL_Y}
+            textAnchor="start"
+            fontSize={7.5}
+            fill="currentColor"
+            fillOpacity={0.5}
+            dominantBaseline="middle"
+          >
+            HEAVY
+          </text>
+          <text
+            x={PAD_LEFT + 4}
+            y={MED_LABEL_Y}
+            textAnchor="start"
+            fontSize={7.5}
+            fill="currentColor"
+            fillOpacity={0.5}
+            dominantBaseline="middle"
+          >
+            MED
+          </text>
+          <text
+            x={PAD_LEFT + 4}
+            y={LIGHT_LABEL_Y}
+            textAnchor="start"
+            fontSize={7.5}
+            fill="currentColor"
+            fillOpacity={0.5}
+            dominantBaseline="middle"
+          >
+            LIGHT
+          </text>
 
           {/* Bars — one per minute, skip trace amounts */}
           {minutely.map((m, i) => {
@@ -877,20 +919,35 @@ function PrecipitationChart({ minutely }: { minutely: MinutelyData[] }) {
           })}
 
           {/* Baseline */}
-          <line x1={PAD_LEFT} y1={baseY} x2={PAD_LEFT + chartW} y2={baseY}
-            stroke="currentColor" strokeOpacity={0.15} strokeWidth={1} />
+          <line
+            x1={PAD_LEFT}
+            y1={baseY}
+            x2={PAD_LEFT + chartW}
+            y2={baseY}
+            stroke="currentColor"
+            strokeOpacity={0.15}
+            strokeWidth={1}
+          />
 
           {/* X-axis labels */}
           {xTicks.map(({ min, x }) => (
-            <text key={min} x={x} y={baseY + 11} textAnchor="middle" fontSize={7.5}
-              fill="currentColor" fillOpacity={0.5}>{min} min</text>
+            <text
+              key={min}
+              x={x}
+              y={baseY + 11}
+              textAnchor="middle"
+              fontSize={7.5}
+              fill="currentColor"
+              fillOpacity={0.5}
+            >
+              {min} min
+            </text>
           ))}
         </svg>
       </div>
     </div>
   );
 }
-
 
 /**
  * SUN + MOON ARC
@@ -949,15 +1006,19 @@ function SunriseSunsetArc({
     return () => ro.disconnect();
   }, []);
 
-  const H        = 110;
+  const H = 110;
   const horizonY = 66;
-  const pad      = 8;
+  const pad = 8;
   const arcWidth = width - 2 * pad;
-  const ryTop    = horizonY - 10;      // pixels representing zenith (alt = π/2)
-  const ryBot    = H - horizonY - 10;  // pixels representing antizenith (alt = -π/2)
-  const dayMs    = 24 * 3_600_000;
+  const ryTop = horizonY - 10; // pixels representing zenith (alt = π/2)
+  const ryBot = H - horizonY - 10; // pixels representing antizenith (alt = -π/2)
+  const dayMs = 24 * 3_600_000;
 
-  const today = React.useMemo(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; }, []);
+  const today = React.useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
   const midnightMs = today.getTime();
   const nowMs = Date.now();
 
@@ -968,10 +1029,13 @@ function SunriseSunsetArc({
   // Map a celestial altitude (radians, -π/2..π/2) to a Y pixel.
   // FIXED scale: zenith = ryTop above horizonY. Sub-zenith altitudes shrink
   // proportionally so winter sun visibly arcs lower than summer sun.
-  const altToY = React.useCallback((altRad: number): number => {
-    if (altRad >= 0) return horizonY - ryTop * Math.min(1, altRad / (Math.PI / 2));
-    return horizonY + ryBot * Math.min(1, -altRad / (Math.PI / 2));
-  }, [horizonY, ryTop, ryBot]);
+  const altToY = React.useCallback(
+    (altRad: number): number => {
+      if (altRad >= 0) return horizonY - ryTop * Math.min(1, altRad / (Math.PI / 2));
+      return horizonY + ryBot * Math.min(1, -altRad / (Math.PI / 2));
+    },
+    [horizonY, ryTop, ryBot]
+  );
 
   // Resolve coords: fall back to Chicago for demo data without lat/lon.
   const useLat = lat ?? 41.8781;
@@ -997,18 +1061,22 @@ function SunriseSunsetArc({
   // Generic helpers — convert a sample list into one or more SVG paths,
   // optionally filtering by above/below horizon and elapsed/future.
   const samplesToPath = (pts: { frac: number; y: number }[]): string =>
-    pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${xOf(p.frac).toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
+    pts
+      .map((p, i) => `${i === 0 ? 'M' : 'L'} ${xOf(p.frac).toFixed(1)} ${p.y.toFixed(1)}`)
+      .join(' ');
 
   const segmentBy = (
     pts: { frac: number; alt: number; y: number }[],
-    keep: (s: { alt: number; frac: number }) => boolean,
+    keep: (s: { alt: number; frac: number }) => boolean
   ): string[] => {
     const out: string[] = [];
     let buf: { frac: number; y: number }[] = [];
     for (const s of pts) {
       if (keep(s)) buf.push({ frac: s.frac, y: s.y });
-      else if (buf.length > 1) { out.push(samplesToPath(buf)); buf = []; }
-      else buf = [];
+      else if (buf.length > 1) {
+        out.push(samplesToPath(buf));
+        buf = [];
+      } else buf = [];
     }
     if (buf.length > 1) out.push(samplesToPath(buf));
     return out;
@@ -1017,15 +1085,15 @@ function SunriseSunsetArc({
   // Sun arc segments. "Elapsed" portions (frac ≤ nowFrac) get the bright
   // amber / slate treatment; future portions sit on the dashed background.
   const sunFullPath = samplesToPath(samples.sun);
-  const sunElapsedAbove = segmentBy(samples.sun, s => s.frac <= nowFrac && s.alt >= 0);
-  const sunElapsedBelow = segmentBy(samples.sun, s => s.frac <= nowFrac && s.alt < 0);
+  const sunElapsedAbove = segmentBy(samples.sun, (s) => s.frac <= nowFrac && s.alt >= 0);
+  const sunElapsedBelow = segmentBy(samples.sun, (s) => s.frac <= nowFrac && s.alt < 0);
 
   // Moon: light up the whole above-horizon portion in blue (we don't track
   // elapsed/future for moon — the curve is short enough that it reads as a
   // single "moon-up" highlight).
   const moonSamples = moonrise || moonset || moonPhase !== undefined ? samples.moon : null;
   const moonFullPath = moonSamples ? samplesToPath(moonSamples) : null;
-  const moonAbovePaths = moonSamples ? segmentBy(moonSamples, s => s.alt >= 0) : [];
+  const moonAbovePaths = moonSamples ? segmentBy(moonSamples, (s) => s.alt >= 0) : [];
 
   // Current positions (uses suncalc directly rather than interpolating
   // samples — accurate to the second instead of the 15-min sample grid).
@@ -1042,14 +1110,13 @@ function SunriseSunsetArc({
   // Rise/set fractions, clamped to [0,1] today. Suncalc rises/sets can
   // straddle midnight, in which case we just hide the off-screen tick.
   const sunRiseFrac = (sunrise.getTime() - midnightMs) / dayMs;
-  const sunSetFrac  = (sunset.getTime()  - midnightMs) / dayMs;
+  const sunSetFrac = (sunset.getTime() - midnightMs) / dayMs;
   const moonRiseRaw = moonrise ? (moonrise.getTime() - midnightMs) / dayMs : null;
-  const moonSetRaw  = moonset  ? (moonset.getTime()  - midnightMs) / dayMs : null;
+  const moonSetRaw = moonset ? (moonset.getTime() - midnightMs) / dayMs : null;
   const inWindow = (f: number | null): f is number => f !== null && f >= 0 && f <= 1;
 
-
-  const SUN_COLOR = '#FBBF24';   // amber-400 — sun at zenith
-  const SUN_LOW   = '#F97316';   // orange-500 — sun at low altitude
+  const SUN_COLOR = '#FBBF24'; // amber-400 — sun at zenith
+  const SUN_LOW = '#F97316'; // orange-500 — sun at low altitude
   const SUN_HORIZON = '#EF4444'; // red-500 — sun at the horizon
   const MOON_COLOR = '#60A5FA';
 
@@ -1065,14 +1132,20 @@ function SunriseSunsetArc({
     : '#94A3B8';
 
   return (
-    <div ref={containerRef} className="flex flex-col gap-1 w-full">
+    <div ref={containerRef} className="flex w-full flex-col gap-1">
       <svg width={width} height={H} style={{ display: 'block', overflow: 'visible' }}>
         {/* Altitude-based color gradient for the sun arc — red at the
             horizon, orange at low altitude, amber at zenith. Matches the
             atmospheric-scattering color shift you'd actually see in the sky. */}
         <defs>
-          <linearGradient id={gradientId} gradientUnits="userSpaceOnUse"
-            x1={0} y1={horizonY} x2={0} y2={horizonY - ryTop}>
+          <linearGradient
+            id={gradientId}
+            gradientUnits="userSpaceOnUse"
+            x1={0}
+            y1={horizonY}
+            x2={0}
+            y2={horizonY - ryTop}
+          >
             <stop offset="0" stopColor={SUN_HORIZON} />
             <stop offset="0.3" stopColor={SUN_LOW} />
             <stop offset="1" stopColor={SUN_COLOR} />
@@ -1081,60 +1154,127 @@ function SunriseSunsetArc({
 
         {/* Horizon line */}
         <line
-          x1={pad - 4} y1={horizonY} x2={width - pad + 4} y2={horizonY}
-          stroke="currentColor" strokeOpacity={0.12} strokeWidth={1}
+          x1={pad - 4}
+          y1={horizonY}
+          x2={width - pad + 4}
+          y2={horizonY}
+          stroke="currentColor"
+          strokeOpacity={0.12}
+          strokeWidth={1}
         />
 
         {/* Sun: full 24h arc — dashed background */}
-        <path d={sunFullPath} fill="none" stroke="currentColor"
-          strokeOpacity={0.2} strokeWidth={2} strokeDasharray="4 3" />
+        <path
+          d={sunFullPath}
+          fill="none"
+          stroke="currentColor"
+          strokeOpacity={0.2}
+          strokeWidth={2}
+          strokeDasharray="4 3"
+        />
 
         {/* Sun: elapsed above-horizon — gradient by altitude (red→orange→amber) */}
         {sunElapsedAbove.map((d, i) => (
-          <path key={`sun-up-${i}`} d={d} fill="none" stroke={`url(#${gradientId})`}
-            strokeOpacity={0.85} strokeWidth={2.5} strokeLinecap="round" />
+          <path
+            key={`sun-up-${i}`}
+            d={d}
+            fill="none"
+            stroke={`url(#${gradientId})`}
+            strokeOpacity={0.85}
+            strokeWidth={2.5}
+            strokeLinecap="round"
+          />
         ))}
 
         {/* Sun: elapsed below-horizon — slate */}
         {sunElapsedBelow.map((d, i) => (
-          <path key={`sun-down-${i}`} d={d} fill="none" stroke="#94A3B8"
-            strokeOpacity={0.45} strokeWidth={2.5} strokeLinecap="round" />
+          <path
+            key={`sun-down-${i}`}
+            d={d}
+            fill="none"
+            stroke="#94A3B8"
+            strokeOpacity={0.45}
+            strokeWidth={2.5}
+            strokeLinecap="round"
+          />
         ))}
 
         {/* Sunrise / sunset ticks */}
         {inWindow(sunRiseFrac) && (
-          <line x1={xOf(sunRiseFrac)} y1={horizonY - 5} x2={xOf(sunRiseFrac)} y2={horizonY + 5}
-            stroke={SUN_COLOR} strokeOpacity={0.55} strokeWidth={1.5} />
+          <line
+            x1={xOf(sunRiseFrac)}
+            y1={horizonY - 5}
+            x2={xOf(sunRiseFrac)}
+            y2={horizonY + 5}
+            stroke={SUN_COLOR}
+            strokeOpacity={0.55}
+            strokeWidth={1.5}
+          />
         )}
         {inWindow(sunSetFrac) && (
-          <line x1={xOf(sunSetFrac)} y1={horizonY - 5} x2={xOf(sunSetFrac)} y2={horizonY + 5}
-            stroke={SUN_COLOR} strokeOpacity={0.55} strokeWidth={1.5} />
+          <line
+            x1={xOf(sunSetFrac)}
+            y1={horizonY - 5}
+            x2={xOf(sunSetFrac)}
+            y2={horizonY + 5}
+            stroke={SUN_COLOR}
+            strokeOpacity={0.55}
+            strokeWidth={1.5}
+          />
         )}
 
         {/* Moon arc (full + above-horizon highlight) */}
         {moonFullPath && (
-          <path d={moonFullPath} fill="none" stroke="currentColor"
-            strokeOpacity={0.15} strokeWidth={1.5} strokeDasharray="2 4" />
+          <path
+            d={moonFullPath}
+            fill="none"
+            stroke="currentColor"
+            strokeOpacity={0.15}
+            strokeWidth={1.5}
+            strokeDasharray="2 4"
+          />
         )}
         {moonAbovePaths.map((d, i) => (
-          <path key={`moon-up-${i}`} d={d} fill="none" stroke={MOON_COLOR}
-            strokeOpacity={0.75} strokeWidth={2} strokeLinecap="round" />
+          <path
+            key={`moon-up-${i}`}
+            d={d}
+            fill="none"
+            stroke={MOON_COLOR}
+            strokeOpacity={0.75}
+            strokeWidth={2}
+            strokeLinecap="round"
+          />
         ))}
 
         {/* Moonrise / moonset ticks */}
         {inWindow(moonRiseRaw) && (
-          <line x1={xOf(moonRiseRaw)} y1={horizonY - 4} x2={xOf(moonRiseRaw)} y2={horizonY + 4}
-            stroke={MOON_COLOR} strokeOpacity={0.55} strokeWidth={1.5} />
+          <line
+            x1={xOf(moonRiseRaw)}
+            y1={horizonY - 4}
+            x2={xOf(moonRiseRaw)}
+            y2={horizonY + 4}
+            stroke={MOON_COLOR}
+            strokeOpacity={0.55}
+            strokeWidth={1.5}
+          />
         )}
         {inWindow(moonSetRaw) && (
-          <line x1={xOf(moonSetRaw)} y1={horizonY - 4} x2={xOf(moonSetRaw)} y2={horizonY + 4}
-            stroke={MOON_COLOR} strokeOpacity={0.55} strokeWidth={1.5} />
+          <line
+            x1={xOf(moonSetRaw)}
+            y1={horizonY - 4}
+            x2={xOf(moonSetRaw)}
+            y2={horizonY + 4}
+            stroke={MOON_COLOR}
+            strokeOpacity={0.55}
+            strokeWidth={1.5}
+          />
         )}
 
         {/* Sun glow + dot — color tracks altitude so a low sun glows red/orange */}
         {isDay && <circle cx={sunX} cy={sunY} r={16} fill={sunDotColor} opacity={0.2} />}
         <circle
-          cx={sunX} cy={sunY}
+          cx={sunX}
+          cy={sunY}
           r={isDay ? 7 : 4}
           fill={sunDotColor}
           opacity={isDay ? 1 : 0.55}
@@ -1146,14 +1286,20 @@ function SunriseSunsetArc({
         {moonSamples && moonPhase !== undefined && (
           <g>
             {isMoonUp && <circle cx={moonX} cy={moonY} r={11} fill={MOON_COLOR} opacity={0.18} />}
-            <circle cx={moonX} cy={moonY} r={6}
+            <circle
+              cx={moonX}
+              cy={moonY}
+              r={6}
               fill="none"
               stroke={isMoonUp ? MOON_COLOR : '#94A3B8'}
               strokeOpacity={isMoonUp ? 0.65 : 0.4}
-              strokeWidth={1} />
-            <path d={moonPhasePath(moonX, moonY, 6, moonPhase)}
+              strokeWidth={1}
+            />
+            <path
+              d={moonPhasePath(moonX, moonY, 6, moonPhase)}
               fill={isMoonUp ? MOON_COLOR : '#94A3B8'}
-              opacity={isMoonUp ? 1 : 0.55} />
+              opacity={isMoonUp ? 1 : 0.55}
+            />
           </g>
         )}
       </svg>
@@ -1161,25 +1307,31 @@ function SunriseSunsetArc({
       {/* Sun / moon times — one evenly-spaced row: sun pair fixed on the left
           (sunrise, sunset), moon pair on the right (moonrise ↑, moonset ↓).
           Cleaner and never clips vs. the old x-anchored floating labels. */}
-      <div className="flex items-center justify-between gap-3 text-[11px] tabular-nums pt-0.5 whitespace-nowrap">
+      <div className="flex items-center justify-between gap-3 whitespace-nowrap pt-0.5 text-[11px] tabular-nums">
         <span className="flex items-center gap-3">
           <span className="flex items-center gap-1" style={{ color: SUN_COLOR }} title="Sunrise">
-            <Sunrise className="h-3 w-3" />{formatDisplayTime(sunrise, timeFormat, {}, timezone)}
+            <Sunrise className="h-3 w-3" />
+            {formatDisplayTime(sunrise, timeFormat, {}, timezone)}
           </span>
           <span className="flex items-center gap-1" style={{ color: SUN_COLOR }} title="Sunset">
-            <Sunset className="h-3 w-3" />{formatDisplayTime(sunset, timeFormat, {}, timezone)}
+            <Sunset className="h-3 w-3" />
+            {formatDisplayTime(sunset, timeFormat, {}, timezone)}
           </span>
         </span>
         {(moonrise || moonset) && (
           <span className="flex items-center gap-3" style={{ color: MOON_COLOR }}>
             {moonrise && (
               <span className="flex items-center gap-1" title="Moonrise">
-                <MoonGlyph phase={moonPhase ?? 0} size={11} /><span className="opacity-70">↑</span>{formatDisplayTime(moonrise, timeFormat, {}, timezone)}
+                <MoonGlyph phase={moonPhase ?? 0} size={11} />
+                <span className="opacity-70">↑</span>
+                {formatDisplayTime(moonrise, timeFormat, {}, timezone)}
               </span>
             )}
             {moonset && (
               <span className="flex items-center gap-1" title="Moonset">
-                {!moonrise && <MoonGlyph phase={moonPhase ?? 0} size={11} />}<span className="opacity-70">↓</span>{formatDisplayTime(moonset, timeFormat, {}, timezone)}
+                {!moonrise && <MoonGlyph phase={moonPhase ?? 0} size={11} />}
+                <span className="opacity-70">↓</span>
+                {formatDisplayTime(moonset, timeFormat, {}, timezone)}
               </span>
             )}
           </span>
@@ -1188,7 +1340,6 @@ function SunriseSunsetArc({
     </div>
   );
 }
-
 
 /**
  * DEMO DATA
@@ -1208,19 +1359,19 @@ function getDemoWeatherData(location: string): WeatherData {
     'sunny',
   ];
 
-  const highs   = [52, 61, 47, 44, 39, 34, 58];
-  const lows    = [38, 45, 36, 31, 27, 22, 40];
-  const precips = [78,  0,  0, 86, 97,  2, 20];
+  const highs = [52, 61, 47, 44, 39, 34, 58];
+  const lows = [38, 45, 36, 31, 27, 22, 40];
+  const precips = [78, 0, 0, 86, 97, 2, 20];
 
   const forecast: ForecastDay[] = Array.from({ length: 7 }, (_, i) => {
     const date = new Date(today);
     date.setDate(date.getDate() + i);
     return {
       date,
-      dayName:          dayNames[date.getDay()] ?? 'Day',
-      high:             highs[i] ?? 55,
-      low:              lows[i] ?? 40,
-      condition:        conditions[i] ?? 'sunny',
+      dayName: dayNames[date.getDay()] ?? 'Day',
+      high: highs[i] ?? 55,
+      low: lows[i] ?? 40,
+      condition: conditions[i] ?? 'sunny',
       precipProbability: precips[i] ?? 0,
     };
   });
@@ -1232,21 +1383,36 @@ function getDemoWeatherData(location: string): WeatherData {
 
   // Demo hourly data: 24 hours starting now
   const hourlyConditions: WeatherCondition[] = [
-    'partly-cloudy', 'partly-cloudy', 'cloudy', 'rainy', 'rainy',
-    'rainy', 'cloudy', 'cloudy', 'partly-cloudy', 'sunny',
-    'sunny', 'sunny', 'partly-cloudy', 'cloudy', 'rainy',
-    'rainy', 'cloudy', 'cloudy', 'partly-cloudy', 'partly-cloudy',
-    'cloudy', 'cloudy', 'rainy', 'rainy',
+    'partly-cloudy',
+    'partly-cloudy',
+    'cloudy',
+    'rainy',
+    'rainy',
+    'rainy',
+    'cloudy',
+    'cloudy',
+    'partly-cloudy',
+    'sunny',
+    'sunny',
+    'sunny',
+    'partly-cloudy',
+    'cloudy',
+    'rainy',
+    'rainy',
+    'cloudy',
+    'cloudy',
+    'partly-cloudy',
+    'partly-cloudy',
+    'cloudy',
+    'cloudy',
+    'rainy',
+    'rainy',
   ];
   const hourlyTemps = [
-    52, 51, 50, 49, 48, 47, 47, 48, 50, 53,
-    55, 57, 57, 56, 54, 52, 51, 50, 49, 48,
-    47, 47, 46, 46,
+    52, 51, 50, 49, 48, 47, 47, 48, 50, 53, 55, 57, 57, 56, 54, 52, 51, 50, 49, 48, 47, 47, 46, 46,
   ];
   const hourlyPrecips = [
-    20, 25, 35, 65, 80, 75, 55, 40, 20, 5,
-    0, 0, 10, 30, 70, 85, 60, 40, 25, 15,
-    20, 30, 60, 75,
+    20, 25, 35, 65, 80, 75, 55, 40, 20, 5, 0, 0, 10, 30, 70, 85, 60, 40, 25, 15, 20, 30, 60, 75,
   ];
   const hourly: HourlyForecast[] = Array.from({ length: 24 }, (_, i) => {
     const t = new Date(today);
@@ -1265,11 +1431,11 @@ function getDemoWeatherData(location: string): WeatherData {
   const minutely: MinutelyData[] = Array.from({ length: 61 }, (_, i) => {
     let intensity = 0;
     if (i >= 16 && i < 22) {
-      intensity = 2.5 * ((i - 16) / 6);   // ramp up to LIGHT
+      intensity = 2.5 * ((i - 16) / 6); // ramp up to LIGHT
     } else if (i >= 22 && i <= 55) {
       intensity = 2.2 + 0.5 * Math.sin((i - 22) / 8); // plateau near LIGHT
     } else if (i > 55) {
-      intensity = 2.5 * ((61 - i) / 6);   // taper off
+      intensity = 2.5 * ((61 - i) / 6); // taper off
     }
     return {
       time: nowSec + i * 60,
@@ -1279,14 +1445,14 @@ function getDemoWeatherData(location: string): WeatherData {
   });
 
   return {
-    location:    location || 'Melrose, MA',
+    location: location || 'Melrose, MA',
     units: { temperature: 'F', windSpeed: 'mph', precipitation: 'in' },
     current: {
       temperature: 52,
-      feelsLike:   48,
-      condition:   'partly-cloudy',
-      humidity:    62,
-      windSpeed:   9,
+      feelsLike: 48,
+      condition: 'partly-cloudy',
+      humidity: 62,
+      windSpeed: 9,
       description: 'Partly cloudy',
     },
     forecast,
@@ -1295,8 +1461,17 @@ function getDemoWeatherData(location: string): WeatherData {
     sunrise,
     sunset,
     // Synthetic moon fixture: waning gibbous — easy to eyeball in dev.
-    moonrise: (() => { const d = new Date(today); d.setHours(20, 14, 0, 0); return d; })(),
-    moonset:  (() => { const d = new Date(today); d.setHours(8, 47, 0, 0); d.setDate(d.getDate() + 1); return d; })(),
+    moonrise: (() => {
+      const d = new Date(today);
+      d.setHours(20, 14, 0, 0);
+      return d;
+    })(),
+    moonset: (() => {
+      const d = new Date(today);
+      d.setHours(8, 47, 0, 0);
+      d.setDate(d.getDate() + 1);
+      return d;
+    })(),
     moonPhase: 0.62,
     moonIllumination: 0.78,
     moonPhaseName: 'Waning Gibbous',

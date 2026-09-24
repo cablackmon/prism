@@ -49,15 +49,10 @@ const handleConnect = () => {
   window.location.href = '/api/auth/google?returnSection=integrations';
 };
 const handleReauth = () => {
-  window.location.href =
-    '/api/auth/google?reauth=all&returnSection=integrations';
+  window.location.href = '/api/auth/google?reauth=all&returnSection=integrations';
 };
 
-export function GoogleProviderCard({
-  status,
-  onChange,
-  forceSubSectionOpen,
-}: Props) {
+export function GoogleProviderCard({ status, onChange, forceSubSectionOpen }: Props) {
   const { confirm, dialogProps } = useConfirmDialog();
   const [disconnecting, setDisconnecting] = React.useState(false);
   const oauthStatus = useOAuthConfigStatus();
@@ -86,7 +81,7 @@ export function GoogleProviderCard({
   const handleDisconnect = async () => {
     const ok = await confirm(
       'Disconnect Google?',
-      'Removes all Google calendars and their events from Prism.',
+      'Removes all Google calendars and their events from KYST.'
     );
     if (!ok) return;
     setDisconnecting(true);
@@ -128,14 +123,14 @@ export function GoogleProviderCard({
   } else if (expired) {
     primaryAction = (
       <Button size="sm" onClick={handleReauth}>
-        <RefreshCw className="h-4 w-4 mr-2" />
+        <RefreshCw className="mr-2 h-4 w-4" />
         Re-authenticate
       </Button>
     );
   } else {
     primaryAction = (
       <Button variant="outline" size="sm" onClick={handleReauth}>
-        <RefreshCw className="h-4 w-4 mr-2" />
+        <RefreshCw className="mr-2 h-4 w-4" />
         Re-authenticate
       </Button>
     );
@@ -160,9 +155,7 @@ export function GoogleProviderCard({
             ? [
                 connectedAs,
                 `${calendarCount} calendar${calendarCount === 1 ? '' : 's'}`,
-                taskCount > 0
-                  ? `${taskCount} task source${taskCount === 1 ? '' : 's'}`
-                  : null,
+                taskCount > 0 ? `${taskCount} task source${taskCount === 1 ? '' : 's'}` : null,
                 lastSyncedLabel,
               ]
                 .filter(Boolean)
@@ -181,7 +174,7 @@ export function GoogleProviderCard({
             defaultOpen
           >
             <GoogleCredentialsForm onSaved={() => window.location.reload()} />
-            <p className="text-xs text-muted-foreground mt-3">
+            <p className="mt-3 text-xs text-muted-foreground">
               Prefer no setup? Use{' '}
               <Link href="/calendar?manage=calendars" className="text-primary hover:underline">
                 iCal subscriptions
@@ -211,7 +204,7 @@ export function GoogleProviderCard({
               size="sm"
               onClick={handleDisconnect}
               disabled={disconnecting}
-              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
             >
               {disconnecting ? 'Disconnecting…' : 'Disconnect Google'}
             </Button>
@@ -222,7 +215,7 @@ export function GoogleProviderCard({
           label="Connect without a public URL (advanced)"
           summary={
             browserFlowUnusable
-              ? "Google will not accept this address for its sign-in. Use this, or reopen Prism on a public https address or localhost"
+              ? 'Google will not accept this address for its sign-in. Use this, or reopen KYST on a public https address or localhost'
               : "Paste a refresh token from Google's OAuth Playground — for LAN-only installs, or to re-paste an expired one"
           }
           // Opened by default where it is the only flow that can work, so a
@@ -247,10 +240,7 @@ export function GoogleProviderCard({
           defaultOpen={!connected}
         >
           <div className="text-sm">
-            <Link
-              href="/calendar?manage=calendars"
-              className="text-primary hover:underline"
-            >
+            <Link href="/calendar?manage=calendars" className="text-primary hover:underline">
               Manage calendars →
             </Link>
           </div>

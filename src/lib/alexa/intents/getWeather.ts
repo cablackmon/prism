@@ -4,7 +4,7 @@ import { logError } from '@/lib/utils/logError';
 
 export async function handleGetWeather(): Promise<AlexaResponse> {
   try {
-    const result = await voiceClient.getWeatherToday() as { spoken: string };
+    const result = (await voiceClient.getWeatherToday()) as { spoken: string };
     return speak(result.spoken);
   } catch (err) {
     if (err instanceof VoiceApiError) {

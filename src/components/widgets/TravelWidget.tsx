@@ -19,7 +19,7 @@ function useWidgetTravelData() {
 
   useEffect(() => {
     fetch('/api/travel/pins')
-      .then((r) => r.ok ? r.json() : { pins: [] })
+      .then((r) => (r.ok ? r.json() : { pins: [] }))
       .then((data) => setPins(data.pins ?? []))
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -38,9 +38,7 @@ export const TravelWidget = React.memo(function TravelWidget({ className }: Trav
 
   // Count unique countries from placeName (last comma-separated part)
   const countries = new Set(
-    rootPins
-      .map((p) => p.placeName?.split(',').at(-1)?.trim())
-      .filter(Boolean)
+    rootPins.map((p) => p.placeName?.split(',').at(-1)?.trim()).filter(Boolean)
   ).size;
 
   // Count total national park children
@@ -60,35 +58,47 @@ export const TravelWidget = React.memo(function TravelWidget({ className }: Trav
       className={className}
     >
       {rootPins.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-full text-center gap-2 p-4">
+        <div className="flex h-full flex-col items-center justify-center gap-2 p-4 text-center">
           <Globe className="h-8 w-8 text-muted-foreground/40" />
           <p className="text-sm text-muted-foreground">No places yet</p>
-          <a href="/travel" className="text-xs text-primary hover:underline">Open the map →</a>
+          <a href="/travel" className="text-xs text-primary hover:underline">
+            Open the map →
+          </a>
         </div>
       ) : (
-        <div className="flex flex-col h-full p-2 gap-2 overflow-hidden">
+        <div className="flex h-full flex-col gap-2 overflow-hidden p-2">
           {/* Stats row */}
-          <div className="grid grid-cols-2 gap-1.5 shrink-0">
+          <div className="grid shrink-0 grid-cols-2 gap-1.5">
             <StatChip
-              icon={<span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: STATUS_CONFIG.been_there.color }} />}
+              icon={
+                <span
+                  className="h-2 w-2 shrink-0 rounded-full"
+                  style={{ backgroundColor: STATUS_CONFIG.been_there.color }}
+                />
+              }
               value={visited.length}
               label="visited"
             />
             <StatChip
-              icon={<span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: STATUS_CONFIG.want_to_go.color }} />}
+              icon={
+                <span
+                  className="h-2 w-2 shrink-0 rounded-full"
+                  style={{ backgroundColor: STATUS_CONFIG.want_to_go.color }}
+                />
+              }
               value={wantToGo.length}
               label="want to go"
             />
             {countries > 0 && (
               <StatChip
-                icon={<Globe className="h-3 w-3 text-muted-foreground shrink-0" />}
+                icon={<Globe className="h-3 w-3 shrink-0 text-muted-foreground" />}
                 value={countries}
                 label={countries === 1 ? 'country' : 'countries'}
               />
             )}
             {bucketList.length > 0 && (
               <StatChip
-                icon={<Star className="h-3 w-3 fill-amber-500 text-amber-500 shrink-0" />}
+                icon={<Star className="h-3 w-3 shrink-0 fill-amber-500 text-amber-500" />}
                 value={bucketList.length}
                 label="bucket list"
               />
@@ -105,7 +115,7 @@ export const TravelWidget = React.memo(function TravelWidget({ className }: Trav
           {/* Recent trips */}
           {recentTrips.length > 0 && (
             <div className="flex-1 overflow-hidden">
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-1 px-0.5">
+              <p className="mb-1 px-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                 Recent trips
               </p>
               <ul className="space-y-1">
@@ -113,14 +123,14 @@ export const TravelWidget = React.memo(function TravelWidget({ className }: Trav
                   <li key={pin.id}>
                     <a
                       href="/travel"
-                      className="flex items-center gap-1.5 rounded-md px-1.5 py-1 hover:bg-muted/60 transition-colors group"
+                      className="group flex items-center gap-1.5 rounded-md px-1.5 py-1 transition-colors hover:bg-muted/60"
                     >
                       <span
-                        className="h-2 w-2 rounded-full shrink-0"
+                        className="h-2 w-2 shrink-0 rounded-full"
                         style={{ backgroundColor: pin.color || STATUS_CONFIG.been_there.color }}
                       />
-                      <span className="flex-1 min-w-0">
-                        <span className="text-xs font-medium truncate block">{pin.name}</span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-xs font-medium">{pin.name}</span>
                         {pin.visitedDate && (
                           <span className="text-[10px] text-muted-foreground">
                             {pin.visitedEndDate
@@ -130,7 +140,7 @@ export const TravelWidget = React.memo(function TravelWidget({ className }: Trav
                         )}
                       </span>
                       {pin.isBucketList && (
-                        <Star className="h-3 w-3 fill-amber-500 text-amber-500 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <Star className="h-3 w-3 shrink-0 fill-amber-500 text-amber-500 opacity-0 transition-opacity group-hover:opacity-100" />
                       )}
                     </a>
                   </li>
@@ -146,11 +156,11 @@ export const TravelWidget = React.memo(function TravelWidget({ className }: Trav
 
 function StatChip({ icon, value, label }: { icon: React.ReactNode; value: number; label: string }) {
   return (
-    <div className="flex items-center gap-1.5 bg-muted/50 rounded-md px-2 py-1.5">
+    <div className="flex items-center gap-1.5 rounded-md bg-muted/50 px-2 py-1.5">
       {icon}
       <span className="text-xs">
         <strong className="font-semibold">{value}</strong>
-        <span className="text-muted-foreground ml-1">{label}</span>
+        <span className="ml-1 text-muted-foreground">{label}</span>
       </span>
     </div>
   );

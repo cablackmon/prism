@@ -18,14 +18,14 @@ export default function PhotosPage() {
 
 function PhotosSkeleton() {
   return (
-    <div className="h-screen flex flex-col p-4">
-      <div className="flex items-center justify-between mb-6">
-        <div className="h-8 w-32 bg-muted rounded animate-pulse" />
-        <div className="h-10 w-24 bg-muted rounded animate-pulse" />
+    <div className="flex h-screen flex-col p-4">
+      <div className="mb-6 flex items-center justify-between">
+        <div className="h-8 w-32 animate-pulse rounded bg-muted" />
+        <div className="h-10 w-24 animate-pulse rounded bg-muted" />
       </div>
       <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-2">
         {Array.from({ length: 12 }).map((_, i) => (
-          <div key={i} className="aspect-square bg-muted rounded-lg animate-pulse" />
+          <div key={i} className="aspect-square animate-pulse rounded-lg bg-muted" />
         ))}
       </div>
     </div>

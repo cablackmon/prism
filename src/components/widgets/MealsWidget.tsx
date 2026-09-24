@@ -5,7 +5,16 @@ import { Emoji } from '@/components/ui/Emoji';
 import { DAYS_OF_WEEK_MON_FIRST, DAYS_OF_WEEK, type DayOfWeek } from '@/lib/constants/days';
 import { useState, useMemo, useCallback } from 'react';
 import { format, startOfWeek, addDays, parseISO } from 'date-fns';
-import { UtensilsCrossed, Plus, ChevronLeft, ChevronRight, Clock, CheckCircle2, Undo2, X } from 'lucide-react';
+import {
+  UtensilsCrossed,
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  CheckCircle2,
+  Undo2,
+  X,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useWeekStartsOn } from '@/lib/hooks/useWeekStartsOn';
 import { WidgetContainer, WidgetEmpty } from './WidgetContainer';
@@ -65,7 +74,9 @@ export const MealsWidget = React.memo(function MealsWidget({
     // boundary moves with the preference and would hide the whole plan). Falls
     // back to weekOf for any legacy row that predates the date backfill.
     const weekMeals = allMeals.filter((meal) =>
-      meal.date ? meal.date >= weekOfString && meal.date <= weekEndString : meal.weekOf === weekOfString
+      meal.date
+        ? meal.date >= weekOfString && meal.date <= weekEndString
+        : meal.weekOf === weekOfString
     );
     return { weekMeals, mealsByDay: groupMealsByDay(weekMeals) };
   }, [allMeals, weekOfString, weekEndString]);
@@ -109,18 +120,53 @@ export const MealsWidget = React.memo(function MealsWidget({
             <span className="text-xs font-normal text-muted-foreground">
               {format(currentWeek, 'MMM d')} - {format(addDays(currentWeek, 6), 'MMM d')}
             </span>
-            <Button size="icon" variant="ghost" onClick={(e) => { e.stopPropagation(); goToPreviousWeek(); }} className="h-8 w-8" aria-label="Previous week">
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={(e) => {
+                e.stopPropagation();
+                goToPreviousWeek();
+              }}
+              className="h-8 w-8"
+              aria-label="Previous week"
+            >
               <ChevronLeft className="h-4 w-4" />
             </Button>
             {!isCurrentWeek && (
-              <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); goToThisWeek(); }} className="h-8 px-2 text-xs">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  goToThisWeek();
+                }}
+                className="h-8 px-2 text-xs"
+              >
                 Today
               </Button>
             )}
-            <Button size="icon" variant="ghost" onClick={(e) => { e.stopPropagation(); goToNextWeek(); }} className="h-8 w-8" aria-label="Next week">
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={(e) => {
+                e.stopPropagation();
+                goToNextWeek();
+              }}
+              className="h-8 w-8"
+              aria-label="Next week"
+            >
               <ChevronRight className="h-4 w-4" />
             </Button>
-            <Button size="icon" variant="ghost" onClick={(e) => { e.stopPropagation(); handleAddClick(); }} className="h-8 w-8" aria-label="Add meal">
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleAddClick();
+              }}
+              className="h-8 w-8"
+              aria-label="Add meal"
+            >
               <Plus className="h-4 w-4" />
             </Button>
           </div>
@@ -138,7 +184,7 @@ export const MealsWidget = React.memo(function MealsWidget({
             }
           />
         ) : (
-          <div className="overflow-auto h-full -mr-2 pr-2">
+          <div className="-mr-2 h-full overflow-auto pr-2">
             <div className="space-y-3">
               {Array.from({ length: 7 }, (_, index) => {
                 // Derive the day NAME from the actual column date rather than a
@@ -183,7 +229,13 @@ export const MealsWidget = React.memo(function MealsWidget({
 });
 
 function DaySection({
-  day, date, meals, isToday, onMarkCooked, onUnmarkCooked, onMealClick,
+  day,
+  date,
+  meals,
+  isToday,
+  onMarkCooked,
+  onUnmarkCooked,
+  onMealClick,
 }: {
   day: Meal['dayOfWeek'];
   date: Date;
@@ -195,11 +247,15 @@ function DaySection({
 }) {
   if (meals.length === 0) return null;
   return (
-    <div className={cn('space-y-1', isToday && 'rounded-lg bg-accent/30 p-2 -m-2')}>
+    <div className={cn('space-y-1', isToday && '-m-2 rounded-lg bg-accent/30 p-2')}>
       <div className="flex items-center gap-2">
         <h4 className={cn('text-sm font-semibold capitalize', isToday && 'text-primary')}>{day}</h4>
         <span className="text-xs text-muted-foreground">{format(date, 'MMM d')}</span>
-        {isToday && <Badge variant="default" className="text-[10px] px-1.5 py-0">Today</Badge>}
+        {isToday && (
+          <Badge variant="default" className="px-1.5 py-0 text-[10px]">
+            Today
+          </Badge>
+        )}
       </div>
       <div className="space-y-1">
         {meals.map((meal) => (
@@ -217,7 +273,10 @@ function DaySection({
 }
 
 function MealItem({
-  meal, onMarkCooked, onUnmarkCooked, onClick,
+  meal,
+  onMarkCooked,
+  onUnmarkCooked,
+  onClick,
 }: {
   meal: Meal;
   onMarkCooked?: (mealId: string) => void;
@@ -226,19 +285,45 @@ function MealItem({
 }) {
   const isCooked = !!meal.cookedAt;
   return (
-    <div className={cn('flex items-start gap-2 p-2 rounded-md', 'hover:bg-accent/50 transition-colors group', isCooked && 'opacity-60')}>
-      <span className="text-base shrink-0"><Emoji e={getMealTypeEmoji(meal.mealType)} /></span>
+    <div
+      className={cn(
+        'flex items-start gap-2 rounded-md p-2',
+        'group transition-colors hover:bg-accent/50',
+        isCooked && 'opacity-60'
+      )}
+    >
+      <span className="shrink-0 text-base">
+        <Emoji e={getMealTypeEmoji(meal.mealType)} />
+      </span>
       {/* Meal content — clickable surface that opens the edit modal. */}
       <div
-        className={cn('flex-1 min-w-0', onClick && 'cursor-pointer')}
+        className={cn('min-w-0 flex-1', onClick && 'cursor-pointer')}
         role={onClick ? 'button' : undefined}
         tabIndex={onClick ? 0 : undefined}
         onClick={onClick}
-        onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } } : undefined}
+        onKeyDown={
+          onClick
+            ? (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onClick();
+                }
+              }
+            : undefined
+        }
       >
         <div className="flex items-center gap-2">
-          <span className={cn('text-sm font-medium truncate', isCooked && 'line-through text-muted-foreground')}>{meal.name}</span>
-          <Badge variant="outline" className="text-[10px] px-1.5 py-0 capitalize">{meal.mealType}</Badge>
+          <span
+            className={cn(
+              'truncate text-sm font-medium',
+              isCooked && 'text-muted-foreground line-through'
+            )}
+          >
+            {meal.name}
+          </span>
+          <Badge variant="outline" className="px-1.5 py-0 text-[10px] capitalize">
+            {meal.mealType}
+          </Badge>
           {(meal.prepTime || meal.cookTime) && (
             <div className="flex items-center gap-0.5 text-xs text-muted-foreground">
               <Clock className="h-3 w-3" />
@@ -247,21 +332,44 @@ function MealItem({
           )}
         </div>
         {isCooked && meal.cookedBy && (
-          <div className="flex items-center gap-1 mt-0.5">
+          <div className="mt-0.5 flex items-center gap-1">
             <CheckCircle2 className="h-3 w-3 text-muted-foreground" />
-            <UserAvatar name={meal.cookedBy.name} color={meal.cookedBy.color} size="sm" className="h-4 w-4 text-[8px]" />
+            <UserAvatar
+              name={meal.cookedBy.name}
+              color={meal.cookedBy.color}
+              size="sm"
+              className="h-4 w-4 text-[8px]"
+            />
             <span className="text-xs text-muted-foreground">{meal.cookedBy.name} cooked this</span>
           </div>
         )}
       </div>
       {/* Cooked toggle — stops propagation so the row click doesn't fire too. */}
       {isCooked && onUnmarkCooked ? (
-        <Button size="icon" variant="ghost" onClick={(e) => { e.stopPropagation(); onUnmarkCooked(meal.id); }}
-          className="h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" title="Undo" aria-label="Undo mark as cooked">
+        <Button
+          size="icon"
+          variant="ghost"
+          onClick={(e) => {
+            e.stopPropagation();
+            onUnmarkCooked(meal.id);
+          }}
+          className="h-7 w-7 shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
+          title="Undo"
+          aria-label="Undo mark as cooked"
+        >
           <Undo2 className="h-4 w-4" />
         </Button>
       ) : !isCooked && onMarkCooked ? (
-        <Button size="icon" variant="ghost" onClick={(e) => { e.stopPropagation(); onMarkCooked(meal.id); }} className="h-7 w-7 shrink-0" aria-label="Mark as cooked">
+        <Button
+          size="icon"
+          variant="ghost"
+          onClick={(e) => {
+            e.stopPropagation();
+            onMarkCooked(meal.id);
+          }}
+          className="h-7 w-7 shrink-0"
+          aria-label="Mark as cooked"
+        >
           <CheckCircle2 className="h-4 w-4" />
         </Button>
       ) : null}
@@ -270,7 +378,9 @@ function MealItem({
 }
 
 function WidgetAddMealModal({
-  weekOf, onClose, onSave,
+  weekOf,
+  onClose,
+  onSave,
 }: {
   weekOf: string;
   onClose: () => void;
@@ -287,20 +397,40 @@ function WidgetAddMealModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
-      <div className="bg-card rounded-lg p-5 max-w-sm w-full mx-4 shadow-lg border border-border" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-4">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      data-widget-navigation-ignore
+      onClick={onClose}
+    >
+      <div
+        className="mx-4 w-full max-w-sm rounded-lg border border-border bg-card p-5 shadow-lg"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold">Add Meal</h2>
-          <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close"><X className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close">
+            <X className="h-4 w-4" />
+          </Button>
         </div>
         <form onSubmit={handleSubmit} className="space-y-3">
-          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Meal name..." autoFocus />
+          <Input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Meal name..."
+            autoFocus
+          />
           <div>
             <label className="text-xs font-medium text-muted-foreground">Day</label>
-            <div className="grid grid-cols-4 gap-1.5 mt-1">
+            <div className="mt-1 grid grid-cols-4 gap-1.5">
               {DAYS_OF_WEEK_MON_FIRST.map((day) => (
-                <Button key={day} type="button" variant={dayOfWeek === day ? 'default' : 'outline'}
-                  size="sm" onClick={() => setDayOfWeek(day)} className="capitalize text-xs px-1">
+                <Button
+                  key={day}
+                  type="button"
+                  variant={dayOfWeek === day ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setDayOfWeek(day)}
+                  className="px-1 text-xs capitalize"
+                >
                   {day.slice(0, 3)}
                 </Button>
               ))}
@@ -308,18 +438,28 @@ function WidgetAddMealModal({
           </div>
           <div>
             <label className="text-xs font-medium text-muted-foreground">Type</label>
-            <div className="flex gap-1.5 mt-1">
+            <div className="mt-1 flex gap-1.5">
               {(['breakfast', 'lunch', 'dinner', 'snack'] as const).map((type) => (
-                <Button key={type} type="button" variant={mealType === type ? 'default' : 'outline'}
-                  size="sm" onClick={() => setMealType(type)} className="capitalize text-xs">
+                <Button
+                  key={type}
+                  type="button"
+                  variant={mealType === type ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setMealType(type)}
+                  className="text-xs capitalize"
+                >
                   {getMealTypeEmoji(type)} {type}
                 </Button>
               ))}
             </div>
           </div>
           <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="outline" size="sm" onClick={onClose}>Cancel</Button>
-            <Button type="submit" size="sm" disabled={!name.trim()}>Add</Button>
+            <Button type="button" variant="outline" size="sm" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" size="sm" disabled={!name.trim()}>
+              Add
+            </Button>
           </div>
         </form>
       </div>
@@ -329,22 +469,37 @@ function WidgetAddMealModal({
 
 function groupMealsByDay(meals: Meal[]): Record<Meal['dayOfWeek'], Meal[]> {
   const grouped: Record<Meal['dayOfWeek'], Meal[]> = {
-    ...DAYS_OF_WEEK.reduce((acc, d) => { acc[d] = []; return acc; }, {} as Record<DayOfWeek, Meal[]>),
+    ...DAYS_OF_WEEK.reduce(
+      (acc, d) => {
+        acc[d] = [];
+        return acc;
+      },
+      {} as Record<DayOfWeek, Meal[]>
+    ),
   };
-  meals.forEach((meal) => { grouped[meal.dayOfWeek].push(meal); });
+  meals.forEach((meal) => {
+    grouped[meal.dayOfWeek].push(meal);
+  });
   const mealTypeOrder = { breakfast: 0, lunch: 1, dinner: 2, snack: 3 };
   Object.keys(grouped).forEach((day) => {
-    grouped[day as Meal['dayOfWeek']].sort((a, b) => mealTypeOrder[a.mealType] - mealTypeOrder[b.mealType]);
+    grouped[day as Meal['dayOfWeek']].sort(
+      (a, b) => mealTypeOrder[a.mealType] - mealTypeOrder[b.mealType]
+    );
   });
   return grouped;
 }
 
 function getMealTypeEmoji(mealType: string): string {
   switch (mealType) {
-    case 'breakfast': return '🌅';
-    case 'lunch': return '🌮';
-    case 'dinner': return '🍽️';
-    case 'snack': return '🍿';
-    default: return '🍴';
+    case 'breakfast':
+      return '🌅';
+    case 'lunch':
+      return '🌮';
+    case 'dinner':
+      return '🍽️';
+    case 'snack':
+      return '🍿';
+    default:
+      return '🍴';
   }
 }

@@ -118,9 +118,7 @@ describe('useVisibilityPolling', () => {
     expect(callback).not.toHaveBeenCalled();
 
     // Event listener was removed
-    const removeCall = removeSpy.mock.calls.find(
-      (call) => call[0] === 'visibilitychange'
-    );
+    const removeCall = removeSpy.mock.calls.find((call) => call[0] === 'visibilitychange');
     expect(removeCall).toBeTruthy();
 
     removeSpy.mockRestore();
@@ -132,9 +130,7 @@ describe('useVisibilityPolling', () => {
 
     renderHook(() => useVisibilityPolling(callback, 3000));
 
-    const addCall = addSpy.mock.calls.find(
-      (call) => call[0] === 'visibilitychange'
-    );
+    const addCall = addSpy.mock.calls.find((call) => call[0] === 'visibilitychange');
     expect(addCall).toBeTruthy();
 
     addSpy.mockRestore();

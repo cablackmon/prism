@@ -2,7 +2,9 @@ import { speak, type AlexaResponse } from '../responses';
 import { voiceClient, VoiceApiError } from '../client';
 import { logError } from '@/lib/utils/logError';
 
-interface AlexaSlot { value?: string }
+interface AlexaSlot {
+  value?: string;
+}
 interface IntentArgs {
   slots?: Record<string, AlexaSlot | undefined>;
 }
@@ -24,7 +26,7 @@ export async function handleGetTodayChores(args: IntentArgs = {}): Promise<Alexa
   } catch (err) {
     if (err instanceof VoiceApiError) {
       logError('[alexa] getChoresToday failed', err);
-      return speak("Sorry, I couldn't reach Prism right now.");
+      return speak("Sorry, I couldn't reach KYST right now.");
     }
     throw err;
   }

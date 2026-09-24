@@ -34,6 +34,8 @@
 'use client';
 
 import * as React from 'react';
+import { useBoardTheme } from '@/components/theme/KystTheme';
+import { useScrollEdges } from '@/components/theme/useScrollEdges';
 import { Emoji } from '@/components/ui/Emoji';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -59,7 +61,9 @@ export function useWidgetAlignments() {
     try {
       const stored = localStorage.getItem(ALIGNMENT_STORAGE_KEY);
       return stored ? JSON.parse(stored) : {};
-    } catch { return {}; }
+    } catch {
+      return {};
+    }
   });
 
   const setAlignment = React.useCallback((widgetId: string, alignment: WidgetAlignment) => {
@@ -80,7 +84,14 @@ export const WidgetAlignmentProvider = WidgetAlignmentContext.Provider;
 // Context for grid-level background override — when the grid wrapper applies a custom
 // background, the Card strips its own bg/border/shadow so there's no double background.
 // Also carries explicit textColor so WidgetContainer can apply it on the Card.
-const WidgetBgOverrideContext = React.createContext<{ hasCustomBg: boolean; textColor?: string; textOpacity?: number; gridLineOpacity?: number; cellBackgroundColor?: string; cellBackgroundOpacity?: number } | null>(null);
+const WidgetBgOverrideContext = React.createContext<{
+  hasCustomBg: boolean;
+  textColor?: string;
+  textOpacity?: number;
+  gridLineOpacity?: number;
+  cellBackgroundColor?: string;
+  cellBackgroundOpacity?: number;
+} | null>(null);
 export const WidgetBgOverrideProvider = WidgetBgOverrideContext.Provider;
 
 /** Hook for sub-components (e.g. calendar views) to check if widget has custom bg */
@@ -104,14 +115,12 @@ const vAlignClass: Record<VAlign, string> = {
   bottom: 'justify-end',
 };
 
-
 /**
  * WIDGET SIZE
  * Widgets can be different sizes on the dashboard grid.
  * These map to grid column/row spans.
  */
 export type WidgetSize = 'small' | 'medium' | 'large' | 'wide' | 'tall';
-
 
 /**
  * WIDGET CONTAINER PROPS
@@ -148,7 +157,6 @@ export interface WidgetContainerProps {
   /** Click handler for the entire widget */
   onClick?: () => void;
 }
-
 
 /**
  * WIDGET CONTAINER COMPONENT
@@ -194,6 +202,9 @@ export function WidgetContainer({
   className,
   onClick,
 }: WidgetContainerProps) {
+  const nox = useBoardTheme() === 'nox';
+  const scrollRoot = React.useRef<HTMLDivElement>(null);
+  useScrollEdges(scrollRoot, nox, title || widgetType || 'Widget');
   // Resolve alignment from prop, context, or default
   const contextAlignments = React.useContext(WidgetAlignmentContext);
   const contextWidgetId = React.useContext(WidgetIdContext);
@@ -217,20 +228,23 @@ export function WidgetContainer({
 
   return (
     <Card
+      ref={scrollRoot}
       className={cn(
         // Grid sizing
         sizeClasses[size],
         // Full height within grid cell
-        'h-full',
+        'kyst-widget h-full',
         // Grid layout: header gets auto height, content gets remaining space
         // (CSS Grid gives the content row a definite height, enabling ScrollArea h-full)
         'grid overflow-hidden',
         // Interactive cursor if clickable
-        onClick && 'cursor-pointer hover:shadow-md transition-shadow',
+        onClick && 'cursor-pointer transition-shadow hover:shadow-md',
         // Strip Card styling when grid-level background is applied
-        stripCardBg && 'backdrop-blur-none border-transparent shadow-none',
+        stripCardBg && 'border-transparent shadow-none backdrop-blur-none',
         // Auto text color based on background luminance (skipped when explicit textColor override)
-        !overrideTextColor && backgroundColor && (isLightColor(backgroundColor) ? 'text-black' : 'text-white'),
+        !overrideTextColor &&
+          backgroundColor &&
+          (isLightColor(backgroundColor) ? 'text-black' : 'text-white'),
         className
       )}
       onClick={onClick}
@@ -240,8 +254,10 @@ export function WidgetContainer({
         gridTemplateRows: showHeader && title ? 'auto 1fr' : '1fr',
         ...(stripCardBg
           ? { backgroundColor: 'transparent' }
-          : backgroundColor ? { backgroundColor } : {}),
-        ...((() => {
+          : backgroundColor
+            ? { backgroundColor }
+            : {}),
+        ...(() => {
           // Two override surfaces, applied INDEPENDENTLY:
           //
           //   (1) Widget has its own backgroundColor — inner BG tokens
@@ -264,9 +280,7 @@ export function WidgetContainer({
           // faint text-color tint when one is set, falls back to a
           // theme-anchored low-alpha when neither is.
           const hasSolidWidgetBg =
-            !!backgroundColor &&
-            backgroundColor !== 'transparent' &&
-            backgroundColor !== 'frosted';
+            !!backgroundColor && backgroundColor !== 'transparent' && backgroundColor !== 'frosted';
 
           if (!overrideTextColor && !hasSolidWidgetBg) return {};
 
@@ -312,38 +326,26 @@ export function WidgetContainer({
           }
 
           return styles as unknown as React.CSSProperties;
-        })()),
+        })(),
       }}
     >
       {/* WIDGET HEADER */}
       {showHeader && title && (
-        <CardHeader className="flex-shrink-0 flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardHeader className="kyst-widget-header flex flex-shrink-0 flex-row items-center justify-between space-y-0 pb-2">
           <div className="flex items-center gap-2">
             {/* Icon */}
-            {icon && (
-              <span className="text-seasonal-accent">
-                {icon}
-              </span>
-            )}
+            {icon && <span className="text-seasonal-accent">{icon}</span>}
             {/* Title - clickable link if titleHref provided */}
             {titleHref ? (
               <Link href={titleHref} className="hover:underline">
-                <CardTitle className="text-base font-medium">
-                  {title}
-                </CardTitle>
+                <CardTitle className="text-base font-medium">{title}</CardTitle>
               </Link>
             ) : (
-              <CardTitle className="text-base font-medium">
-                {title}
-              </CardTitle>
+              <CardTitle className="text-base font-medium">{title}</CardTitle>
             )}
           </div>
           {/* Action buttons */}
-          {actions && (
-            <div className="flex items-center gap-1">
-              {actions}
-            </div>
-          )}
+          {actions && <div className="flex items-center gap-1">{actions}</div>}
         </CardHeader>
       )}
 
@@ -351,25 +353,21 @@ export function WidgetContainer({
       <CardContent
         className={cn(
           // Fill remaining space; min-h-0 prevents grid row overflow
-          'flex flex-col min-h-0',
+          'kyst-widget-content flex min-h-0 flex-col',
           // Clip content overflow (individual widgets use ScrollArea for scrolling)
           'overflow-hidden',
           // Remove padding if no header
           !showHeader && 'pt-4',
           // Per-widget alignment
           alignment && hAlignClass[alignment.horizontal],
-          alignment && vAlignClass[alignment.vertical],
+          alignment && vAlignClass[alignment.vertical]
         )}
       >
         {/* Loading State */}
-        {loading && (
-          <WidgetLoading />
-        )}
+        {loading && <WidgetLoading />}
 
         {/* Error State */}
-        {error && !loading && (
-          <WidgetError message={error} />
-        )}
+        {error && !loading && <WidgetError message={error} />}
 
         {/* Normal Content */}
         {!loading && !error && children}
@@ -377,7 +375,6 @@ export function WidgetContainer({
     </Card>
   );
 }
-
 
 /**
  * WIDGET LOADING
@@ -387,16 +384,15 @@ export function WidgetContainer({
 function WidgetLoading() {
   return (
     <div className="flex h-full w-full items-center justify-center">
-      <div className="space-y-3 w-full">
+      <div className="w-full space-y-3">
         {/* Skeleton lines */}
-        <div className="h-4 bg-muted animate-pulse rounded w-3/4" />
-        <div className="h-4 bg-muted animate-pulse rounded w-1/2" />
-        <div className="h-4 bg-muted animate-pulse rounded w-2/3" />
+        <div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
+        <div className="h-4 w-1/2 animate-pulse rounded bg-muted" />
+        <div className="h-4 w-2/3 animate-pulse rounded bg-muted" />
       </div>
     </div>
   );
 }
-
 
 /**
  * WIDGET ERROR
@@ -405,13 +401,14 @@ function WidgetLoading() {
  */
 function WidgetError({ message }: { message: string }) {
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center text-center p-4">
-      <div className="text-destructive text-4xl mb-2"><Emoji e="⚠️" /></div>
+    <div className="flex h-full w-full flex-col items-center justify-center p-4 text-center">
+      <div className="mb-2 text-4xl text-destructive">
+        <Emoji e="⚠️" />
+      </div>
       <p className="text-sm text-muted-foreground">{message}</p>
     </div>
   );
 }
-
 
 /**
  * WIDGET EMPTY
@@ -439,12 +436,8 @@ export function WidgetEmpty({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center text-center p-4 gap-3">
-      {icon && (
-        <div className="text-muted-foreground text-4xl">
-          {icon}
-        </div>
-      )}
+    <div className="flex h-full w-full flex-col items-center justify-center gap-3 p-4 text-center">
+      {icon && <div className="text-4xl text-muted-foreground">{icon}</div>}
       <p className="text-sm text-muted-foreground">{message}</p>
       {action}
     </div>

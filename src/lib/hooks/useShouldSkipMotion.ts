@@ -35,9 +35,10 @@ export function useShouldSkipMotion(): boolean {
     const recompute = () => setSkip(readPerfMode() || readReducedMotion());
     recompute();
 
-    const mq = typeof window.matchMedia === 'function'
-      ? window.matchMedia('(prefers-reduced-motion: reduce)')
-      : null;
+    const mq =
+      typeof window.matchMedia === 'function'
+        ? window.matchMedia('(prefers-reduced-motion: reduce)')
+        : null;
     mq?.addEventListener('change', recompute);
     window.addEventListener(PERF_CHANGE_EVENT, recompute as EventListener);
     return () => {

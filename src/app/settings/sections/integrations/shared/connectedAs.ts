@@ -8,10 +8,7 @@
  * generic "Connected" wording (e.g. sources that predate the email-capture
  * migration, until the user re-authenticates).
  */
-export function connectedAsLabel(
-  primary: string | null,
-  all: string[] = [],
-): string | null {
+export function connectedAsLabel(primary: string | null, all: string[] = []): string | null {
   if (!primary) return null;
   const extra = all.filter((e) => e !== primary).length;
   return extra > 0 ? `Connected as ${primary} · +${extra} more` : `Connected as ${primary}`;

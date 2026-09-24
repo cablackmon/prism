@@ -1,6 +1,13 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef, type Dispatch, type SetStateAction } from 'react';
+import {
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+  type Dispatch,
+  type SetStateAction,
+} from 'react';
 import { useVisibilityPolling } from './useVisibilityPolling';
 import { navCacheGet, navCacheSet } from '@/lib/utils/navCache';
 
@@ -23,7 +30,14 @@ interface UseFetchResult<T> {
 }
 
 export function useFetch<T>(options: UseFetchOptions<T>): UseFetchResult<T> {
-  const { url, initialData, transform, refreshInterval = 0, label = 'data', enabled = true } = options;
+  const {
+    url,
+    initialData,
+    transform,
+    refreshInterval = 0,
+    label = 'data',
+    enabled = true,
+  } = options;
 
   const transformRef = useRef(transform);
   transformRef.current = transform;

@@ -20,13 +20,15 @@ export function WifiQRCode({
 }: WifiQRCodeProps) {
   return (
     <div className={`flex flex-col items-center gap-2 ${className}`}>
-      <div className="bg-white p-3 rounded-lg">
+      <div className="rounded-lg bg-white p-3">
         <QRCode value={qrString} size={size} />
       </div>
       {showLabel && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Wifi className="h-4 w-4" />
-          <span>Scan to connect to <strong>{ssid}</strong></span>
+          <span>
+            Scan to connect to <strong>{ssid}</strong>
+          </span>
         </div>
       )}
     </div>

@@ -67,26 +67,29 @@ export function useTaskLists() {
     }
 
     const newList = await res.json();
-    setLists(prev => [...prev, newList]);
+    setLists((prev) => [...prev, newList]);
     return newList;
   }, []);
 
-  const updateList = useCallback(async (id: string, updates: UpdateTaskListInput): Promise<TaskList> => {
-    const res = await fetch(`/api/task-lists/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updates),
-    });
+  const updateList = useCallback(
+    async (id: string, updates: UpdateTaskListInput): Promise<TaskList> => {
+      const res = await fetch(`/api/task-lists/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
 
-    if (!res.ok) {
-      const data = await res.json();
-      throw new Error(data.error || 'Failed to update task list');
-    }
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to update task list');
+      }
 
-    const updated = await res.json();
-    setLists(prev => prev.map(l => l.id === id ? updated : l));
-    return updated;
-  }, []);
+      const updated = await res.json();
+      setLists((prev) => prev.map((l) => (l.id === id ? updated : l)));
+      return updated;
+    },
+    []
+  );
 
   const deleteList = useCallback(async (id: string): Promise<void> => {
     const res = await fetch(`/api/task-lists/${id}`, {
@@ -98,34 +101,39 @@ export function useTaskLists() {
       throw new Error(data.error || 'Failed to delete task list');
     }
 
-    setLists(prev => prev.filter(l => l.id !== id));
+    setLists((prev) => prev.filter((l) => l.id !== id));
   }, []);
 
-  const reorderLists = useCallback(async (orderedIds: string[]): Promise<void> => {
-    // Optimistically update local state
-    const reorderedLists = orderedIds.map((id, index) => {
-      const list = lists.find(l => l.id === id);
-      return list ? { ...list, sortOrder: index } : null;
-    }).filter((l): l is TaskList => l !== null);
+  const reorderLists = useCallback(
+    async (orderedIds: string[]): Promise<void> => {
+      // Optimistically update local state
+      const reorderedLists = orderedIds
+        .map((id, index) => {
+          const list = lists.find((l) => l.id === id);
+          return list ? { ...list, sortOrder: index } : null;
+        })
+        .filter((l): l is TaskList => l !== null);
 
-    setLists(reorderedLists);
+      setLists(reorderedLists);
 
-    // Update each list's sortOrder on the server
-    try {
-      await Promise.all(
-        orderedIds.map((id, index) =>
-          fetch(`/api/task-lists/${id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ sortOrder: index }),
-          })
-        )
-      );
-    } catch {
-      // Revert on error
-      await fetchLists();
-    }
-  }, [lists, fetchLists]);
+      // Update each list's sortOrder on the server
+      try {
+        await Promise.all(
+          orderedIds.map((id, index) =>
+            fetch(`/api/task-lists/${id}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ sortOrder: index }),
+            })
+          )
+        );
+      } catch {
+        // Revert on error
+        await fetchLists();
+      }
+    },
+    [lists, fetchLists]
+  );
 
   return {
     lists,

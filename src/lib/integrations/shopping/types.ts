@@ -72,7 +72,10 @@ export interface ShoppingProvider {
   /**
    * Create a new item in the provider.
    */
-  createItem(tokens: ShoppingProviderTokens, item: CreateShoppingItemInput): Promise<ExternalShoppingItem>;
+  createItem(
+    tokens: ShoppingProviderTokens,
+    item: CreateShoppingItemInput
+  ): Promise<ExternalShoppingItem>;
 
   /**
    * Update an existing item in the provider.

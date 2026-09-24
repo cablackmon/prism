@@ -124,7 +124,11 @@ export async function listBackups(): Promise<BackupInfo[]> {
 /**
  * Create a new backup
  */
-export async function createBackup(): Promise<{ success: boolean; filename?: string; error?: string }> {
+export async function createBackup(): Promise<{
+  success: boolean;
+  filename?: string;
+  error?: string;
+}> {
   await ensureBackupDir();
 
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
@@ -160,7 +164,7 @@ export async function createBackup(): Promise<{ success: boolean; filename?: str
     console.error('Error creating backup:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error creating backup'
+      error: error instanceof Error ? error.message : 'Unknown error creating backup',
     };
   }
 }
@@ -168,7 +172,9 @@ export async function createBackup(): Promise<{ success: boolean; filename?: str
 /**
  * Restore from a backup file
  */
-export async function restoreBackup(filename: string): Promise<{ success: boolean; error?: string }> {
+export async function restoreBackup(
+  filename: string
+): Promise<{ success: boolean; error?: string }> {
   const filePath = path.join(BACKUP_DIR, filename);
 
   // Security: prevent path traversal
@@ -209,7 +215,7 @@ export async function restoreBackup(filename: string): Promise<{ success: boolea
     console.error('Error restoring backup:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error restoring backup'
+      error: error instanceof Error ? error.message : 'Unknown error restoring backup',
     };
   }
 }
@@ -217,7 +223,9 @@ export async function restoreBackup(filename: string): Promise<{ success: boolea
 /**
  * Delete a backup file
  */
-export async function deleteBackup(filename: string): Promise<{ success: boolean; error?: string }> {
+export async function deleteBackup(
+  filename: string
+): Promise<{ success: boolean; error?: string }> {
   // Security: prevent path traversal
   if (filename.includes('..') || filename.includes('/')) {
     return { success: false, error: 'Invalid filename' };
@@ -232,7 +240,7 @@ export async function deleteBackup(filename: string): Promise<{ success: boolean
     console.error('Error deleting backup:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error deleting backup'
+      error: error instanceof Error ? error.message : 'Unknown error deleting backup',
     };
   }
 }
@@ -268,7 +276,7 @@ export async function truncateAllData(): Promise<{ success: boolean; error?: str
   try {
     // Use TRUNCATE with CASCADE to handle foreign keys.
     // PGPASSWORD is passed via env to avoid shell injection.
-    const truncateSQL = ALL_TABLES.map(table => `TRUNCATE TABLE "${table}" CASCADE;`).join(' ');
+    const truncateSQL = ALL_TABLES.map((table) => `TRUNCATE TABLE "${table}" CASCADE;`).join(' ');
     const command = `psql -h ${DB_HOST} -U ${DB_USER} -d ${DB_NAME} -c "${truncateSQL}"`;
 
     await execAsync(command, {
@@ -282,7 +290,7 @@ export async function truncateAllData(): Promise<{ success: boolean; error?: str
     console.error('Error truncating database:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error truncating database'
+      error: error instanceof Error ? error.message : 'Unknown error truncating database',
     };
   }
 }
@@ -324,7 +332,8 @@ export async function seedDatabase(): Promise<{ success: boolean; error?: string
     } catch (altError) {
       return {
         success: false,
-        error: 'Seed script not available in production build. Please run "npm run db:seed" manually.'
+        error:
+          'Seed script not available in production build. Please run "npm run db:seed" manually.',
       };
     }
   }

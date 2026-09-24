@@ -13,9 +13,7 @@ interface Props {
   forceSubSectionOpen?: string;
 }
 
-const CalDAVIcon = () => (
-  <Server className="h-6 w-6 text-slate-500" aria-hidden="true" />
-);
+const CalDAVIcon = () => <Server className="h-6 w-6 text-slate-500" aria-hidden="true" />;
 
 export function CalDAVProviderCard({ onChange, forceSubSectionOpen }: Props) {
   const [dialogOpen, setDialogOpen] = React.useState(false);
@@ -33,7 +31,7 @@ export function CalDAVProviderCard({ onChange, forceSubSectionOpen }: Props) {
         description="Also works with Nextcloud, Radicale, Baikal, and Synology Calendar."
         primaryAction={
           <Button size="sm" onClick={() => setDialogOpen(true)}>
-            <Server className="h-4 w-4 mr-2" />
+            <Server className="mr-2 h-4 w-4" />
             Connect server
           </Button>
         }
@@ -45,15 +43,13 @@ export function CalDAVProviderCard({ onChange, forceSubSectionOpen }: Props) {
           summary="Calendars and contacts only — see the integration overview"
           forceOpen={forceSubSectionOpen === 'caldav-overview'}
         >
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="space-y-2 text-sm text-muted-foreground">
             <p>
               Apple keeps the IETF CalDAV and CardDAV standards open at{' '}
-              <code className="text-xs bg-muted px-1 py-0.5 rounded">caldav.icloud.com</code>{' '}
-              and{' '}
-              <code className="text-xs bg-muted px-1 py-0.5 rounded">contacts.icloud.com</code>,
-              so calendars and contacts (incl. birthdays) sync cleanly.
-              Everything else in iCloud — Reminders, Notes, Photos, Find My,
-              Health — is CloudKit-only with no public API.
+              <code className="rounded bg-muted px-1 py-0.5 text-xs">caldav.icloud.com</code> and{' '}
+              <code className="rounded bg-muted px-1 py-0.5 text-xs">contacts.icloud.com</code>, so
+              calendars and contacts (incl. birthdays) sync cleanly. Everything else in iCloud —
+              Reminders, Notes, Photos, Find My, Health — is CloudKit-only with no public API.
             </p>
             <p>
               Full breakdown:{' '}
@@ -61,7 +57,7 @@ export function CalDAVProviderCard({ onChange, forceSubSectionOpen }: Props) {
                 href="https://sandydargoport.github.io/prism/features/ICLOUD/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary hover:underline inline-flex items-center gap-1"
+                className="inline-flex items-center gap-1 text-primary hover:underline"
               >
                 iCloud integration overview
                 <ExternalLink className="h-3 w-3" />
@@ -77,10 +73,7 @@ export function CalDAVProviderCard({ onChange, forceSubSectionOpen }: Props) {
           forceOpen={forceSubSectionOpen === 'caldav-calendars'}
         >
           <div className="text-sm">
-            <Link
-              href="/calendar?manage=calendars"
-              className="text-primary hover:underline"
-            >
+            <Link href="/calendar?manage=calendars" className="text-primary hover:underline">
               Manage calendars →
             </Link>
           </div>
@@ -89,20 +82,16 @@ export function CalDAVProviderCard({ onChange, forceSubSectionOpen }: Props) {
           id="caldav-tasks"
           label="Reminders / tasks"
           icon={<ListTodo className="h-4 w-4" />}
-          summary="VTODO items sync into Prism Tasks (read-only)"
+          summary="VTODO items sync into KYST Tasks (read-only)"
           forceOpen={forceSubSectionOpen === 'caldav-tasks'}
         >
-          <div className="text-sm text-muted-foreground space-y-2">
+          <div className="space-y-2 text-sm text-muted-foreground">
             <p>
-              CalDAV-backed task lists appear in the regular Tasks view. Note:
-              iCloud accounts return placeholder VTODOs for Reminders lists
-              that have migrated to CloudKit (most modern accounts) — Prism
-              filters those out automatically.
+              CalDAV-backed task lists appear in the regular Tasks view. Note: iCloud accounts
+              return placeholder VTODOs for Reminders lists that have migrated to CloudKit (most
+              modern accounts) — KYST filters those out automatically.
             </p>
-            <Link
-              href="/settings?section=tasks"
-              className="text-primary hover:underline"
-            >
+            <Link href="/settings?section=tasks" className="text-primary hover:underline">
               Open Task Sync settings →
             </Link>
           </div>

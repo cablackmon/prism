@@ -60,7 +60,8 @@ export function SourceManager() {
   };
 
   const handleDelete = async (sourceId: string) => {
-    if (!await confirm('Delete this source?', 'This will delete the source and all its photos.')) return;
+    if (!(await confirm('Delete this source?', 'This will delete the source and all its photos.')))
+      return;
     try {
       await fetch(`/api/photo-sources/${sourceId}`, { method: 'DELETE' });
       await fetchSources();
@@ -101,7 +102,11 @@ export function SourceManager() {
   };
 
   if (loading) {
-    return <div className="flex justify-center py-8"><div className="h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-foreground" /></div>;
+    return (
+      <div className="flex justify-center py-8">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-foreground" />
+      </div>
+    );
   }
 
   return (
@@ -110,9 +115,9 @@ export function SourceManager() {
       <div>
         <a
           href="/api/auth/microsoft"
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-primary-foreground transition-colors hover:bg-primary/90"
         >
-          <Cloud className="w-4 h-4" />
+          <Cloud className="h-4 w-4" />
           Connect OneDrive
         </a>
       </div>
@@ -120,12 +125,15 @@ export function SourceManager() {
       {/* Sources list */}
       <div className="space-y-3">
         {sources.map((source) => (
-          <div key={source.id} className="flex items-center justify-between p-4 rounded-lg border bg-card">
+          <div
+            key={source.id}
+            className="flex items-center justify-between rounded-lg border bg-card p-4"
+          >
             <div className="flex items-center gap-3">
               {source.type === 'onedrive' ? (
-                <Cloud className="w-5 h-5 text-blue-500" />
+                <Cloud className="h-5 w-5 text-blue-500" />
               ) : (
-                <HardDrive className="w-5 h-5 text-muted-foreground" />
+                <HardDrive className="h-5 w-5 text-muted-foreground" />
               )}
               <div>
                 <p className="font-medium">{source.name}</p>
@@ -142,38 +150,38 @@ export function SourceManager() {
               {source.type === 'onedrive' && !source.onedriveFolderId && (
                 <button
                   onClick={() => handlePickFolder(source.id)}
-                  className="p-2 rounded hover:bg-muted transition-colors"
+                  className="rounded p-2 transition-colors hover:bg-muted"
                   title="Pick folder"
                   aria-label="Pick folder"
                 >
-                  <FolderOpen className="w-4 h-4" />
+                  <FolderOpen className="h-4 w-4" />
                 </button>
               )}
               {source.type === 'onedrive' && source.onedriveFolderId && (
                 <button
                   onClick={() => handleSync(source.id)}
                   disabled={syncing === source.id}
-                  className="p-2 rounded hover:bg-muted transition-colors"
+                  className="rounded p-2 transition-colors hover:bg-muted"
                   title="Sync now"
                   aria-label="Sync photos"
                 >
-                  <RefreshCw className={cn('w-4 h-4', syncing === source.id && 'animate-spin')} />
+                  <RefreshCw className={cn('h-4 w-4', syncing === source.id && 'animate-spin')} />
                 </button>
               )}
               <button
                 onClick={() => handleDelete(source.id)}
-                className="p-2 rounded hover:bg-destructive/10 text-destructive transition-colors"
+                className="rounded p-2 text-destructive transition-colors hover:bg-destructive/10"
                 title="Delete source"
                 aria-label="Delete source"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="h-4 w-4" />
               </button>
             </div>
           </div>
         ))}
 
         {sources.length === 0 && (
-          <p className="text-center text-muted-foreground py-8">
+          <p className="py-8 text-center text-muted-foreground">
             No photo sources configured. Upload photos or connect OneDrive.
           </p>
         )}
@@ -181,20 +189,25 @@ export function SourceManager() {
 
       {/* Folder picker modal (simple inline) */}
       {pickingFolder && folders.length > 0 && (
-        <div className="border rounded-lg p-4 bg-card space-y-2">
-          <p className="font-medium text-sm">Select a OneDrive folder:</p>
+        <div className="space-y-2 rounded-lg border bg-card p-4">
+          <p className="text-sm font-medium">Select a OneDrive folder:</p>
           {folders.map((f) => (
             <button
               key={f.id}
               onClick={() => handleSelectFolder(pickingFolder, f.id)}
-              className="block w-full text-left px-3 py-2 rounded hover:bg-muted transition-colors text-sm"
+              className="block w-full rounded px-3 py-2 text-left text-sm transition-colors hover:bg-muted"
             >
               {f.name}
-              {f.folder && <span className="text-muted-foreground ml-2">({f.folder.childCount} items)</span>}
+              {f.folder && (
+                <span className="ml-2 text-muted-foreground">({f.folder.childCount} items)</span>
+              )}
             </button>
           ))}
           <button
-            onClick={() => { setPickingFolder(null); setFolders([]); }}
+            onClick={() => {
+              setPickingFolder(null);
+              setFolders([]);
+            }}
             className="text-xs text-muted-foreground hover:underline"
           >
             Cancel

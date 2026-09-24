@@ -20,26 +20,26 @@ import { db } from '@/lib/db/client';
 import { events, calendarSources, dismissedEvents } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { invalidateEntity } from '@/lib/cache/cacheKeys';
-import { updateCalendarEvent, deleteCalendarEvent, refreshAccessToken, toGoogleAllDayRange } from '@/lib/integrations/google-calendar';
+import {
+  updateCalendarEvent,
+  deleteCalendarEvent,
+  refreshAccessToken,
+  toGoogleAllDayRange,
+} from '@/lib/integrations/google-calendar';
 import { pushCalDAVEventDelete } from '@/lib/services/calendar-sync';
 import { decrypt, encrypt } from '@/lib/utils/crypto';
 import { logActivity } from '@/lib/services/auditLog';
 import { logError } from '@/lib/utils/logError';
 
-
 interface RouteParams {
   params: Promise<{ id: string }>;
 }
-
 
 /**
  * GET /api/events/[id]
  * Retrieves a single event by ID.
  */
-export async function GET(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function GET(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -72,10 +72,7 @@ export async function GET(
       .where(eq(events.id, id));
 
     if (!eventWithSource) {
-      return NextResponse.json(
-        { error: 'Event not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 });
     }
 
     return NextResponse.json({
@@ -104,13 +101,9 @@ export async function GET(
     });
   } catch (error) {
     logError('Error fetching event:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch event' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch event' }, { status: 500 });
   }
 }
-
 
 /**
  * PATCH /api/events/[id]
@@ -136,10 +129,7 @@ export async function GET(
  * the changes should be pushed to the external calendar.
  * This would be handled by a separate sync service.
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -165,10 +155,7 @@ export async function PATCH(
       .where(eq(events.id, id));
 
     if (!existingEvent) {
-      return NextResponse.json(
-        { error: 'Event not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 });
     }
 
     // Owner may edit with canEditOwnEvent; editing anyone else's (or an
@@ -186,10 +173,7 @@ export async function PATCH(
 
     if ('title' in body) {
       if (typeof body.title !== 'string' || body.title.trim().length === 0) {
-        return NextResponse.json(
-          { error: 'Title must be a non-empty string' },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: 'Title must be a non-empty string' }, { status: 400 });
       }
       updateData.title = body.title.trim();
     }
@@ -205,10 +189,7 @@ export async function PATCH(
     if ('startTime' in body) {
       const startTime = new Date(body.startTime);
       if (isNaN(startTime.getTime())) {
-        return NextResponse.json(
-          { error: 'Invalid startTime format' },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: 'Invalid startTime format' }, { status: 400 });
       }
       updateData.startTime = startTime;
     }
@@ -216,10 +197,7 @@ export async function PATCH(
     if ('endTime' in body) {
       const endTime = new Date(body.endTime);
       if (isNaN(endTime.getTime())) {
-        return NextResponse.json(
-          { error: 'Invalid endTime format' },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: 'Invalid endTime format' }, { status: 400 });
       }
       updateData.endTime = endTime;
     }
@@ -238,10 +216,7 @@ export async function PATCH(
 
     if ('color' in body) {
       if (body.color !== null && !/^#[0-9A-Fa-f]{6}$/.test(body.color)) {
-        return NextResponse.json(
-          { error: 'Color must be a valid hex color' },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: 'Color must be a valid hex color' }, { status: 400 });
       }
       updateData.color = body.color;
     }
@@ -258,10 +233,7 @@ export async function PATCH(
           .where(eq(calendarSources.id, body.calendarSourceId));
 
         if (!calendar) {
-          return NextResponse.json(
-            { error: 'Calendar source not found' },
-            { status: 400 }
-          );
+          return NextResponse.json({ error: 'Calendar source not found' }, { status: 400 });
         }
       }
       updateData.calendarSourceId = body.calendarSourceId || null;
@@ -277,7 +249,10 @@ export async function PATCH(
       if (calendarSource?.provider === 'google') {
         if (!calendarSource.accessToken) {
           return NextResponse.json(
-            { error: 'Google Calendar is not authenticated. Reconnect it before editing this event.' },
+            {
+              error:
+                'Google Calendar is not authenticated. Reconnect it before editing this event.',
+            },
             { status: 401 }
           );
         }
@@ -302,7 +277,9 @@ export async function PATCH(
               .update(calendarSources)
               .set({
                 accessToken: encrypt(newTokens.access_token),
-                refreshToken: newTokens.refresh_token ? encrypt(newTokens.refresh_token) : calendarSource.refreshToken,
+                refreshToken: newTokens.refresh_token
+                  ? encrypt(newTokens.refresh_token)
+                  : calendarSource.refreshToken,
                 tokenExpiresAt: new Date(Date.now() + newTokens.expires_in * 1000),
                 updatedAt: new Date(),
               })
@@ -358,10 +335,7 @@ export async function PATCH(
     }
 
     // Execute update
-    await db
-      .update(events)
-      .set(updateData)
-      .where(eq(events.id, id));
+    await db.update(events).set(updateData).where(eq(events.id, id));
 
     // Fetch and return updated event
     const [updatedEvent] = await db
@@ -389,10 +363,7 @@ export async function PATCH(
       .where(eq(events.id, id));
 
     if (!updatedEvent) {
-      return NextResponse.json(
-        { error: 'Event not found after update' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Event not found after update' }, { status: 404 });
     }
 
     // Invalidate events cache
@@ -431,13 +402,9 @@ export async function PATCH(
     });
   } catch (error) {
     logError('Error updating event:', error);
-    return NextResponse.json(
-      { error: 'Failed to update event' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to update event' }, { status: 500 });
   }
 }
-
 
 /**
  * DELETE /api/events/[id]
@@ -455,10 +422,7 @@ export async function PATCH(
  * This simple implementation deletes the single event record.
  * Recurring event handling would be more complex in production.
  */
-export async function DELETE(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
@@ -481,10 +445,7 @@ export async function DELETE(
       .where(eq(events.id, id));
 
     if (!existingEvent) {
-      return NextResponse.json(
-        { error: 'Event not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 });
     }
 
     // Owner may delete with canDeleteOwnEvent; deleting anyone else's (or an
@@ -518,7 +479,9 @@ export async function DELETE(
                 .update(calendarSources)
                 .set({
                   accessToken: encrypt(newTokens.access_token),
-                  refreshToken: newTokens.refresh_token ? encrypt(newTokens.refresh_token) : calendarSource.refreshToken,
+                  refreshToken: newTokens.refresh_token
+                    ? encrypt(newTokens.refresh_token)
+                    : calendarSource.refreshToken,
                   tokenExpiresAt: new Date(Date.now() + newTokens.expires_in * 1000),
                   updatedAt: new Date(),
                 })
@@ -582,9 +545,7 @@ export async function DELETE(
     }
 
     // Delete the event locally
-    await db
-      .delete(events)
-      .where(eq(events.id, id));
+    await db.delete(events).where(eq(events.id, id));
 
     // Invalidate events cache
     await invalidateEntity('events');
@@ -607,9 +568,6 @@ export async function DELETE(
     });
   } catch (error) {
     logError('Error deleting event:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete event' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to delete event' }, { status: 500 });
   }
 }

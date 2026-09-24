@@ -71,7 +71,12 @@ export async function withAuth<T>(
     }
     if (!tokenHasScope(auth.scopes, options.tokenScope)) {
       return NextResponse.json(
-        { error: { code: 'FORBIDDEN', message: `Token scope must include '${options.tokenScope}' or '*'` } },
+        {
+          error: {
+            code: 'FORBIDDEN',
+            message: `Token scope must include '${options.tokenScope}' or '*'`,
+          },
+        },
         { status: 403 }
       );
     }

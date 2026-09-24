@@ -23,7 +23,7 @@ export function PhotoUpload({ onUploadComplete }: PhotoUploadProps) {
 
   const addFiles = useCallback((newFiles: FileList | File[]) => {
     const validFiles: UploadFile[] = Array.from(newFiles)
-      .filter((f) => PHOTO_ALLOWED_TYPES.includes(f.type as typeof PHOTO_ALLOWED_TYPES[number]))
+      .filter((f) => PHOTO_ALLOWED_TYPES.includes(f.type as (typeof PHOTO_ALLOWED_TYPES)[number]))
       .filter((f) => f.size <= PHOTO_MAX_SIZE_MB * 1024 * 1024)
       .map((file) => ({ file, progress: 0, status: 'pending' as const }));
 
@@ -49,9 +49,7 @@ export function PhotoUpload({ onUploadComplete }: PhotoUploadProps) {
       if (!response.ok) throw new Error('Upload failed');
 
       setFiles((prev) =>
-        prev.map((f) =>
-          f.file === file ? { ...f, status: 'done' as const, progress: 100 } : f
-        )
+        prev.map((f) => (f.file === file ? { ...f, status: 'done' as const, progress: 100 } : f))
       );
       onUploadComplete();
     } catch {
@@ -77,20 +75,23 @@ export function PhotoUpload({ onUploadComplete }: PhotoUploadProps) {
   return (
     <div className="space-y-4">
       <div
-        onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setIsDragging(true);
+        }}
         onDragLeave={() => setIsDragging(false)}
         onDrop={handleDrop}
         className={cn(
-          'border-2 border-dashed rounded-xl p-12 text-center transition-colors cursor-pointer',
-          isDragging ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 hover:border-muted-foreground/50'
+          'cursor-pointer rounded-xl border-2 border-dashed p-12 text-center transition-colors',
+          isDragging
+            ? 'border-primary bg-primary/5'
+            : 'border-muted-foreground/25 hover:border-muted-foreground/50'
         )}
         onClick={() => document.getElementById('photo-file-input')?.click()}
       >
-        <Upload className="mx-auto h-10 w-10 text-muted-foreground mb-3" />
-        <p className="text-sm text-muted-foreground">
-          Drag & drop photos here, or click to browse
-        </p>
-        <p className="text-xs text-muted-foreground mt-1">
+        <Upload className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
+        <p className="text-sm text-muted-foreground">Drag & drop photos here, or click to browse</p>
+        <p className="mt-1 text-xs text-muted-foreground">
           JPG, PNG, WebP up to {PHOTO_MAX_SIZE_MB}MB
         </p>
         <input
@@ -106,9 +107,9 @@ export function PhotoUpload({ onUploadComplete }: PhotoUploadProps) {
       {files.length > 0 && (
         <div className="space-y-2">
           {files.map((uf, i) => (
-            <div key={i} className="flex items-center gap-3 p-2 rounded-lg bg-muted/50">
-              <div className="flex-1 min-w-0">
-                <p className="text-sm truncate">{uf.file.name}</p>
+            <div key={i} className="flex items-center gap-3 rounded-lg bg-muted/50 p-2">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm">{uf.file.name}</p>
                 <p className="text-xs text-muted-foreground">
                   {(uf.file.size / 1024 / 1024).toFixed(1)} MB
                 </p>

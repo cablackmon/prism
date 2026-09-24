@@ -12,8 +12,14 @@ import { cn } from '@/lib/utils';
 import { PIN_LENGTH_OPTIONS, DEFAULT_PIN_LENGTH } from '@/lib/constants';
 
 const COLOR_OPTIONS = [
-  '#3B82F6', '#EC4899', '#10B981', '#F59E0B',
-  '#8B5CF6', '#EF4444', '#06B6D4', '#84CC16',
+  '#3B82F6',
+  '#EC4899',
+  '#10B981',
+  '#F59E0B',
+  '#8B5CF6',
+  '#EF4444',
+  '#06B6D4',
+  '#84CC16',
 ];
 
 interface AddedMember {
@@ -45,7 +51,7 @@ export function FamilyStep({ onNext, onBack }: FamilyStepProps) {
   // Non-null while the form below is editing an already-added member (by id)
   // instead of adding a new one.
   const [editingId, setEditingId] = useState<string | null>(null);
-  const editingMember = editingId ? added.find((m) => m.id === editingId) ?? null : null;
+  const editingMember = editingId ? (added.find((m) => m.id === editingId) ?? null) : null;
 
   // Re-load members already created this setup session, so returning to this
   // step (or reloading the page) re-shows them — they live in the DB, not just
@@ -71,7 +77,7 @@ export function FamilyStep({ onNext, onBack }: FamilyStepProps) {
               color: (m.color as string) ?? COLOR_OPTIONS[0]!,
               hasPin: !!m.hasPin,
               pinLength: (m.pinLength as number) ?? DEFAULT_PIN_LENGTH,
-            })),
+            }))
         );
       } catch {
         /* ignore — start with an empty list */
@@ -98,7 +104,9 @@ export function FamilyStep({ onNext, onBack }: FamilyStepProps) {
   const trimmedName = name.trim();
   const isDuplicateName =
     trimmedName.length > 0 &&
-    added.some((m) => m.id !== editingId && m.name.trim().toLowerCase() === trimmedName.toLowerCase());
+    added.some(
+      (m) => m.id !== editingId && m.name.trim().toLowerCase() === trimmedName.toLowerCase()
+    );
 
   const canSubmit = trimmedName.length > 0 && pinMatchesLength && !isDuplicateName;
 
@@ -173,8 +181,12 @@ export function FamilyStep({ onNext, onBack }: FamilyStepProps) {
 
         const updated = await res.json();
         const updatedMember: AddedMember = {
-          id: updated.id, name: updated.name, role: updated.role,
-          color: updated.color, hasPin: updated.hasPin, pinLength: updated.pinLength,
+          id: updated.id,
+          name: updated.name,
+          role: updated.role,
+          color: updated.color,
+          hasPin: updated.hasPin,
+          pinLength: updated.pinLength,
         };
         setAdded((prev) => prev.map((m) => (m.id === editingMember.id ? updatedMember : m)));
         toast({ title: `Updated ${trimmedName}` });
@@ -208,7 +220,14 @@ export function FamilyStep({ onNext, onBack }: FamilyStepProps) {
       }
 
       const created = await res.json();
-      const newMember: AddedMember = { id: created.id, name: trimmedName, role, color, hasPin: !!pin.trim(), pinLength: memberPinLength };
+      const newMember: AddedMember = {
+        id: created.id,
+        name: trimmedName,
+        role,
+        color,
+        hasPin: !!pin.trim(),
+        pinLength: memberPinLength,
+      };
       setAdded((prev) => [...prev, newMember]);
       toast({ title: `Added ${trimmedName}` });
       resetForm();
@@ -250,7 +269,7 @@ export function FamilyStep({ onNext, onBack }: FamilyStepProps) {
     if (!editingMember && trimmedName.length > 0) {
       if (!canSubmit) {
         toast({
-          title: 'Finish the member you\'re adding first',
+          title: "Finish the member you're adding first",
           description: isDuplicateName
             ? 'That name is already taken.'
             : 'Check the PIN length, then tap “Add member”.',
@@ -296,11 +315,18 @@ export function FamilyStep({ onNext, onBack }: FamilyStepProps) {
           <div className="space-y-2">
             {added.map((m) => (
               <div key={m.id} className="flex items-center gap-2 rounded-md border px-3 py-2">
-                <div className="h-3 w-3 rounded-full flex-shrink-0" style={{ background: m.color }} />
+                <div
+                  className="h-3 w-3 flex-shrink-0 rounded-full"
+                  style={{ background: m.color }}
+                />
                 <span className="flex-1 text-sm font-medium">{m.name}</span>
-                <Badge variant="secondary" className="capitalize text-xs">{m.role}</Badge>
+                <Badge variant="secondary" className="text-xs capitalize">
+                  {m.role}
+                </Badge>
                 {m.hasPin && (
-                  <Badge variant="outline" className="text-xs">{m.pinLength}-digit PIN</Badge>
+                  <Badge variant="outline" className="text-xs">
+                    {m.pinLength}-digit PIN
+                  </Badge>
                 )}
                 <Button
                   type="button"
@@ -343,7 +369,9 @@ export function FamilyStep({ onNext, onBack }: FamilyStepProps) {
               placeholder="e.g. Alex"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') submitMember(); }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') submitMember();
+              }}
             />
             {isDuplicateName && (
               <p className="text-xs text-destructive">
@@ -361,9 +389,7 @@ export function FamilyStep({ onNext, onBack }: FamilyStepProps) {
                   onClick={() => setRole(r)}
                   className={cn(
                     'flex-1 rounded-md border px-3 py-2 text-sm font-medium capitalize transition-colors',
-                    role === r
-                      ? 'border-primary bg-primary/10 text-primary'
-                      : 'hover:bg-muted',
+                    role === r ? 'border-primary bg-primary/10 text-primary' : 'hover:bg-muted'
                   )}
                 >
                   {r}
@@ -374,14 +400,14 @@ export function FamilyStep({ onNext, onBack }: FamilyStepProps) {
 
           <div className="space-y-1">
             <Label>Color</Label>
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex flex-wrap gap-2">
               {COLOR_OPTIONS.map((c) => (
                 <button
                   key={c}
                   onClick={() => setColor(c)}
                   className={cn(
                     'h-7 w-7 rounded-full transition-transform',
-                    color === c ? 'ring-2 ring-primary ring-offset-2 scale-110' : '',
+                    color === c ? 'scale-110 ring-2 ring-primary ring-offset-2' : ''
                   )}
                   style={{ background: c }}
                   aria-label={c}
@@ -402,7 +428,7 @@ export function FamilyStep({ onNext, onBack }: FamilyStepProps) {
                     'flex-1 rounded-md border px-3 py-2 text-sm font-medium transition-colors',
                     len === memberPinLength
                       ? 'border-primary bg-primary/10 text-primary'
-                      : 'hover:bg-muted',
+                      : 'hover:bg-muted'
                   )}
                 >
                   {len} digits
@@ -414,9 +440,11 @@ export function FamilyStep({ onNext, onBack }: FamilyStepProps) {
           <div className="space-y-1">
             <Label htmlFor="member-pin">
               PIN{' '}
-              <span className="text-muted-foreground font-normal">
+              <span className="font-normal text-muted-foreground">
                 {editingMember
-                  ? removePin ? '(will be removed)' : '(leave blank to keep current)'
+                  ? removePin
+                    ? '(will be removed)'
+                    : '(leave blank to keep current)'
                   : '(optional)'}
               </span>
             </Label>
@@ -440,7 +468,10 @@ export function FamilyStep({ onNext, onBack }: FamilyStepProps) {
             {editingMember?.hasPin && (
               <button
                 type="button"
-                onClick={() => { setRemovePin((v) => !v); setPin(''); }}
+                onClick={() => {
+                  setRemovePin((v) => !v);
+                  setPin('');
+                }}
                 className="text-xs text-destructive underline"
               >
                 {removePin ? 'Cancel removing PIN' : 'Remove PIN'}
@@ -450,7 +481,13 @@ export function FamilyStep({ onNext, onBack }: FamilyStepProps) {
 
           <div className="flex gap-2">
             {editingMember && (
-              <Button type="button" variant="ghost" onClick={cancelEdit} disabled={saving} className="flex-1">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={cancelEdit}
+                disabled={saving}
+                className="flex-1"
+              >
                 Cancel
               </Button>
             )}
@@ -459,7 +496,7 @@ export function FamilyStep({ onNext, onBack }: FamilyStepProps) {
                 'Save changes'
               ) : (
                 <>
-                  <Plus className="h-4 w-4 mr-1" />
+                  <Plus className="mr-1 h-4 w-4" />
                   Add member
                 </>
               )}
@@ -468,14 +505,16 @@ export function FamilyStep({ onNext, onBack }: FamilyStepProps) {
         </div>
 
         <div className="flex gap-3 pt-1">
-          <Button variant="ghost" onClick={onBack} className="flex-1" disabled={saving}>Back</Button>
+          <Button variant="ghost" onClick={onBack} className="flex-1" disabled={saving}>
+            Back
+          </Button>
           <Button onClick={handleContinue} className="flex-1" disabled={saving || !!deletingId}>
-            Continue <ChevronRight className="h-4 w-4 ml-1" />
+            Continue <ChevronRight className="ml-1 h-4 w-4" />
           </Button>
         </div>
 
         {added.length === 0 && (
-          <p className="text-xs text-center text-muted-foreground -mt-1">
+          <p className="-mt-1 text-center text-xs text-muted-foreground">
             Add at least one parent to continue.
           </p>
         )}
