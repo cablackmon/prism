@@ -337,7 +337,7 @@ export async function createHoloRenderer({ container, cameraKey = "A", reducedMo
   const guard = Core.createMorphGuard(manifest);
   const motion = Core.createMotion(manifest.motion);
   const blink = Core.createBlink(manifest.motion);
-  const speech = Core.createSpeech();
+  const speech = Core.createSpeech({ jawMax: guard.cap("Jaw") });
   const transition = Core.createTransition({ reducedMotion });
   const level = manifest.shader.level ?? 0.6;
   const cam = manifest.cameras[cameraKey] || manifest.cameras.A;
@@ -528,14 +528,14 @@ export async function createHoloRenderer({ container, cameraKey = "A", reducedMo
   // proofs only: hold the bind pose (no idle, no blink) so a frame compares with the accepted stills
   let held = false;
   let analyser = null;
-  let freq = null;
+  let wave = null;
   let levelScale = 1;
   let last = performance.now() / 1000;
   let running = false;
   let exitWaiters = [];
   let frames = 0;
   let lastPose = { yaw: 0, pitch: 0, sway: 0 };
-  let lastMouth = { jaw: 0, press: 0, blink: 0 };
+  let lastMouth = { jaw: 0, press: 0, open: 0, levelDb: -Infinity, blink: 0 };
   let lastFrame = { phase: "hidden", focus: 0, reveal: 0 };
   const euler = new THREE.Euler();
   const q = new THREE.Quaternion();
@@ -565,8 +565,8 @@ export async function createHoloRenderer({ container, cameraKey = "A", reducedMo
     const dt = Math.min(0.05, now - last);
     last = now;
     const frame = transition.step(dt);
-    if (analyser) analyser.getByteFrequencyData(freq);
-    const mouth = speech.step(analyser ? freq : null, dt);
+    if (analyser) analyser.getFloatTimeDomainData(wave);
+    const mouth = speech.step(analyser ? wave : null, dt);
     const pose = motion.step(avatarState, now, dt, mouth.jaw);
     for (const [bone, angles] of Object.entries(pose.bones)) rotBone(bone, held ? [0, 0, 0] : angles);
     const blinkValue = held ? 0 : blink.step(avatarState, dt);
@@ -641,7 +641,7 @@ export async function createHoloRenderer({ container, cameraKey = "A", reducedMo
     holdPose(value) { held = Boolean(value); },
     setSpeechAnalyser(node) {
       analyser = node;
-      freq = node ? new Uint8Array(node.frequencyBinCount) : null;
+      wave = node ? new Float32Array(node.fftSize) : null;
     },
     // read-only view for proofs: what the figure is doing now, in the manifest's units
     readState() {
@@ -658,6 +658,8 @@ export async function createHoloRenderer({ container, cameraKey = "A", reducedMo
         headYawDeg: held ? 0 : +(lastPose.yaw * 0.55).toFixed(2), headPitchDeg: held ? 0 : +(lastPose.pitch * 0.55).toFixed(2),
         bodySwayDeg: held ? 0 : +lastPose.sway.toFixed(2),
         jaw: +lastMouth.jaw.toFixed(3), press: +lastMouth.press.toFixed(3), blink: +lastMouth.blink.toFixed(3),
+        // the envelope behind jaw and press: frame RMS in dBFS (null when silent) and its 0..1 openness
+        levelDb: Number.isFinite(lastMouth.levelDb) ? +lastMouth.levelDb.toFixed(1) : null, open: +lastMouth.open.toFixed(3),
         speechAttached: Boolean(analyser), nonZeroMorphs: nonZero,
         frame: { viewW, viewH, frameW: +frameW.toFixed(1), frameH: +frameH.toFixed(1), frameCx: +frameCx.toFixed(1) },
         gl: renderer.getContext().getParameter(renderer.getContext().RENDERER),
