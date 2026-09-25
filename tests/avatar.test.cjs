@@ -555,6 +555,7 @@ test("the wall wires the avatar to the voice states, the mic, Done and the share
   assert.match(setVoiceState, /avatar\.setVoiceState\(state\);\n\}$/);
   const micClick = wall.match(/mic\.addEventListener\("click", \(\) => \{[\s\S]*?\n\}\);/)?.[0] || "";
   assert.match(micClick, /setChatOpen\(true\);\n  avatar\.open\(\);/);
+  assert.match(wall, /\n  onDismiss: \(\) => setChatOpen\(false\),\n/, "a tap on the hologram must close the chat too");
   assert.match(wall, /chatClose\.addEventListener\("click", \(\) => \{\n  notifyBoardActivity\(\);\n  setChatOpen\(false\);\n  avatar\.close\(\);/);
   assert.match(wall, /source\.connect\(speechOutput\(nextContext\)\);/);
   assert.doesNotMatch(wall, /source\.connect\(nextContext\.destination\)/);
