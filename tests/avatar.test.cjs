@@ -50,7 +50,11 @@ test("the smile guard lets only the manifest's driven morphs move, within their 
   assert.ok(smileKeys.includes("NX19_Smile_Joy"));
   for (const key of smileKeys) assert.equal(guard.value(key, 1), 0, `${key} must never move`);
   for (const morph of manifest.morphs.filter((m) => !m.runtime_driven)) assert.equal(guard.value(morph.name, 1), 0);
-  assert.equal(guard.value("Jaw", 1.8), 1);
+  // NOX-11813: the Jaw viseme is overdriven to the manifest's 1.5, and no further
+  assert.equal(guard.cap("Jaw"), 1.5);
+  assert.equal(guard.value("Jaw", 1.8), 1.5);
+  assert.equal(guard.cap("Press"), 1);
+  assert.equal(guard.cap("NX19_Smile_Joy"), 0);
   assert.equal(guard.value("Jaw", -0.4), 0);
   assert.equal(guard.value("Jaw", Number.NaN), 0);
   assert.equal(guard.value("Press", 0.25), 0.25);
@@ -63,6 +67,8 @@ test("a manifest that drives a joy key is refused, not rendered", () => {
   const capped = structuredClone(manifest);
   capped.morphs.find((m) => m.name === "Jaw").cap = 0.4;
   assert.equal(Avatar.createMorphGuard(capped).value("Jaw", 1), 0.4);
+  capped.morphs.find((m) => m.name === "Jaw").cap = 7;
+  assert.equal(Avatar.createMorphGuard(capped).value("Jaw", 9), Avatar.MAX_DRIVEN_CAP);
 });
 
 function sampleMotion(state, seconds = 60, jaw = 0) {
@@ -137,20 +143,112 @@ test("blinks land on the manifest interval, and thinking blinks more often", () 
   assert.ok(blinks("thinking") > idle);
 });
 
-test("the mouth follows the TTS spectrum and never goes NaN", () => {
-  const speech = Avatar.createSpeech();
-  const silent = new Uint8Array(512);
-  const loud = new Uint8Array(512).fill(170);
-  assert.deepEqual(speech.step(silent, 1 / 60), { jaw: 0, press: 0 });
-  let out;
-  for (let i = 0; i < 30; i += 1) out = speech.step(loud, 1 / 60);
-  assert.ok(out.jaw > 0.5 && out.jaw <= 1);
-  for (let i = 0; i < 60; i += 1) out = speech.step(null, 1 / 60);
-  assert.ok(out.jaw < 0.01);
-  for (const n of [511, 513, 1]) {
-    const odd = Avatar.createSpeech().step(new Uint8Array(n).fill(200), 1 / 60);
-    assert.ok(Number.isFinite(odd.jaw) && Number.isFinite(odd.press), `NaN at ${n} bins`);
+// 60 fps frames of the analyser's last 1024 samples (48 kHz): a 180 Hz voice carrier whose level swings between
+// `peakDb` and `peakDb - depthDb` at `syllablesPerS`, which is how TTS speech moves at the analyser.
+function syllables({ seconds, peakDb = -14, depthDb = 24, syllablesPerS = 4, fps = 60 } = {}) {
+  const frames = [];
+  for (let f = 0; f < seconds * fps; f += 1) {
+    const end = Math.round((f + 1) * 48000 / fps);
+    const wave = new Float32Array(1024);
+    for (let i = 0; i < 1024; i += 1) {
+      const t = (end - 1024 + i) / 48000;
+      const envDb = peakDb - depthDb * (0.5 - 0.5 * Math.cos(2 * Math.PI * syllablesPerS * t));
+      wave[i] = Math.SQRT2 * 10 ** (envDb / 20) * Math.sin(2 * Math.PI * 180 * t);
+    }
+    frames.push(wave);
   }
+  return frames;
+}
+
+function speak(speech, frames, dt = 1 / 60) {
+  return frames.map((wave) => speech.step(wave, dt));
+}
+
+test("the mouth opens and shuts on every syllable instead of holding open (NOX-11813)", () => {
+  const jawMax = Avatar.createMorphGuard(manifest).cap("Jaw");
+  // 2 s from one trough (frame 69, t = 1.15 s) to another, after the first second settles the peak
+  const out = speak(Avatar.createSpeech({ jawMax }), syllables({ seconds: 3.5, depthDb: 14 })).slice(69, 189);
+  const jaws = out.map((o) => o.jaw);
+  assert.ok(Math.max(...jaws) > 0.8 * jawMax, `jaw peaked at ${Math.max(...jaws)}`);
+  assert.ok(Math.min(...jaws) < 0.15 * jawMax, `jaw never shut: min ${Math.min(...jaws)}`);
+  let opens = 0;
+  let up = false;
+  for (const jaw of jaws) {
+    if (!up && jaw > 0.5 * jawMax) { up = true; opens += 1; } else if (up && jaw < 0.2 * jawMax) up = false;
+  }
+  assert.equal(opens, 8, "one open per syllable over 2 s at 4 syllables/s");
+  // between syllables the lips meet
+  assert.ok(Math.max(...out.map((o) => o.press)) > 0.5);
+});
+
+// Codex P2s on d393c2d9: a quieter stretch must articulate at once, not after the old peak has leaked away
+test("a quieter phrase after a pause opens fully from its first syllable, at 60 fps and at the Acer's 27", () => {
+  // the shortest pause that counts: its silent ticks alone fall short of gapSeconds, the resuming tick completes it
+  for (const fps of [60, 27]) {
+    const dt = 1 / fps;
+    const silentTicks = Math.ceil(Avatar.SPEECH.gapSeconds / dt) - 1;
+    const speech = Avatar.createSpeech({ jawMax: 1.5 });
+    speak(speech, syllables({ seconds: 1, peakDb: -6, fps }), dt);
+    speak(speech, Array.from({ length: silentTicks }, () => new Float32Array(1024)), dt);
+    const jaws = speak(speech, syllables({ seconds: 0.5, peakDb: -22, depthDb: 14, fps }), dt).map((o) => o.jaw);
+    const first = Math.max(...jaws.slice(0, Math.ceil(fps / 3)));
+    assert.ok(first > 1.2, `${fps} fps, ${silentTicks} silent ticks: first syllable peaked at ${first}`);
+  }
+  // and a short TTS phrase pause counts as one: 150 ms is 8 silent ticks and the resuming one at 60 fps
+  const speech = Avatar.createSpeech({ jawMax: 1.5 });
+  speak(speech, syllables({ seconds: 1, peakDb: -6 }));
+  speak(speech, Array.from({ length: 8 }, () => new Float32Array(1024)));
+  const jaws = speak(speech, syllables({ seconds: 0.5, peakDb: -22, depthDb: 14 })).map((o) => o.jaw);
+  assert.ok(Math.max(...jaws.slice(0, 20)) > 1.2, `after a 150 ms pause the first syllable peaked at ${Math.max(...jaws.slice(0, 20))}`);
+});
+
+test("a quieter stretch without a pause is articulated within half a second", () => {
+  const speech = Avatar.createSpeech({ jawMax: 1.5 });
+  speak(speech, syllables({ seconds: 1, peakDb: -6 }));
+  const jaws = speak(speech, syllables({ seconds: 1, peakDb: -22, depthDb: 14 })).map((o) => o.jaw);
+  const late = jaws.slice(30, 60);
+  assert.ok(Math.max(...late) > 1.2, `0.5-1 s after the drop the jaw peaked at ${Math.max(...late)}`);
+  assert.ok(Math.min(...late) < 0.3, `and never shut: min ${Math.min(...late)}`);
+});
+
+test("quiet voiced speech just above the gate still opens the mouth fully", () => {
+  for (const peakDb of [-45, -48]) {
+    const jaws = speak(Avatar.createSpeech({ jawMax: 1.5 }), syllables({ seconds: 2, peakDb, depthDb: 1 })).slice(60).map((o) => o.jaw);
+    assert.ok(Math.min(...jaws) > 1.2, `${peakDb} dBFS held the jaw at ${Math.min(...jaws)}`);
+  }
+});
+
+test("the mouth moves the same at any playback gain: loud speech no longer pins the jaw", () => {
+  const swing = (peakDb) => {
+    const jaws = speak(Avatar.createSpeech({ jawMax: 1.5 }), syllables({ seconds: 3, peakDb })).slice(60).map((o) => o.jaw);
+    return Math.max(...jaws) - Math.min(...jaws);
+  };
+  const loud = swing(-3);
+  const quiet = swing(-30);
+  assert.ok(loud > 1.1, `loud swing ${loud}`);
+  assert.ok(Math.abs(loud - quiet) < 0.05, `gain changed the swing: ${loud} vs ${quiet}`);
+});
+
+test("after the answer the jaw shuts, the press lets go, and silence never goes NaN", () => {
+  const speech = Avatar.createSpeech({ jawMax: 1.5 });
+  assert.deepEqual(speech.step(new Float32Array(1024), 1 / 60), { jaw: 0, press: 0, open: 0, levelDb: -Infinity });
+  speak(speech, syllables({ seconds: 1 }));
+  let out;
+  for (let i = 0; i < 60; i += 1) out = speech.step(new Float32Array(1024), 1 / 60);
+  assert.ok(out.jaw < 0.01 && out.press < 0.01, `rest pose not restored: ${JSON.stringify(out)}`);
+  for (const wave of [null, new Float32Array(0), new Float32Array(3).fill(1)]) {
+    const odd = Avatar.createSpeech().step(wave, 1 / 60);
+    assert.ok(Number.isFinite(odd.jaw) && Number.isFinite(odd.press), `NaN for ${wave && wave.length}`);
+  }
+});
+
+test("the renderer feeds the speech model the analyser's waveform and the manifest's Jaw cap", () => {
+  // holo-avatar.js needs three.js and a GPU, so its two speech lines are pinned in the source
+  const holo = fs.readFileSync(path.join(__dirname, "../public/avatar/holo-avatar.js"), "utf8");
+  assert.match(holo, /Core\.createSpeech\(\{ jawMax: guard\.cap\("Jaw"\) \}\)/);
+  assert.match(holo, /analyser\.getFloatTimeDomainData\(wave\)/);
+  assert.match(holo, /wave = node \? new Float32Array\(node\.fftSize\) : null/);
+  assert.doesNotMatch(holo, /getByteFrequencyData/);
 });
 
 function runTransition(transition, seconds, dt = 1 / 60) {

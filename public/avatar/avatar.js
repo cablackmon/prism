@@ -77,7 +77,10 @@
   // the bake. Only morphs the manifest marks runtime_driven may move at all,
   // each within its cap; every other morph, including every joy key, is held
   // at 0 every frame. A manifest that marks a capped smile key as driven is
-  // refused outright rather than rendered.
+  // refused outright rather than rendered. A driven cap may exceed 1 (the Jaw
+  // viseme is overdriven past its baked frame, NOX-11813), never past 2.
+  const MAX_DRIVEN_CAP = 2;
+
   function createMorphGuard(manifest) {
     const smileRule = manifest.smile_rule || {};
     const smileKeys = new Set([
@@ -88,10 +91,13 @@
     for (const morph of manifest.morphs || []) {
       if (morph.runtime_driven !== true) continue;
       if (smileKeys.has(morph.name)) throw new Error(`smile_rule: ${morph.name} may not be runtime driven`);
-      caps.set(morph.name, clamp(Number(morph.cap ?? 1)));
+      caps.set(morph.name, clamp(Number(morph.cap ?? 1), 0, MAX_DRIVEN_CAP));
     }
     return {
       driven: Object.freeze([...caps.keys()]),
+      cap(name) {
+        return caps.get(name) ?? 0;
+      },
       value(name, requested) {
         const cap = caps.get(name);
         if (cap === undefined || !Number.isFinite(requested)) return 0;
@@ -184,35 +190,64 @@
     };
   }
 
-  // Jaw and Press from the streamed TTS audio's spectrum, the viewer's
-  // analyser shape. Integer bin bounds: a fractional index into a Uint8Array
-  // is undefined and turns the whole chain NaN (export HANDOFF, do not repeat).
-  function createSpeech() {
+  // Jaw and Press from the streamed TTS audio's waveform (NOX-11813). The
+  // viewer's byte spectrum saturated: at playback level most bins sit above
+  // the analyser's -30 dB ceiling, so the jaw was pinned at its cap for a
+  // whole answer (median 1.0 on the board) and the mouth held open instead of
+  // moving. Here the frame's RMS level is read against the phrase's own
+  // peak, so every syllable opens the jaw from shut whatever the playback
+  // gain, and while speech is going on the lips press together in the gaps.
+  // The peak follows any voiced level, however quiet, restarts at every
+  // pause, and after a syllable's hold falls fast enough that a quieter
+  // stretch without a pause still opens the mouth. After the answer the press lets go and the rest pose
+  // returns.
+  const SPEECH = Object.freeze({
+    gateDb: -50,         // below this the frame is silence (the tap outputs zeros between answers)
+    rangeDb: 12,         // a syllable peak opens fully; 12 dB under the peak is shut
+    peakHoldSeconds: 0.3, // about one syllable: a trough is read against the syllable before it
+    peakReleaseDbPerS: 30, // then the peak falls to meet a quieter stretch
+    gapSeconds: 0.12,    // this long since the last voiced frame is a pause: the next phrase sets its own peak
+    shape: 1,            // openness is linear in dB; below 1 held the jaw open through consonants
+    pressMax: 0.85,
+    holdSeconds: 0.35,   // how long the lips keep pressing after the last voiced frame
+    openRate: 30,        // 1/s, the jaw drops fast on a syllable onset
+    closeRate: 24,       // and closes a little slower, fast enough to shut between syllables
+  });
+
+  function createSpeech({ jawMax = 1, ...tuning } = {}) {
+    const cfg = { ...SPEECH, ...tuning };
     let jaw = 0;
     let press = 0;
+    let peakDb = cfg.gateDb;
+    let hold = 0;
+    let quiet = 0;
+    let peakAge = 0;
+    let levelDb = -Infinity;
+    let open = 0;
     return {
-      step(freq, dt) {
-        let jawTarget = 0;
-        let pressTarget = 0;
-        if (freq && freq.length) {
-          const n = freq.length;
-          const b1 = Math.floor(n * 0.12);
-          const b2 = Math.floor(n * 0.45);
-          let lo = 0;
-          let hi = 0;
-          for (let i = 2; i < b1; i += 1) lo += freq[i];
-          for (let i = b1; i < b2; i += 1) hi += freq[i];
-          lo /= Math.max(1, b1 - 2) * 255;
-          hi /= Math.max(1, b2 - b1) * 255;
-          const energy = Math.min(1, lo * 1.9 + hi * 0.7);
-          jawTarget = clamp((energy - 0.06) * 1.15);
-          // a lip press is voiced energy with the jaw shut: high band low, some low band
-          pressTarget = clamp(lo * 2.6 - hi * 1.6) * (1 - jawTarget);
-        }
-        const k = 1 - Math.exp(-Math.max(0, dt) * 22);
-        jaw += (jawTarget - jaw) * k;
-        press += (pressTarget - press) * k;
-        return { jaw, press };
+      step(samples, dt) {
+        dt = Math.max(0, dt);
+        let sum = 0;
+        const n = samples ? samples.length : 0;
+        for (let i = 0; i < n; i += 1) sum += samples[i] * samples[i];
+        const rms = n ? Math.sqrt(sum / n) : 0;
+        levelDb = rms > 0 && Number.isFinite(rms) ? 20 * Math.log10(rms) : -Infinity;
+        const voiced = levelDb > cfg.gateDb;
+        // measured to this tick before it is cleared, so the frame that resumes speech still sees the pause
+        const sinceVoiced = quiet + dt;
+        quiet = voiced ? 0 : sinceVoiced;
+        peakAge += dt;
+        if (sinceVoiced >= cfg.gapSeconds) peakDb = cfg.gateDb;
+        else if (peakAge > cfg.peakHoldSeconds) peakDb = Math.max(cfg.gateDb, peakDb - cfg.peakReleaseDbPerS * dt);
+        if (voiced && levelDb >= peakDb) { peakDb = levelDb; peakAge = 0; }
+        open = voiced ? clamp((levelDb - (peakDb - cfg.rangeDb)) / cfg.rangeDb) ** cfg.shape : 0;
+        hold = voiced ? cfg.holdSeconds : Math.max(0, hold - dt);
+        const jawTarget = open * jawMax;
+        const pressTarget = hold > 0 ? cfg.pressMax * (1 - open) ** 2 : 0;
+        const rate = jawTarget > jaw ? cfg.openRate : cfg.closeRate;
+        jaw += (jawTarget - jaw) * (1 - Math.exp(-dt * rate));
+        press += (pressTarget - press) * (1 - Math.exp(-dt * cfg.closeRate));
+        return { jaw, press, open, levelDb };
       },
     };
   }
@@ -399,6 +434,8 @@
     PHONE_MAX_WIDTH,
     AVATAR_STATE_FOR_VOICE,
     TRANSITION,
+    SPEECH,
+    MAX_DRIVEN_CAP,
     IDLE_DISMISS_MS,
     resolveAvatarMode,
     canRenderHolo,

@@ -230,11 +230,12 @@
    ],
    "max_delta_mm": 4.9122,
    "verts_clamped": 0,
-   "cap": 1.0,
+   "cap": 1.5,
    "window": null,
    "source_frame": 392,
    "note": "mid-word open viseme, frame 392, measured lip gap 13 x 56 px at 640",
-   "runtime_driven": true
+   "runtime_driven": true,
+   "cap_note": "NOX-11813 (Cameron 2026-09-24: the mouth isn't moving very much): the runtime overdrives the frame-392 viseme to 1.5. At 1.5 the lip gap reads as an open vowel at framing A with no mesh break; the composite also lifts the lids a little, which is why it stops short of 2.0 (visibly startled). Smile keys are untouched."
   },
   {
    "name": "Press",
