@@ -206,7 +206,7 @@
     rangeDb: 12,         // a syllable peak opens fully; 12 dB under the peak is shut
     peakHoldSeconds: 0.3, // about one syllable: a trough is read against the syllable before it
     peakReleaseDbPerS: 30, // then the peak falls to meet a quieter stretch
-    gapSeconds: 0.15,    // this long below the gate is a pause: the next phrase sets its own peak
+    gapSeconds: 0.12,    // this long since the last voiced frame is a pause: the next phrase sets its own peak
     shape: 1,            // openness is linear in dB; below 1 held the jaw open through consonants
     pressMax: 0.85,
     holdSeconds: 0.35,   // how long the lips keep pressing after the last voiced frame
@@ -233,9 +233,11 @@
         const rms = n ? Math.sqrt(sum / n) : 0;
         levelDb = rms > 0 && Number.isFinite(rms) ? 20 * Math.log10(rms) : -Infinity;
         const voiced = levelDb > cfg.gateDb;
-        quiet = voiced ? 0 : quiet + dt;
+        // measured to this tick before it is cleared, so the frame that resumes speech still sees the pause
+        const sinceVoiced = quiet + dt;
+        quiet = voiced ? 0 : sinceVoiced;
         peakAge += dt;
-        if (quiet >= cfg.gapSeconds) peakDb = cfg.gateDb;
+        if (sinceVoiced >= cfg.gapSeconds) peakDb = cfg.gateDb;
         else if (peakAge > cfg.peakHoldSeconds) peakDb = Math.max(cfg.gateDb, peakDb - cfg.peakReleaseDbPerS * dt);
         if (voiced && levelDb >= peakDb) { peakDb = levelDb; peakAge = 0; }
         open = voiced ? clamp((levelDb - (peakDb - cfg.rangeDb)) / cfg.rangeDb) ** cfg.shape : 0;

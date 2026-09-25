@@ -145,10 +145,10 @@ test("blinks land on the manifest interval, and thinking blinks more often", () 
 
 // 60 fps frames of the analyser's last 1024 samples (48 kHz): a 180 Hz voice carrier whose level swings between
 // `peakDb` and `peakDb - depthDb` at `syllablesPerS`, which is how TTS speech moves at the analyser.
-function syllables({ seconds, peakDb = -14, depthDb = 24, syllablesPerS = 4 } = {}) {
+function syllables({ seconds, peakDb = -14, depthDb = 24, syllablesPerS = 4, fps = 60 } = {}) {
   const frames = [];
-  for (let f = 0; f < seconds * 60; f += 1) {
-    const end = Math.round((f + 1) * 800);
+  for (let f = 0; f < seconds * fps; f += 1) {
+    const end = Math.round((f + 1) * 48000 / fps);
     const wave = new Float32Array(1024);
     for (let i = 0; i < 1024; i += 1) {
       const t = (end - 1024 + i) / 48000;
@@ -160,8 +160,8 @@ function syllables({ seconds, peakDb = -14, depthDb = 24, syllablesPerS = 4 } = 
   return frames;
 }
 
-function speak(speech, frames) {
-  return frames.map((wave) => speech.step(wave, 1 / 60));
+function speak(speech, frames, dt = 1 / 60) {
+  return frames.map((wave) => speech.step(wave, dt));
 }
 
 test("the mouth opens and shuts on every syllable instead of holding open (NOX-11813)", () => {
@@ -182,12 +182,24 @@ test("the mouth opens and shuts on every syllable instead of holding open (NOX-1
 });
 
 // Codex P2s on d393c2d9: a quieter stretch must articulate at once, not after the old peak has leaked away
-test("a quieter phrase after a pause opens fully from its first syllable", () => {
+test("a quieter phrase after a pause opens fully from its first syllable, at 60 fps and at the Acer's 27", () => {
+  // the shortest pause that counts: its silent ticks alone fall short of gapSeconds, the resuming tick completes it
+  for (const fps of [60, 27]) {
+    const dt = 1 / fps;
+    const silentTicks = Math.ceil(Avatar.SPEECH.gapSeconds / dt) - 1;
+    const speech = Avatar.createSpeech({ jawMax: 1.5 });
+    speak(speech, syllables({ seconds: 1, peakDb: -6, fps }), dt);
+    speak(speech, Array.from({ length: silentTicks }, () => new Float32Array(1024)), dt);
+    const jaws = speak(speech, syllables({ seconds: 0.5, peakDb: -22, depthDb: 14, fps }), dt).map((o) => o.jaw);
+    const first = Math.max(...jaws.slice(0, Math.ceil(fps / 3)));
+    assert.ok(first > 1.2, `${fps} fps, ${silentTicks} silent ticks: first syllable peaked at ${first}`);
+  }
+  // and a short TTS phrase pause counts as one: 150 ms is 8 silent ticks and the resuming one at 60 fps
   const speech = Avatar.createSpeech({ jawMax: 1.5 });
   speak(speech, syllables({ seconds: 1, peakDb: -6 }));
-  speak(speech, Array.from({ length: 12 }, () => new Float32Array(1024)));
+  speak(speech, Array.from({ length: 8 }, () => new Float32Array(1024)));
   const jaws = speak(speech, syllables({ seconds: 0.5, peakDb: -22, depthDb: 14 })).map((o) => o.jaw);
-  assert.ok(Math.max(...jaws.slice(0, 20)) > 1.2, `first syllable peaked at ${Math.max(...jaws.slice(0, 20))}`);
+  assert.ok(Math.max(...jaws.slice(0, 20)) > 1.2, `after a 150 ms pause the first syllable peaked at ${Math.max(...jaws.slice(0, 20))}`);
 });
 
 test("a quieter stretch without a pause is articulated within half a second", () => {
