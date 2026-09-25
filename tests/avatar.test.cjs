@@ -599,8 +599,34 @@ test("the bridge's whole-answer audio and its tap-to-play retry resume a tapped 
   assert.equal((micClick.match(/voiceAudio\.play\(\)/g) || []).length, 1);
 });
 
+// next.config.js as Next loads it, with its two build plugins stubbed: next-pwa's options are captured, both wrappers
+// pass the config through.
+function loadNextConfig() {
+  const Module = require("node:module");
+  const load = Module._load;
+  let pwaOptions = null;
+  Module._load = function stubbed(request, ...rest) {
+    if (request === "next-pwa") return (options) => { pwaOptions = options; return (config) => config; };
+    if (request === "@next/bundle-analyzer") return () => (config) => config;
+    return load.call(this, request, ...rest);
+  };
+  const file = path.join(__dirname, "../next.config.js");
+  try { delete require.cache[file]; return { config: require(file), pwaOptions }; } finally { Module._load = load; }
+}
+
 test("the hologram stays out of the service worker precache", () => {
   // next-pwa precaches every public/ file, past workbox's size cap, into every client that installs the worker.
-  const config = fs.readFileSync(path.join(__dirname, "../next.config.js"), "utf8");
-  assert.match(config, /publicExcludes: \['!noprecache\/\*\*\/\*', '!avatar\/\*\*\/\*'\],/);
+  const { pwaOptions } = loadNextConfig();
+  assert.deepEqual(pwaOptions.publicExcludes, ["!noprecache/**/*", "!avatar/**/*"]);
+});
+
+test("only the wall's CSP lets GLTFLoader fetch the blob: textures it creates", async () => {
+  // Live run under kyst-board's CSP: all seven embedded textures were refused (connect-src had no blob:).
+  const headers = await loadNextConfig().config.headers();
+  const csp = (source) => headers.find((rule) => rule.source === source).headers
+    .find((header) => header.key === "Content-Security-Policy").value;
+  const directive = (policy, name) => policy.split(";").map((part) => part.trim()).find((part) => part.startsWith(`${name} `));
+  assert.equal(directive(csp("/wall.html"), "connect-src"), "connect-src 'self' blob: https: wss:");
+  assert.equal(directive(csp("/wall.html"), "frame-src"), "frame-src 'self' https://kyst-wall-proxy.fly.dev");
+  assert.equal(directive(csp("/((?!wall\\.html$).*)"), "connect-src"), "connect-src 'self' https: wss:");
 });

@@ -48,8 +48,15 @@ const nextConfig = {
 
   async headers() {
     const securityHeaders = buildSecurityHeaders();
+    // The wall also needs connect-src blob: because GLTFLoader fetches the hologram GLB's embedded
+    // textures from blob: URLs it creates itself. Without it they are refused and NOX renders untextured.
     const wallHeaders = securityHeaders.map((header) => header.key === 'Content-Security-Policy'
-      ? { ...header, value: header.value.replace("frame-src 'self'", "frame-src 'self' https://kyst-wall-proxy.fly.dev") }
+      ? {
+          ...header,
+          value: header.value
+            .replace("frame-src 'self'", "frame-src 'self' https://kyst-wall-proxy.fly.dev")
+            .replace("connect-src 'self'", "connect-src 'self' blob:"),
+        }
       : header);
     return [
       {
