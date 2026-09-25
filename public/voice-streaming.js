@@ -7,7 +7,14 @@
 
   const TARGET_RATE = 16000;
   const VOICE_URL = "wss://cb-threadripper.tail3a8e2d.ts.net:8445/voice";
+  // Once the server shows progress on a turn, 6 s of silence from it is a
+  // stall. The first sign of an answer is allowed longer: end of speech to
+  // first audio measured 3.6-7.2 s on the Phase B brain, and a 6 s first-audio
+  // deadline abandoned exactly the two slowest turns -- their audio then
+  // arrived for a request the client had already dropped, which is the
+  // "frames delivered, none scheduled" silent wall (NOX-11812).
   const RESPONSE_TIMEOUT_MS = 6000;
+  const FIRST_RESPONSE_TIMEOUT_MS = 15000;
 
   function pcm16FromFloat32(input, inputRate, state = {}) {
     const ratio = inputRate / TARGET_RATE;
@@ -36,8 +43,13 @@
   class VoiceStreamClient {
     constructor(options = {}) {
       this.WebSocketClass = options.WebSocketClass || globalThis.WebSocket;
-      this.setTimer = options.setTimer || globalThis.setTimeout;
-      this.clearTimer = options.clearTimer || globalThis.clearTimeout;
+      // setTimeout/clearTimeout are Window methods: stored bare on an instance and
+      // called as this.setTimer(...), the browser sees a VoiceStreamClient receiver
+      // and throws "Illegal invocation". connect() clears a timer before it opens
+      // the socket, so every connect threw and the wall never opened a websocket at
+      // all. Bind them to the global so the receiver stays correct.
+      this.setTimer = options.setTimer || globalThis.setTimeout.bind(globalThis);
+      this.clearTimer = options.clearTimer || globalThis.clearTimeout.bind(globalThis);
       this.now = options.now || (() => Date.now());
       this.onEvent = options.onEvent || (() => {});
       this.onFallback = options.onFallback || (() => {});
@@ -50,8 +62,6 @@
       this.audioRequestId = null;
       this.readyTimer = null;
       this.audioTimer = null;
-      this.reconnectTimer = null;
-      this.reconnectAttempts = 0;
     }
 
     get ready() {
@@ -62,7 +72,6 @@
       if (!url || !token) throw new Error("Streaming configuration is incomplete");
       if (url !== VOICE_URL) throw new Error("Unexpected streaming endpoint");
       if (this.ready && this.url === url && this.token === token) return false;
-      this.clearTimer(this.reconnectTimer);
       this.disconnect("reconfigure", { preserveCompletedPlayback });
       this.url = url;
       this.token = token;
@@ -75,7 +84,6 @@
           this.failConnection("ready_timeout");
           this.socket = null;
           if (socket.readyState < this.WebSocketClass.CLOSING) socket.close(4000, "ready_timeout");
-          this.scheduleReconnect();
         }, 3000);
       });
       socket.addEventListener("message", (event) => {
@@ -89,29 +97,19 @@
         this.socket = null;
         this.authenticated = false;
         if (!this.activeRequest?.complete) this.failActive("socket_closed");
+        // No automatic reconnect. Stream tickets are single-use, so retrying
+        // with the spent one is refused every time: the server logged three
+        // accepted-then-rejected sockets after every idle close. The caller
+        // mints a fresh ticket the next time a turn needs the stream.
+        this.token = null;
         this.onEvent({ type: "stream.closed" });
-        this.scheduleReconnect();
       });
       this.socket = socket;
-    }
-
-    scheduleReconnect() {
-      this.clearTimer(this.reconnectTimer);
-      if (!this.url || !this.token || this.reconnectAttempts >= 3) return;
-      const delay = 500 * (2 ** this.reconnectAttempts++);
-      this.reconnectTimer = this.setTimer(() => {
-        this.reconnectTimer = null;
-        this.connect(
-          { url: this.url, token: this.token },
-          { preserveCompletedPlayback: Boolean(this.activeRequest?.complete) },
-        );
-      }, delay);
     }
 
     disconnect(reason = "disconnect", { preserveCompletedPlayback = false } = {}) {
       if (!(preserveCompletedPlayback && this.activeRequest?.complete)) this.cancel(reason);
       this.clearTimer(this.readyTimer);
-      this.clearTimer(this.reconnectTimer);
       const socket = this.socket;
       this.socket = null;
       this.authenticated = false;
@@ -134,11 +132,39 @@
 
     end() {
       const request = this.activeRequest;
-      if (!request || request.ended || !this.ready) return false;
+      if (!request) return false;
+      // The server already closed this turn (its VAD heard the pause first);
+      // the turn is ended, so a late tap is not a failure.
+      if (request.ended) return true;
+      if (!this.ready) return false;
       request.ended = true;
       this.sendControl({ type: "end_of_speech", requestId: request.requestId });
-      this.audioTimer = this.setTimer(() => this.failActive("first_audio_timeout"), RESPONSE_TIMEOUT_MS);
+      this.armWatchdog("first_audio_timeout", FIRST_RESPONSE_TIMEOUT_MS);
       return true;
+    }
+
+    armWatchdog(reason, delay) {
+      this.clearTimer(this.audioTimer);
+      this.audioTimer = this.setTimer(() => this.failActive(reason), delay);
+    }
+
+    // Any answer traffic means the server has closed the user's turn, whether
+    // or not a tap did it: stop streaming mic audio into a finished turn and
+    // tell the caller so it can release the microphone.
+    noteServerProgress(message) {
+      const request = this.activeRequest;
+      if (!request || request.complete) return;
+      if (!request.ended && message.type !== "transcript.delta") {
+        request.ended = true;
+        this.onEvent({ type: "turn.ended", requestId: request.requestId, via: message.type });
+      }
+      if (request.ended && !request.firstAudio) {
+        // Transcript and end-of-speech acks come before the brain has said
+        // anything, so they keep the first-answer window; only answer traffic
+        // moves the turn onto the shorter stall deadline.
+        const answering = message.type === "answer.delta" || message.type === "audio.start";
+        this.armWatchdog("first_audio_timeout", answering ? RESPONSE_TIMEOUT_MS : FIRST_RESPONSE_TIMEOUT_MS);
+      }
     }
 
     cancel() {
@@ -191,14 +217,21 @@
       if (message.type === "ready") {
         this.clearTimer(this.readyTimer);
         this.authenticated = true;
-        this.reconnectAttempts = 0;
         this.onEvent(message);
       } else if (message.type === "audio.start" && this.matchesActive(message)) {
+        this.noteServerProgress(message);
         this.audioFormat = message.format;
         this.audioRequestId = message.requestId;
         this.onEvent(message);
+      } else if (message.type === "speech.end" && this.matchesActive(message)) {
+        this.noteServerProgress(message);
       } else if (message.type === "transcript.delta" || message.type === "answer.delta" || message.type === "complete") {
         if (this.matchesActive(message)) {
+          if (message.type !== "complete") this.noteServerProgress(message);
+          else if (!this.activeRequest.ended) {
+            this.activeRequest.ended = true;
+            this.onEvent({ type: "turn.ended", requestId: message.requestId, via: "complete" });
+          }
           if (message.type === "complete") {
             this.activeRequest.complete = true;
             if (!this.activeRequest.firstAudio && this.activeRequest.pendingAudio === 0) {

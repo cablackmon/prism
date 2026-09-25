@@ -248,39 +248,74 @@ let activeRequestId = null;
 let activeRequestMediaUrl = null;
 let pendingPlaybackRequestId = null;
 let activeRecordingBlob = null;
-let batchSubmitted = false;
 let streamingRequest = false;
 const resampleState = {};
 const chatTurns = new Map();
 
+let pendingStreamTicketId = null;
+let streamConnect = null;
+// Mic audio captured while the socket is still opening; flushed on ready.
+// Capped at the 10 s recording limit (16 kHz mono PCM16).
+const MAX_BUFFERED_PCM_BYTES = 16000 * 2 * 10;
+const STREAM_CONNECT_TIMEOUT_MS = 8000;
+
+// The proxy bridge answers a ticket request only when it carries a requestId;
+// without one it drops the message silently, so the wall never had a socket and
+// every tap fell through to the batch path (NOX-11812).
 function requestStreamConfig() {
-  boardFrame.contentWindow?.postMessage({ type:"kyst-voice-stream-ticket" }, "https://kyst-wall-proxy.fly.dev");
+  pendingStreamTicketId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
+  boardFrame.contentWindow?.postMessage({
+    type:"kyst-voice-stream-ticket", requestId: pendingStreamTicketId,
+  }, "https://kyst-wall-proxy.fly.dev");
 }
 
-function appendChatDelta(requestId, field, text) {
+// The voice socket opens on tap, never on board load. A ticket minted on every
+// bridge-ready would open a full server voice session on each 10-minute board
+// reload and idle it out unused (NOX-11812). An open socket is reused for
+// follow-up turns until the server's idle timeout closes it.
+function connectStream() {
+  if (streamClient.ready) return Promise.resolve(true);
+  if (streamConnect) return streamConnect.promise;
+  let settle;
+  const promise = new Promise((resolve) => { settle = resolve; });
+  const timer = setTimeout(() => finishStreamConnect(false, "connect_timeout"), STREAM_CONNECT_TIMEOUT_MS);
+  streamConnect = { promise, settle, timer };
+  requestStreamConfig();
+  return promise;
+}
+
+function finishStreamConnect(ok, reason) {
+  const pending = streamConnect;
+  if (!pending) return;
+  streamConnect = null;
+  clearTimeout(pending.timer);
+  if (!ok) {
+    pendingStreamTicketId = null;
+    console.warn("kyst_voice_stream_connect_failed", { reason });
+  }
+  pending.settle(ok);
+}
+
+// The two delta streams are not the same shape. answer.delta is a token stream
+// and accumulates; transcript.delta carries the whole utterance so far and is
+// revised, so appending it repeated the question in the "You said" bubble.
+function applyChatDelta(requestId, field, text) {
   if (!text) return;
   const turn = ensureChatTurn(requestId);
-  const next = `${turn[field] || ""}${text}`;
+  const next = field === "answer" ? `${turn[field] || ""}${text}` : text;
   updateChatTurn(requestId, field === "transcript" ? next : null, field === "answer" ? next : null);
 }
 
-function submitBatchFallback(requestId, reason) {
-  if (requestId !== activeRequestId || batchSubmitted || !activeRecordingBlob) return false;
-  batchSubmitted = true;
+// The batch /ask pipeline was retired 2026-09-12 (NOX-11685) and its worker is
+// disabled, so falling back to it polled a dead endpoint for ~37 s behind
+// "NOX is thinking…". Streaming is the only path; when it drops, say so now.
+function reportStreamUnavailable(requestId, reason) {
+  if (requestId !== activeRequestId) return false;
+  console.warn("kyst_voice_stream_unavailable", { requestId, reason });
   streamingRequest = false;
-  activeRecordingBlob.arrayBuffer().then((buffer) => {
-    if (requestId !== activeRequestId) return;
-    console.info("kyst_voice_fallback", { requestId, reason });
-    boardFrame.contentWindow.postMessage({
-      type: "kyst-voice-ask", requestId,
-      mimeType: recordingMimeType.split(";", 1)[0], audio: buffer,
-    }, "https://kyst-wall-proxy.fly.dev", [buffer]);
-  }).catch(() => {
-    if (requestId === activeRequestId) {
-      activeRequestId = null;
-      setVoiceState("ready", "NOX could not receive that recording. Tap to retry.");
-    }
-  });
+  activeRequestId = null;
+  activeRecordingBlob = null;
+  setVoiceState("ready", "NOX's voice connection dropped. Tap to try again.");
   return true;
 }
 
@@ -311,7 +346,6 @@ function cancelActiveVoice(reason = "barge_in") {
   }
   activeRequestId = null;
   activeRecordingBlob = null;
-  batchSubmitted = false;
   streamingRequest = false;
 }
 
@@ -319,14 +353,20 @@ const streamClient = new KystVoiceStreaming.VoiceStreamClient({
   playAudio: (chunk, format, requestId) => progressiveAudio.push(chunk, format, requestId),
   stopAudio: () => progressiveAudio.stop(),
   onFallback: ({ requestId, reason }) => {
-    streamingRequest = false;
-    if (activeRecordingBlob) submitBatchFallback(requestId, reason);
+    reportStreamUnavailable(requestId, reason);
   },
   onEvent: (message) => {
+    if (message.type === "ready") finishStreamConnect(true);
+    if (message.type === "stream.unavailable" || message.type === "stream.closed") {
+      finishStreamConnect(false, message.reason || message.type);
+    }
     if (message.requestId && message.requestId !== activeRequestId) return;
-    if (message.type === "transcript.delta") appendChatDelta(message.requestId, "transcript", message.text);
+    // The server closed the turn (its VAD heard the pause, or the answer
+    // began): release the mic so the next tap starts a new question.
+    if (message.type === "turn.ended" && recorder?.state === "recording") stopRecording();
+    if (message.type === "transcript.delta") applyChatDelta(message.requestId, "transcript", message.text);
     if (message.type === "answer.delta") {
-      appendChatDelta(message.requestId, "answer", message.text);
+      applyChatDelta(message.requestId, "answer", message.text);
       setVoiceState("thinking", "Preparing NOX's voice…");
     }
     if (message.type === "audio.start" || message.type === "audio.first_chunk") {
@@ -612,7 +652,6 @@ async function beginRecording() {
     recordingMimeType = recorder.mimeType || preferred || "audio/webm";
     recordingChunks = [];
     activeRecordingBlob = null;
-    batchSubmitted = false;
     activeRequestId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
     ensureChatTurn(activeRequestId);
     const turnRequestId = activeRequestId;
@@ -622,7 +661,24 @@ async function beginRecording() {
     const turnMimeType = recordingMimeType;
     const trackSettings = turnStream.getAudioTracks()[0]?.getSettings?.() || {};
     console.info("kyst_voice_capture_settings", trackSettings);
+    const pendingTurn = { stopped: false, pcm: [], pcmBytes: 0 };
     streamingRequest = streamClient.begin({ requestId: activeRequestId });
+    if (!streamingRequest) {
+      connectStream().then((connected) => {
+        if (activeRequestId !== turnRequestId) return;
+        if (connected) streamingRequest = streamClient.begin({ requestId: turnRequestId });
+        if (!streamingRequest) {
+          if (recorder === turnRecorder) {
+            recorder = null;
+            cleanupRecording();
+          }
+          return reportStreamUnavailable(turnRequestId, "stream_unavailable");
+        }
+        for (const chunk of pendingTurn.pcm) streamClient.sendPcm(chunk);
+        pendingTurn.pcm = [];
+        if (pendingTurn.stopped && !streamClient.end()) reportStreamUnavailable(turnRequestId, "stream_unavailable");
+      });
+    }
     turnRecorder.addEventListener("dataavailable", (event) => {
       if (!event.data.size) return;
       turnChunks.push(event.data);
@@ -644,14 +700,23 @@ async function beginRecording() {
       setVoiceState("thinking", "NOX is thinking…");
       const speechEndedAt = Date.now();
       console.info("kyst_voice_timing", { requestId: turnRequestId, speech_end: speechEndedAt });
-      if (streamingRequest && streamClient.end()) return;
-      submitBatchFallback(turnRequestId, "stream_unavailable");
+      if (!streamingRequest) {
+        // Still connecting: the buffered audio and this end are sent on ready.
+        pendingTurn.stopped = true;
+        return;
+      }
+      if (streamClient.end()) return;
+      reportStreamUnavailable(turnRequestId, "stream_unavailable");
     }, { once:true });
     recordingStartedAt = performance.now();
     setVoiceState("listening", "Listening… tap to stop");
     recorder.start(40);
     watchForSilence(recordingStream, (pcm) => {
       if (streamingRequest) streamClient.sendPcm(pcm);
+      else if (pendingTurn.pcmBytes + pcm.byteLength <= MAX_BUFFERED_PCM_BYTES) {
+        pendingTurn.pcm.push(pcm);
+        pendingTurn.pcmBytes += pcm.byteLength;
+      }
     });
     maxTimer = setTimeout(stopRecording, 10_000);
   } catch (error) {
@@ -692,16 +757,25 @@ window.addEventListener("message", async (event) => {
   const message = event.data || {};
   if (message.type === "kyst-voice-bridge-ready") {
     bridgeReady = true;
-    requestStreamConfig();
+    // Only a tap already waiting on a ticket re-requests one: a board reload
+    // mid-connect drops the request the old frame was answering.
+    if (streamConnect) requestStreamConfig();
     if (!recorder && !activeRequestId) setVoiceState("ready", "Tap to ask NOX");
     return;
   }
   if (message.type === "kyst-voice-stream-config") {
+    if (!message.requestId || message.requestId !== pendingStreamTicketId) return;
+    pendingStreamTicketId = null;
     try {
       streamClient.connect({ url:message.url, token:message.token });
     } catch (error) {
       console.warn("kyst_voice_stream_config_rejected", error?.message || "invalid config");
+      finishStreamConnect(false, "config_rejected");
     }
+    return;
+  }
+  if (message.type === "kyst-voice-error" && message.requestId && message.requestId === pendingStreamTicketId) {
+    finishStreamConnect(false, "ticket_unavailable");
     return;
   }
   if (message.requestId !== activeRequestId) return;
