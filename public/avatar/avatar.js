@@ -194,14 +194,19 @@
   // viewer's byte spectrum saturated: at playback level most bins sit above
   // the analyser's -30 dB ceiling, so the jaw was pinned at its cap for a
   // whole answer (median 1.0 on the board) and the mouth held open instead of
-  // moving. Here the frame's RMS level is read against a peak that decays
-  // between phrases, so every syllable opens the jaw from shut whatever the
-  // playback gain, and while speech is going on the lips press together in
-  // the gaps. After the answer the press lets go and the rest pose returns.
+  // moving. Here the frame's RMS level is read against the phrase's own
+  // peak, so every syllable opens the jaw from shut whatever the playback
+  // gain, and while speech is going on the lips press together in the gaps.
+  // The peak follows any voiced level, however quiet, restarts at every
+  // pause, and after a syllable's hold falls fast enough that a quieter
+  // stretch without a pause still opens the mouth. After the answer the press lets go and the rest pose
+  // returns.
   const SPEECH = Object.freeze({
     gateDb: -50,         // below this the frame is silence (the tap outputs zeros between answers)
     rangeDb: 12,         // a syllable peak opens fully; 12 dB under the peak is shut
-    peakReleaseDbPerS: 9,
+    peakHoldSeconds: 0.3, // about one syllable: a trough is read against the syllable before it
+    peakReleaseDbPerS: 30, // then the peak falls to meet a quieter stretch
+    gapSeconds: 0.15,    // this long below the gate is a pause: the next phrase sets its own peak
     shape: 1,            // openness is linear in dB; below 1 held the jaw open through consonants
     pressMax: 0.85,
     holdSeconds: 0.35,   // how long the lips keep pressing after the last voiced frame
@@ -213,8 +218,10 @@
     const cfg = { ...SPEECH, ...tuning };
     let jaw = 0;
     let press = 0;
-    let peakDb = cfg.gateDb + cfg.rangeDb;
+    let peakDb = cfg.gateDb;
     let hold = 0;
+    let quiet = 0;
+    let peakAge = 0;
     let levelDb = -Infinity;
     let open = 0;
     return {
@@ -226,8 +233,11 @@
         const rms = n ? Math.sqrt(sum / n) : 0;
         levelDb = rms > 0 && Number.isFinite(rms) ? 20 * Math.log10(rms) : -Infinity;
         const voiced = levelDb > cfg.gateDb;
-        const decayed = peakDb - cfg.peakReleaseDbPerS * dt;
-        peakDb = Math.max(cfg.gateDb + cfg.rangeDb, voiced ? Math.max(levelDb, decayed) : decayed);
+        quiet = voiced ? 0 : quiet + dt;
+        peakAge += dt;
+        if (quiet >= cfg.gapSeconds) peakDb = cfg.gateDb;
+        else if (peakAge > cfg.peakHoldSeconds) peakDb = Math.max(cfg.gateDb, peakDb - cfg.peakReleaseDbPerS * dt);
+        if (voiced && levelDb >= peakDb) { peakDb = levelDb; peakAge = 0; }
         open = voiced ? clamp((levelDb - (peakDb - cfg.rangeDb)) / cfg.rangeDb) ** cfg.shape : 0;
         hold = voiced ? cfg.holdSeconds : Math.max(0, hold - dt);
         const jawTarget = open * jawMax;

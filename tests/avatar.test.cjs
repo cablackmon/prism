@@ -181,11 +181,29 @@ test("the mouth opens and shuts on every syllable instead of holding open (NOX-1
   assert.ok(Math.max(...out.map((o) => o.press)) > 0.5);
 });
 
-test("a quieter phrase after a loud one still opens the mouth fully", () => {
+// Codex P2s on d393c2d9: a quieter stretch must articulate at once, not after the old peak has leaked away
+test("a quieter phrase after a pause opens fully from its first syllable", () => {
   const speech = Avatar.createSpeech({ jawMax: 1.5 });
   speak(speech, syllables({ seconds: 1, peakDb: -6 }));
-  const jaws = speak(speech, syllables({ seconds: 4, peakDb: -22 })).slice(180).map((o) => o.jaw);
-  assert.ok(Math.max(...jaws) > 1.2, `the quiet phrase peaked at ${Math.max(...jaws)}`);
+  speak(speech, Array.from({ length: 12 }, () => new Float32Array(1024)));
+  const jaws = speak(speech, syllables({ seconds: 0.5, peakDb: -22, depthDb: 14 })).map((o) => o.jaw);
+  assert.ok(Math.max(...jaws.slice(0, 20)) > 1.2, `first syllable peaked at ${Math.max(...jaws.slice(0, 20))}`);
+});
+
+test("a quieter stretch without a pause is articulated within half a second", () => {
+  const speech = Avatar.createSpeech({ jawMax: 1.5 });
+  speak(speech, syllables({ seconds: 1, peakDb: -6 }));
+  const jaws = speak(speech, syllables({ seconds: 1, peakDb: -22, depthDb: 14 })).map((o) => o.jaw);
+  const late = jaws.slice(30, 60);
+  assert.ok(Math.max(...late) > 1.2, `0.5-1 s after the drop the jaw peaked at ${Math.max(...late)}`);
+  assert.ok(Math.min(...late) < 0.3, `and never shut: min ${Math.min(...late)}`);
+});
+
+test("quiet voiced speech just above the gate still opens the mouth fully", () => {
+  for (const peakDb of [-45, -48]) {
+    const jaws = speak(Avatar.createSpeech({ jawMax: 1.5 }), syllables({ seconds: 2, peakDb, depthDb: 1 })).slice(60).map((o) => o.jaw);
+    assert.ok(Math.min(...jaws) > 1.2, `${peakDb} dBFS held the jaw at ${Math.min(...jaws)}`);
+  }
 });
 
 test("the mouth moves the same at any playback gain: loud speech no longer pins the jaw", () => {
