@@ -1,0 +1,5865 @@
+{
+ "schema": "nox-hologram-runtime/1",
+ "source": {
+  "blend": "projects/kyst-brand/nox-hologram-look/look09/work/NOX_Look09_Hologram.blend",
+  "blend_sha256": "8f4956a75dfacd2015af8905918750c060ff7e62f66518dee1ddb954b8510a7e",
+  "blend_bytes": 288451777,
+  "accepted_variant": "B",
+  "variant_B": "bodysuit + choker + the eight LOOK09_Shoulder_Armour pieces, no jacket",
+  "export_date_utc": "2026-09-23T05:54:55+00:00",
+  "worker": "isolated Opus 5 worker, cron 28a57588-4241-4738-bf12-0d40cf7fab3f",
+  "blender": "4.5.14 LTS",
+  "cameron_acceptance": {
+   "timestamp": "2026-09-22 23:30 CDT",
+   "quote": "ok on the avatar that's actually pretty good. The only thing is that for this bust only version, her body is moving too much. Maybe only slight body movement, but her head/neck should move, which it doesn't seem to currently. But honestly, this is good enough for now for the live version. Can you wire it in to the live voice thing?"
+  },
+  "lashes": "LASHES_OFF in the accepted look; Ludovisions_Toon3D8_Eyelashes and NX8_Swept_Lashes are excluded from the GLB, their materials render fully transparent"
+ },
+ "scale": {
+  "units": "world_metres",
+  "note": "never scale the avatar. Blender is Z-up, the GLB is Y-up: a world z below is the GLB y.",
+  "choker_band_bottom": 1.40705,
+  "choker_band_top": 1.44813,
+  "bodice_top": 1.39155,
+  "bodice_bottom": 1.02647,
+  "head_top": 1.73803,
+  "eye_line_z": 1.55902,
+  "belt": [
+   1.02217,
+   1.06277
+  ],
+  "geometry_cut_below_z": 0.9,
+  "geometry_cut_note": "everything below this world z is fully inside the bottom dissolve (Fade Z0 1.00) and was removed to save bytes"
+ },
+ "cameras": {
+  "A": {
+   "name": "closeup",
+   "blender_object": "NX2_Tracked_EyeLevel_Closeup",
+   "lens_mm": 85.0,
+   "sensor_width_mm": 36.0,
+   "sensor_height_mm": 24.0,
+   "sensor_fit": "HORIZONTAL",
+   "shift_x": 0.0,
+   "shift_y": -0.09,
+   "fov_x_deg": 23.9132,
+   "fov_y_deg": 16.0714,
+   "clip": [
+    0.1,
+    1000.0
+   ],
+   "resolution": [
+    1080,
+    1080
+   ],
+   "blender_zup": {
+    "position": [
+     -0.09311,
+     -1.14486,
+     1.55899
+    ],
+    "target": [
+     -0.09311,
+     0.03,
+     1.55899
+    ],
+    "rotation_euler_xyz_deg": [
+     90.0,
+     -0.0,
+     0.0
+    ]
+   },
+   "three_yup": {
+    "position": [
+     -0.09311,
+     1.55899,
+     1.14486
+    ],
+    "quaternion_xyzw": [
+     -0.0,
+     0.0,
+     0.0,
+     1.0
+    ],
+    "target": [
+     -0.09311,
+     1.55899,
+     -0.03
+    ]
+   }
+  },
+  "C": {
+   "name": "three_quarter",
+   "blender_object": "LOOK01_ThreeQuarter_Bust",
+   "lens_mm": 85.0,
+   "sensor_width_mm": 36.0,
+   "sensor_height_mm": 24.0,
+   "sensor_fit": "AUTO",
+   "shift_x": 0.0,
+   "shift_y": 0.0,
+   "fov_x_deg": 23.9132,
+   "fov_y_deg": 16.0714,
+   "clip": [
+    0.1,
+    1000.0
+   ],
+   "resolution": [
+    1080,
+    1080
+   ],
+   "blender_zup": {
+    "position": [
+     0.64879,
+     -0.94561,
+     1.575
+    ],
+    "target": [
+     0.3536,
+     -0.56778,
+     1.55902
+    ],
+    "rotation_euler_xyz_deg": [
+     88.0909,
+     -0.0,
+     38.0
+    ]
+   },
+   "three_yup": {
+    "position": [
+     0.64879,
+     1.575,
+     0.94561
+    ],
+    "quaternion_xyzw": [
+     -0.015752,
+     0.325523,
+     0.005424,
+     0.945387
+    ],
+    "target": [
+     0.3536,
+     1.55902,
+     0.56778
+    ]
+   }
+  },
+  "D": {
+   "name": "full_body_bust",
+   "blender_object": "NXFL_EyeLevel_FullBody",
+   "lens_mm": 120.0,
+   "sensor_width_mm": 36.0,
+   "sensor_height_mm": 24.0,
+   "sensor_fit": "HORIZONTAL",
+   "shift_x": 0.0,
+   "shift_y": -0.445,
+   "fov_x_deg": 17.0615,
+   "fov_y_deg": 11.4212,
+   "clip": [
+    0.1,
+    1000.0
+   ],
+   "resolution": [
+    1920,
+    2688
+   ],
+   "blender_zup": {
+    "position": [
+     0.18,
+     -4.8,
+     1.5589
+    ],
+    "target": [
+     -0.00111,
+     0.03,
+     1.5589
+    ],
+    "rotation_euler_xyz_deg": [
+     90.0,
+     0.0,
+     2.1476
+    ]
+   },
+   "three_yup": {
+    "position": [
+     0.18,
+     1.5589,
+     4.8
+    ],
+    "quaternion_xyzw": [
+     -0.0,
+     0.01874,
+     0.0,
+     0.999824
+    ],
+    "target": [
+     -0.00111,
+     1.5589,
+     -0.03
+    ]
+   }
+  }
+ },
+ "morphs": [
+  {
+   "name": "Blink",
+   "role": "composite",
+   "objects": [
+    "LK16_Rendered_TwoRegion_Skin",
+    "Ludovisions_Toon3D8_Tear",
+    "NX2_Controlled_Brow_Arcs",
+    "NX6_Protected_Display_NXHO_Tailored_Black_Trousers",
+    "NX8_Thin_Arched_Tapered_Brows",
+    "NX8_Upper_Lid_Line"
+   ],
+   "max_delta_mm": 27.9617,
+   "verts_clamped": 44,
+   "cap": 1.0,
+   "window": null,
+   "source_frame": 651,
+   "note": "both lids closed, frame 651",
+   "runtime_driven": true
+  },
+  {
+   "name": "Jaw",
+   "role": "composite",
+   "objects": [
+    "LK16_Rendered_TwoRegion_Skin",
+    "Ludovisions_Toon3D8_Mouth",
+    "NX2_Controlled_Brow_Arcs",
+    "NX8_Thin_Arched_Tapered_Brows",
+    "NX8_Upper_Lid_Line"
+   ],
+   "max_delta_mm": 4.9122,
+   "verts_clamped": 0,
+   "cap": 1.0,
+   "window": null,
+   "source_frame": 392,
+   "note": "mid-word open viseme, frame 392, measured lip gap 13 x 56 px at 640",
+   "runtime_driven": true
+  },
+  {
+   "name": "Press",
+   "role": "composite",
+   "objects": [
+    "LK16_Rendered_TwoRegion_Skin",
+    "Ludovisions_Toon3D8_Mouth",
+    "NX8_Thin_Arched_Tapered_Brows",
+    "NX8_Upper_Lid_Line"
+   ],
+   "max_delta_mm": 9.9375,
+   "verts_clamped": 0,
+   "cap": 1.0,
+   "window": null,
+   "source_frame": 606,
+   "note": "lip press, frame 606, measured lip gap 1 px at 640",
+   "runtime_driven": true
+  },
+  {
+   "name": "LK_SmileFit",
+   "role": "smile",
+   "objects": [
+    "LK16_Rendered_TwoRegion_Skin",
+    "Ludovisions_Toon3D8_Mouth",
+    "NX8_Thin_Arched_Tapered_Brows",
+    "NX8_Upper_Lid_Line"
+   ],
+   "max_delta_mm": 0.6741,
+   "verts_clamped": 0,
+   "cap": 0.25,
+   "clamp06_global_cap": 0.25,
+   "clamp06_window_cap": null,
+   "window": null,
+   "window_ramp_frames": null,
+   "performance_range": [
+    0.0,
+    0.25
+   ],
+   "per_object_ref_target": {
+    "LK10_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": 0.0,
+     "max": 0.25,
+     "ref": 0.0,
+     "target": 0.25
+    },
+    "LK11_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": 0.0,
+     "max": 0.25,
+     "ref": 0.0,
+     "target": 0.25
+    },
+    "LK12_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": 0.0,
+     "max": 0.25,
+     "ref": 0.0,
+     "target": 0.25
+    },
+    "LK16_Candidate_TwoRegion_Skin": {
+     "min": 0.0,
+     "max": 0.25,
+     "ref": 0.0,
+     "target": 0.25
+    },
+    "LK16_Pass15_Unchanged_Contact_Surface": {
+     "min": 0.0,
+     "max": 0.25,
+     "ref": 0.0,
+     "target": 0.25
+    },
+    "LK16_Rendered_TwoRegion_Skin": {
+     "min": 0.0,
+     "max": 0.25,
+     "ref": 0.0,
+     "target": 0.25
+    },
+    "LK17_Candidate_Local_Skin": {
+     "min": 0.0,
+     "max": 0.25,
+     "ref": 0.0,
+     "target": 0.25
+    },
+    "Ludovisions_Toon3D8_Body": {
+     "min": 0.0,
+     "max": 0.25,
+     "ref": 0.0,
+     "target": 0.25
+    },
+    "Ludovisions_Toon3D8_Mouth": {
+     "min": 0.0,
+     "max": 0.25,
+     "ref": 0.0,
+     "target": 0.25
+    },
+    "NX18_Candidate_Smile_Skin": {
+     "min": 0.0,
+     "max": 0.25,
+     "ref": 0.0,
+     "target": 0.25
+    },
+    "NX19_Candidate_Cheek_Smile_Skin": {
+     "min": 0.0,
+     "max": 0.25,
+     "ref": 0.0,
+     "target": 0.25
+    }
+   },
+   "runtime_driven": false,
+   "note": "value 1.0 on this morph equals the maximum the shipped performance reached, with the clamp06 cap already applied"
+  },
+  {
+   "name": "NX18_Joy_Lid_Fit",
+   "role": "blink",
+   "objects": [
+    "LK16_Rendered_TwoRegion_Skin"
+   ],
+   "max_delta_mm": 0.8465,
+   "verts_clamped": 0,
+   "cap": 0.2,
+   "clamp06_global_cap": 0.2,
+   "clamp06_window_cap": null,
+   "window": null,
+   "window_ramp_frames": null,
+   "performance_range": [
+    0.0,
+    0.2
+   ],
+   "per_object_ref_target": {
+    "NX18_Candidate_Smile_Skin": {
+     "min": 0.0,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "NX19_Candidate_Cheek_Smile_Skin": {
+     "min": 0.0,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    }
+   },
+   "runtime_driven": false,
+   "note": "value 1.0 on this morph equals the maximum the shipped performance reached, with the clamp06 cap already applied"
+  },
+  {
+   "name": "NX18_Smile_Raised_Cheek_Apples",
+   "role": "smile",
+   "objects": [
+    "LK16_Rendered_TwoRegion_Skin"
+   ],
+   "max_delta_mm": 2.7708,
+   "verts_clamped": 0,
+   "cap": 0.35,
+   "clamp06_global_cap": null,
+   "clamp06_window_cap": 0.35,
+   "window": [
+    648,
+    696
+   ],
+   "window_ramp_frames": 6,
+   "performance_range": [
+    0.0,
+    0.99985
+   ],
+   "per_object_ref_target": {
+    "NX18_Candidate_Smile_Skin": {
+     "min": 0.0,
+     "max": 0.99985,
+     "ref": 0.0,
+     "target": 0.99985
+    },
+    "NX19_Candidate_Cheek_Smile_Skin": {
+     "min": 0.0,
+     "max": 0.99985,
+     "ref": 0.0,
+     "target": 0.99985
+    }
+   },
+   "runtime_driven": false,
+   "note": "value 1.0 on this morph equals the maximum the shipped performance reached, with the clamp06 cap already applied"
+  },
+  {
+   "name": "NX18_Warm_Lid_Fit",
+   "role": "blink",
+   "objects": [
+    "LK16_Rendered_TwoRegion_Skin"
+   ],
+   "max_delta_mm": 5.2882,
+   "verts_clamped": 0,
+   "cap": 1.0,
+   "clamp06_global_cap": null,
+   "clamp06_window_cap": null,
+   "window": null,
+   "window_ramp_frames": null,
+   "performance_range": [
+    0.0,
+    0.99985
+   ],
+   "per_object_ref_target": {
+    "NX18_Candidate_Smile_Skin": {
+     "min": 0.0,
+     "max": 0.99985,
+     "ref": 0.0,
+     "target": 0.99985
+    },
+    "NX19_Candidate_Cheek_Smile_Skin": {
+     "min": 0.0,
+     "max": 0.99985,
+     "ref": 0.0,
+     "target": 0.99985
+    }
+   },
+   "runtime_driven": false,
+   "note": "value 1.0 equals the maximum the shipped performance reached"
+  },
+  {
+   "name": "NX19_Joy_Corner_Fairing",
+   "role": "smile",
+   "objects": [
+    "LK16_Rendered_TwoRegion_Skin"
+   ],
+   "max_delta_mm": 0.3332,
+   "verts_clamped": 0,
+   "cap": 0.2,
+   "clamp06_global_cap": 0.2,
+   "clamp06_window_cap": null,
+   "window": null,
+   "window_ramp_frames": null,
+   "performance_range": [
+    0.0,
+    0.2
+   ],
+   "per_object_ref_target": {
+    "NX19_Candidate_Cheek_Smile_Skin": {
+     "min": 0.0,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    }
+   },
+   "runtime_driven": false,
+   "note": "value 1.0 on this morph equals the maximum the shipped performance reached, with the clamp06 cap already applied"
+  },
+  {
+   "name": "NX19_Smile_Joy",
+   "role": "smile",
+   "objects": [
+    "LK16_Rendered_TwoRegion_Skin"
+   ],
+   "max_delta_mm": 2.7023,
+   "verts_clamped": 0,
+   "cap": 0.2,
+   "clamp06_global_cap": 0.2,
+   "clamp06_window_cap": null,
+   "window": null,
+   "window_ramp_frames": null,
+   "performance_range": [
+    0.0,
+    0.2
+   ],
+   "per_object_ref_target": {
+    "NX19_Candidate_Cheek_Smile_Skin": {
+     "min": 0.0,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    }
+   },
+   "runtime_driven": false,
+   "note": "value 1.0 on this morph equals the maximum the shipped performance reached, with the clamp06 cap already applied"
+  },
+  {
+   "name": "NX19_Smile_Malar_Rise",
+   "role": "smile",
+   "objects": [
+    "LK16_Rendered_TwoRegion_Skin"
+   ],
+   "max_delta_mm": 3.5303,
+   "verts_clamped": 0,
+   "cap": 0.35,
+   "clamp06_global_cap": null,
+   "clamp06_window_cap": 0.35,
+   "window": [
+    648,
+    696
+   ],
+   "window_ramp_frames": 6,
+   "performance_range": [
+    0.0,
+    0.99985
+   ],
+   "per_object_ref_target": {
+    "NX19_Candidate_Cheek_Smile_Skin": {
+     "min": 0.0,
+     "max": 0.99985,
+     "ref": 0.0,
+     "target": 0.99985
+    }
+   },
+   "runtime_driven": false,
+   "note": "value 1.0 on this morph equals the maximum the shipped performance reached, with the clamp06 cap already applied"
+  },
+  {
+   "name": "NX19_Smile_Warm",
+   "role": "smile",
+   "objects": [
+    "LK16_Rendered_TwoRegion_Skin"
+   ],
+   "max_delta_mm": 6.588,
+   "verts_clamped": 0,
+   "cap": 1.0,
+   "clamp06_global_cap": null,
+   "clamp06_window_cap": null,
+   "window": null,
+   "window_ramp_frames": null,
+   "performance_range": [
+    0.0,
+    0.99985
+   ],
+   "per_object_ref_target": {
+    "NX19_Candidate_Cheek_Smile_Skin": {
+     "min": 0.0,
+     "max": 0.99985,
+     "ref": 0.0,
+     "target": 0.99985
+    }
+   },
+   "runtime_driven": false,
+   "note": "value 1.0 equals the maximum the shipped performance reached"
+  },
+  {
+   "name": "NX19_Warm_Corner_Fairing",
+   "role": "smile",
+   "objects": [
+    "LK16_Rendered_TwoRegion_Skin"
+   ],
+   "max_delta_mm": 1.6134,
+   "verts_clamped": 0,
+   "cap": 1.0,
+   "clamp06_global_cap": null,
+   "clamp06_window_cap": null,
+   "window": null,
+   "window_ramp_frames": null,
+   "performance_range": [
+    0.0,
+    0.99985
+   ],
+   "per_object_ref_target": {
+    "NX19_Candidate_Cheek_Smile_Skin": {
+     "min": 0.0,
+     "max": 0.99985,
+     "ref": 0.0,
+     "target": 0.99985
+    }
+   },
+   "runtime_driven": false,
+   "note": "value 1.0 equals the maximum the shipped performance reached"
+  },
+  {
+   "name": "NX5_Performance_Brow_Asymmetric",
+   "role": "brow",
+   "objects": [
+    "LK16_Rendered_TwoRegion_Skin",
+    "NX2_Controlled_Brow_Arcs",
+    "NX8_Thin_Arched_Tapered_Brows",
+    "NX8_Upper_Lid_Line"
+   ],
+   "max_delta_mm": 5.7777,
+   "verts_clamped": 115,
+   "cap": 1.0,
+   "clamp06_global_cap": null,
+   "clamp06_window_cap": null,
+   "window": null,
+   "window_ramp_frames": null,
+   "performance_range": [
+    -0.0563,
+    0.94989
+   ],
+   "per_object_ref_target": {
+    "LK10_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": -0.0563,
+     "max": 0.94989,
+     "ref": 0.0,
+     "target": 0.94989
+    },
+    "LK10_ROLLBACK_NX8_Thin_Arched_Tapered_Brows": {
+     "min": -0.0563,
+     "max": 0.94989,
+     "ref": 0.0,
+     "target": 0.94989
+    },
+    "LK11_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": -0.0563,
+     "max": 0.94989,
+     "ref": 0.0,
+     "target": 0.94989
+    },
+    "LK11_ROLLBACK_NX8_Thin_Arched_Tapered_Brows": {
+     "min": -0.0563,
+     "max": 0.94989,
+     "ref": 0.0,
+     "target": 0.94989
+    },
+    "LK12_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": -0.0563,
+     "max": 0.94989,
+     "ref": 0.0,
+     "target": 0.94989
+    },
+    "LK12_ROLLBACK_NX8_Thin_Arched_Tapered_Brows": {
+     "min": -0.0563,
+     "max": 0.94989,
+     "ref": 0.0,
+     "target": 0.94989
+    },
+    "LK16_Candidate_TwoRegion_Skin": {
+     "min": -0.0563,
+     "max": 0.94989,
+     "ref": 0.0,
+     "target": 0.94989
+    },
+    "LK16_Pass15_Unchanged_Contact_Surface": {
+     "min": -0.0563,
+     "max": 0.94989,
+     "ref": 0.0,
+     "target": 0.94989
+    },
+    "LK16_Rendered_TwoRegion_Skin": {
+     "min": -0.0563,
+     "max": 0.94989,
+     "ref": 0.0,
+     "target": 0.94989
+    },
+    "LK17_Candidate_Local_Skin": {
+     "min": -0.0563,
+     "max": 0.94989,
+     "ref": 0.0,
+     "target": 0.94989
+    },
+    "LK9_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": -0.0563,
+     "max": 0.94989,
+     "ref": 0.0,
+     "target": 0.94989
+    },
+    "Ludovisions_Toon3D8_Body": {
+     "min": -0.0563,
+     "max": 0.94989,
+     "ref": 0.0,
+     "target": 0.94989
+    },
+    "NX18_Candidate_Smile_Skin": {
+     "min": -0.0563,
+     "max": 0.94989,
+     "ref": 0.0,
+     "target": 0.94989
+    },
+    "NX19_Candidate_Cheek_Smile_Skin": {
+     "min": -0.0563,
+     "max": 0.94989,
+     "ref": 0.0,
+     "target": 0.94989
+    },
+    "NX2_Controlled_Brow_Arcs": {
+     "min": -0.0563,
+     "max": 0.94989,
+     "ref": 0.0,
+     "target": 0.94989
+    },
+    "NX6_Protected_Garment_Collision": {
+     "min": -0.0563,
+     "max": 0.94989,
+     "ref": 0.0,
+     "target": 0.94989
+    },
+    "NX6_Smooth_Brow_Arcs": {
+     "min": -0.0563,
+     "max": 0.94989,
+     "ref": 0.0,
+     "target": 0.94989
+    },
+    "NX7_Raised_Soft_Brow_Arcs": {
+     "min": -0.0563,
+     "max": 0.94989,
+     "ref": 0.0,
+     "target": 0.94989
+    },
+    "NX8_Thin_Arched_Tapered_Brows": {
+     "min": -0.0563,
+     "max": 0.94989,
+     "ref": 0.0,
+     "target": 0.94989
+    }
+   },
+   "runtime_driven": false,
+   "note": "value 1.0 equals the maximum the shipped performance reached"
+  },
+  {
+   "name": "NX5_Performance_Brow_Concern",
+   "role": "brow",
+   "objects": [
+    "LK16_Rendered_TwoRegion_Skin",
+    "NX2_Controlled_Brow_Arcs",
+    "NX8_Thin_Arched_Tapered_Brows",
+    "NX8_Upper_Lid_Line"
+   ],
+   "max_delta_mm": 6.3951,
+   "verts_clamped": 39,
+   "cap": 1.0,
+   "clamp06_global_cap": null,
+   "clamp06_window_cap": null,
+   "window": null,
+   "window_ramp_frames": null,
+   "performance_range": [
+    -0.02782,
+    0.47995
+   ],
+   "per_object_ref_target": {
+    "LK10_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": -0.02782,
+     "max": 0.47995,
+     "ref": 0.0,
+     "target": 0.47995
+    },
+    "LK10_ROLLBACK_NX8_Thin_Arched_Tapered_Brows": {
+     "min": -0.02782,
+     "max": 0.47995,
+     "ref": 0.0,
+     "target": 0.47995
+    },
+    "LK11_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": -0.02782,
+     "max": 0.47995,
+     "ref": 0.0,
+     "target": 0.47995
+    },
+    "LK11_ROLLBACK_NX8_Thin_Arched_Tapered_Brows": {
+     "min": -0.02782,
+     "max": 0.47995,
+     "ref": 0.0,
+     "target": 0.47995
+    },
+    "LK12_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": -0.02782,
+     "max": 0.47995,
+     "ref": 0.0,
+     "target": 0.47995
+    },
+    "LK12_ROLLBACK_NX8_Thin_Arched_Tapered_Brows": {
+     "min": -0.02782,
+     "max": 0.47995,
+     "ref": 0.0,
+     "target": 0.47995
+    },
+    "LK16_Candidate_TwoRegion_Skin": {
+     "min": -0.02782,
+     "max": 0.47995,
+     "ref": 0.0,
+     "target": 0.47995
+    },
+    "LK16_Pass15_Unchanged_Contact_Surface": {
+     "min": -0.02782,
+     "max": 0.47995,
+     "ref": 0.0,
+     "target": 0.47995
+    },
+    "LK16_Rendered_TwoRegion_Skin": {
+     "min": -0.02782,
+     "max": 0.47995,
+     "ref": 0.0,
+     "target": 0.47995
+    },
+    "LK17_Candidate_Local_Skin": {
+     "min": -0.02782,
+     "max": 0.47995,
+     "ref": 0.0,
+     "target": 0.47995
+    },
+    "LK9_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": -0.02782,
+     "max": 0.47995,
+     "ref": 0.0,
+     "target": 0.47995
+    },
+    "Ludovisions_Toon3D8_Body": {
+     "min": -0.02782,
+     "max": 0.47995,
+     "ref": 0.0,
+     "target": 0.47995
+    },
+    "NX18_Candidate_Smile_Skin": {
+     "min": -0.02782,
+     "max": 0.47995,
+     "ref": 0.0,
+     "target": 0.47995
+    },
+    "NX19_Candidate_Cheek_Smile_Skin": {
+     "min": -0.02782,
+     "max": 0.47995,
+     "ref": 0.0,
+     "target": 0.47995
+    },
+    "NX2_Controlled_Brow_Arcs": {
+     "min": -0.02782,
+     "max": 0.47995,
+     "ref": 0.0,
+     "target": 0.47995
+    },
+    "NX6_Protected_Garment_Collision": {
+     "min": -0.02782,
+     "max": 0.47995,
+     "ref": 0.0,
+     "target": 0.47995
+    },
+    "NX6_Smooth_Brow_Arcs": {
+     "min": -0.02782,
+     "max": 0.47995,
+     "ref": 0.0,
+     "target": 0.47995
+    },
+    "NX7_Raised_Soft_Brow_Arcs": {
+     "min": -0.02782,
+     "max": 0.47995,
+     "ref": 0.0,
+     "target": 0.47995
+    },
+    "NX8_Thin_Arched_Tapered_Brows": {
+     "min": -0.02782,
+     "max": 0.47995,
+     "ref": 0.0,
+     "target": 0.47995
+    }
+   },
+   "runtime_driven": false,
+   "note": "value 1.0 equals the maximum the shipped performance reached"
+  },
+  {
+   "name": "NX5_Performance_Brow_Furrow",
+   "role": "brow",
+   "objects": [
+    "LK16_Rendered_TwoRegion_Skin",
+    "NX2_Controlled_Brow_Arcs",
+    "NX8_Thin_Arched_Tapered_Brows",
+    "NX8_Upper_Lid_Line"
+   ],
+   "max_delta_mm": 4.6049,
+   "verts_clamped": 7,
+   "cap": 1.0,
+   "clamp06_global_cap": null,
+   "clamp06_window_cap": null,
+   "window": null,
+   "window_ramp_frames": null,
+   "performance_range": [
+    -0.01488,
+    0.26543
+   ],
+   "per_object_ref_target": {
+    "LK10_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": -0.01488,
+     "max": 0.26543,
+     "ref": 0.0,
+     "target": 0.26543
+    },
+    "LK10_ROLLBACK_NX8_Thin_Arched_Tapered_Brows": {
+     "min": -0.01488,
+     "max": 0.26543,
+     "ref": 0.0,
+     "target": 0.26543
+    },
+    "LK11_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": -0.01488,
+     "max": 0.26543,
+     "ref": 0.0,
+     "target": 0.26543
+    },
+    "LK11_ROLLBACK_NX8_Thin_Arched_Tapered_Brows": {
+     "min": -0.01488,
+     "max": 0.26543,
+     "ref": 0.0,
+     "target": 0.26543
+    },
+    "LK12_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": -0.01488,
+     "max": 0.26543,
+     "ref": 0.0,
+     "target": 0.26543
+    },
+    "LK12_ROLLBACK_NX8_Thin_Arched_Tapered_Brows": {
+     "min": -0.01488,
+     "max": 0.26543,
+     "ref": 0.0,
+     "target": 0.26543
+    },
+    "LK16_Candidate_TwoRegion_Skin": {
+     "min": -0.01488,
+     "max": 0.26543,
+     "ref": 0.0,
+     "target": 0.26543
+    },
+    "LK16_Pass15_Unchanged_Contact_Surface": {
+     "min": -0.01488,
+     "max": 0.26543,
+     "ref": 0.0,
+     "target": 0.26543
+    },
+    "LK16_Rendered_TwoRegion_Skin": {
+     "min": -0.01488,
+     "max": 0.26543,
+     "ref": 0.0,
+     "target": 0.26543
+    },
+    "LK17_Candidate_Local_Skin": {
+     "min": -0.01488,
+     "max": 0.26543,
+     "ref": 0.0,
+     "target": 0.26543
+    },
+    "LK9_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": -0.01488,
+     "max": 0.26543,
+     "ref": 0.0,
+     "target": 0.26543
+    },
+    "Ludovisions_Toon3D8_Body": {
+     "min": -0.01488,
+     "max": 0.26543,
+     "ref": 0.0,
+     "target": 0.26543
+    },
+    "NX18_Candidate_Smile_Skin": {
+     "min": -0.01488,
+     "max": 0.26543,
+     "ref": 0.0,
+     "target": 0.26543
+    },
+    "NX19_Candidate_Cheek_Smile_Skin": {
+     "min": -0.01488,
+     "max": 0.26543,
+     "ref": 0.0,
+     "target": 0.26543
+    },
+    "NX2_Controlled_Brow_Arcs": {
+     "min": -0.01488,
+     "max": 0.26543,
+     "ref": 0.0,
+     "target": 0.26543
+    },
+    "NX6_Protected_Garment_Collision": {
+     "min": -0.01488,
+     "max": 0.26543,
+     "ref": 0.0,
+     "target": 0.26543
+    },
+    "NX6_Smooth_Brow_Arcs": {
+     "min": -0.01488,
+     "max": 0.26543,
+     "ref": 0.0,
+     "target": 0.26543
+    },
+    "NX7_Raised_Soft_Brow_Arcs": {
+     "min": -0.01488,
+     "max": 0.26543,
+     "ref": 0.0,
+     "target": 0.26543
+    },
+    "NX8_Thin_Arched_Tapered_Brows": {
+     "min": -0.01488,
+     "max": 0.26543,
+     "ref": 0.0,
+     "target": 0.26543
+    }
+   },
+   "runtime_driven": false,
+   "note": "value 1.0 equals the maximum the shipped performance reached"
+  },
+  {
+   "name": "NX5_Performance_Brow_Surprise",
+   "role": "brow",
+   "objects": [
+    "LK16_Rendered_TwoRegion_Skin",
+    "NX2_Controlled_Brow_Arcs",
+    "NX8_Thin_Arched_Tapered_Brows",
+    "NX8_Upper_Lid_Line"
+   ],
+   "max_delta_mm": 5.7477,
+   "verts_clamped": 44,
+   "cap": 1.0,
+   "clamp06_global_cap": null,
+   "clamp06_window_cap": null,
+   "window": null,
+   "window_ramp_frames": null,
+   "performance_range": [
+    -0.01817,
+    0.64732
+   ],
+   "per_object_ref_target": {
+    "LK10_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": -0.01817,
+     "max": 0.64732,
+     "ref": 0.0,
+     "target": 0.64732
+    },
+    "LK10_ROLLBACK_NX8_Thin_Arched_Tapered_Brows": {
+     "min": -0.01817,
+     "max": 0.64732,
+     "ref": 0.0,
+     "target": 0.64732
+    },
+    "LK11_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": -0.01817,
+     "max": 0.64732,
+     "ref": 0.0,
+     "target": 0.64732
+    },
+    "LK11_ROLLBACK_NX8_Thin_Arched_Tapered_Brows": {
+     "min": -0.01817,
+     "max": 0.64732,
+     "ref": 0.0,
+     "target": 0.64732
+    },
+    "LK12_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": -0.01817,
+     "max": 0.64732,
+     "ref": 0.0,
+     "target": 0.64732
+    },
+    "LK12_ROLLBACK_NX8_Thin_Arched_Tapered_Brows": {
+     "min": -0.01817,
+     "max": 0.64732,
+     "ref": 0.0,
+     "target": 0.64732
+    },
+    "LK16_Candidate_TwoRegion_Skin": {
+     "min": -0.01817,
+     "max": 0.64732,
+     "ref": 0.0,
+     "target": 0.64732
+    },
+    "LK16_Pass15_Unchanged_Contact_Surface": {
+     "min": -0.01817,
+     "max": 0.64732,
+     "ref": 0.0,
+     "target": 0.64732
+    },
+    "LK16_Rendered_TwoRegion_Skin": {
+     "min": -0.01817,
+     "max": 0.64732,
+     "ref": 0.0,
+     "target": 0.64732
+    },
+    "LK17_Candidate_Local_Skin": {
+     "min": -0.01817,
+     "max": 0.64732,
+     "ref": 0.0,
+     "target": 0.64732
+    },
+    "LK9_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": -0.01817,
+     "max": 0.64732,
+     "ref": 0.0,
+     "target": 0.64732
+    },
+    "Ludovisions_Toon3D8_Body": {
+     "min": -0.01817,
+     "max": 0.64732,
+     "ref": 0.0,
+     "target": 0.64732
+    },
+    "NX18_Candidate_Smile_Skin": {
+     "min": -0.01817,
+     "max": 0.64732,
+     "ref": 0.0,
+     "target": 0.64732
+    },
+    "NX19_Candidate_Cheek_Smile_Skin": {
+     "min": -0.01817,
+     "max": 0.64732,
+     "ref": 0.0,
+     "target": 0.64732
+    },
+    "NX2_Controlled_Brow_Arcs": {
+     "min": -0.01817,
+     "max": 0.64732,
+     "ref": 0.0,
+     "target": 0.64732
+    },
+    "NX6_Protected_Garment_Collision": {
+     "min": -0.01817,
+     "max": 0.64732,
+     "ref": 0.0,
+     "target": 0.64732
+    },
+    "NX6_Smooth_Brow_Arcs": {
+     "min": -0.01817,
+     "max": 0.64732,
+     "ref": 0.0,
+     "target": 0.64732
+    },
+    "NX7_Raised_Soft_Brow_Arcs": {
+     "min": -0.01817,
+     "max": 0.64732,
+     "ref": 0.0,
+     "target": 0.64732
+    },
+    "NX8_Thin_Arched_Tapered_Brows": {
+     "min": -0.01817,
+     "max": 0.64732,
+     "ref": 0.0,
+     "target": 0.64732
+    }
+   },
+   "runtime_driven": false,
+   "note": "value 1.0 equals the maximum the shipped performance reached"
+  },
+  {
+   "name": "NX5_Performance_Cheek_Lift",
+   "role": "smile",
+   "objects": [
+    "LK16_Rendered_TwoRegion_Skin",
+    "NX8_Thin_Arched_Tapered_Brows",
+    "NX8_Upper_Lid_Line"
+   ],
+   "max_delta_mm": 1.3572,
+   "verts_clamped": 0,
+   "cap": 0.35,
+   "clamp06_global_cap": 0.35,
+   "clamp06_window_cap": null,
+   "window": null,
+   "window_ramp_frames": null,
+   "performance_range": [
+    -0.05193,
+    0.35
+   ],
+   "per_object_ref_target": {
+    "LK10_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": -0.05193,
+     "max": 0.35,
+     "ref": 0.0,
+     "target": 0.35
+    },
+    "LK11_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": -0.05193,
+     "max": 0.35,
+     "ref": 0.0,
+     "target": 0.35
+    },
+    "LK12_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": -0.05193,
+     "max": 0.35,
+     "ref": 0.0,
+     "target": 0.35
+    },
+    "LK16_Candidate_TwoRegion_Skin": {
+     "min": -0.05193,
+     "max": 0.35,
+     "ref": 0.0,
+     "target": 0.35
+    },
+    "LK16_Pass15_Unchanged_Contact_Surface": {
+     "min": -0.05193,
+     "max": 0.35,
+     "ref": 0.0,
+     "target": 0.35
+    },
+    "LK16_Rendered_TwoRegion_Skin": {
+     "min": -0.05193,
+     "max": 0.35,
+     "ref": 0.0,
+     "target": 0.35
+    },
+    "LK17_Candidate_Local_Skin": {
+     "min": -0.05193,
+     "max": 0.35,
+     "ref": 0.0,
+     "target": 0.35
+    },
+    "LK9_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": -0.05193,
+     "max": 0.35,
+     "ref": 0.0,
+     "target": 0.35
+    },
+    "Ludovisions_Toon3D8_Body": {
+     "min": -0.05193,
+     "max": 0.35,
+     "ref": 0.0,
+     "target": 0.35
+    },
+    "NX18_Candidate_Smile_Skin": {
+     "min": -0.05193,
+     "max": 0.35,
+     "ref": 0.0,
+     "target": 0.35
+    },
+    "NX19_Candidate_Cheek_Smile_Skin": {
+     "min": -0.05193,
+     "max": 0.35,
+     "ref": 0.0,
+     "target": 0.35
+    },
+    "NX6_Protected_Garment_Collision": {
+     "min": -0.05193,
+     "max": 0.35,
+     "ref": 0.0,
+     "target": 0.35
+    }
+   },
+   "runtime_driven": false,
+   "note": "value 1.0 on this morph equals the maximum the shipped performance reached, with the clamp06 cap already applied"
+  },
+  {
+   "name": "NX5_Performance_Concern_Corners",
+   "role": "smile",
+   "objects": [
+    "LK16_Rendered_TwoRegion_Skin",
+    "Ludovisions_Toon3D8_Mouth",
+    "NX2_Controlled_Brow_Arcs",
+    "NX8_Thin_Arched_Tapered_Brows",
+    "NX8_Upper_Lid_Line"
+   ],
+   "max_delta_mm": 0.3612,
+   "verts_clamped": 0,
+   "cap": 1.0,
+   "clamp06_global_cap": null,
+   "clamp06_window_cap": null,
+   "window": null,
+   "window_ramp_frames": null,
+   "performance_range": [
+    -0.0151,
+    0.33071
+   ],
+   "per_object_ref_target": {
+    "LK10_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": -0.0151,
+     "max": 0.33071,
+     "ref": 0.0,
+     "target": 0.33071
+    },
+    "LK11_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": -0.0151,
+     "max": 0.33071,
+     "ref": 0.0,
+     "target": 0.33071
+    },
+    "LK12_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": -0.0151,
+     "max": 0.33071,
+     "ref": 0.0,
+     "target": 0.33071
+    },
+    "LK16_Candidate_TwoRegion_Skin": {
+     "min": -0.0151,
+     "max": 0.33071,
+     "ref": 0.0,
+     "target": 0.33071
+    },
+    "LK16_Pass15_Unchanged_Contact_Surface": {
+     "min": -0.0151,
+     "max": 0.33071,
+     "ref": 0.0,
+     "target": 0.33071
+    },
+    "LK16_Rendered_TwoRegion_Skin": {
+     "min": -0.0151,
+     "max": 0.33071,
+     "ref": 0.0,
+     "target": 0.33071
+    },
+    "LK17_Candidate_Local_Skin": {
+     "min": -0.0151,
+     "max": 0.33071,
+     "ref": 0.0,
+     "target": 0.33071
+    },
+    "LK9_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": -0.0151,
+     "max": 0.33071,
+     "ref": 0.0,
+     "target": 0.33071
+    },
+    "LK9_ROLLBACK_Ludovisions_Toon3D8_Mouth": {
+     "min": -0.0151,
+     "max": 0.33071,
+     "ref": 0.0,
+     "target": 0.33071
+    },
+    "Ludovisions_Toon3D8_Body": {
+     "min": -0.0151,
+     "max": 0.33071,
+     "ref": 0.0,
+     "target": 0.33071
+    },
+    "Ludovisions_Toon3D8_Mouth": {
+     "min": -0.0151,
+     "max": 0.33071,
+     "ref": 0.0,
+     "target": 0.33071
+    },
+    "NX18_Candidate_Smile_Skin": {
+     "min": -0.0151,
+     "max": 0.33071,
+     "ref": 0.0,
+     "target": 0.33071
+    },
+    "NX19_Candidate_Cheek_Smile_Skin": {
+     "min": -0.0151,
+     "max": 0.33071,
+     "ref": 0.0,
+     "target": 0.33071
+    },
+    "NX6_Protected_Garment_Collision": {
+     "min": -0.0151,
+     "max": 0.33071,
+     "ref": 0.0,
+     "target": 0.33071
+    }
+   },
+   "runtime_driven": false,
+   "note": "value 1.0 equals the maximum the shipped performance reached"
+  },
+  {
+   "name": "NX5_Performance_Gaze_Lead",
+   "role": "gaze",
+   "objects": [
+    "Ludovisions_Toon3D8_Eyes"
+   ],
+   "max_delta_mm": 0.163,
+   "verts_clamped": 0,
+   "cap": 1.0,
+   "clamp06_global_cap": null,
+   "clamp06_window_cap": null,
+   "window": null,
+   "window_ramp_frames": null,
+   "performance_range": [
+    -0.30397,
+    0.08639
+   ],
+   "per_object_ref_target": {
+    "Ludovisions_Toon3D8_Eyes": {
+     "min": -0.30397,
+     "max": 0.08639,
+     "ref": 0.0,
+     "target": -0.30397
+    }
+   },
+   "runtime_driven": false,
+   "note": "value 1.0 equals the maximum the shipped performance reached"
+  },
+  {
+   "name": "NX5_Performance_Lower_Lid_Cheek",
+   "role": "blink",
+   "objects": [
+    "LK16_Rendered_TwoRegion_Skin",
+    "Ludovisions_Toon3D8_Tear",
+    "NX8_Thin_Arched_Tapered_Brows",
+    "NX8_Upper_Lid_Line"
+   ],
+   "max_delta_mm": 0.8177,
+   "verts_clamped": 0,
+   "cap": 0.3,
+   "clamp06_global_cap": 0.3,
+   "clamp06_window_cap": null,
+   "window": null,
+   "window_ramp_frames": null,
+   "performance_range": [
+    -0.04414,
+    0.3
+   ],
+   "per_object_ref_target": {
+    "LK10_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": -0.04414,
+     "max": 0.3,
+     "ref": 0.0,
+     "target": 0.3
+    },
+    "LK10_ROLLBACK_Ludovisions_Toon3D8_Eyelashes": {
+     "min": -0.04414,
+     "max": 0.3,
+     "ref": 0.0,
+     "target": 0.3
+    },
+    "LK10_ROLLBACK_Ludovisions_Toon3D8_Tear": {
+     "min": -0.04414,
+     "max": 0.3,
+     "ref": 0.0,
+     "target": 0.3
+    },
+    "LK10_ROLLBACK_NX8_Swept_Lashes": {
+     "min": -0.04414,
+     "max": 0.3,
+     "ref": 0.0,
+     "target": 0.3
+    },
+    "LK10_ROLLBACK_NX8_Upper_Lid_Line": {
+     "min": -0.04414,
+     "max": 0.3,
+     "ref": 0.0,
+     "target": 0.3
+    },
+    "LK11_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": -0.04414,
+     "max": 0.3,
+     "ref": 0.0,
+     "target": 0.3
+    },
+    "LK11_ROLLBACK_Ludovisions_Toon3D8_Eyelashes": {
+     "min": -0.04414,
+     "max": 0.3,
+     "ref": 0.0,
+     "target": 0.3
+    },
+    "LK11_ROLLBACK_Ludovisions_Toon3D8_Tear": {
+     "min": -0.04414,
+     "max": 0.3,
+     "ref": 0.0,
+     "target": 0.3
+    },
+    "LK11_ROLLBACK_NX8_Swept_Lashes": {
+     "min": -0.04414,
+     "max": 0.3,
+     "ref": 0.0,
+     "target": 0.3
+    },
+    "LK11_ROLLBACK_NX8_Upper_Lid_Line": {
+     "min": -0.04414,
+     "max": 0.3,
+     "ref": 0.0,
+     "target": 0.3
+    },
+    "LK12_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": -0.04414,
+     "max": 0.3,
+     "ref": 0.0,
+     "target": 0.3
+    },
+    "LK12_ROLLBACK_Ludovisions_Toon3D8_Eyelashes": {
+     "min": -0.04414,
+     "max": 0.3,
+     "ref": 0.0,
+     "target": 0.3
+    },
+    "LK12_ROLLBACK_Ludovisions_Toon3D8_Tear": {
+     "min": -0.04414,
+     "max": 0.3,
+     "ref": 0.0,
+     "target": 0.3
+    },
+    "LK12_ROLLBACK_NX8_Swept_Lashes": {
+     "min": -0.04414,
+     "max": 0.3,
+     "ref": 0.0,
+     "target": 0.3
+    },
+    "LK12_ROLLBACK_NX8_Upper_Lid_Line": {
+     "min": -0.04414,
+     "max": 0.3,
+     "ref": 0.0,
+     "target": 0.3
+    },
+    "LK16_Candidate_TwoRegion_Skin": {
+     "min": -0.04414,
+     "max": 0.3,
+     "ref": 0.0,
+     "target": 0.3
+    },
+    "LK16_Pass15_Unchanged_Contact_Surface": {
+     "min": -0.04414,
+     "max": 0.3,
+     "ref": 0.0,
+     "target": 0.3
+    },
+    "LK16_Rendered_TwoRegion_Skin": {
+     "min": -0.04414,
+     "max": 0.3,
+     "ref": 0.0,
+     "target": 0.3
+    },
+    "LK17_Candidate_Local_Skin": {
+     "min": -0.04414,
+     "max": 0.3,
+     "ref": 0.0,
+     "target": 0.3
+    },
+    "LK9_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": -0.04414,
+     "max": 0.3,
+     "ref": 0.0,
+     "target": 0.3
+    },
+    "LK9_ROLLBACK_Ludovisions_Toon3D8_Eyelashes": {
+     "min": -0.04414,
+     "max": 0.3,
+     "ref": 0.0,
+     "target": 0.3
+    },
+    "LK9_ROLLBACK_Ludovisions_Toon3D8_Tear": {
+     "min": -0.04414,
+     "max": 0.3,
+     "ref": 0.0,
+     "target": 0.3
+    },
+    "LK9_ROLLBACK_NX8_Swept_Lashes": {
+     "min": -0.04414,
+     "max": 0.3,
+     "ref": 0.0,
+     "target": 0.3
+    },
+    "LK9_ROLLBACK_NX8_Upper_Lid_Line": {
+     "min": -0.04414,
+     "max": 0.3,
+     "ref": 0.0,
+     "target": 0.3
+    },
+    "Ludovisions_Toon3D8_Body": {
+     "min": -0.04414,
+     "max": 0.3,
+     "ref": 0.0,
+     "target": 0.3
+    },
+    "Ludovisions_Toon3D8_Eyelashes": {
+     "min": -0.04414,
+     "max": 0.3,
+     "ref": 0.0,
+     "target": 0.3
+    },
+    "Ludovisions_Toon3D8_Tear": {
+     "min": -0.04414,
+     "max": 0.3,
+     "ref": 0.0,
+     "target": 0.3
+    },
+    "NX18_Candidate_Smile_Skin": {
+     "min": -0.04414,
+     "max": 0.3,
+     "ref": 0.0,
+     "target": 0.3
+    },
+    "NX19_Candidate_Cheek_Smile_Skin": {
+     "min": -0.04414,
+     "max": 0.3,
+     "ref": 0.0,
+     "target": 0.3
+    },
+    "NX6_Continuous_Upper_Lid_Line": {
+     "min": -0.04414,
+     "max": 0.3,
+     "ref": 0.0,
+     "target": 0.3
+    },
+    "NX6_Outer_Graphic_Lash_Fans": {
+     "min": -0.04414,
+     "max": 0.3,
+     "ref": 0.0,
+     "target": 0.3
+    },
+    "NX6_Protected_Garment_Collision": {
+     "min": -0.04414,
+     "max": 0.3,
+     "ref": 0.0,
+     "target": 0.3
+    },
+    "NX7_Curved_Upper_Lash_Line": {
+     "min": -0.04414,
+     "max": 0.3,
+     "ref": 0.0,
+     "target": 0.3
+    },
+    "NX7_Upswept_Tapered_Lashes": {
+     "min": -0.04414,
+     "max": 0.3,
+     "ref": 0.0,
+     "target": 0.3
+    },
+    "NX8_Swept_Lashes": {
+     "min": -0.04414,
+     "max": 0.3,
+     "ref": 0.0,
+     "target": 0.3
+    },
+    "NX8_Upper_Lid_Line": {
+     "min": -0.04414,
+     "max": 0.3,
+     "ref": 0.0,
+     "target": 0.3
+    }
+   },
+   "runtime_driven": false,
+   "note": "value 1.0 on this morph equals the maximum the shipped performance reached, with the clamp06 cap already applied"
+  },
+  {
+   "name": "NX5_Performance_Smile_Corners",
+   "role": "smile",
+   "objects": [
+    "LK16_Rendered_TwoRegion_Skin",
+    "Ludovisions_Toon3D8_Mouth",
+    "NX8_Thin_Arched_Tapered_Brows",
+    "NX8_Upper_Lid_Line"
+   ],
+   "max_delta_mm": 0.9535,
+   "verts_clamped": 0,
+   "cap": 0.2,
+   "clamp06_global_cap": 0.2,
+   "clamp06_window_cap": null,
+   "window": null,
+   "window_ramp_frames": null,
+   "performance_range": [
+    -0.04831,
+    0.2
+   ],
+   "per_object_ref_target": {
+    "LK10_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": -0.04831,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "LK11_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": -0.04831,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "LK12_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": -0.04831,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "LK16_Candidate_TwoRegion_Skin": {
+     "min": -0.04831,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "LK16_Pass15_Unchanged_Contact_Surface": {
+     "min": -0.04831,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "LK16_Rendered_TwoRegion_Skin": {
+     "min": -0.04831,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "LK17_Candidate_Local_Skin": {
+     "min": -0.04831,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "LK9_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": -0.04831,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "LK9_ROLLBACK_Ludovisions_Toon3D8_Mouth": {
+     "min": -0.04831,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "Ludovisions_Toon3D8_Body": {
+     "min": -0.04831,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "Ludovisions_Toon3D8_Mouth": {
+     "min": -0.04831,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "NX18_Candidate_Smile_Skin": {
+     "min": -0.04831,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "NX19_Candidate_Cheek_Smile_Skin": {
+     "min": -0.04831,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "NX6_Protected_Garment_Collision": {
+     "min": -0.04831,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    }
+   },
+   "runtime_driven": false,
+   "note": "value 1.0 on this morph equals the maximum the shipped performance reached, with the clamp06 cap already applied"
+  },
+  {
+   "name": "NX5_Performance_Speech_Jaw_Accent",
+   "role": "viseme",
+   "objects": [
+    "LK16_Rendered_TwoRegion_Skin",
+    "Ludovisions_Toon3D8_Mouth",
+    "NX8_Thin_Arched_Tapered_Brows",
+    "NX8_Upper_Lid_Line"
+   ],
+   "max_delta_mm": 1.0402,
+   "verts_clamped": 0,
+   "cap": 1.0,
+   "clamp06_global_cap": null,
+   "clamp06_window_cap": null,
+   "window": null,
+   "window_ramp_frames": null,
+   "performance_range": [
+    -0.02509,
+    0.61294
+   ],
+   "per_object_ref_target": {
+    "LK10_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": -0.02509,
+     "max": 0.61294,
+     "ref": 0.0,
+     "target": 0.61294
+    },
+    "LK11_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": -0.02509,
+     "max": 0.61294,
+     "ref": 0.0,
+     "target": 0.61294
+    },
+    "LK12_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": -0.02509,
+     "max": 0.61294,
+     "ref": 0.0,
+     "target": 0.61294
+    },
+    "LK16_Candidate_TwoRegion_Skin": {
+     "min": -0.02509,
+     "max": 0.61294,
+     "ref": 0.0,
+     "target": 0.61294
+    },
+    "LK16_Pass15_Unchanged_Contact_Surface": {
+     "min": -0.02509,
+     "max": 0.61294,
+     "ref": 0.0,
+     "target": 0.61294
+    },
+    "LK16_Rendered_TwoRegion_Skin": {
+     "min": -0.02509,
+     "max": 0.61294,
+     "ref": 0.0,
+     "target": 0.61294
+    },
+    "LK17_Candidate_Local_Skin": {
+     "min": -0.02509,
+     "max": 0.61294,
+     "ref": 0.0,
+     "target": 0.61294
+    },
+    "LK9_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": -0.02509,
+     "max": 0.61294,
+     "ref": 0.0,
+     "target": 0.61294
+    },
+    "LK9_ROLLBACK_Ludovisions_Toon3D8_Mouth": {
+     "min": -0.02509,
+     "max": 0.61294,
+     "ref": 0.0,
+     "target": 0.61294
+    },
+    "Ludovisions_Toon3D8_Body": {
+     "min": -0.02509,
+     "max": 0.61294,
+     "ref": 0.0,
+     "target": 0.61294
+    },
+    "Ludovisions_Toon3D8_Mouth": {
+     "min": -0.02509,
+     "max": 0.61294,
+     "ref": 0.0,
+     "target": 0.61294
+    },
+    "NX18_Candidate_Smile_Skin": {
+     "min": -0.02509,
+     "max": 0.61294,
+     "ref": 0.0,
+     "target": 0.61294
+    },
+    "NX19_Candidate_Cheek_Smile_Skin": {
+     "min": -0.02509,
+     "max": 0.61294,
+     "ref": 0.0,
+     "target": 0.61294
+    },
+    "NX6_Protected_Garment_Collision": {
+     "min": -0.02509,
+     "max": 0.61294,
+     "ref": 0.0,
+     "target": 0.61294
+    }
+   },
+   "runtime_driven": false,
+   "note": "value 1.0 equals the maximum the shipped performance reached"
+  },
+  {
+   "name": "NX5_Performance_Wry_Corners",
+   "role": "smile",
+   "objects": [
+    "LK16_Rendered_TwoRegion_Skin",
+    "Ludovisions_Toon3D8_Mouth",
+    "NX8_Thin_Arched_Tapered_Brows",
+    "NX8_Upper_Lid_Line"
+   ],
+   "max_delta_mm": 2.5493,
+   "verts_clamped": 0,
+   "cap": 1.0,
+   "clamp06_global_cap": null,
+   "clamp06_window_cap": null,
+   "window": null,
+   "window_ramp_frames": null,
+   "performance_range": [
+    -0.05124,
+    0.76691
+   ],
+   "per_object_ref_target": {
+    "LK10_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": -0.05124,
+     "max": 0.76691,
+     "ref": 0.0,
+     "target": 0.76691
+    },
+    "LK11_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": -0.05124,
+     "max": 0.76691,
+     "ref": 0.0,
+     "target": 0.76691
+    },
+    "LK12_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": -0.05124,
+     "max": 0.76691,
+     "ref": 0.0,
+     "target": 0.76691
+    },
+    "LK16_Candidate_TwoRegion_Skin": {
+     "min": -0.05124,
+     "max": 0.76691,
+     "ref": 0.0,
+     "target": 0.76691
+    },
+    "LK16_Pass15_Unchanged_Contact_Surface": {
+     "min": -0.05124,
+     "max": 0.76691,
+     "ref": 0.0,
+     "target": 0.76691
+    },
+    "LK16_Rendered_TwoRegion_Skin": {
+     "min": -0.05124,
+     "max": 0.76691,
+     "ref": 0.0,
+     "target": 0.76691
+    },
+    "LK17_Candidate_Local_Skin": {
+     "min": -0.05124,
+     "max": 0.76691,
+     "ref": 0.0,
+     "target": 0.76691
+    },
+    "LK9_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": -0.05124,
+     "max": 0.76691,
+     "ref": 0.0,
+     "target": 0.76691
+    },
+    "LK9_ROLLBACK_Ludovisions_Toon3D8_Mouth": {
+     "min": -0.05124,
+     "max": 0.76691,
+     "ref": 0.0,
+     "target": 0.76691
+    },
+    "Ludovisions_Toon3D8_Body": {
+     "min": -0.05124,
+     "max": 0.76691,
+     "ref": 0.0,
+     "target": 0.76691
+    },
+    "Ludovisions_Toon3D8_Mouth": {
+     "min": -0.05124,
+     "max": 0.76691,
+     "ref": 0.0,
+     "target": 0.76691
+    },
+    "NX18_Candidate_Smile_Skin": {
+     "min": -0.05124,
+     "max": 0.76691,
+     "ref": 0.0,
+     "target": 0.76691
+    },
+    "NX19_Candidate_Cheek_Smile_Skin": {
+     "min": -0.05124,
+     "max": 0.76691,
+     "ref": 0.0,
+     "target": 0.76691
+    },
+    "NX6_Protected_Garment_Collision": {
+     "min": -0.05124,
+     "max": 0.76691,
+     "ref": 0.0,
+     "target": 0.76691
+    }
+   },
+   "runtime_driven": false,
+   "note": "value 1.0 equals the maximum the shipped performance reached"
+  },
+  {
+   "name": "NX6_Speech_Compact_Jaw",
+   "role": "viseme",
+   "objects": [
+    "LK16_Rendered_TwoRegion_Skin",
+    "NX8_Thin_Arched_Tapered_Brows",
+    "NX8_Upper_Lid_Line"
+   ],
+   "max_delta_mm": 3.8234,
+   "verts_clamped": 0,
+   "cap": 1.0,
+   "clamp06_global_cap": null,
+   "clamp06_window_cap": null,
+   "window": null,
+   "window_ramp_frames": null,
+   "performance_range": [
+    0.0,
+    0.79819
+   ],
+   "per_object_ref_target": {
+    "LK10_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": 0.0,
+     "max": 0.79819,
+     "ref": 0.0,
+     "target": 0.79819
+    },
+    "LK11_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": 0.0,
+     "max": 0.79819,
+     "ref": 0.0,
+     "target": 0.79819
+    },
+    "LK12_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": 0.0,
+     "max": 0.79819,
+     "ref": 0.0,
+     "target": 0.79819
+    },
+    "LK16_Candidate_TwoRegion_Skin": {
+     "min": 0.0,
+     "max": 0.79819,
+     "ref": 0.0,
+     "target": 0.79819
+    },
+    "LK16_Pass15_Unchanged_Contact_Surface": {
+     "min": 0.0,
+     "max": 0.79819,
+     "ref": 0.0,
+     "target": 0.79819
+    },
+    "LK16_Rendered_TwoRegion_Skin": {
+     "min": 0.0,
+     "max": 0.79819,
+     "ref": 0.0,
+     "target": 0.79819
+    },
+    "LK17_Candidate_Local_Skin": {
+     "min": 0.0,
+     "max": 0.79819,
+     "ref": 0.0,
+     "target": 0.79819
+    },
+    "LK9_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": 0.0,
+     "max": 0.79819,
+     "ref": 0.0,
+     "target": 0.79819
+    },
+    "Ludovisions_Toon3D8_Body": {
+     "min": 0.0,
+     "max": 0.79819,
+     "ref": 0.0,
+     "target": 0.79819
+    },
+    "NX18_Candidate_Smile_Skin": {
+     "min": 0.0,
+     "max": 0.79819,
+     "ref": 0.0,
+     "target": 0.79819
+    },
+    "NX19_Candidate_Cheek_Smile_Skin": {
+     "min": 0.0,
+     "max": 0.79819,
+     "ref": 0.0,
+     "target": 0.79819
+    }
+   },
+   "runtime_driven": false,
+   "note": "value 1.0 equals the maximum the shipped performance reached"
+  },
+  {
+   "name": "NX6_Speech_Lip_Cover",
+   "role": "viseme",
+   "objects": [
+    "LK16_Rendered_TwoRegion_Skin",
+    "NX8_Thin_Arched_Tapered_Brows",
+    "NX8_Upper_Lid_Line"
+   ],
+   "max_delta_mm": 3.1404,
+   "verts_clamped": 0,
+   "cap": 1.0,
+   "clamp06_global_cap": null,
+   "clamp06_window_cap": null,
+   "window": null,
+   "window_ramp_frames": null,
+   "performance_range": [
+    0.0,
+    0.99998
+   ],
+   "per_object_ref_target": {
+    "LK10_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": 0.0,
+     "max": 0.99998,
+     "ref": 0.9543,
+     "target": 0.0
+    },
+    "LK11_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": 0.0,
+     "max": 0.99998,
+     "ref": 0.9543,
+     "target": 0.0
+    },
+    "LK12_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": 0.0,
+     "max": 0.99998,
+     "ref": 0.9543,
+     "target": 0.0
+    },
+    "LK16_Candidate_TwoRegion_Skin": {
+     "min": 0.0,
+     "max": 0.99998,
+     "ref": 0.9543,
+     "target": 0.0
+    },
+    "LK16_Pass15_Unchanged_Contact_Surface": {
+     "min": 0.0,
+     "max": 0.99998,
+     "ref": 0.9543,
+     "target": 0.0
+    },
+    "LK16_Rendered_TwoRegion_Skin": {
+     "min": 0.0,
+     "max": 0.99998,
+     "ref": 0.9543,
+     "target": 0.0
+    },
+    "LK17_Candidate_Local_Skin": {
+     "min": 0.0,
+     "max": 0.99998,
+     "ref": 0.9543,
+     "target": 0.0
+    },
+    "LK9_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": 0.0,
+     "max": 0.99998,
+     "ref": 0.9543,
+     "target": 0.0
+    },
+    "Ludovisions_Toon3D8_Body": {
+     "min": 0.0,
+     "max": 0.99998,
+     "ref": 0.9543,
+     "target": 0.0
+    },
+    "NX18_Candidate_Smile_Skin": {
+     "min": 0.0,
+     "max": 0.99998,
+     "ref": 0.9543,
+     "target": 0.0
+    },
+    "NX19_Candidate_Cheek_Smile_Skin": {
+     "min": 0.0,
+     "max": 0.99998,
+     "ref": 0.9543,
+     "target": 0.0
+    }
+   },
+   "runtime_driven": false,
+   "note": "value 1.0 equals the maximum the shipped performance reached"
+  },
+  {
+   "name": "NX6_Upper_Tooth_Exposure_Limiter",
+   "role": "viseme",
+   "objects": [
+    "LK16_Rendered_TwoRegion_Skin",
+    "NX8_Thin_Arched_Tapered_Brows",
+    "NX8_Upper_Lid_Line"
+   ],
+   "max_delta_mm": 1.539,
+   "verts_clamped": 0,
+   "cap": 1.0,
+   "clamp06_global_cap": null,
+   "clamp06_window_cap": null,
+   "window": null,
+   "window_ramp_frames": null,
+   "performance_range": [
+    0.0,
+    0.99998
+   ],
+   "per_object_ref_target": {
+    "LK10_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": 0.0,
+     "max": 0.99998,
+     "ref": 0.95322,
+     "target": 0.0
+    },
+    "LK11_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": 0.0,
+     "max": 0.99998,
+     "ref": 0.95322,
+     "target": 0.0
+    },
+    "LK12_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": 0.0,
+     "max": 0.99998,
+     "ref": 0.95322,
+     "target": 0.0
+    },
+    "LK16_Candidate_TwoRegion_Skin": {
+     "min": 0.0,
+     "max": 0.99998,
+     "ref": 0.95322,
+     "target": 0.0
+    },
+    "LK16_Pass15_Unchanged_Contact_Surface": {
+     "min": 0.0,
+     "max": 0.99998,
+     "ref": 0.95322,
+     "target": 0.0
+    },
+    "LK16_Rendered_TwoRegion_Skin": {
+     "min": 0.0,
+     "max": 0.99998,
+     "ref": 0.95322,
+     "target": 0.0
+    },
+    "LK17_Candidate_Local_Skin": {
+     "min": 0.0,
+     "max": 0.99998,
+     "ref": 0.95322,
+     "target": 0.0
+    },
+    "LK9_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": 0.0,
+     "max": 0.99998,
+     "ref": 0.95322,
+     "target": 0.0
+    },
+    "Ludovisions_Toon3D8_Body": {
+     "min": 0.0,
+     "max": 0.99998,
+     "ref": 0.95322,
+     "target": 0.0
+    },
+    "NX18_Candidate_Smile_Skin": {
+     "min": 0.0,
+     "max": 0.99998,
+     "ref": 0.95322,
+     "target": 0.0
+    },
+    "NX19_Candidate_Cheek_Smile_Skin": {
+     "min": 0.0,
+     "max": 0.99998,
+     "ref": 0.95322,
+     "target": 0.0
+    }
+   },
+   "runtime_driven": false,
+   "note": "value 1.0 equals the maximum the shipped performance reached"
+  },
+  {
+   "name": "NX8_Closed_Smile_Corners_Cheeks_Dimples",
+   "role": "smile",
+   "objects": [
+    "LK16_Rendered_TwoRegion_Skin",
+    "Ludovisions_Toon3D8_Mouth",
+    "NX2_Controlled_Brow_Arcs",
+    "NX8_Thin_Arched_Tapered_Brows",
+    "NX8_Upper_Lid_Line"
+   ],
+   "max_delta_mm": 1.4755,
+   "verts_clamped": 0,
+   "cap": 1.0,
+   "clamp06_global_cap": null,
+   "clamp06_window_cap": null,
+   "window": null,
+   "window_ramp_frames": null,
+   "performance_range": [
+    0.0,
+    0.32744
+   ],
+   "per_object_ref_target": {
+    "LK10_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": 0.0,
+     "max": 0.32744,
+     "ref": 0.0,
+     "target": 0.32744
+    },
+    "LK11_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": 0.0,
+     "max": 0.32744,
+     "ref": 0.0,
+     "target": 0.32744
+    },
+    "LK12_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": 0.0,
+     "max": 0.32744,
+     "ref": 0.0,
+     "target": 0.32744
+    },
+    "LK16_Candidate_TwoRegion_Skin": {
+     "min": 0.0,
+     "max": 0.32744,
+     "ref": 0.0,
+     "target": 0.32744
+    },
+    "LK16_Pass15_Unchanged_Contact_Surface": {
+     "min": 0.0,
+     "max": 0.32744,
+     "ref": 0.0,
+     "target": 0.32744
+    },
+    "LK16_Rendered_TwoRegion_Skin": {
+     "min": 0.0,
+     "max": 0.32744,
+     "ref": 0.0,
+     "target": 0.32744
+    },
+    "LK17_Candidate_Local_Skin": {
+     "min": 0.0,
+     "max": 0.32744,
+     "ref": 0.0,
+     "target": 0.32744
+    },
+    "LK9_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": 0.0,
+     "max": 0.32744,
+     "ref": 0.0,
+     "target": 0.32744
+    },
+    "LK9_ROLLBACK_Ludovisions_Toon3D8_Mouth": {
+     "min": 0.0,
+     "max": 0.32744,
+     "ref": 0.0,
+     "target": 0.32744
+    },
+    "Ludovisions_Toon3D8_Body": {
+     "min": 0.0,
+     "max": 0.32744,
+     "ref": 0.0,
+     "target": 0.32744
+    },
+    "Ludovisions_Toon3D8_Mouth": {
+     "min": 0.0,
+     "max": 0.32744,
+     "ref": 0.0,
+     "target": 0.32744
+    },
+    "NX18_Candidate_Smile_Skin": {
+     "min": 0.0,
+     "max": 0.32744,
+     "ref": 0.0,
+     "target": 0.32744
+    },
+    "NX19_Candidate_Cheek_Smile_Skin": {
+     "min": 0.0,
+     "max": 0.32744,
+     "ref": 0.0,
+     "target": 0.32744
+    }
+   },
+   "runtime_driven": false,
+   "note": "value 1.0 equals the maximum the shipped performance reached"
+  },
+  {
+   "name": "NX8_Joy_Smile_Corners_Cheeks_Dimples",
+   "role": "smile",
+   "objects": [
+    "LK16_Rendered_TwoRegion_Skin",
+    "Ludovisions_Toon3D8_Mouth",
+    "NX2_Controlled_Brow_Arcs",
+    "NX8_Thin_Arched_Tapered_Brows",
+    "NX8_Upper_Lid_Line"
+   ],
+   "max_delta_mm": 1.0627,
+   "verts_clamped": 0,
+   "cap": 0.2,
+   "clamp06_global_cap": 0.2,
+   "clamp06_window_cap": null,
+   "window": null,
+   "window_ramp_frames": null,
+   "performance_range": [
+    0.0,
+    0.2
+   ],
+   "per_object_ref_target": {
+    "LK10_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": 0.0,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "LK11_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": 0.0,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "LK12_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": 0.0,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "LK16_Candidate_TwoRegion_Skin": {
+     "min": 0.0,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "LK16_Pass15_Unchanged_Contact_Surface": {
+     "min": 0.0,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "LK16_Rendered_TwoRegion_Skin": {
+     "min": 0.0,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "LK17_Candidate_Local_Skin": {
+     "min": 0.0,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "LK9_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": 0.0,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "LK9_ROLLBACK_Ludovisions_Toon3D8_Mouth": {
+     "min": 0.0,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "Ludovisions_Toon3D8_Body": {
+     "min": 0.0,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "Ludovisions_Toon3D8_Mouth": {
+     "min": 0.0,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "NX18_Candidate_Smile_Skin": {
+     "min": 0.0,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "NX19_Candidate_Cheek_Smile_Skin": {
+     "min": 0.0,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    }
+   },
+   "runtime_driven": false,
+   "note": "value 1.0 on this morph equals the maximum the shipped performance reached, with the clamp06 cap already applied"
+  },
+  {
+   "name": "NX8_Joy_Upper_Dental_Arc",
+   "role": "smile",
+   "objects": [
+    "Ludovisions_Toon3D8_Mouth"
+   ],
+   "max_delta_mm": 0.4242,
+   "verts_clamped": 0,
+   "cap": 0.2,
+   "clamp06_global_cap": 0.2,
+   "clamp06_window_cap": null,
+   "window": null,
+   "window_ramp_frames": null,
+   "performance_range": [
+    0.0,
+    0.2
+   ],
+   "per_object_ref_target": {
+    "LK9_ROLLBACK_Ludovisions_Toon3D8_Mouth": {
+     "min": 0.0,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "Ludovisions_Toon3D8_Mouth": {
+     "min": 0.0,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    }
+   },
+   "runtime_driven": false,
+   "note": "value 1.0 on this morph equals the maximum the shipped performance reached, with the clamp06 cap already applied"
+  },
+  {
+   "name": "NX8_Smile_Blink_Compatibility",
+   "role": "blink",
+   "objects": [
+    "LK16_Rendered_TwoRegion_Skin",
+    "NX2_Controlled_Brow_Arcs",
+    "NX8_Thin_Arched_Tapered_Brows",
+    "NX8_Upper_Lid_Line"
+   ],
+   "max_delta_mm": 0.2038,
+   "verts_clamped": 0,
+   "cap": 1.0,
+   "clamp06_global_cap": null,
+   "clamp06_window_cap": null,
+   "window": null,
+   "window_ramp_frames": null,
+   "performance_range": [
+    0.0,
+    0.26172
+   ],
+   "per_object_ref_target": {
+    "LK10_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": 0.0,
+     "max": 0.26172,
+     "ref": 0.0,
+     "target": 0.26172
+    },
+    "LK11_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": 0.0,
+     "max": 0.26172,
+     "ref": 0.0,
+     "target": 0.26172
+    },
+    "LK12_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": 0.0,
+     "max": 0.26172,
+     "ref": 0.0,
+     "target": 0.26172
+    },
+    "LK16_Candidate_TwoRegion_Skin": {
+     "min": 0.0,
+     "max": 0.26172,
+     "ref": 0.0,
+     "target": 0.26172
+    },
+    "LK16_Pass15_Unchanged_Contact_Surface": {
+     "min": 0.0,
+     "max": 0.26172,
+     "ref": 0.0,
+     "target": 0.26172
+    },
+    "LK16_Rendered_TwoRegion_Skin": {
+     "min": 0.0,
+     "max": 0.26172,
+     "ref": 0.0,
+     "target": 0.26172
+    },
+    "LK17_Candidate_Local_Skin": {
+     "min": 0.0,
+     "max": 0.26172,
+     "ref": 0.0,
+     "target": 0.26172
+    },
+    "LK9_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": 0.0,
+     "max": 0.26172,
+     "ref": 0.0,
+     "target": 0.26172
+    },
+    "Ludovisions_Toon3D8_Body": {
+     "min": 0.0,
+     "max": 0.26172,
+     "ref": 0.0,
+     "target": 0.26172
+    },
+    "NX18_Candidate_Smile_Skin": {
+     "min": 0.0,
+     "max": 0.26172,
+     "ref": 0.0,
+     "target": 0.26172
+    },
+    "NX19_Candidate_Cheek_Smile_Skin": {
+     "min": 0.0,
+     "max": 0.26172,
+     "ref": 0.0,
+     "target": 0.26172
+    }
+   },
+   "runtime_driven": false,
+   "note": "value 1.0 equals the maximum the shipped performance reached"
+  },
+  {
+   "name": "NX8_Smile_Lower_Lid_Cheek_Compression",
+   "role": "blink",
+   "objects": [
+    "Ludovisions_Toon3D8_Tear"
+   ],
+   "max_delta_mm": 0.1605,
+   "verts_clamped": 0,
+   "cap": 0.2,
+   "clamp06_global_cap": 0.2,
+   "clamp06_window_cap": null,
+   "window": null,
+   "window_ramp_frames": null,
+   "performance_range": [
+    0.0,
+    0.2
+   ],
+   "per_object_ref_target": {
+    "LK10_ROLLBACK_Ludovisions_Toon3D8_Eyelashes": {
+     "min": 0.0,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "LK10_ROLLBACK_Ludovisions_Toon3D8_Tear": {
+     "min": 0.0,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "LK10_ROLLBACK_NX8_Swept_Lashes": {
+     "min": 0.0,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "LK10_ROLLBACK_NX8_Upper_Lid_Line": {
+     "min": 0.0,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "LK11_ROLLBACK_Ludovisions_Toon3D8_Eyelashes": {
+     "min": 0.0,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "LK11_ROLLBACK_Ludovisions_Toon3D8_Tear": {
+     "min": 0.0,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "LK11_ROLLBACK_NX8_Swept_Lashes": {
+     "min": 0.0,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "LK11_ROLLBACK_NX8_Upper_Lid_Line": {
+     "min": 0.0,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "LK12_ROLLBACK_Ludovisions_Toon3D8_Eyelashes": {
+     "min": 0.0,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "LK12_ROLLBACK_Ludovisions_Toon3D8_Tear": {
+     "min": 0.0,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "LK12_ROLLBACK_NX8_Swept_Lashes": {
+     "min": 0.0,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "LK12_ROLLBACK_NX8_Upper_Lid_Line": {
+     "min": 0.0,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "LK9_ROLLBACK_Ludovisions_Toon3D8_Eyelashes": {
+     "min": 0.0,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "LK9_ROLLBACK_Ludovisions_Toon3D8_Tear": {
+     "min": 0.0,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "LK9_ROLLBACK_NX8_Swept_Lashes": {
+     "min": 0.0,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "LK9_ROLLBACK_NX8_Upper_Lid_Line": {
+     "min": 0.0,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "Ludovisions_Toon3D8_Eyelashes": {
+     "min": 0.0,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "Ludovisions_Toon3D8_Tear": {
+     "min": 0.0,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "NX8_Swept_Lashes": {
+     "min": 0.0,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    },
+    "NX8_Upper_Lid_Line": {
+     "min": 0.0,
+     "max": 0.2,
+     "ref": 0.0,
+     "target": 0.2
+    }
+   },
+   "runtime_driven": false,
+   "note": "value 1.0 on this morph equals the maximum the shipped performance reached, with the clamp06 cap already applied"
+  },
+  {
+   "name": "NX8_Soft_Lip_Profile_Retraction",
+   "role": "viseme",
+   "objects": [
+    "LK16_Rendered_TwoRegion_Skin",
+    "Ludovisions_Toon3D8_Mouth",
+    "NX8_Thin_Arched_Tapered_Brows",
+    "NX8_Upper_Lid_Line"
+   ],
+   "max_delta_mm": 1.2932,
+   "verts_clamped": 0,
+   "cap": 1.0,
+   "clamp06_global_cap": null,
+   "clamp06_window_cap": null,
+   "window": null,
+   "window_ramp_frames": null,
+   "performance_range": [
+    0.0,
+    1.0
+   ],
+   "per_object_ref_target": {
+    "LK10_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": 0.0,
+     "max": 1.0,
+     "ref": 0.0,
+     "target": 1.0
+    },
+    "LK11_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": 0.0,
+     "max": 1.0,
+     "ref": 0.0,
+     "target": 1.0
+    },
+    "LK12_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": 0.0,
+     "max": 1.0,
+     "ref": 0.0,
+     "target": 1.0
+    },
+    "LK16_Candidate_TwoRegion_Skin": {
+     "min": 0.0,
+     "max": 1.0,
+     "ref": 0.0,
+     "target": 1.0
+    },
+    "LK16_Pass15_Unchanged_Contact_Surface": {
+     "min": 0.0,
+     "max": 1.0,
+     "ref": 0.0,
+     "target": 1.0
+    },
+    "LK16_Rendered_TwoRegion_Skin": {
+     "min": 0.0,
+     "max": 1.0,
+     "ref": 0.0,
+     "target": 1.0
+    },
+    "LK17_Candidate_Local_Skin": {
+     "min": 0.0,
+     "max": 1.0,
+     "ref": 0.0,
+     "target": 1.0
+    },
+    "LK9_ROLLBACK_Ludovisions_Toon3D8_Body": {
+     "min": 0.0,
+     "max": 1.0,
+     "ref": 0.0,
+     "target": 1.0
+    },
+    "LK9_ROLLBACK_Ludovisions_Toon3D8_Mouth": {
+     "min": 0.0,
+     "max": 1.0,
+     "ref": 0.0,
+     "target": 1.0
+    },
+    "Ludovisions_Toon3D8_Body": {
+     "min": 0.0,
+     "max": 1.0,
+     "ref": 0.0,
+     "target": 1.0
+    },
+    "Ludovisions_Toon3D8_Mouth": {
+     "min": 0.0,
+     "max": 1.0,
+     "ref": 0.0,
+     "target": 1.0
+    },
+    "NX18_Candidate_Smile_Skin": {
+     "min": 0.0,
+     "max": 1.0,
+     "ref": 0.0,
+     "target": 1.0
+    },
+    "NX19_Candidate_Cheek_Smile_Skin": {
+     "min": 0.0,
+     "max": 1.0,
+     "ref": 0.0,
+     "target": 1.0
+    }
+   },
+   "runtime_driven": false,
+   "note": "value 1.0 equals the maximum the shipped performance reached"
+  },
+  {
+   "name": "NXHO_Local_Brush_Back_Response",
+   "role": "viseme",
+   "objects": [
+    "NXHO_Hair_Swept_Pink_Charcoal"
+   ],
+   "max_delta_mm": 3.3009,
+   "verts_clamped": 0,
+   "cap": 1.0,
+   "clamp06_global_cap": null,
+   "clamp06_window_cap": null,
+   "window": null,
+   "window_ramp_frames": null,
+   "performance_range": [
+    0.0,
+    0.04614
+   ],
+   "per_object_ref_target": {
+    "NXHO_Hair_Swept_Pink_Charcoal": {
+     "min": 0.0,
+     "max": 0.04614,
+     "ref": 0.0,
+     "target": 0.04614
+    }
+   },
+   "runtime_driven": false,
+   "note": "value 1.0 equals the maximum the shipped performance reached"
+  }
+ ],
+ "morph_summary": {
+  "composites": [
+   "Blink",
+   "Jaw",
+   "Press"
+  ],
+  "count": 33,
+  "folded_into_Blink": [
+   "LK10_BlinkFit",
+   "LK11_BlinkFit",
+   "LK12_BlinkFit",
+   "LK13_BlinkFit",
+   "LK14_BlinkFit",
+   "LK14_ClosedContourSoft",
+   "LK15_Crease_BlinkRelax",
+   "LK_BlinkFit",
+   "NX3_Blink_Medial_Canthus_Soften",
+   "NX4_Animated_Open_Eye_Appeal",
+   "NX5_Neutral_Relaxed_Upper_Opening",
+   "NX5_Performance_Upper_Lid_Contrast",
+   "NX6_Almond_Upper_Lid",
+   "NX8_Neutral_Upper_Lid_Iris_Overlap",
+   "NX8_Outer_Lid_Globe_Wrap",
+   "NXFL_Relaxed_Upper_Aperture"
+  ],
+  "folded_note": "the blink is a coordinated swap of these keys plus the eyelid bones; they are not exported individually because no runtime can re-derive the pairing",
+  "glb_target_names_match": true
+ },
+ "bones": {
+  "skeleton": "Ludovisions_Toon3D8_Rig (Genesis 9), reduced",
+  "source_count": 370,
+  "exported_count": 66,
+  "exported": [
+   {
+    "name": "centerbrow",
+    "role": "brow",
+    "rest_head_blender_zup": [
+     -0.00026,
+     -0.08954,
+     1.61064
+    ],
+    "rest_head_three_yup": [
+     -0.00026,
+     1.61064,
+     0.08954
+    ]
+   },
+   {
+    "name": "chin",
+    "role": "jaw",
+    "rest_head_blender_zup": [
+     -0.00022,
+     -0.06234,
+     1.49517
+    ],
+    "rest_head_three_yup": [
+     -0.00022,
+     1.49517,
+     0.06234
+    ]
+   },
+   {
+    "name": "head",
+    "role": "head",
+    "rest_head_blender_zup": [
+     -0.00023,
+     0.02219,
+     1.5
+    ],
+    "rest_head_three_yup": [
+     -0.00023,
+     1.5,
+     -0.02219
+    ]
+   },
+   {
+    "name": "l_browinner",
+    "role": "brow",
+    "rest_head_blender_zup": [
+     0.02784,
+     -0.08206,
+     1.61872
+    ],
+    "rest_head_three_yup": [
+     0.02784,
+     1.61872,
+     0.08206
+    ]
+   },
+   {
+    "name": "l_browouter",
+    "role": "brow",
+    "rest_head_blender_zup": [
+     0.05874,
+     -0.0709,
+     1.62217
+    ],
+    "rest_head_three_yup": [
+     0.05874,
+     1.62217,
+     0.0709
+    ]
+   },
+   {
+    "name": "l_cheek",
+    "role": "cheek",
+    "rest_head_blender_zup": [
+     0.0632,
+     -0.05915,
+     1.56022
+    ],
+    "rest_head_three_yup": [
+     0.0632,
+     1.56022,
+     0.05915
+    ]
+   },
+   {
+    "name": "l_cheeklower",
+    "role": "cheek",
+    "rest_head_blender_zup": [
+     0.05102,
+     -0.03728,
+     1.53053
+    ],
+    "rest_head_three_yup": [
+     0.05102,
+     1.53053,
+     0.03728
+    ]
+   },
+   {
+    "name": "l_ear",
+    "role": "face",
+    "rest_head_blender_zup": [
+     0.07818,
+     0.01156,
+     1.57133
+    ],
+    "rest_head_three_yup": [
+     0.07818,
+     1.57133,
+     -0.01156
+    ]
+   },
+   {
+    "name": "l_eye",
+    "role": "eye_l",
+    "rest_head_blender_zup": [
+     0.04059,
+     -0.04189,
+     1.58863
+    ],
+    "rest_head_three_yup": [
+     0.04059,
+     1.58863,
+     0.04189
+    ]
+   },
+   {
+    "name": "l_eyelidlower",
+    "role": "eyelid",
+    "rest_head_blender_zup": [
+     0.04219,
+     -0.05099,
+     1.58866
+    ],
+    "rest_head_three_yup": [
+     0.04219,
+     1.58866,
+     0.05099
+    ]
+   },
+   {
+    "name": "l_eyelidupper",
+    "role": "eyelid",
+    "rest_head_blender_zup": [
+     0.04219,
+     -0.0509,
+     1.5875
+    ],
+    "rest_head_three_yup": [
+     0.04219,
+     1.5875,
+     0.0509
+    ]
+   },
+   {
+    "name": "l_forearm",
+    "role": "forearm",
+    "rest_head_blender_zup": [
+     0.30388,
+     0.04619,
+     1.18717
+    ],
+    "rest_head_three_yup": [
+     0.30388,
+     1.18717,
+     -0.04619
+    ]
+   },
+   {
+    "name": "l_forearmtwist1",
+    "role": "forearm",
+    "rest_head_blender_zup": [
+     0.3442,
+     0.03173,
+     1.14978
+    ],
+    "rest_head_three_yup": [
+     0.3442,
+     1.14978,
+     -0.03173
+    ]
+   },
+   {
+    "name": "l_forearmtwist2",
+    "role": "forearm",
+    "rest_head_blender_zup": [
+     0.41312,
+     0.00481,
+     1.08262
+    ],
+    "rest_head_three_yup": [
+     0.41312,
+     1.08262,
+     -0.00481
+    ]
+   },
+   {
+    "name": "l_hand",
+    "role": "hand",
+    "rest_head_blender_zup": [
+     0.47739,
+     -0.01952,
+     1.02222
+    ],
+    "rest_head_three_yup": [
+     0.47739,
+     1.02222,
+     0.01952
+    ]
+   },
+   {
+    "name": "l_infraorbital",
+    "role": "face",
+    "rest_head_blender_zup": [
+     0.02661,
+     -0.0616,
+     1.56367
+    ],
+    "rest_head_three_yup": [
+     0.02661,
+     1.56367,
+     0.0616
+    ]
+   },
+   {
+    "name": "l_lipcorner",
+    "role": "lip",
+    "rest_head_blender_zup": [
+     0.03084,
+     -0.06645,
+     1.5259
+    ],
+    "rest_head_three_yup": [
+     0.03084,
+     1.5259,
+     0.06645
+    ]
+   },
+   {
+    "name": "l_liplower",
+    "role": "lip",
+    "rest_head_blender_zup": [
+     0.01401,
+     -0.07441,
+     1.52052
+    ],
+    "rest_head_three_yup": [
+     0.01401,
+     1.52052,
+     0.07441
+    ]
+   },
+   {
+    "name": "l_lipupper",
+    "role": "lip",
+    "rest_head_blender_zup": [
+     0.0139,
+     -0.07903,
+     1.52734
+    ],
+    "rest_head_three_yup": [
+     0.0139,
+     1.52734,
+     0.07903
+    ]
+   },
+   {
+    "name": "l_nostril",
+    "role": "face",
+    "rest_head_blender_zup": [
+     0.00544,
+     -0.0936,
+     1.54784
+    ],
+    "rest_head_three_yup": [
+     0.00544,
+     1.54784,
+     0.0936
+    ]
+   },
+   {
+    "name": "l_pectoral",
+    "role": "chest_l",
+    "rest_head_blender_zup": [
+     0.04221,
+     -0.01898,
+     1.27021
+    ],
+    "rest_head_three_yup": [
+     0.04221,
+     1.27021,
+     0.01898
+    ]
+   },
+   {
+    "name": "l_shoulder",
+    "role": "clavicle_l",
+    "rest_head_blender_zup": [
+     0.02916,
+     0.03344,
+     1.41
+    ],
+    "rest_head_three_yup": [
+     0.02916,
+     1.41,
+     -0.03344
+    ]
+   },
+   {
+    "name": "l_squint",
+    "role": "face",
+    "rest_head_blender_zup": [
+     0.03334,
+     -0.06801,
+     1.569
+    ],
+    "rest_head_three_yup": [
+     0.03334,
+     1.569,
+     0.06801
+    ]
+   },
+   {
+    "name": "l_upperarm",
+    "role": "upperarm_l",
+    "rest_head_blender_zup": [
+     0.13927,
+     0.04465,
+     1.4
+    ],
+    "rest_head_three_yup": [
+     0.13927,
+     1.4,
+     -0.04465
+    ]
+   },
+   {
+    "name": "l_upperarmtwist1",
+    "role": "face",
+    "rest_head_blender_zup": [
+     0.16713,
+     0.0445,
+     1.33513
+    ],
+    "rest_head_three_yup": [
+     0.16713,
+     1.33513,
+     -0.0445
+    ]
+   },
+   {
+    "name": "l_upperarmtwist2",
+    "role": "face",
+    "rest_head_blender_zup": [
+     0.22597,
+     0.04666,
+     1.27054
+    ],
+    "rest_head_three_yup": [
+     0.22597,
+     1.27054,
+     -0.04666
+    ]
+   },
+   {
+    "name": "liplowermiddle",
+    "role": "lip",
+    "rest_head_blender_zup": [
+     -0.00023,
+     -0.07982,
+     1.51562
+    ],
+    "rest_head_three_yup": [
+     -0.00023,
+     1.51562,
+     0.07982
+    ]
+   },
+   {
+    "name": "lipuppermiddle",
+    "role": "lip",
+    "rest_head_blender_zup": [
+     -0.00027,
+     -0.08584,
+     1.53009
+    ],
+    "rest_head_three_yup": [
+     -0.00027,
+     1.53009,
+     0.08584
+    ]
+   },
+   {
+    "name": "lowerjaw",
+    "role": "jaw",
+    "rest_head_blender_zup": [
+     -0.00033,
+     0.00159,
+     1.55198
+    ],
+    "rest_head_three_yup": [
+     -0.00033,
+     1.55198,
+     -0.00159
+    ]
+   },
+   {
+    "name": "lowerteeth",
+    "role": "teeth",
+    "rest_head_blender_zup": [
+     -0.00026,
+     -0.04433,
+     1.52319
+    ],
+    "rest_head_three_yup": [
+     -0.00026,
+     1.52319,
+     0.04433
+    ]
+   },
+   {
+    "name": "neck1",
+    "role": "neck",
+    "rest_head_blender_zup": [
+     -1e-05,
+     -0.006,
+     1.4096
+    ],
+    "rest_head_three_yup": [
+     -1e-05,
+     1.4096,
+     0.006
+    ]
+   },
+   {
+    "name": "neck2",
+    "role": "neck",
+    "rest_head_blender_zup": [
+     -6e-05,
+     0.01678,
+     1.52
+    ],
+    "rest_head_three_yup": [
+     -6e-05,
+     1.52,
+     -0.01678
+    ]
+   },
+   {
+    "name": "pelvis",
+    "role": "root",
+    "rest_head_blender_zup": [
+     1e-05,
+     -0.01091,
+     1.01983
+    ],
+    "rest_head_three_yup": [
+     1e-05,
+     1.01983,
+     0.01091
+    ]
+   },
+   {
+    "name": "r_browinner",
+    "role": "brow",
+    "rest_head_blender_zup": [
+     -0.02837,
+     -0.08207,
+     1.6187
+    ],
+    "rest_head_three_yup": [
+     -0.02837,
+     1.6187,
+     0.08207
+    ]
+   },
+   {
+    "name": "r_browouter",
+    "role": "brow",
+    "rest_head_blender_zup": [
+     -0.05926,
+     -0.07092,
+     1.62218
+    ],
+    "rest_head_three_yup": [
+     -0.05926,
+     1.62218,
+     0.07092
+    ]
+   },
+   {
+    "name": "r_cheek",
+    "role": "cheek",
+    "rest_head_blender_zup": [
+     -0.06372,
+     -0.05915,
+     1.56022
+    ],
+    "rest_head_three_yup": [
+     -0.06372,
+     1.56022,
+     0.05915
+    ]
+   },
+   {
+    "name": "r_cheeklower",
+    "role": "cheek",
+    "rest_head_blender_zup": [
+     -0.05153,
+     -0.0373,
+     1.53055
+    ],
+    "rest_head_three_yup": [
+     -0.05153,
+     1.53055,
+     0.0373
+    ]
+   },
+   {
+    "name": "r_ear",
+    "role": "face",
+    "rest_head_blender_zup": [
+     -0.07874,
+     0.01153,
+     1.57131
+    ],
+    "rest_head_three_yup": [
+     -0.07874,
+     1.57131,
+     -0.01153
+    ]
+   },
+   {
+    "name": "r_eye",
+    "role": "eye_r",
+    "rest_head_blender_zup": [
+     -0.0412,
+     -0.04172,
+     1.58864
+    ],
+    "rest_head_three_yup": [
+     -0.0412,
+     1.58864,
+     0.04172
+    ]
+   },
+   {
+    "name": "r_eyelidlower",
+    "role": "eyelid",
+    "rest_head_blender_zup": [
+     -0.0428,
+     -0.05082,
+     1.58867
+    ],
+    "rest_head_three_yup": [
+     -0.0428,
+     1.58867,
+     0.05082
+    ]
+   },
+   {
+    "name": "r_eyelidupper",
+    "role": "eyelid",
+    "rest_head_blender_zup": [
+     -0.04281,
+     -0.05017,
+     1.58749
+    ],
+    "rest_head_three_yup": [
+     -0.04281,
+     1.58749,
+     0.05017
+    ]
+   },
+   {
+    "name": "r_forearm",
+    "role": "forearm",
+    "rest_head_blender_zup": [
+     -0.30385,
+     0.04617,
+     1.18718
+    ],
+    "rest_head_three_yup": [
+     -0.30385,
+     1.18718,
+     -0.04617
+    ]
+   },
+   {
+    "name": "r_forearmtwist1",
+    "role": "forearm",
+    "rest_head_blender_zup": [
+     -0.34421,
+     0.03174,
+     1.14979
+    ],
+    "rest_head_three_yup": [
+     -0.34421,
+     1.14979,
+     -0.03174
+    ]
+   },
+   {
+    "name": "r_forearmtwist2",
+    "role": "forearm",
+    "rest_head_blender_zup": [
+     -0.41311,
+     0.00481,
+     1.08265
+    ],
+    "rest_head_three_yup": [
+     -0.41311,
+     1.08265,
+     -0.00481
+    ]
+   },
+   {
+    "name": "r_hand",
+    "role": "hand",
+    "rest_head_blender_zup": [
+     -0.4774,
+     -0.01953,
+     1.02222
+    ],
+    "rest_head_three_yup": [
+     -0.4774,
+     1.02222,
+     0.01953
+    ]
+   },
+   {
+    "name": "r_infraorbital",
+    "role": "face",
+    "rest_head_blender_zup": [
+     -0.02715,
+     -0.06163,
+     1.56369
+    ],
+    "rest_head_three_yup": [
+     -0.02715,
+     1.56369,
+     0.06163
+    ]
+   },
+   {
+    "name": "r_lipcorner",
+    "role": "lip",
+    "rest_head_blender_zup": [
+     -0.03134,
+     -0.06647,
+     1.52591
+    ],
+    "rest_head_three_yup": [
+     -0.03134,
+     1.52591,
+     0.06647
+    ]
+   },
+   {
+    "name": "r_liplower",
+    "role": "lip",
+    "rest_head_blender_zup": [
+     -0.01443,
+     -0.07442,
+     1.52055
+    ],
+    "rest_head_three_yup": [
+     -0.01443,
+     1.52055,
+     0.07442
+    ]
+   },
+   {
+    "name": "r_lipupper",
+    "role": "lip",
+    "rest_head_blender_zup": [
+     -0.01438,
+     -0.07906,
+     1.52732
+    ],
+    "rest_head_three_yup": [
+     -0.01438,
+     1.52732,
+     0.07906
+    ]
+   },
+   {
+    "name": "r_nostril",
+    "role": "face",
+    "rest_head_blender_zup": [
+     -0.00596,
+     -0.09362,
+     1.54789
+    ],
+    "rest_head_three_yup": [
+     -0.00596,
+     1.54789,
+     0.09362
+    ]
+   },
+   {
+    "name": "r_pectoral",
+    "role": "chest_r",
+    "rest_head_blender_zup": [
+     -0.04215,
+     -0.01898,
+     1.27015
+    ],
+    "rest_head_three_yup": [
+     -0.04215,
+     1.27015,
+     0.01898
+    ]
+   },
+   {
+    "name": "r_shoulder",
+    "role": "clavicle_r",
+    "rest_head_blender_zup": [
+     -0.02917,
+     0.03343,
+     1.40999
+    ],
+    "rest_head_three_yup": [
+     -0.02917,
+     1.40999,
+     -0.03343
+    ]
+   },
+   {
+    "name": "r_squint",
+    "role": "face",
+    "rest_head_blender_zup": [
+     -0.03388,
+     -0.06799,
+     1.569
+    ],
+    "rest_head_three_yup": [
+     -0.03388,
+     1.569,
+     0.06799
+    ]
+   },
+   {
+    "name": "r_upperarm",
+    "role": "upperarm_r",
+    "rest_head_blender_zup": [
+     -0.13927,
+     0.04465,
+     1.40005
+    ],
+    "rest_head_three_yup": [
+     -0.13927,
+     1.40005,
+     -0.04465
+    ]
+   },
+   {
+    "name": "r_upperarmtwist1",
+    "role": "face",
+    "rest_head_blender_zup": [
+     -0.16713,
+     0.04451,
+     1.33511
+    ],
+    "rest_head_three_yup": [
+     -0.16713,
+     1.33511,
+     -0.04451
+    ]
+   },
+   {
+    "name": "r_upperarmtwist2",
+    "role": "face",
+    "rest_head_blender_zup": [
+     -0.22598,
+     0.04665,
+     1.27053
+    ],
+    "rest_head_three_yup": [
+     -0.22598,
+     1.27053,
+     -0.04665
+    ]
+   },
+   {
+    "name": "spine1",
+    "role": "spine",
+    "rest_head_blender_zup": [
+     0.0,
+     -0.00619,
+     1.01948
+    ],
+    "rest_head_three_yup": [
+     0.0,
+     1.01948,
+     0.00619
+    ]
+   },
+   {
+    "name": "spine2",
+    "role": "spine",
+    "rest_head_blender_zup": [
+     4e-05,
+     -0.01076,
+     1.09367
+    ],
+    "rest_head_three_yup": [
+     4e-05,
+     1.09367,
+     0.01076
+    ]
+   },
+   {
+    "name": "spine3",
+    "role": "spine",
+    "rest_head_blender_zup": [
+     1e-05,
+     -0.0021,
+     1.16708
+    ],
+    "rest_head_three_yup": [
+     1e-05,
+     1.16708,
+     0.0021
+    ]
+   },
+   {
+    "name": "spine4",
+    "role": "spine",
+    "rest_head_blender_zup": [
+     1e-05,
+     0.0205,
+     1.28775
+    ],
+    "rest_head_three_yup": [
+     1e-05,
+     1.28775,
+     -0.0205
+    ]
+   },
+   {
+    "name": "tongue01",
+    "role": "tongue",
+    "rest_head_blender_zup": [
+     -0.00023,
+     -0.02893,
+     1.51799
+    ],
+    "rest_head_three_yup": [
+     -0.00023,
+     1.51799,
+     0.02893
+    ]
+   },
+   {
+    "name": "tongue02",
+    "role": "tongue",
+    "rest_head_blender_zup": [
+     -0.00023,
+     -0.03733,
+     1.52226
+    ],
+    "rest_head_three_yup": [
+     -0.00023,
+     1.52226,
+     0.03733
+    ]
+   },
+   {
+    "name": "tongue03",
+    "role": "tongue",
+    "rest_head_blender_zup": [
+     -0.00023,
+     -0.04563,
+     1.52429
+    ],
+    "rest_head_three_yup": [
+     -0.00023,
+     1.52429,
+     0.04563
+    ]
+   },
+   {
+    "name": "tongue04",
+    "role": "tongue",
+    "rest_head_blender_zup": [
+     -0.00023,
+     -0.05393,
+     1.52416
+    ],
+    "rest_head_three_yup": [
+     -0.00023,
+     1.52416,
+     0.05393
+    ]
+   },
+   {
+    "name": "tongue05",
+    "role": "tongue",
+    "rest_head_blender_zup": [
+     -0.00023,
+     -0.06183,
+     1.52433
+    ],
+    "rest_head_three_yup": [
+     -0.00023,
+     1.52433,
+     0.06183
+    ]
+   },
+   {
+    "name": "upperteeth",
+    "role": "teeth",
+    "rest_head_blender_zup": [
+     -0.00026,
+     -0.04707,
+     1.53579
+    ],
+    "rest_head_three_yup": [
+     -0.00026,
+     1.53579,
+     0.04707
+    ]
+   }
+  ],
+  "remap": {
+   "LK15_Outer_Band_Surface": "head",
+   "LK15_Welded_Wing_Projection": "head",
+   "NX2_Upper_Lash_Contact_Clearance": "head",
+   "head.001": "head",
+   "head.002": "head",
+   "l_bigtoe1": "pelvis",
+   "l_bigtoe2": "pelvis",
+   "l_browinner.001": "l_browinner",
+   "l_browinner.002": "l_browinner",
+   "l_eye.003": "l_eye",
+   "l_eyelidlower.001": "l_eyelidlower",
+   "l_eyelidlower.002": "l_eyelidlower",
+   "l_eyelidupper.001": "l_eyelidupper",
+   "l_eyelidupper.002": "l_eyelidupper",
+   "l_foot": "pelvis",
+   "l_index1": "l_hand",
+   "l_index2": "l_hand",
+   "l_index3": "l_hand",
+   "l_indexmetacarpal": "l_hand",
+   "l_indextoe1": "pelvis",
+   "l_indextoe2": "pelvis",
+   "l_metatarsal": "pelvis",
+   "l_mid1": "l_hand",
+   "l_mid2": "l_hand",
+   "l_mid3": "l_hand",
+   "l_midmetacarpal": "l_hand",
+   "l_midtoe1": "pelvis",
+   "l_midtoe2": "pelvis",
+   "l_pinky1": "l_hand",
+   "l_pinky2": "l_hand",
+   "l_pinky3": "l_hand",
+   "l_pinkymetacarpal": "l_hand",
+   "l_pinkytoe1": "pelvis",
+   "l_pinkytoe2": "pelvis",
+   "l_ring1": "l_hand",
+   "l_ring2": "l_hand",
+   "l_ring3": "l_hand",
+   "l_ringmetacarpal": "l_hand",
+   "l_ringtoe1": "pelvis",
+   "l_ringtoe2": "pelvis",
+   "l_shin": "pelvis",
+   "l_squint.001": "l_squint",
+   "l_squint.002": "l_squint",
+   "l_thightwist1": "pelvis",
+   "l_thightwist2": "pelvis",
+   "l_thumb1": "l_hand",
+   "l_thumb2": "l_hand",
+   "l_thumb3": "l_hand",
+   "l_toes": "pelvis",
+   "lowerteeth.001": "lowerteeth",
+   "r_bigtoe1": "pelvis",
+   "r_bigtoe2": "pelvis",
+   "r_browinner.001": "r_browinner",
+   "r_browinner.002": "r_browinner",
+   "r_eye.003": "r_eye",
+   "r_eyelidlower.001": "r_eyelidlower",
+   "r_eyelidlower.002": "r_eyelidlower",
+   "r_eyelidupper.001": "r_eyelidupper",
+   "r_eyelidupper.002": "r_eyelidupper",
+   "r_foot": "pelvis",
+   "r_index1": "r_hand",
+   "r_index2": "r_hand",
+   "r_index3": "r_hand",
+   "r_indexmetacarpal": "r_hand",
+   "r_indextoe1": "pelvis",
+   "r_indextoe2": "pelvis",
+   "r_metatarsal": "pelvis",
+   "r_mid1": "r_hand",
+   "r_mid2": "r_hand",
+   "r_mid3": "r_hand",
+   "r_midmetacarpal": "r_hand",
+   "r_midtoe1": "pelvis",
+   "r_midtoe2": "pelvis",
+   "r_pinky1": "r_hand",
+   "r_pinky2": "r_hand",
+   "r_pinky3": "r_hand",
+   "r_pinkymetacarpal": "r_hand",
+   "r_pinkytoe1": "pelvis",
+   "r_pinkytoe2": "pelvis",
+   "r_ring1": "r_hand",
+   "r_ring2": "r_hand",
+   "r_ring3": "r_hand",
+   "r_ringmetacarpal": "r_hand",
+   "r_ringtoe1": "pelvis",
+   "r_ringtoe2": "pelvis",
+   "r_shin": "pelvis",
+   "r_squint.001": "r_squint",
+   "r_squint.002": "r_squint",
+   "r_thightwist1": "pelvis",
+   "r_thightwist2": "pelvis",
+   "r_thumb1": "r_hand",
+   "r_thumb2": "r_hand",
+   "r_thumb3": "r_hand",
+   "r_toes": "pelvis",
+   "upperteeth.003": "upperteeth"
+  },
+  "remap_rules": "suffix .00N stripped to the base bone, fingers to l/r_hand, legs and feet to pelvis, anything else to its nearest kept ancestor",
+  "bind_pose": "REST. The exported vertices already carry the accepted frame-1 pose, so the identity pose reproduces the accepted A1 / C1 / D1 framing exactly. Head pose at frame 1 is identity, so runtime head yaw and pitch rotate from the accepted look.",
+  "max_influences_per_vertex": 4
+ },
+ "shader": {
+  "engine_note": "these are the values nox_render09.py applies at RENDER time. The .blend still holds the look01 defaults, so reading the file gives different numbers.",
+  "background": "#0b0f1a",
+  "level": 0.6,
+  "eye_variant": "AMBER",
+  "classes": {
+   "feature": {
+    "Orig Color": [
+     0.032,
+     0.014,
+     0.009,
+     1.0
+    ],
+    "Orig Alpha": 0.0,
+    "Tint": [
+     0.06,
+     0.22,
+     0.55,
+     1.0
+    ],
+    "Rim Color": [
+     0.55,
+     0.9,
+     1.0,
+     1.0
+    ],
+    "Tint Mix": 0.0,
+    "Fill": 0.25,
+    "Lum Mix": 0.0,
+    "Alpha Mult": 1.6,
+    "Rim": 0.3,
+    "Rim Power": 2.0,
+    "Edge Glow": 0.0,
+    "Diffuse": 0.1,
+    "Cull": 0.0,
+    "Clip Y": 0.03,
+    "Fade Z0": 1.0,
+    "Fade Z1": 1.39,
+    "Sat Mask": 0.0,
+    "Feature": 1.0
+   },
+   "iris": {
+    "Orig Color": [
+     0.8,
+     0.8,
+     0.8,
+     1.0
+    ],
+    "Orig Alpha": 1.0,
+    "Tint": [
+     0.25,
+     0.65,
+     1.0,
+     1.0
+    ],
+    "Rim Color": [
+     0.55,
+     0.9,
+     1.0,
+     1.0
+    ],
+    "Tint Mix": 0.5,
+    "Fill": 1.2,
+    "Lum Mix": 0.0,
+    "Alpha Mult": 1.5,
+    "Rim": 0.0,
+    "Rim Power": 2.0,
+    "Edge Glow": 0.0,
+    "Diffuse": 0.3,
+    "Cull": 1.0,
+    "Clip Y": -0.012,
+    "Fade Z0": 1.0,
+    "Fade Z1": 1.39,
+    "Sat Mask": 1.0,
+    "Feature": 0.0
+   },
+   "skin": {
+    "Orig Color": [
+     0.8,
+     0.8,
+     0.8,
+     1.0
+    ],
+    "Orig Alpha": 1.0,
+    "Tint": [
+     0.06,
+     0.36,
+     1.0,
+     1.0
+    ],
+    "Rim Color": [
+     0.55,
+     0.9,
+     1.0,
+     1.0
+    ],
+    "Tint Mix": 0.0,
+    "Fill": 1.4,
+    "Lum Mix": 0.4,
+    "Alpha Mult": 1.0,
+    "Rim": 3.5,
+    "Rim Power": 1.6,
+    "Edge Glow": 6.0,
+    "Diffuse": 0.2,
+    "Cull": 1.0,
+    "Clip Y": 0.03,
+    "Fade Z0": 1.0,
+    "Fade Z1": 1.39,
+    "Sat Mask": 0.0,
+    "Feature": 0.0
+   },
+   "cloth": {
+    "Orig Color": [
+     0.8,
+     0.8,
+     0.8,
+     1.0
+    ],
+    "Orig Alpha": 1.0,
+    "Tint": [
+     0.06,
+     0.36,
+     1.0,
+     1.0
+    ],
+    "Rim Color": [
+     0.55,
+     0.9,
+     1.0,
+     1.0
+    ],
+    "Tint Mix": 0.0,
+    "Fill": 0.4,
+    "Lum Mix": 0.35,
+    "Alpha Mult": 0.75,
+    "Rim": 1.5,
+    "Rim Power": 1.6,
+    "Edge Glow": 2.0,
+    "Diffuse": 0.14,
+    "Cull": 1.0,
+    "Clip Y": 0.03,
+    "Fade Z0": 1.0,
+    "Fade Z1": 1.39,
+    "Sat Mask": 0.0,
+    "Feature": 0.0
+   },
+   "metal": {
+    "Orig Color": [
+     0.8,
+     0.8,
+     0.8,
+     1.0
+    ],
+    "Orig Alpha": 1.0,
+    "Tint": [
+     0.1,
+     0.45,
+     1.0,
+     1.0
+    ],
+    "Rim Color": [
+     0.55,
+     0.9,
+     1.0,
+     1.0
+    ],
+    "Tint Mix": 0.0,
+    "Fill": 0.55,
+    "Lum Mix": 0.0,
+    "Alpha Mult": 1.0,
+    "Rim": 0.9,
+    "Rim Power": 1.6,
+    "Edge Glow": 0.0,
+    "Diffuse": 0.12,
+    "Cull": 1.0,
+    "Clip Y": 0.03,
+    "Fade Z0": 1.0,
+    "Fade Z1": 1.39,
+    "Sat Mask": 0.0,
+    "Feature": 0.0
+   },
+   "body": {
+    "Orig Color": [
+     0.8,
+     0.8,
+     0.8,
+     1.0
+    ],
+    "Orig Alpha": 1.0,
+    "Tint": [
+     0.06,
+     0.36,
+     1.0,
+     1.0
+    ],
+    "Rim Color": [
+     0.55,
+     0.9,
+     1.0,
+     1.0
+    ],
+    "Tint Mix": 0.0,
+    "Fill": 0.45,
+    "Lum Mix": 0.4,
+    "Alpha Mult": 0.55,
+    "Rim": 1.5,
+    "Rim Power": 1.6,
+    "Edge Glow": 6.0,
+    "Diffuse": 0.2,
+    "Cull": 1.0,
+    "Clip Y": 0.03,
+    "Fade Z0": 1.0,
+    "Fade Z1": 1.39,
+    "Sat Mask": 0.0,
+    "Feature": 0.0
+   },
+   "cavity": {
+    "Orig Color": [
+     0.8,
+     0.8,
+     0.8,
+     1.0
+    ],
+    "Orig Alpha": 1.0,
+    "Tint": [
+     0.03,
+     0.1,
+     0.28,
+     1.0
+    ],
+    "Rim Color": [
+     0.55,
+     0.9,
+     1.0,
+     1.0
+    ],
+    "Tint Mix": 0.0,
+    "Fill": 0.05,
+    "Lum Mix": 0.0,
+    "Alpha Mult": 0.4,
+    "Rim": 0.1,
+    "Rim Power": 2.0,
+    "Edge Glow": 0.0,
+    "Diffuse": 0.08,
+    "Cull": 1.0,
+    "Clip Y": 0.03,
+    "Fade Z0": 1.0,
+    "Fade Z1": 1.39,
+    "Sat Mask": 0.0,
+    "Feature": 0.0
+   },
+   "hair": {
+    "Orig Color": [
+     0.005,
+     0.0035,
+     0.003,
+     1.0
+    ],
+    "Orig Alpha": 1.0,
+    "Tint": [
+     0.25,
+     0.65,
+     1.0,
+     1.0
+    ],
+    "Rim Color": [
+     0.55,
+     0.9,
+     1.0,
+     1.0
+    ],
+    "Tint Mix": 0.0,
+    "Fill": 0.6,
+    "Lum Mix": 0.5,
+    "Alpha Mult": 1.0,
+    "Rim": 1.2,
+    "Rim Power": 1.6,
+    "Edge Glow": 6.0,
+    "Diffuse": 0.15,
+    "Cull": 1.0,
+    "Clip Y": 0.03,
+    "Fade Z0": 1.0,
+    "Fade Z1": 1.39,
+    "Sat Mask": 0.0,
+    "Feature": 0.0
+   },
+   "teeth": {
+    "Orig Color": [
+     0.68,
+     0.63,
+     0.54,
+     1.0
+    ],
+    "Orig Alpha": 1.0,
+    "Tint": [
+     0.72,
+     0.9,
+     1.0,
+     1.0
+    ],
+    "Rim Color": [
+     0.55,
+     0.9,
+     1.0,
+     1.0
+    ],
+    "Tint Mix": 0.0,
+    "Fill": 0.14,
+    "Lum Mix": 0.0,
+    "Alpha Mult": 0.6,
+    "Rim": 0.2,
+    "Rim Power": 2.0,
+    "Edge Glow": 0.0,
+    "Diffuse": 0.25,
+    "Cull": 1.0,
+    "Clip Y": 0.03,
+    "Fade Z0": 1.0,
+    "Fade Z1": 1.39,
+    "Sat Mask": 0.0,
+    "Feature": 0.0
+   }
+  },
+  "runtime_materials": {
+   "RT_HOLO_Ludovisions_Fingernails": {
+    "source_material": "HOLO_Ludovisions_Fingernails",
+    "class": "skin",
+    "texture": "Ludovisions_Toon3D8_Nails_D.jpg",
+    "params": {
+     "Orig Color": [
+      0.8,
+      0.8,
+      0.8,
+      1.0
+     ],
+     "Orig Alpha": 1.0,
+     "Tint": [
+      0.06,
+      0.36,
+      1.0,
+      1.0
+     ],
+     "Rim Color": [
+      0.55,
+      0.9,
+      1.0,
+      1.0
+     ],
+     "Tint Mix": 0.0,
+     "Fill": 1.4,
+     "Lum Mix": 0.4,
+     "Alpha Mult": 1.0,
+     "Rim": 3.5,
+     "Rim Power": 1.6,
+     "Edge Glow": 6.0,
+     "Diffuse": 0.2,
+     "Cull": 1.0,
+     "Clip Y": 0.03,
+     "Fade Z0": 1.0,
+     "Fade Z1": 1.39,
+     "Sat Mask": 0.0,
+     "Feature": 0.0
+    }
+   },
+   "RT_HOLO_Ludovisions_Toenails": {
+    "source_material": "HOLO_Ludovisions_Toenails",
+    "class": "skin",
+    "texture": "Ludovisions_Toon3D8_Nails_D.jpg",
+    "params": {
+     "Orig Color": [
+      0.8,
+      0.8,
+      0.8,
+      1.0
+     ],
+     "Orig Alpha": 1.0,
+     "Tint": [
+      0.06,
+      0.36,
+      1.0,
+      1.0
+     ],
+     "Rim Color": [
+      0.55,
+      0.9,
+      1.0,
+      1.0
+     ],
+     "Tint Mix": 0.0,
+     "Fill": 1.4,
+     "Lum Mix": 0.4,
+     "Alpha Mult": 1.0,
+     "Rim": 3.5,
+     "Rim Power": 1.6,
+     "Edge Glow": 6.0,
+     "Diffuse": 0.2,
+     "Cull": 1.0,
+     "Clip Y": 0.03,
+     "Fade Z0": 1.0,
+     "Fade Z1": 1.39,
+     "Sat Mask": 0.0,
+     "Feature": 0.0
+    }
+   },
+   "RT_HOLO_Ludovisions_Legs": {
+    "source_material": "HOLO_Ludovisions_Legs",
+    "class": "body",
+    "texture": "Ludovisions_Toon3D8_Legs_D.jpg",
+    "params": {
+     "Orig Color": [
+      0.8,
+      0.8,
+      0.8,
+      1.0
+     ],
+     "Orig Alpha": 1.0,
+     "Tint": [
+      0.06,
+      0.36,
+      1.0,
+      1.0
+     ],
+     "Rim Color": [
+      0.55,
+      0.9,
+      1.0,
+      1.0
+     ],
+     "Tint Mix": 0.0,
+     "Fill": 0.45,
+     "Lum Mix": 0.4,
+     "Alpha Mult": 0.55,
+     "Rim": 1.5,
+     "Rim Power": 1.6,
+     "Edge Glow": 6.0,
+     "Diffuse": 0.2,
+     "Cull": 1.0,
+     "Clip Y": 0.03,
+     "Fade Z0": 1.0,
+     "Fade Z1": 1.39,
+     "Sat Mask": 0.0,
+     "Feature": 0.0
+    }
+   },
+   "RT_HOLO_Ludovisions_MouthCavity": {
+    "source_material": "HOLO_Ludovisions_MouthCavity",
+    "class": "cavity",
+    "texture": "Ludovisions_Toon3D8_MouthCavity_D.jpg",
+    "params": {
+     "Orig Color": [
+      0.8,
+      0.8,
+      0.8,
+      1.0
+     ],
+     "Orig Alpha": 1.0,
+     "Tint": [
+      0.03,
+      0.1,
+      0.28,
+      1.0
+     ],
+     "Rim Color": [
+      0.55,
+      0.9,
+      1.0,
+      1.0
+     ],
+     "Tint Mix": 0.0,
+     "Fill": 0.05,
+     "Lum Mix": 0.0,
+     "Alpha Mult": 0.4,
+     "Rim": 0.1,
+     "Rim Power": 2.0,
+     "Edge Glow": 0.0,
+     "Diffuse": 0.08,
+     "Cull": 1.0,
+     "Clip Y": 0.03,
+     "Fade Z0": 1.0,
+     "Fade Z1": 1.39,
+     "Sat Mask": 0.0,
+     "Feature": 0.0
+    },
+    "render": false,
+    "fix2_note": "look02 base variant (nox_render09.py:116) puts a Transparent BSDF on the teeth and mouth interior: nothing renders and nothing blocks the first-hit gate"
+   },
+   "RT_HOLO_Ludovisions_Arms": {
+    "source_material": "HOLO_Ludovisions_Arms",
+    "class": "body",
+    "texture": "Ludovisions_Toon3D8_Arms_D.jpg",
+    "params": {
+     "Orig Color": [
+      0.8,
+      0.8,
+      0.8,
+      1.0
+     ],
+     "Orig Alpha": 1.0,
+     "Tint": [
+      0.06,
+      0.36,
+      1.0,
+      1.0
+     ],
+     "Rim Color": [
+      0.55,
+      0.9,
+      1.0,
+      1.0
+     ],
+     "Tint Mix": 0.0,
+     "Fill": 0.45,
+     "Lum Mix": 0.4,
+     "Alpha Mult": 0.55,
+     "Rim": 1.5,
+     "Rim Power": 1.6,
+     "Edge Glow": 6.0,
+     "Diffuse": 0.2,
+     "Cull": 1.0,
+     "Clip Y": 0.03,
+     "Fade Z0": 1.0,
+     "Fade Z1": 1.39,
+     "Sat Mask": 0.0,
+     "Feature": 0.0
+    }
+   },
+   "RT_LK15_Sampled_Peach_Complexion_Blush_Lips": {
+    "source_material": "HOLO_NX19_Muted_Peach_Lips_Continuous_Lid_Rim",
+    "class": "skin",
+    "texture": null,
+    "params": {
+     "Orig Color": [
+      0.8,
+      0.8,
+      0.8,
+      1.0
+     ],
+     "Orig Alpha": 1.0,
+     "Tint": [
+      0.06,
+      0.36,
+      1.0,
+      1.0
+     ],
+     "Rim Color": [
+      0.55,
+      0.9,
+      1.0,
+      1.0
+     ],
+     "Tint Mix": 0.0,
+     "Fill": 1.4,
+     "Lum Mix": 0.4,
+     "Alpha Mult": 1.0,
+     "Rim": 3.5,
+     "Rim Power": 1.6,
+     "Edge Glow": 6.0,
+     "Diffuse": 0.2,
+     "Cull": 1.0,
+     "Clip Y": 0.03,
+     "Fade Z0": 1.0,
+     "Fade Z1": 1.39,
+     "Sat Mask": 0.0,
+     "Feature": 0.0
+    },
+    "fix1_note": "recovered in fix pass 1; the GLB exported this primitive under the pre-hologram material name LK15_Sampled_Peach_Complexion_Blush_Lips"
+   },
+   "RT_HOLO_Ludovisions_Body": {
+    "source_material": "HOLO_Ludovisions_Body",
+    "class": "body",
+    "texture": "Ludovisions_Toon3D8_Body_D.jpg",
+    "params": {
+     "Orig Color": [
+      0.8,
+      0.8,
+      0.8,
+      1.0
+     ],
+     "Orig Alpha": 1.0,
+     "Tint": [
+      0.06,
+      0.36,
+      1.0,
+      1.0
+     ],
+     "Rim Color": [
+      0.55,
+      0.9,
+      1.0,
+      1.0
+     ],
+     "Tint Mix": 0.0,
+     "Fill": 0.45,
+     "Lum Mix": 0.4,
+     "Alpha Mult": 0.55,
+     "Rim": 1.5,
+     "Rim Power": 1.6,
+     "Edge Glow": 6.0,
+     "Diffuse": 0.2,
+     "Cull": 1.0,
+     "Clip Y": 0.03,
+     "Fade Z0": 1.0,
+     "Fade Z1": 1.39,
+     "Sat Mask": 0.0,
+     "Feature": 0.0
+    }
+   },
+   "RT_HOLO_LK17_Lower_Rim_Only": {
+    "source_material": "HOLO_LK17_Lower_Rim_Only",
+    "class": "skin",
+    "texture": "Ludovisions_Toon3D8_Head_D.png",
+    "params": {
+     "Orig Color": [
+      0.8,
+      0.8,
+      0.8,
+      1.0
+     ],
+     "Orig Alpha": 1.0,
+     "Tint": [
+      0.06,
+      0.36,
+      1.0,
+      1.0
+     ],
+     "Rim Color": [
+      0.55,
+      0.9,
+      1.0,
+      1.0
+     ],
+     "Tint Mix": 0.0,
+     "Fill": 1.4,
+     "Lum Mix": 0.4,
+     "Alpha Mult": 1.0,
+     "Rim": 3.5,
+     "Rim Power": 1.6,
+     "Edge Glow": 6.0,
+     "Diffuse": 0.2,
+     "Cull": 1.0,
+     "Clip Y": 0.03,
+     "Fade Z0": 1.0,
+     "Fade Z1": 1.39,
+     "Sat Mask": 0.0,
+     "Feature": 0.0
+    }
+   },
+   "RT_HOLO_LK17_Nose_Paint_Reflectance_Only": {
+    "source_material": "HOLO_LK17_Nose_Paint_Reflectance_Only",
+    "class": "skin",
+    "texture": "Ludovisions_Toon3D8_Head_D.png",
+    "params": {
+     "Orig Color": [
+      0.8,
+      0.8,
+      0.8,
+      1.0
+     ],
+     "Orig Alpha": 1.0,
+     "Tint": [
+      0.06,
+      0.36,
+      1.0,
+      1.0
+     ],
+     "Rim Color": [
+      0.55,
+      0.9,
+      1.0,
+      1.0
+     ],
+     "Tint Mix": 0.0,
+     "Fill": 1.4,
+     "Lum Mix": 0.4,
+     "Alpha Mult": 1.0,
+     "Rim": 3.5,
+     "Rim Power": 1.6,
+     "Edge Glow": 6.0,
+     "Diffuse": 0.2,
+     "Cull": 1.0,
+     "Clip Y": 0.03,
+     "Fade Z0": 1.0,
+     "Fade Z1": 1.39,
+     "Sat Mask": 0.0,
+     "Feature": 0.0
+    }
+   },
+   "RT_HOLO_LK15_Restrained_Transparent_Cornea_0": {
+    "source_material": "HOLO_LK15_Restrained_Transparent_Cornea_0",
+    "class": "cornea",
+    "texture": null,
+    "params": {},
+    "render": false,
+    "fix1_note": "look01 make_cornea: plain Transparent BSDF, nothing to draw"
+   },
+   "RT_HOLO_LK15_Iris_Amber_Gradient_1": {
+    "source_material": "HOLO_LK15_Iris_Amber_Gradient_1",
+    "class": "iris",
+    "texture": "FIX2_Iris_OrigColor",
+    "params": {
+     "Orig Color": [
+      0.8,
+      0.8,
+      0.8,
+      1.0
+     ],
+     "Orig Alpha": 1.0,
+     "Tint": [
+      0.25,
+      0.65,
+      1.0,
+      1.0
+     ],
+     "Rim Color": [
+      0.55,
+      0.9,
+      1.0,
+      1.0
+     ],
+     "Tint Mix": 0.5,
+     "Fill": 1.2,
+     "Lum Mix": 0.0,
+     "Alpha Mult": 1.5,
+     "Rim": 0.0,
+     "Rim Power": 2.0,
+     "Edge Glow": 0.0,
+     "Diffuse": 0.3,
+     "Cull": 1.0,
+     "Clip Y": -0.012,
+     "Fade Z0": 1.0,
+     "Fade Z1": 1.39,
+     "Sat Mask": 1.0,
+     "Feature": 0.0
+    },
+    "eye": {
+     "shader": "LOOK02_Eye",
+     "variant": "AMBER",
+     "source": "look02/scripts/build_look02.py:73-133 (EYE dict :29), look04 EYE_VARIANTS AMBER = Iris Blue 0, applied by nox_render09.py:118",
+     "Tint": [
+      0.25,
+      0.65,
+      1.0,
+      1.0
+     ],
+     "Sclera Color": [
+      0.8,
+      0.9,
+      1.0,
+      1.0
+     ],
+     "Pupil Color": [
+      0.01,
+      0.02,
+      0.06,
+      1.0
+     ],
+     "Tint Mix": 0.5,
+     "Iris Alpha": 1.6,
+     "Iris Fill": 1.2,
+     "Sclera Alpha": 0.9,
+     "Sclera Fill": 0.12,
+     "Diffuse": 0.3,
+     "regions": "HSV of Orig Color: sat = clamp((S-0.28)*3), bright = clamp((V-0.15)*6); pupil = 1-bright, iris = sat*bright, sclera = (1-sat)*bright",
+     "lid_mask": "source: Geometry-Nodes camera raycast against the skin; runtime: the first-hit depth prepass (the lids are nearer)",
+     "texture": "FIX2_Iris_OrigColor"
+    },
+    "fix2_note": "look09 renders this material through LOOK02_Eye, not LOOK01: `params` below are the unlinked LOOK01 node kept for the look02 toggle and are NOT the shipped eye. Use `eye`."
+   },
+   "RT_HOLO_LK15_Iris_Amber_Gradient_2": {
+    "source_material": "HOLO_LK15_Iris_Amber_Gradient_2",
+    "class": "iris",
+    "texture": "FIX2_Iris_OrigColor",
+    "params": {
+     "Orig Color": [
+      0.8,
+      0.8,
+      0.8,
+      1.0
+     ],
+     "Orig Alpha": 1.0,
+     "Tint": [
+      0.25,
+      0.65,
+      1.0,
+      1.0
+     ],
+     "Rim Color": [
+      0.55,
+      0.9,
+      1.0,
+      1.0
+     ],
+     "Tint Mix": 0.5,
+     "Fill": 1.2,
+     "Lum Mix": 0.0,
+     "Alpha Mult": 1.5,
+     "Rim": 0.0,
+     "Rim Power": 2.0,
+     "Edge Glow": 0.0,
+     "Diffuse": 0.3,
+     "Cull": 1.0,
+     "Clip Y": -0.012,
+     "Fade Z0": 1.0,
+     "Fade Z1": 1.39,
+     "Sat Mask": 1.0,
+     "Feature": 0.0
+    },
+    "eye": {
+     "shader": "LOOK02_Eye",
+     "variant": "AMBER",
+     "source": "look02/scripts/build_look02.py:73-133 (EYE dict :29), look04 EYE_VARIANTS AMBER = Iris Blue 0, applied by nox_render09.py:118",
+     "Tint": [
+      0.25,
+      0.65,
+      1.0,
+      1.0
+     ],
+     "Sclera Color": [
+      0.8,
+      0.9,
+      1.0,
+      1.0
+     ],
+     "Pupil Color": [
+      0.01,
+      0.02,
+      0.06,
+      1.0
+     ],
+     "Tint Mix": 0.5,
+     "Iris Alpha": 1.6,
+     "Iris Fill": 1.2,
+     "Sclera Alpha": 0.9,
+     "Sclera Fill": 0.12,
+     "Diffuse": 0.3,
+     "regions": "HSV of Orig Color: sat = clamp((S-0.28)*3), bright = clamp((V-0.15)*6); pupil = 1-bright, iris = sat*bright, sclera = (1-sat)*bright",
+     "lid_mask": "source: Geometry-Nodes camera raycast against the skin; runtime: the first-hit depth prepass (the lids are nearer)",
+     "texture": "FIX2_Iris_OrigColor"
+    },
+    "fix2_note": "look09 renders this material through LOOK02_Eye, not LOOK01: `params` below are the unlinked LOOK01 node kept for the look02 toggle and are NOT the shipped eye. Use `eye`."
+   },
+   "RT_HOLO_LK15_Restrained_Transparent_Cornea_3": {
+    "source_material": "HOLO_LK15_Restrained_Transparent_Cornea_3",
+    "class": "cornea",
+    "texture": null,
+    "params": {},
+    "render": false,
+    "fix1_note": "look01 make_cornea: plain Transparent BSDF, nothing to draw"
+   },
+   "RT_HOLO_Ludovisions_Mouth": {
+    "source_material": "HOLO_Ludovisions_Mouth",
+    "class": "cavity",
+    "texture": "Ludovisions_Toon3D8_Mouth_D.jpg",
+    "params": {
+     "Orig Color": [
+      0.8,
+      0.8,
+      0.8,
+      1.0
+     ],
+     "Orig Alpha": 1.0,
+     "Tint": [
+      0.03,
+      0.1,
+      0.28,
+      1.0
+     ],
+     "Rim Color": [
+      0.55,
+      0.9,
+      1.0,
+      1.0
+     ],
+     "Tint Mix": 0.0,
+     "Fill": 0.05,
+     "Lum Mix": 0.0,
+     "Alpha Mult": 0.4,
+     "Rim": 0.1,
+     "Rim Power": 2.0,
+     "Edge Glow": 0.0,
+     "Diffuse": 0.08,
+     "Cull": 1.0,
+     "Clip Y": 0.03,
+     "Fade Z0": 1.0,
+     "Fade Z1": 1.39,
+     "Sat Mask": 0.0,
+     "Feature": 0.0
+    },
+    "render": false,
+    "fix2_note": "look02 base variant (nox_render09.py:116) puts a Transparent BSDF on the teeth and mouth interior: nothing renders and nothing blocks the first-hit gate"
+   },
+   "RT_HOLO_NX6_Soft_Ivory_Teeth": {
+    "source_material": "HOLO_NX6_Soft_Ivory_Teeth",
+    "class": "teeth",
+    "texture": null,
+    "params": {
+     "Orig Color": [
+      0.68,
+      0.63,
+      0.54,
+      1.0
+     ],
+     "Orig Alpha": 1.0,
+     "Tint": [
+      0.72,
+      0.9,
+      1.0,
+      1.0
+     ],
+     "Rim Color": [
+      0.55,
+      0.9,
+      1.0,
+      1.0
+     ],
+     "Tint Mix": 0.0,
+     "Fill": 0.14,
+     "Lum Mix": 0.0,
+     "Alpha Mult": 0.6,
+     "Rim": 0.2,
+     "Rim Power": 2.0,
+     "Edge Glow": 0.0,
+     "Diffuse": 0.25,
+     "Cull": 1.0,
+     "Clip Y": 0.03,
+     "Fade Z0": 1.0,
+     "Fade Z1": 1.39,
+     "Sat Mask": 0.0,
+     "Feature": 0.0
+    },
+    "render": false,
+    "fix2_note": "look02 base variant (nox_render09.py:116) puts a Transparent BSDF on the teeth and mouth interior: nothing renders and nothing blocks the first-hit gate"
+   },
+   "RT_HOLO_LK12_Soft_Ludovisions_Toon3D8_Tear": {
+    "source_material": "HOLO_LK12_Soft_Ludovisions_Toon3D8_Tear",
+    "class": "feature",
+    "texture": null,
+    "params": {
+     "Orig Color": [
+      0.032,
+      0.014,
+      0.009,
+      1.0
+     ],
+     "Orig Alpha": 0.0,
+     "Tint": [
+      0.06,
+      0.22,
+      0.55,
+      1.0
+     ],
+     "Rim Color": [
+      0.55,
+      0.9,
+      1.0,
+      1.0
+     ],
+     "Tint Mix": 0.0,
+     "Fill": 0.25,
+     "Lum Mix": 0.0,
+     "Alpha Mult": 1.6,
+     "Rim": 0.3,
+     "Rim Power": 2.0,
+     "Edge Glow": 0.0,
+     "Diffuse": 0.1,
+     "Cull": 0.0,
+     "Clip Y": 0.03,
+     "Fade Z0": 1.0,
+     "Fade Z1": 1.39,
+     "Sat Mask": 0.0,
+     "Feature": 1.0
+    }
+   },
+   "RT_HOLO_NX6_Original_Brow_Rollback_Visibility": {
+    "source_material": "HOLO_NX6_Original_Brow_Rollback_Visibility",
+    "class": "feature",
+    "texture": null,
+    "params": {
+     "Orig Color": [
+      0.015,
+      0.009,
+      0.003,
+      1.0
+     ],
+     "Orig Alpha": 0.0,
+     "Tint": [
+      0.06,
+      0.22,
+      0.55,
+      1.0
+     ],
+     "Rim Color": [
+      0.55,
+      0.9,
+      1.0,
+      1.0
+     ],
+     "Tint Mix": 0.0,
+     "Fill": 0.25,
+     "Lum Mix": 0.0,
+     "Alpha Mult": 1.6,
+     "Rim": 0.3,
+     "Rim Power": 2.0,
+     "Edge Glow": 0.0,
+     "Diffuse": 0.1,
+     "Cull": 0.0,
+     "Clip Y": 0.03,
+     "Fade Z0": 1.0,
+     "Fade Z1": 1.39,
+     "Sat Mask": 0.0,
+     "Feature": 1.0
+    }
+   },
+   "RT_HOLO_NXHO_Obsidian_Tech_Leather": {
+    "source_material": "HOLO_NXHO_Obsidian_Tech_Leather",
+    "class": "cloth",
+    "texture": null,
+    "params": {
+     "Orig Color": [
+      0.017,
+      0.024,
+      0.032,
+      1.0
+     ],
+     "Orig Alpha": 1.0,
+     "Tint": [
+      0.06,
+      0.36,
+      1.0,
+      1.0
+     ],
+     "Rim Color": [
+      0.55,
+      0.9,
+      1.0,
+      1.0
+     ],
+     "Tint Mix": 0.0,
+     "Fill": 0.4,
+     "Lum Mix": 0.35,
+     "Alpha Mult": 0.75,
+     "Rim": 1.5,
+     "Rim Power": 1.6,
+     "Edge Glow": 2.0,
+     "Diffuse": 0.14,
+     "Cull": 1.0,
+     "Clip Y": 0.03,
+     "Fade Z0": 1.0,
+     "Fade Z1": 1.39,
+     "Sat Mask": 0.0,
+     "Feature": 0.0
+    }
+   },
+   "RT_HOLO_LK15_NearBlack_Brow_SoftEdge": {
+    "source_material": "HOLO_LK15_NearBlack_Brow_SoftEdge",
+    "class": "feature",
+    "texture": null,
+    "params": {
+     "Orig Color": [
+      0.052,
+      0.026,
+      0.019,
+      1.0
+     ],
+     "Orig Alpha": 1.0,
+     "Tint": [
+      0.06,
+      0.22,
+      0.55,
+      1.0
+     ],
+     "Rim Color": [
+      0.55,
+      0.9,
+      1.0,
+      1.0
+     ],
+     "Tint Mix": 0.0,
+     "Fill": 0.25,
+     "Lum Mix": 0.0,
+     "Alpha Mult": 1.6,
+     "Rim": 0.3,
+     "Rim Power": 2.0,
+     "Edge Glow": 0.0,
+     "Diffuse": 0.1,
+     "Cull": 0.0,
+     "Clip Y": 0.03,
+     "Fade Z0": 1.0,
+     "Fade Z1": 1.39,
+     "Sat Mask": 0.0,
+     "Feature": 1.0
+    }
+   },
+   "RT_LK15_Liner_Soft_NearBlack": {
+    "source_material": "HOLO_NX19_Upper_Liner_Blink_Surface_Handoff",
+    "class": "feature",
+    "texture": null,
+    "params": {
+     "Orig Color": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+     ],
+     "Orig Alpha": 1.0,
+     "Tint": [
+      0.06,
+      0.22,
+      0.55,
+      1.0
+     ],
+     "Rim Color": [
+      0.55,
+      0.9,
+      1.0,
+      1.0
+     ],
+     "Tint Mix": 0.0,
+     "Fill": 0.25,
+     "Lum Mix": 0.0,
+     "Alpha Mult": 1.6,
+     "Rim": 0.3,
+     "Rim Power": 2.0,
+     "Edge Glow": 0.0,
+     "Diffuse": 0.1,
+     "Cull": 0.0,
+     "Clip Y": 0.03,
+     "Fade Z0": 1.0,
+     "Fade Z1": 1.39,
+     "Sat Mask": 0.0,
+     "Feature": 1.0
+    },
+    "fix1_note": "recovered in fix pass 1; the GLB exported this primitive under the pre-hologram material name LK15_Liner_Soft_NearBlack"
+   },
+   "RT_HOLO_NXHO_Brushed_Silver": {
+    "source_material": "HOLO_NXHO_Brushed_Silver",
+    "class": "metal",
+    "texture": null,
+    "params": {
+     "Orig Color": [
+      0.48,
+      0.53,
+      0.6,
+      1.0
+     ],
+     "Orig Alpha": 1.0,
+     "Tint": [
+      0.1,
+      0.45,
+      1.0,
+      1.0
+     ],
+     "Rim Color": [
+      0.55,
+      0.9,
+      1.0,
+      1.0
+     ],
+     "Tint Mix": 0.0,
+     "Fill": 0.55,
+     "Lum Mix": 0.0,
+     "Alpha Mult": 1.0,
+     "Rim": 0.9,
+     "Rim Power": 1.6,
+     "Edge Glow": 0.0,
+     "Diffuse": 0.12,
+     "Cull": 1.0,
+     "Clip Y": 0.03,
+     "Fade Z0": 1.0,
+     "Fade Z1": 1.39,
+     "Sat Mask": 0.0,
+     "Feature": 0.0
+    }
+   },
+   "RT_HOLO_NXHO_Antique_Gold": {
+    "source_material": "HOLO_NXHO_Antique_Gold",
+    "class": "metal",
+    "texture": null,
+    "params": {
+     "Orig Color": [
+      0.4,
+      0.23,
+      0.055,
+      1.0
+     ],
+     "Orig Alpha": 1.0,
+     "Tint": [
+      0.1,
+      0.45,
+      1.0,
+      1.0
+     ],
+     "Rim Color": [
+      0.55,
+      0.9,
+      1.0,
+      1.0
+     ],
+     "Tint Mix": 0.0,
+     "Fill": 0.55,
+     "Lum Mix": 0.0,
+     "Alpha Mult": 1.0,
+     "Rim": 0.9,
+     "Rim Power": 1.6,
+     "Edge Glow": 0.0,
+     "Diffuse": 0.12,
+     "Cull": 1.0,
+     "Clip Y": 0.03,
+     "Fade Z0": 1.0,
+     "Fade Z1": 1.39,
+     "Sat Mask": 0.0,
+     "Feature": 0.0
+    }
+   },
+   "RT_HOLO_NXHO_Source_Hair_PBR": {
+    "source_material": "HOLO_NXHO_Source_Hair_PBR",
+    "class": "hair",
+    "texture": "NXHO_Hair_texture_diffuse.001",
+    "params": {
+     "Orig Color": [
+      0.8,
+      0.8,
+      0.8,
+      1.0
+     ],
+     "Orig Alpha": 1.0,
+     "Tint": [
+      0.25,
+      0.65,
+      1.0,
+      1.0
+     ],
+     "Rim Color": [
+      0.55,
+      0.9,
+      1.0,
+      1.0
+     ],
+     "Tint Mix": 0.0,
+     "Fill": 0.6,
+     "Lum Mix": 0.5,
+     "Alpha Mult": 1.0,
+     "Rim": 1.2,
+     "Rim Power": 1.6,
+     "Edge Glow": 6.0,
+     "Diffuse": 0.15,
+     "Cull": 1.0,
+     "Clip Y": 0.03,
+     "Fade Z0": 1.0,
+     "Fade Z1": 1.39,
+     "Sat Mask": 0.0,
+     "Feature": 0.0
+    }
+   },
+   "RT_HOLO_NX6_Hair_Part_Charcoal_0": {
+    "source_material": "HOLO_NX6_Hair_Part_Charcoal_0",
+    "class": "hair",
+    "texture": null,
+    "params": {
+     "Orig Color": [
+      0.005,
+      0.0035,
+      0.003,
+      1.0
+     ],
+     "Orig Alpha": 1.0,
+     "Tint": [
+      0.25,
+      0.65,
+      1.0,
+      1.0
+     ],
+     "Rim Color": [
+      0.55,
+      0.9,
+      1.0,
+      1.0
+     ],
+     "Tint Mix": 0.0,
+     "Fill": 0.6,
+     "Lum Mix": 0.5,
+     "Alpha Mult": 1.0,
+     "Rim": 1.2,
+     "Rim Power": 1.6,
+     "Edge Glow": 6.0,
+     "Diffuse": 0.15,
+     "Cull": 1.0,
+     "Clip Y": 0.03,
+     "Fade Z0": 1.0,
+     "Fade Z1": 1.39,
+     "Sat Mask": 0.0,
+     "Feature": 0.0
+    }
+   },
+   "RT_LOOK09_Armour_NXHO_Antique_Gold": {
+    "source_material": "LOOK09_Armour_NXHO_Antique_Gold",
+    "class": "metal",
+    "texture": null,
+    "params": {
+     "Orig Color": [
+      0.4,
+      0.23,
+      0.055,
+      1.0
+     ],
+     "Orig Alpha": 1.0,
+     "Tint": [
+      0.1,
+      0.45,
+      1.0,
+      1.0
+     ],
+     "Rim Color": [
+      0.55,
+      0.9,
+      1.0,
+      1.0
+     ],
+     "Tint Mix": 0.0,
+     "Fill": 0.85,
+     "Lum Mix": 0.0,
+     "Alpha Mult": 1.0,
+     "Rim": 1.6,
+     "Rim Power": 1.6,
+     "Edge Glow": 0.0,
+     "Diffuse": 0.12,
+     "Cull": 1.0,
+     "Clip Y": 0.03,
+     "Fade Z0": 1.0,
+     "Fade Z1": 1.39,
+     "Sat Mask": 0.0,
+     "Feature": 0.0
+    }
+   },
+   "RT_LOOK09_Armour_NXHO_Obsidian_Tech_Leather": {
+    "source_material": "LOOK09_Armour_NXHO_Obsidian_Tech_Leather",
+    "class": "cloth",
+    "texture": null,
+    "params": {
+     "Orig Color": [
+      0.017,
+      0.024,
+      0.032,
+      1.0
+     ],
+     "Orig Alpha": 1.0,
+     "Tint": [
+      0.06,
+      0.36,
+      1.0,
+      1.0
+     ],
+     "Rim Color": [
+      0.55,
+      0.9,
+      1.0,
+      1.0
+     ],
+     "Tint Mix": 0.0,
+     "Fill": 0.4,
+     "Lum Mix": 0.35,
+     "Alpha Mult": 0.75,
+     "Rim": 1.5,
+     "Rim Power": 1.6,
+     "Edge Glow": 2.0,
+     "Diffuse": 0.14,
+     "Cull": 1.0,
+     "Clip Y": 0.03,
+     "Fade Z0": 1.0,
+     "Fade Z1": 1.39,
+     "Sat Mask": 0.0,
+     "Feature": 0.0
+    }
+   }
+  },
+  "cloth": {
+   "Fill": 0.4,
+   "Rim": 1.5,
+   "Edge Glow": 2.0,
+   "Alpha Mult": 0.75,
+   "Lum Mix": 0.35,
+   "Diffuse": 0.14
+  },
+  "metal": {
+   "Fill": 0.55,
+   "Rim": 0.9,
+   "Rim Power": 1.6,
+   "Edge Glow": 0.0,
+   "Alpha Mult": 1.0,
+   "Lum Mix": 0.0,
+   "Diffuse": 0.12,
+   "Tint": [
+    0.1,
+    0.45,
+    1.0,
+    1.0
+   ]
+  },
+  "skin_face": {
+   "Fill": 1.4,
+   "note": "asserted at 1.40 on every shipped still"
+  },
+  "body_dim": {
+   "on": true,
+   "Fill": 0.45,
+   "Rim": 1.5,
+   "measured_effect": "a no-op in a jacket-free look: max 9/255 channel delta, 0.32% of camera D pixels differ by more than 2 (look09 logs/dim_diff09.json)"
+  },
+  "hair": {
+   "Alpha Mult": 1.0,
+   "Fill": 0.6
+  },
+  "armour_copies": {
+   "materials": [
+    "LOOK09_Armour_NXHO_Antique_Gold",
+    "LOOK09_Armour_NXHO_Obsidian_Tech_Leather"
+   ],
+   "Fill": 0.85,
+   "Rim": 1.6,
+   "note": "render-time copies; the shared originals keep their look06 values"
+  },
+  "RODIN_FADE": {
+   "Fade Z0": 1.0,
+   "Fade Z1": 1.39
+  },
+  "fade09": {
+   "z0": 1.0,
+   "z1": 1.39,
+   "applies_to": "every non-Rodin HOLO material",
+   "note": "look08 used 1.04 for the body and 1.00 for the jacket; with the jacket gone look09 moved everything to 1.00 so the figure bottoms out at the same screen height, camera D screen y 0.557"
+  },
+  "ear_clip": {
+   "axis": "world_y",
+   "clip": 0.03,
+   "rule": "alpha *= (world_y < clip)",
+   "edge_glow_band_m": 0.02,
+   "note": "a binary per-fragment test on the DEFORMED mesh, build_look01.py CLIP_Y"
+  },
+  "first_hit_gate": {
+   "params": {
+    "Forward Clip": 0,
+    "First Hit": 1,
+    "First Hit Mode": 1
+   },
+   "rule": "T2: only the first surface the camera ray hits shades as the hologram; anything behind it is passed through as transparent. Back faces are culled.",
+   "orig_alpha_threshold": 0.5,
+   "runtime_approximation": "depth prepass plus front-face-only alpha",
+   "runtime_implementation": "viewer FirstHitRenderPass: pass 1 writes depth only for real hologram surfaces (Orig Alpha > 0.5, in front of the ear plane, front-facing; features, corneas, teeth and mouth interior excluded); pass 2 shades with depthWrite off and LessEqual against it, so only the nearest surface blends over the ground. Features (Feature = 1) draw after, depth-tested, with a polygon offset."
+  },
+  "bloom": {
+   "recipe": "screened bloom as look04: gaussian blur at width/120, scaled 0.35, screened back over the render",
+   "blur_fraction_of_width": 0.008333333333333333,
+   "scale": 0.35,
+   "mode": "screen",
+   "runtime_implementation": "viewer ScreenBloomPass after OutputPass (display space, as the PIL composite): separable Gaussian with sigma = buffer width / 120 in a buffer capped at 640 px wide, x 0.35, screened. Replaces UnrealBloomPass.",
+   "bloom_buffer_max_width_px": 640
+  },
+  "alpha_fresnel": "look01: a1 = a0 + (1 - a0) * fresnel * 0.85, independent of Alpha Mult",
+  "fix1": {
+   "date": "2026-09-23",
+   "root_cause": "object-linked material slots: look01 writes the HOLO copy into the OBJECT slot, new_from_object copies the MESH DATA list",
+   "objects_affected": [
+    "LK16_Rendered_TwoRegion_Skin slot 5",
+    "NX8_Upper_Lid_Line slot 0"
+   ],
+   "repaired": {
+    "RT_LK15_Sampled_Peach_Complexion_Blush_Lips": {
+     "class_before": null,
+     "class_after": "skin",
+     "params_before": 0,
+     "params_after": 18
+    },
+    "RT_LK15_Liner_Soft_NearBlack": {
+     "class_before": null,
+     "class_after": "feature",
+     "params_before": 0,
+     "params_after": 18
+    },
+    "RT_HOLO_LK15_Restrained_Transparent_Cornea_0": {
+     "class_before": "cornea",
+     "class_after": "cornea (render:false)"
+    },
+    "RT_HOLO_LK15_Restrained_Transparent_Cornea_3": {
+     "class_before": "cornea",
+     "class_after": "cornea (render:false)"
+    }
+   },
+   "cull_is_authoritative": "Cull 0 means the material renders both sides (look04 fix for the mirrored, un-flipped card normals). The viewer must map it to THREE.DoubleSide; FrontSide culls the avatar-left brow and liner."
+  },
+  "eye": {
+   "shader": "LOOK02_Eye",
+   "variant": "AMBER",
+   "source": "look02/scripts/build_look02.py:73-133 (EYE dict :29), look04 EYE_VARIANTS AMBER = Iris Blue 0, applied by nox_render09.py:118",
+   "Tint": [
+    0.25,
+    0.65,
+    1.0,
+    1.0
+   ],
+   "Sclera Color": [
+    0.8,
+    0.9,
+    1.0,
+    1.0
+   ],
+   "Pupil Color": [
+    0.01,
+    0.02,
+    0.06,
+    1.0
+   ],
+   "Tint Mix": 0.5,
+   "Iris Alpha": 1.6,
+   "Iris Fill": 1.2,
+   "Sclera Alpha": 0.9,
+   "Sclera Fill": 0.12,
+   "Diffuse": 0.3,
+   "regions": "HSV of Orig Color: sat = clamp((S-0.28)*3), bright = clamp((V-0.15)*6); pupil = 1-bright, iris = sat*bright, sclera = (1-sat)*bright",
+   "lid_mask": "source: Geometry-Nodes camera raycast against the skin; runtime: the first-hit depth prepass (the lids are nearer)",
+   "texture": "FIX2_Iris_OrigColor"
+  }
+ },
+ "smile_rule": {
+  "rule": "never the wide joy smile on the hologram; closed / smirk / slightly open only",
+  "clamp06_global_caps": {
+   "NX18_Smile_Joy": 0.2,
+   "NX19_Smile_Joy": 0.2,
+   "NX19_Joy_Corner_Fairing": 0.2,
+   "NX18_Joy_Lid_Fit": 0.2,
+   "NX5_Performance_Smile_Corners": 0.2,
+   "NX8_Joy_Smile_Corners_Cheeks_Dimples": 0.2,
+   "NX8_Joy_Upper_Dental_Arc": 0.2,
+   "LK_SmileFit": 0.25,
+   "NX8_Smile_Lower_Lid_Cheek_Compression": 0.2,
+   "NX5_Performance_Cheek_Lift": 0.35,
+   "NX5_Performance_Lower_Lid_Cheek": 0.3,
+   "NX18_Joy_Curved_Upper_Crowns": 0.0,
+   "NX19_Joy_Upper_Crowns": 0.0
+  },
+  "clamp06_window_caps": {
+   "NX18_Smile_Raised_Cheek_Apples": 0.35,
+   "NX19_Smile_Malar_Rise": 0.35,
+   "NX18_Smile_Lower_Lids": 0.35
+  },
+  "joy_window": [
+   [
+    648,
+    696
+   ]
+  ],
+  "window_ramp_frames": 6,
+  "enforcement": "the caps are baked into the exported morph maxima: a morph at 1.0 IS the capped maximum, so a runtime cannot exceed them by driving a morph harder",
+  "measured_result": "look06: max mouth opening across the clip fell from 30 x 96 px at frame 676 to 12 x 73 px at frame 658, at 640",
+  "candidate_skin_caps_note": "NX18_Smile_Joy and NX18_Smile_Lower_Lids stay in the clamp06 cap tables because clamp06.py caps them on the candidate skin (source evidence). They have no runtime morph; see excluded.manifest_only_morphs."
+ },
+ "motion": {
+  "body_sway": "slight",
+  "body_sway_max_deg": 1.5,
+  "head_neck": "must move",
+  "head_idle_yaw_deg": 6,
+  "head_idle_pitch_deg": 4,
+  "head_idle_period_s": [
+   4,
+   9
+  ],
+  "speech_nod_deg": 2,
+  "blink_interval_s": [
+   3,
+   7
+  ],
+  "tunable": true,
+  "source": "Cameron 2026-09-22 23:30 CDT: less body movement, head and neck must move",
+  "drive": {
+   "body_sway": [
+    "spine1",
+    "spine2",
+    "spine3",
+    "spine4"
+   ],
+   "head_idle": [
+    "head",
+    "neck1",
+    "neck2"
+   ],
+   "speech_nod": [
+    "head",
+    "neck2"
+   ],
+   "blink": [
+    "Blink morph"
+   ],
+   "speech": [
+    "Jaw morph",
+    "Press morph"
+   ]
+  }
+ },
+ "states": {
+  "idle": "head and neck idle yaw/pitch, slight spine sway, blink on the 3-7 s timer, mouth closed",
+  "listening": "idle plus a small forward head pitch and a slower, wider idle yaw (attentive)",
+  "thinking": "idle with the head held slightly off-axis and blink interval shortened",
+  "speaking": "Jaw and Press driven from the TTS audio analyser, speech nod on the head, idle sway continues, smile caps enforced",
+  "dissolve_out": "raise Fade Z0 and Z1 together until the figure is gone, then hide"
+ },
+ "geometry": {
+  "total_vertices": 468968,
+  "total_triangles": 356957,
+  "objects": 36,
+  "glb_bytes": 16589692,
+  "glb_mb": 16.59,
+  "glb_sha256": "cce21bab168aa6b97af7ac9da6d775e16cb6be53e0fc17a983a7c7cc1c38c91e",
+  "compression": "Draco, level 6, position quantization 14",
+  "textures": {
+   "Ludovisions_Toon3D8_Nails_D.jpg": [
+    1024,
+    1024
+   ],
+   "Ludovisions_Toon3D8_Legs_D.jpg": [
+    2048,
+    2048
+   ],
+   "Ludovisions_Toon3D8_MouthCavity_D.jpg": [
+    2048,
+    2048
+   ],
+   "Ludovisions_Toon3D8_Arms_D.jpg": [
+    2048,
+    2048
+   ],
+   "Ludovisions_Toon3D8_Body_D.jpg": [
+    2048,
+    2048
+   ],
+   "Ludovisions_Toon3D8_Head_D.png": [
+    2048,
+    2048
+   ],
+   "Ludovisions_Toon3D8_Mouth_D.jpg": [
+    2048,
+    2048
+   ],
+   "NXHO_Hair_texture_diffuse.001": [
+    2048,
+    2048
+   ],
+   "FIX2_Iris_OrigColor.jpg": [
+    2048,
+    2048
+   ]
+  },
+  "texture_format": "JPEG quality 85"
+ },
+ "bake_check": {
+  "problem": "the rendered face takes its smile-region positions from render-hidden candidate skins through four Geometry-Nodes Strict Regions modifiers; glTF cannot carry that",
+  "method": "every exported state is evaluated through the whole modifier stack and written as a plain shape key on a flat copy",
+  "flat_copy_vs_reference_max_mm": 0.000488,
+  "frame_reconstruction": {
+   "1": {
+    "max_mm": 0.0005,
+    "object": "NX8_Upper_Lid_Line",
+    "max_excl_unbaked_mm": 0.0005,
+    "object_excl": "NX8_Upper_Lid_Line",
+    "unbaked_verts_skipped": 161,
+    "per_object": {
+     "LK16_Rendered_TwoRegion_Skin": {
+      "max_mm": 0.0,
+      "max_excl_unbaked_mm": 0.0
+     },
+     "Ludovisions_Toon3D8_Eyes": {
+      "max_mm": 0.0,
+      "max_excl_unbaked_mm": 0.0
+     },
+     "Ludovisions_Toon3D8_Mouth": {
+      "max_mm": 0.0,
+      "max_excl_unbaked_mm": 0.0
+     },
+     "Ludovisions_Toon3D8_Tear": {
+      "max_mm": 0.0,
+      "max_excl_unbaked_mm": 0.0
+     },
+     "NX2_Controlled_Brow_Arcs": {
+      "max_mm": 0.0,
+      "max_excl_unbaked_mm": 0.0
+     },
+     "NX6_Protected_Display_NXHO_Tailored_Black_Trousers": {
+      "max_mm": 0.0,
+      "max_excl_unbaked_mm": 0.0
+     },
+     "NX8_Thin_Arched_Tapered_Brows": {
+      "max_mm": 0.0,
+      "max_excl_unbaked_mm": 0.0
+     },
+     "NX8_Upper_Lid_Line": {
+      "max_mm": 0.0005,
+      "max_excl_unbaked_mm": 0.0005
+     },
+     "NXHO_Hair_Swept_Pink_Charcoal": {
+      "max_mm": 0.0,
+      "max_excl_unbaked_mm": 0.0
+     }
+    }
+   },
+   "300": {
+    "max_mm": 141.0183,
+    "object": "NX8_Upper_Lid_Line",
+    "max_excl_unbaked_mm": 2.7588,
+    "object_excl": "NX8_Upper_Lid_Line",
+    "unbaked_verts_skipped": 161,
+    "per_object": {
+     "LK16_Rendered_TwoRegion_Skin": {
+      "max_mm": 2.3975,
+      "max_excl_unbaked_mm": 2.3975
+     },
+     "Ludovisions_Toon3D8_Eyes": {
+      "max_mm": 0.0,
+      "max_excl_unbaked_mm": 0.0
+     },
+     "Ludovisions_Toon3D8_Mouth": {
+      "max_mm": 0.0462,
+      "max_excl_unbaked_mm": 0.0462
+     },
+     "Ludovisions_Toon3D8_Tear": {
+      "max_mm": 0.0239,
+      "max_excl_unbaked_mm": 0.0239
+     },
+     "NX2_Controlled_Brow_Arcs": {
+      "max_mm": 1.3523,
+      "max_excl_unbaked_mm": 1.3523
+     },
+     "NX6_Protected_Display_NXHO_Tailored_Black_Trousers": {
+      "max_mm": 0.0,
+      "max_excl_unbaked_mm": 0.0
+     },
+     "NX8_Thin_Arched_Tapered_Brows": {
+      "max_mm": 0.1245,
+      "max_excl_unbaked_mm": 0.1245
+     },
+     "NX8_Upper_Lid_Line": {
+      "max_mm": 141.0183,
+      "max_excl_unbaked_mm": 2.7588
+     },
+     "NXHO_Hair_Swept_Pink_Charcoal": {
+      "max_mm": 0.0,
+      "max_excl_unbaked_mm": 0.0
+     }
+    }
+   },
+   "392": {
+    "max_mm": 0.5479,
+    "object": "NX2_Controlled_Brow_Arcs",
+    "max_excl_unbaked_mm": 0.5479,
+    "object_excl": "NX2_Controlled_Brow_Arcs",
+    "unbaked_verts_skipped": 161,
+    "per_object": {
+     "LK16_Rendered_TwoRegion_Skin": {
+      "max_mm": 0.0103,
+      "max_excl_unbaked_mm": 0.0103
+     },
+     "Ludovisions_Toon3D8_Eyes": {
+      "max_mm": 0.0,
+      "max_excl_unbaked_mm": 0.0
+     },
+     "Ludovisions_Toon3D8_Mouth": {
+      "max_mm": 0.0006,
+      "max_excl_unbaked_mm": 0.0006
+     },
+     "Ludovisions_Toon3D8_Tear": {
+      "max_mm": 0.0006,
+      "max_excl_unbaked_mm": 0.0006
+     },
+     "NX2_Controlled_Brow_Arcs": {
+      "max_mm": 0.5479,
+      "max_excl_unbaked_mm": 0.5479
+     },
+     "NX6_Protected_Display_NXHO_Tailored_Black_Trousers": {
+      "max_mm": 0.0,
+      "max_excl_unbaked_mm": 0.0
+     },
+     "NX8_Thin_Arched_Tapered_Brows": {
+      "max_mm": 0.0941,
+      "max_excl_unbaked_mm": 0.0941
+     },
+     "NX8_Upper_Lid_Line": {
+      "max_mm": 0.1456,
+      "max_excl_unbaked_mm": 0.1456
+     },
+     "NXHO_Hair_Swept_Pink_Charcoal": {
+      "max_mm": 0.0,
+      "max_excl_unbaked_mm": 0.0
+     }
+    }
+   },
+   "663": {
+    "max_mm": 141.0183,
+    "object": "NX8_Upper_Lid_Line",
+    "max_excl_unbaked_mm": 2.733,
+    "object_excl": "NX8_Upper_Lid_Line",
+    "unbaked_verts_skipped": 161,
+    "per_object": {
+     "LK16_Rendered_TwoRegion_Skin": {
+      "max_mm": 2.7016,
+      "max_excl_unbaked_mm": 2.7016
+     },
+     "Ludovisions_Toon3D8_Eyes": {
+      "max_mm": 0.0,
+      "max_excl_unbaked_mm": 0.0
+     },
+     "Ludovisions_Toon3D8_Mouth": {
+      "max_mm": 0.0459,
+      "max_excl_unbaked_mm": 0.0459
+     },
+     "Ludovisions_Toon3D8_Tear": {
+      "max_mm": 0.0239,
+      "max_excl_unbaked_mm": 0.0239
+     },
+     "NX2_Controlled_Brow_Arcs": {
+      "max_mm": 1.2294,
+      "max_excl_unbaked_mm": 1.2294
+     },
+     "NX6_Protected_Display_NXHO_Tailored_Black_Trousers": {
+      "max_mm": 0.0,
+      "max_excl_unbaked_mm": 0.0
+     },
+     "NX8_Thin_Arched_Tapered_Brows": {
+      "max_mm": 0.1338,
+      "max_excl_unbaked_mm": 0.1338
+     },
+     "NX8_Upper_Lid_Line": {
+      "max_mm": 141.0183,
+      "max_excl_unbaked_mm": 2.733
+     },
+     "NXHO_Hair_Swept_Pink_Charcoal": {
+      "max_mm": 0.0,
+      "max_excl_unbaked_mm": 0.0
+     }
+    }
+   }
+  },
+  "worst_mm": 141.0183,
+  "worst_excluding_unbaked_mm": 2.7588,
+  "bar_mm": 0.5,
+  "passes": false,
+  "unbaked_shrinkwrap_tail": {
+   "object": "NX8_Upper_Lid_Line",
+   "cause": "two Shrinkwrap modifiers whose projection fails on a closed lid, throwing a tail of vertices 170-230 mm across the head. Measured in logs/diag_blink.json as the ASSET's behaviour, not this bake's: the same tail appears when the whole frame 651 is evaluated. Cycles hides it because the liner is a thin line.",
+   "handling": "any morph delta past 30.0 mm is written as zero, leaving that vertex at its neutral position",
+   "verts_clamped_by_morph": {
+    "Blink": 44,
+    "NX5_Performance_Brow_Concern": 39,
+    "NX5_Performance_Brow_Furrow": 7,
+    "NX5_Performance_Brow_Asymmetric": 115,
+    "NX5_Performance_Brow_Surprise": 44
+   }
+  },
+  "known_deviation": {
+   "accepted_by": "main NOX, NOX-11771 review round 1 (2026-09-24), finding 5 nit, accepted for v1, no rebuild",
+   "frames": {
+    "300": 2.7588,
+    "663": 2.733
+   },
+   "bar_mm": 0.5,
+   "cause": "NX8_Upper_Lid_Line shrinkwrap tail (unbaked verts) plus Strict Regions residue; RESULTS.md contradictions 1-5"
+  }
+ },
+ "press_choice": {
+  "chosen": 606,
+  "candidates": 43,
+  "scan_gap_px": {
+   "1": 9,
+   "310": 4,
+   "318": 5,
+   "326": 2,
+   "334": 2,
+   "342": 4,
+   "350": 9,
+   "358": 13,
+   "366": 12,
+   "374": 12,
+   "382": 11,
+   "390": 13,
+   "392": 13,
+   "398": 16,
+   "406": 17,
+   "414": 16,
+   "422": 15,
+   "430": 15,
+   "438": 15,
+   "446": 17,
+   "454": 2,
+   "462": 5,
+   "470": 4,
+   "478": 7,
+   "486": 6,
+   "494": 6,
+   "502": 6,
+   "510": 8,
+   "518": 7,
+   "526": 7,
+   "534": 9,
+   "542": 8,
+   "550": 7,
+   "558": 6,
+   "566": 7,
+   "574": 7,
+   "582": 4,
+   "590": 3,
+   "598": 4,
+   "606": 1,
+   "614": 3,
+   "622": 3,
+   "630": 7,
+   "638": 6,
+   "646": 3,
+   "663": 11
+  },
+  "chosen_gap": {
+   "gap_px": 1,
+   "gap_mm": 0.7,
+   "col_px": 352,
+   "rows": [
+    285,
+    285
+   ],
+   "width_px": 0,
+   "lip_cover": 0.09669,
+   "compact_jaw": 0.07633
+  },
+  "ref_f1_gap_px": 9,
+  "f392_gap_px": 13,
+  "f392_width_px": 56,
+  "rule": "argmin clamp06.scan_gap over 310-647 step 8, ties broken by max NX6_Speech_Lip_Cover",
+  "caveat": "scan_gap reads 9 px at the closed-mouth reference frame 1, so it is relative, not absolute (look06 RESULTS: the in-Blender ray scan has chin/neck notch false positives)"
+ },
+ "excluded": {
+  "jackets": [
+   "LOOK08_Rodin_Jacket_Coll",
+   "LOOK08_Full_Jacket_Hidden",
+   "LOOK08_Retired_Look07_Jacket",
+   "LOOK07_Retired_NXHO_Jacket"
+  ],
+  "lashes": [
+   "Ludovisions_Toon3D8_Eyelashes",
+   "NX8_Swept_Lashes"
+  ],
+  "candidate_skins": [
+   "NX18_Candidate_Smile_Skin",
+   "NX19_Candidate_Cheek_Smile_Skin"
+  ],
+  "candidate_skins_note": "render-hidden; their effect is baked into the face morphs",
+  "manifest_only_morphs": {
+   "names": [
+    "NX18_Smile_Joy",
+    "NX18_Smile_Lower_Lids",
+    "NX18_Smile_Warm"
+   ],
+   "reason": "no target in the GLB: these keys exist only on the render-hidden NX18_Candidate_Smile_Skin, whose effect reaches the rendered face through the Strict Regions chain and is baked into the NX19 / face morphs. They were listed with objects [] and max_delta_mm 0.0 before fix pass 2.",
+   "warm_beat_smile": "NX19_Smile_Warm (6.588 mm, with NX19_Warm_Corner_Fairing) on LK16_Rendered_TwoRegion_Skin",
+   "removed": "NOX-11771 fix pass 2, 2026-09-24"
+  }
+ },
+ "runtime_conventions": {
+  "matches": "projects/kyst-brand/nightsky-proto/nightsky-chatmode-v2.html",
+  "three_version": "0.180",
+  "morph_names_for_v23_state_machine": [
+   "Jaw",
+   "Press",
+   "Blink"
+  ],
+  "loader": "GLTFLoader + DRACOLoader"
+ },
+ "fix2": {
+  "date": "2026-09-24",
+  "issue": "NOX-11771 review round 1 (main NOX comment 0e06af11)",
+  "glb": "one image appended (FIX2_Iris_OrigColor, 2048 JPEG q90), geometry / skin / morph bytes unchanged",
+  "morphs": "3 manifest-only entries removed, 33 remain == GLB targetNames",
+  "viewer": "LOOK02_Eye port, first-hit depth prepass, look09 screened bloom at a capped 640 px buffer"
+ }
+}

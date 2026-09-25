@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>KYST Wall</title>
+<script type="importmap">
+{"imports":{"three":"/avatar/vendor/three/three.module.min.js","three/addons/":"/avatar/vendor/three/addons/"}}
+</script>
 <style>
   html,body { margin:0; height:100%; background:#000; overflow:hidden; }
   iframe { position:fixed; inset:0; width:100%; height:100%; border:0; }
@@ -79,17 +82,29 @@
            font:600 14px/1.3 ui-sans-serif,-apple-system,sans-serif; opacity:0; transform:translateY(-5px);
            pointer-events:none; transition:opacity .16s ease,transform .16s ease; }
   #toast.visible { opacity:1; transform:translateY(0); }
+  /* NOX hologram avatar (NOX-11769). Under the chat panel and mic, over the board. The ground is look09's as
+     shipped, (14,20,35); in holo mode the renderer drives the fade through --holo-overlay. */
+  #holo-avatar { position:fixed; inset:0; z-index:6; background:#0e1423; opacity:0; cursor:pointer;
+                 transition:opacity .45s ease; -webkit-tap-highlight-color:transparent; }
+  #holo-avatar.open { opacity:1; }
+  #holo-avatar[data-mode="holo"] { opacity:var(--holo-overlay,0); transition:none; }
+  #holo-avatar .holo-canvas { position:absolute; inset:0; width:100%; height:100%; display:block; }
+  #holo-avatar .holo-still { position:absolute; left:50%; top:max(16px,env(safe-area-inset-top)); transform:translateX(-50%);
+                             width:min(86vw,62vh); height:auto; }
+  @media (prefers-reduced-motion:reduce) { #holo-avatar { transition-duration:.01s; } }
   @keyframes pulse { 50% { transform:scale(1.07); box-shadow:0 10px 38px rgba(212,60,86,.62); } }
   @keyframes pulseDot { 50% { transform:scale(1.35); opacity:.62; } }
   @media (max-width:520px) {
     #chat-panel { right:14px; bottom:max(102px,calc(env(safe-area-inset-bottom) + 102px));
                   width:calc(100vw - 28px); max-height:64vh; }
     #voice-status { display:none; }
+    #holo-avatar .holo-still { width:min(86vw,46vh); }
   }
 </style>
 </head>
 <body>
-<iframe id="board-frame" src="https://kyst-wall-proxy.fly.dev/" allow="autoplay; fullscreen; microphone"></iframe>
+<iframe id="board-frame" src="https://kyst-wall-proxy.fly.dev/" title="KYST family board" allow="autoplay; fullscreen; microphone"></iframe>
+<div id="holo-avatar" aria-hidden="true" hidden></div>
 <script>
   (() => {
     const url = new URL(window.location.href);
@@ -130,6 +145,7 @@
 </div>
 <div id="toast" role="status" aria-live="polite"></div>
 <script src="/voice-streaming.js"></script>
+<script src="/avatar/avatar.js"></script>
 <script>
 // Silk keep-alive: a looping silent audio track makes the browser treat the tab
 // as actively playing media, so the Echo Show doesn't bounce back to its home
@@ -251,6 +267,27 @@ let activeRecordingBlob = null;
 let streamingRequest = false;
 const resampleState = {};
 const chatTurns = new Map();
+
+// NOX hologram avatar (NOX-11769). On by default; ?avatarMode=off (or =still)
+// overrides it. Flag off, the controller is inert and the wall behaves exactly as before.
+const avatarRoot = document.getElementById("holo-avatar");
+const avatar = KystAvatar.createAvatarController({
+  mode: KystAvatar.resolveAvatarMode({
+    search: window.location.search,
+    viewportWidth: window.innerWidth,
+    holoGpu: () => { try { return KystAvatar.canRenderHolo(document.createElement("canvas").getContext("webgl2")); } catch { return false; } },
+  }),
+  root: avatarRoot,
+  loadRenderer: () => import("/avatar/holo-avatar.js").then((module) => module.createHoloRenderer({
+    container: avatarRoot,
+    cameraKey: new URLSearchParams(window.location.search).get("avatarCam") || "A",
+    // the open chat panel's column: #chat-panel's 410 px plus its 22 px margin and a 24 px gap
+    reserveRightPx: window.innerWidth > 520 ? 456 : 0,
+    reducedMotion: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches || false,
+  })),
+  // a tap on the hologram is Done, the same as the chat close button
+  onDismiss: () => setChatOpen(false),
+});
 
 let pendingStreamTicketId = null;
 let streamConnect = null;
@@ -381,7 +418,9 @@ const streamClient = new KystVoiceStreaming.VoiceStreamClient({
     if (message.type === "transcript.delta") applyChatDelta(message.requestId, "transcript", message.text);
     if (message.type === "answer.delta") {
       applyChatDelta(message.requestId, "answer", message.text);
-      setVoiceState("thinking", "Preparing NOX's voice…");
+      // Answer tokens keep streaming after the first audio. Once NOX is
+      // speaking, a later token must not relabel the answer "Preparing".
+      if (!mic.classList.contains("speaking")) setVoiceState("thinking", "Preparing NOX's voice…");
     }
     if (message.type === "audio.start" || message.type === "audio.first_chunk") {
       setVoiceState("speaking", "NOX is speaking…");
@@ -413,6 +452,49 @@ const progressiveAudio = (() => {
   let playbackReady = null;
   let mp3Failure = null;
   let pendingPcm = 0;
+  let speechTap = null;
+  let mediaTap = null;
+
+  // With the avatar on, answer audio passes through an analyser on its way to
+  // the speakers, so the hologram's mouth follows the audio already streamed
+  // to the wall (no server hop). Flag off, it is source -> destination as before.
+  function speechOutput(audioContext) {
+    if (!avatar.wantsSpeech) return audioContext.destination;
+    if (speechTap?.context !== audioContext) {
+      speechTap = audioContext.createAnalyser();
+      speechTap.fftSize = 1024;
+      speechTap.smoothingTimeConstant = 0.5;
+      speechTap.connect(audioContext.destination);
+      avatar.attachSpeechAnalyser(speechTap);
+    }
+    return speechTap;
+  }
+
+  // MP3 answers play through voiceAudio rather than buffer sources, so the
+  // element is tapped too. createMediaElementSource cannot be undone and
+  // silences the element whenever its context is not running, so the tap is
+  // only ever attached to a running context: a still mouth, never a silent answer.
+  function tapMediaElement() {
+    if (!avatar.wantsSpeech || mediaTap) return;
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    context ||= new AudioContextClass();
+    if (context.state !== "running") {
+      context.resume().catch(() => {});
+      return;
+    }
+    mediaTap = context.createMediaElementSource(voiceAudio);
+    mediaTap.connect(speechOutput(context));
+  }
+
+  // Once tapped, the element only sounds while that context runs, and a kiosk
+  // left up all day can have it suspended between answers (power management).
+  // Resume it before every MP3 answer; one that will not run fails the turn
+  // visibly ("Tap to try again") instead of playing a silent answer.
+  async function mediaTapRunning() {
+    if (!mediaTap || context.state === "running") return;
+    await context.resume();
+    if (context.state !== "running") throw new Error("mp3_tap_context_suspended");
+  }
 
   function notifyEnded() {
     const endedRequestId = requestId;
@@ -454,6 +536,7 @@ const progressiveAudio = (() => {
   function startMp3(nextRequestId) {
     stop();
     requestId = nextRequestId;
+    try { tapMediaElement(); } catch (error) { console.warn("kyst_avatar_media_tap_failed", error?.message || String(error)); }
     if (!window.MediaSource?.isTypeSupported("audio/mpeg")) throw new Error("mp3_stream_unsupported");
     const nextMediaSource = new MediaSource();
     mediaSource = nextMediaSource;
@@ -478,6 +561,8 @@ const progressiveAudio = (() => {
           nextSourceBuffer.addEventListener("error", fail, { once:true });
           voiceAudio.addEventListener("error", fail, { once:true });
           flushMp3();
+          await mediaTapRunning();
+          if (mediaSource !== nextMediaSource || requestId !== nextRequestId) return reject(new Error("mp3_turn_cancelled"));
           await voiceAudio.play();
           resolve();
         } catch (error) { reject(error); }
@@ -506,7 +591,7 @@ const progressiveAudio = (() => {
       for (let index = 0; index < samples.length; index += 1) channel[index] = samples[index] / 32768;
       const source = nextContext.createBufferSource();
       source.buffer = buffer;
-      source.connect(nextContext.destination);
+      source.connect(speechOutput(nextContext));
       const startAt = Math.max(nextContext.currentTime + .015, nextPlayAt);
       nextPlayAt = startAt + buffer.duration;
       sources.add(source);
@@ -529,7 +614,9 @@ const progressiveAudio = (() => {
     else if (sources.size === 0 && pendingPcm === 0) notifyEnded();
   }
 
-  return { push, stop, finish };
+  // voiceAudio's other players (the bridge's whole-answer audio and its
+  // tap-to-play retry) go through the same tapped element.
+  return { push, stop, finish, elementRunning: mediaTapRunning };
 })();
 
 function setChatOpen(open) {
@@ -587,6 +674,7 @@ function setVoiceState(state, label) {
   chatProgress.dataset.state = state;
   chatProgressText.textContent = label;
   mic.setAttribute("aria-label", state === "listening" ? "Stop recording" : "Ask NOX");
+  avatar.setVoiceState(state);
 }
 
 function cleanupRecording() {
@@ -741,10 +829,11 @@ async function beginRecording() {
 mic.addEventListener("click", () => {
   notifyBoardActivity();
   setChatOpen(true);
+  avatar.open();
   if (recorder?.state === "recording") stopRecording();
   else if (pendingPlaybackRequestId && pendingPlaybackRequestId === activeRequestId) {
     pendingPlaybackRequestId = null;
-    voiceAudio.play().catch(() => {
+    progressiveAudio.elementRunning().then(() => voiceAudio.play()).catch(() => {
       pendingPlaybackRequestId = activeRequestId;
       setVoiceState("ready", "Tap the mic once to play the answer.");
     });
@@ -757,6 +846,12 @@ mic.addEventListener("click", () => {
 });
 chatClose.addEventListener("click", () => {
   notifyBoardActivity();
+  setChatOpen(false);
+  avatar.close();
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape" || avatar.mode === "off") return;
+  avatar.close();
   setChatOpen(false);
 });
 
@@ -820,7 +915,11 @@ window.addEventListener("message", async (event) => {
       activeRecordingBlob = null;
       setVoiceState("ready", "Answer audio could not play. Tap to retry.");
     };
-    try { await voiceAudio.play(); } catch {
+    try {
+      await progressiveAudio.elementRunning();
+      if (activeRequestId !== requestId) return;
+      await voiceAudio.play();
+    } catch {
       if (activeRequestId !== requestId) return;
       pendingPlaybackRequestId = requestId;
       setVoiceState("ready", "Tap the mic once to play the answer.");
