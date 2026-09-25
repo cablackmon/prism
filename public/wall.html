@@ -278,7 +278,13 @@ function connectStream() {
   if (streamConnect) return streamConnect.promise;
   let settle;
   const promise = new Promise((resolve) => { settle = resolve; });
-  const timer = setTimeout(() => finishStreamConnect(false, "connect_timeout"), STREAM_CONNECT_TIMEOUT_MS);
+  const timer = setTimeout(() => {
+    // A socket still opening at the deadline would otherwise authenticate later:
+    // it spends a server session after the wall gave up, and could satisfy or
+    // tear down the next tap's connection. Close it before reporting failure.
+    streamClient.disconnect("connect_timeout", { preserveCompletedPlayback: true });
+    finishStreamConnect(false, "connect_timeout");
+  }, STREAM_CONNECT_TIMEOUT_MS);
   streamConnect = { promise, settle, timer };
   requestStreamConfig();
   return promise;
@@ -312,6 +318,14 @@ function applyChatDelta(requestId, field, text) {
 function reportStreamUnavailable(requestId, reason) {
   if (requestId !== activeRequestId) return false;
   console.warn("kyst_voice_stream_unavailable", { requestId, reason });
+  // The socket can drop while the user is still talking. Release the mic now;
+  // otherwise the next tap only stops this stale recording and a retry takes two.
+  if (recorder) {
+    const staleRecorder = recorder;
+    recorder = null;
+    cleanupRecording();
+    if (staleRecorder.state === "recording") staleRecorder.stop();
+  }
   streamingRequest = false;
   activeRequestId = null;
   activeRecordingBlob = null;
@@ -667,13 +681,7 @@ async function beginRecording() {
       connectStream().then((connected) => {
         if (activeRequestId !== turnRequestId) return;
         if (connected) streamingRequest = streamClient.begin({ requestId: turnRequestId });
-        if (!streamingRequest) {
-          if (recorder === turnRecorder) {
-            recorder = null;
-            cleanupRecording();
-          }
-          return reportStreamUnavailable(turnRequestId, "stream_unavailable");
-        }
+        if (!streamingRequest) return reportStreamUnavailable(turnRequestId, "stream_unavailable");
         for (const chunk of pendingTurn.pcm) streamClient.sendPcm(chunk);
         pendingTurn.pcm = [];
         if (pendingTurn.stopped && !streamClient.end()) reportStreamUnavailable(turnRequestId, "stream_unavailable");

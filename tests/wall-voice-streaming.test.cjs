@@ -425,3 +425,14 @@ test("the wall opens the voice socket on tap, not on board load", () => {
   assert.match(wall, /if \(message\.type === "turn\.ended" && recorder\?\.state === "recording"\) stopRecording\(\);/);
   assert.match(wall, /setInterval\(\(\) => \{ boardFrame\.src = proxyRoot; \}, 10 \* 60 \* 1000\);/);
 });
+
+test("a dropped or stalled stream releases the mic and its socket", () => {
+  // Behaviour is driven on kyst-board by lifecycle-check.cjs (NOX-11812 PR #22
+  // round 1); these pin the two statements that behaviour rests on.
+  const wall = fs.readFileSync(path.join(__dirname, "../public/wall.html"), "utf8");
+  const report = wall.match(/function reportStreamUnavailable\(requestId, reason\) \{[\s\S]*?\n\}/)?.[0] || "";
+  assert.ok(report, "reportStreamUnavailable not found");
+  assert.match(report, /recorder = null;\n    cleanupRecording\(\);\n    if \(staleRecorder\.state === "recording"\) staleRecorder\.stop\(\);/);
+  const connect = wall.match(/function connectStream\(\) \{[\s\S]*?\n\}/)?.[0] || "";
+  assert.match(connect, /streamClient\.disconnect\("connect_timeout", \{ preserveCompletedPlayback: true \}\);\n    finishStreamConnect\(false, "connect_timeout"\);/);
+});
