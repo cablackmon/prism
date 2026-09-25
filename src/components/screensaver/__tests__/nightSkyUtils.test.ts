@@ -4,13 +4,16 @@ import {
   isExpectedNightSkyFrameUrl,
   isExpectedNightSkyResponse,
   moonPhase,
+  nightSkyFrameEvents,
   nightSkyEvents,
+  truncateCometDescription,
   tomorrowEvents,
 } from '../nightSkyUtils';
 
-const event = (id: string, start: string): CalendarEvent => ({
+const event = (id: string, start: string, description?: string): CalendarEvent => ({
   id,
   title: id,
+  description,
   startTime: new Date(start),
   endTime: new Date(new Date(start).getTime() + 3600000),
   allDay: false,
@@ -56,6 +59,28 @@ describe('Night Sky schedule model', () => {
   it('computes known new and full moon illumination', () => {
     expect(moonPhase(new Date('2000-01-06T18:14:00Z')).illumination).toBeCloseTo(0, 4);
     expect(moonPhase(new Date('2000-01-21T12:36:00Z')).illumination).toBeCloseTo(1, 2);
+  });
+
+  it('collapses whitespace and caps comet descriptions at sixty characters', () => {
+    expect(truncateCometDescription('  Pack   the telescope  ')).toBe('Pack the telescope');
+    const result = truncateCometDescription('A'.repeat(80));
+    expect(result).toHaveLength(60);
+    expect(result.endsWith('…')).toBe(true);
+  });
+
+  it('serializes only upcoming frame data and never sends a full long description', () => {
+    const result = nightSkyFrameEvents(
+      [
+        event('next', '2026-08-29T13:00:00-05:00', 'B'.repeat(90)),
+        event('past', '2026-08-28T10:00:00-05:00', 'already over'),
+      ],
+      now
+    )[0]!;
+
+    expect(result.id).toBe('next');
+    expect(result.startTime).toBe('2026-08-29T18:00:00.000Z');
+    expect(result.description).toHaveLength(60);
+    expect(result.description).toBe(`${'B'.repeat(59)}…`);
   });
 });
 

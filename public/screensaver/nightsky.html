@@ -9,7 +9,8 @@
     * { box-sizing: border-box; }
     html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #02030e; }
     body { font-family: system-ui, sans-serif; }
-    canvas { display: block; width: 100%; height: 100%; }
+    canvas { display: block; width: 100%; height: 100%; transition: filter 1.2s ease; }
+    body.night-dim canvas { filter: brightness(.66); }
     .label {
       position: fixed;
       left: 50%;
@@ -37,12 +38,60 @@
       pointer-events: none;
     }
     body.show-debug .debug { display: block; }
-    @media (prefers-reduced-motion: reduce) { .label { opacity: .72; } }
+    .comet-label {
+      position: fixed;
+      right: clamp(20px, 4vw, 72px);
+      bottom: clamp(72px, 9vh, 132px);
+      max-width: min(520px, 72vw);
+      padding: 13px 17px 14px;
+      border: 1px solid rgba(139, 218, 255, .26);
+      border-radius: 14px;
+      background: rgba(3, 8, 28, .72);
+      box-shadow: 0 14px 50px rgba(0, 0, 12, .34), inset 0 1px rgba(255, 255, 255, .05);
+      color: rgba(238, 250, 255, .96);
+      font: 400 clamp(12px, .84vw, 17px)/1.45 system-ui, sans-serif;
+      letter-spacing: .012em;
+      text-wrap: balance;
+      text-shadow: 0 1px 14px rgba(0, 0, 0, .9);
+      opacity: 0;
+      transform: translateY(9px);
+      transition: opacity .45s ease, transform .45s ease;
+      pointer-events: none;
+    }
+    .comet-label.is-visible { opacity: 1; transform: translateY(0); }
+    .comet-label__eyebrow {
+      display: block;
+      margin-bottom: 4px;
+      color: rgba(139, 218, 255, .72);
+      font-size: .72em;
+      font-weight: 600;
+      letter-spacing: .24em;
+      text-transform: uppercase;
+    }
+    .comet-label__description { color: rgba(211, 229, 242, .72); }
+    @media (max-width: 600px) {
+      .comet-label {
+        right: 50%;
+        bottom: clamp(68px, 8vh, 92px);
+        width: min(86vw, 420px);
+        max-width: none;
+        transform: translate(50%, 9px);
+      }
+      .comet-label.is-visible { transform: translate(50%, 0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      canvas, .comet-label { transition: none; }
+      .label { opacity: .72; }
+    }
   </style>
 </head>
 <body>
   <canvas id="sky" role="img" aria-label="Animated night sky with the face-in-the-moon KYST emblem decorated by constellation stars"></canvas>
   <div class="label" aria-hidden="true">KYST · NIGHT SKY</div>
+  <div class="comet-label" id="comet-label" role="status" aria-live="polite" aria-atomic="true">
+    <span class="comet-label__eyebrow" id="comet-label-time">Next light</span>
+    <span id="comet-label-title"></span><span class="comet-label__description" id="comet-label-description"></span>
+  </div>
   <div class="debug" id="debug"></div>
 
   <script>
@@ -160,8 +209,9 @@
     const GEOMETRY = {
       points: [
         ['m00',.805,.155],['m01',.640,.072],['m02',.430,.060],['m03',.225,.210],
-        ['m04',.075,.430],['m05',.105,.700],['m06',.330,.915],['m07',.620,.975],
-        ['m08',.944,.671],['m09',.800,.890],['m10',.560,.925],['m11',.330,.820],
+        ['m04',.075,.430],['m05',.105,.700],['m06',.330,.915],['m06a',.475,.960],
+        ['m07',.620,.975],['m07a',.790,.880],['m08',.944,.671],['m09',.800,.890],
+        ['m09a',.680,.925],['m10',.560,.925],['m11',.330,.820],
         ['m12',.165,.610],['m13',.170,.365],['m14',.380,.145],['m15',.650,.080],
         ['h00',.186,.444],['h01',.269,.452],['h02',.269,.310],['h03',.410,.322],
         ['h04',.337,.201],['h05',.457,.249],['h06',.538,.127],['h07',.614,.210],
@@ -173,8 +223,9 @@
       ],
       pose2: [
         ['m00',.805,.155],['m01',.640,.072],['m02',.430,.060],['m03',.225,.210],
-        ['m04',.075,.430],['m05',.105,.700],['m06',.330,.915],['m07',.620,.975],
-        ['m08',.944,.671],['m09',.800,.890],['m10',.560,.925],['m11',.330,.820],
+        ['m04',.075,.430],['m05',.105,.700],['m06',.330,.915],['m06a',.475,.960],
+        ['m07',.620,.975],['m07a',.790,.880],['m08',.944,.671],['m09',.800,.890],
+        ['m09a',.680,.925],['m10',.560,.925],['m11',.330,.820],
         ['m12',.165,.610],['m13',.170,.365],['m14',.380,.145],['m15',.650,.080],
         ['h00',.187,.444],['h01',.267,.452],['h02',.266,.311],['h03',.403,.324],
         ['h04',.329,.204],['h05',.448,.250],['h06',.528,.131],['h07',.604,.212],
@@ -186,8 +237,9 @@
       ],
       edges: [
         ['m00','m01'],['m01','m02'],['m02','m03'],['m03','m04'],
-        ['m04','m05'],['m05','m06'],['m06','m07'],['m07','m08'],
-        ['m08','m09'],['m09','m10'],['m10','m11'],['m11','m12'],
+        ['m04','m05'],['m05','m06'],['m06','m06a'],['m06a','m07'],
+        ['m07','m07a'],['m07a','m08'],['m08','m09'],['m09','m09a'],
+        ['m09a','m10'],['m10','m11'],['m11','m12'],
         ['m12','m13'],['m13','m14'],['m14','m15'],['m15','m00'],
         ['h00','h01'],['h01','h02'],['h02','h03'],['h03','h04'],
         ['h04','h05'],['h05','h06'],['h06','h07'],['h07','h08'],['h08','h09'],
@@ -201,9 +253,13 @@
     const canvas = document.getElementById('sky');
     const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
     const debugNode = document.getElementById('debug');
+    const cometLabelNode = document.getElementById('comet-label');
+    const cometLabelTimeNode = document.getElementById('comet-label-time');
+    const cometLabelTitleNode = document.getElementById('comet-label-title');
+    const cometLabelDescriptionNode = document.getElementById('comet-label-description');
     const TAU = Math.PI * 2;
     const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const motionFactor = reducedMotion ? 0.25 : 1;
+    const motionFactor = reducedMotion ? 0 : 1;
     const captureOffsetSeconds = Number(query.get('t')) || 0;
     const captureEvent = query.get('event');
     const captureEventFixed = query.has('eventT');
@@ -211,6 +267,11 @@
     window.__NIGHTSKY_CAPTURE_TIME = captureEventTime;
     const hideLivingComet = query.get('hideComet') === '1';
     if (query.has('debug')) document.body.classList.add('show-debug');
+    const forcedPalette = query.get('nightSkyMode');
+    const localHour = new Date().getHours();
+    const nightDim = forcedPalette === 'night' ||
+      (forcedPalette !== 'day' && (localHour >= 21 || localHour < 6));
+    document.body.classList.toggle('night-dim', nightDim);
 
     const COMET_SCHEDULE_STORAGE_KEY = 'prism-nightsky-comet-anchor-v1';
     function loadProductionCometSchedule(nowMs = Date.now()) {
@@ -281,8 +342,8 @@
     const currentX = new Float32Array(pointCount);
     const currentY = new Float32Array(pointCount);
     const CRESCENT_IDS = Object.freeze([
-      'm00','m01','m02','m03','m04','m05','m06','m07',
-      'm08','m09','m10','m11','m12','m13','m14','m15'
+      'm00','m01','m02','m03','m04','m05','m06','m06a','m07','m07a',
+      'm08','m09','m09a','m10','m11','m12','m13','m14','m15'
     ]);
     const SILHOUETTE_IDS = Object.freeze([
       'h00','h01','h02','h03','h04','h05','h06','h07','h08','h09',
@@ -378,6 +439,108 @@
       { x:.79, y:.19, scale:.63, phase:2.1, points:[[0,.52],[.22,.20],[.50,.30],[.72,0],[1,.18],[.81,.47],[.56,.65],[.27,.61]], edges:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[2,6]] },
       { x:.83, y:.72, scale:.72, phase:4.0, points:[[0,.18],[.22,0],[.43,.24],[.68,.12],[1,.38],[.76,.64],[.48,.52],[.18,.78]], edges:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[2,6]] }
     ];
+    const EVENT_CONSTELLATION_SLOTS = Object.freeze([
+      [.08,.18], [.79,.16], [.06,.65], [.80,.68], [.16,.42], [.71,.43]
+    ]);
+    const EVENT_CONSTELLATION_SHAPES = Object.freeze([
+      [[0,.34],[.22,.04],[.51,.18],[.77,0],[1,.31],[.72,.59],[.40,.48]],
+      [[0,.16],[.28,.32],[.45,0],[.66,.28],[1,.17],[.82,.54],[.48,.65]],
+      [[0,.46],[.20,.08],[.48,.24],[.70,0],[1,.35],[.76,.66],[.36,.58]]
+    ]);
+    const EVENT_CONSTELLATION_EDGES = Object.freeze([
+      [0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[2,6]
+    ]);
+    let eventConstellations = [];
+    let cometLabelEvent = null;
+    let cometLabelVisible = false;
+
+    function hashText(value) {
+      let result = 2166136261;
+      for (let i = 0; i < value.length; i++) {
+        result = Math.imul(result ^ value.charCodeAt(i), 16777619);
+      }
+      return (result >>> 0) / 4294967295;
+    }
+
+    function safeEventColor(value) {
+      return /^#[0-9a-f]{6}$/i.test(value || '') ? value : '#8bdcff';
+    }
+
+    function colorWithAlpha(value, alpha) {
+      const color = safeEventColor(value);
+      const red = parseInt(color.slice(1, 3), 16);
+      const green = parseInt(color.slice(3, 5), 16);
+      const blue = parseInt(color.slice(5, 7), 16);
+      return 'rgba(' + red + ',' + green + ',' + blue + ',' + alpha + ')';
+    }
+
+    function buildEventConstellations(events) {
+      return events.slice(0, EVENT_CONSTELLATION_SLOTS.length).map((item, index) => {
+        const seed = hashText(item.id + ':' + item.startTime);
+        const slot = EVENT_CONSTELLATION_SLOTS[index];
+        return {
+          x: slot[0], y: slot[1],
+          scale: .66 + seed * .24,
+          phase: seed * TAU,
+          color: safeEventColor(item.color),
+          points: EVENT_CONSTELLATION_SHAPES[index % EVENT_CONSTELLATION_SHAPES.length],
+          edges: EVENT_CONSTELLATION_EDGES
+        };
+      });
+    }
+
+    function setCometLabelVisible(visible) {
+      if (visible === cometLabelVisible) return;
+      cometLabelVisible = visible;
+      cometLabelNode.classList.toggle('is-visible', visible);
+    }
+
+    function updateCometLabel() {
+      if (!cometLabelEvent) {
+        cometLabelTitleNode.textContent = '';
+        cometLabelDescriptionNode.textContent = '';
+        setCometLabelVisible(false);
+        return;
+      }
+      const start = new Date(cometLabelEvent.startTime);
+      cometLabelTimeNode.textContent = Number.isNaN(start.getTime())
+        ? 'Next light'
+        : start.toLocaleString([], {
+            weekday: 'short', hour: 'numeric', minute: '2-digit'
+          });
+      cometLabelTitleNode.textContent = cometLabelEvent.title;
+      const excerpt = cometLabelEvent.description.replace(/\s+/g, ' ').trim().slice(0, 60);
+      cometLabelDescriptionNode.textContent = excerpt ? ' — ' + excerpt : '';
+    }
+
+    function receiveNightSkyData(message) {
+      if (message.source !== parent || message.origin !== location.origin) return;
+      if (!message.data || message.data.type !== 'kyst:nightsky-data' ||
+          !Array.isArray(message.data.events)) return;
+      const events = message.data.events.slice(0, 24).map((item) => ({
+        id: String(item.id || ''),
+        title: String(item.title || 'Untitled event').slice(0, 180),
+        description: String(item.description || '').slice(0, 60),
+        startTime: String(item.startTime || ''),
+        color: safeEventColor(String(item.color || ''))
+      })).filter((item) => item.id && Number.isFinite(new Date(item.startTime).getTime()));
+      eventConstellations = buildEventConstellations(events);
+      const now = new Date();
+      const tomorrowStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+      const tomorrowEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2);
+      cometLabelEvent = events.find((item) => {
+        const start = new Date(item.startTime);
+        return start >= tomorrowStart && start < tomorrowEnd;
+      }) || events[0] || null;
+      updateCometLabel();
+      window.__NIGHTSKY_EVENT_DATA = {
+        eventCount: events.length,
+        constellationCount: eventConstellations.length,
+        cometDescriptionLength: cometLabelEvent ? cometLabelEvent.description.length : 0,
+        cometTitle: cometLabelEvent ? cometLabelEvent.title : null
+      };
+    }
+    addEventListener('message', receiveNightSkyData);
 
     function random() {
       randomState ^= randomState << 13;
@@ -456,6 +619,7 @@
       starY = new Float32Array(starCount);
       starDepth = new Float32Array(starCount);
       starPhase = new Float32Array(starCount);
+      starRate = new Float32Array(starCount);
       starTint = new Uint8Array(starCount);
       for (let i = 0; i < starCount; i++) {
         starX[i] = random() * width;
@@ -542,18 +706,24 @@
 
     function drawBackgroundConstellations(seconds) {
       const base = Math.min(width, height) * .16;
+      const eventDriven = eventConstellations.length > 0;
+      const constellations = eventDriven ? eventConstellations : BACKGROUND_CONSTELLATIONS;
       ctx.save();
       ctx.globalCompositeOperation = 'screen';
-      ctx.lineWidth = .72 * dpr;
-      for (let c = 0; c < BACKGROUND_CONSTELLATIONS.length; c++) {
-        const item = BACKGROUND_CONSTELLATIONS[c];
+      ctx.lineWidth = (eventDriven ? 1.12 : .72) * dpr;
+      for (let c = 0; c < constellations.length; c++) {
+        const item = constellations[c];
         const driftX = Math.sin(seconds * .025 * motionFactor + item.phase) * 18 * dpr;
         const driftY = Math.cos(seconds * .019 * motionFactor + item.phase) * 11 * dpr;
         const size = base * item.scale;
         const left = width * item.x + driftX;
         const top = height * item.y + driftY;
-        ctx.strokeStyle = 'rgba(111,164,228,.20)';
-        ctx.globalAlpha = .42 + .10 * Math.sin(seconds * .18 + item.phase);
+        ctx.strokeStyle = eventDriven
+          ? colorWithAlpha(item.color, .72)
+          : 'rgba(111,164,228,.20)';
+        ctx.globalAlpha = eventDriven
+          ? .64 + .12 * Math.sin(seconds * .18 + item.phase)
+          : .42 + .10 * Math.sin(seconds * .18 + item.phase);
         ctx.beginPath();
         for (let i = 0; i < item.edges.length; i++) {
           const edge = item.edges[i];
@@ -566,8 +736,8 @@
         for (let i = 0; i < item.points.length; i++) {
           const p = item.points[i];
           const twinkle = .52 + .30 * Math.sin(seconds * (.35 + i * .015) + item.phase + i);
-          const spriteSize = (5.5 + (i % 3) * 1.2) * dpr;
-          ctx.globalAlpha = .28 * twinkle;
+          const spriteSize = ((eventDriven ? 7.2 : 5.5) + (i % 3) * 1.2) * dpr;
+          ctx.globalAlpha = (eventDriven ? .76 : .28) * twinkle;
           ctx.drawImage(starSprites[(i + c) % 3],
             left + p[0] * size - spriteSize * .5,
             top + p[1] * size - spriteSize * .5,
@@ -1499,7 +1669,7 @@
       }
       ctx.restore();
 
-      // Finally place 40 brighter, independently twinkling stars ON those contours.
+      // Finally place brighter, independently twinkling stars ON those contours.
       for (let i = 0; i < pointCount; i++) {
         const id = GEOMETRY.points[i][0];
         const pointWake = cometMorph && (id[0] === 'm' || id[0] === 'j')
@@ -1554,6 +1724,8 @@
       // The special comet sits in the emblem's foreground plane. Drawing it after
       // the emblem also prevents it from collapsing into the background starfield.
       drawLivingComet();
+      setCometLabelVisible(Boolean(cometLabelEvent &&
+        livingCometProgress >= 0 && livingCometOpacity > 0));
 
       ctx.fillStyle = vignetteGradient;
       ctx.fillRect(0, 0, width, height);
@@ -1629,13 +1801,16 @@
           lastBigKind: livingLastBigKind
         };
       }
-      requestAnimationFrame(frame);
+      if (!reducedMotion) requestAnimationFrame(frame);
     }
 
     addEventListener('resize', () => {
       if (!resizeQueued) {
         resizeQueued = true;
-        requestAnimationFrame(resize);
+        requestAnimationFrame((now) => {
+          resize();
+          if (reducedMotion) frame(now);
+        });
       }
     }, { passive: true });
 

@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useIdleDetection } from '@/lib/hooks/useIdleDetection';
 import type { WidgetConfig } from '@/lib/hooks/useLayouts';
 import { WIDGET_REGISTRY } from '@/components/widgets/widgetRegistry';
@@ -15,7 +15,9 @@ import { NightSky } from './NightSky';
 import {
   isExpectedNightSkyFrameUrl,
   isExpectedNightSkyResponse,
+  nightSkyFrameEvents,
   NIGHT_SKY_IDLE_SECONDS,
+  NIGHT_SKY_MESSAGE_TYPE,
 } from './nightSkyUtils';
 
 /**
@@ -49,7 +51,20 @@ export function Screensaver() {
   const [staticNightSkyAvailable, setStaticNightSkyAvailable] = useState<boolean | null>(null);
   const [staticNightSkyListenerReady, setStaticNightSkyListenerReady] = useState(false);
   const frameLoadTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const nightSkyFrame = useRef<HTMLIFrameElement>(null);
   const staticNightSkyLoaded = useRef(false);
+  const nightSkyDomains = useMemo(() => new Set(['calendar']), []);
+  const nightSkyData = useDashboardData(nightSkyDomains);
+  const frameEvents = useMemo(
+    () => nightSkyFrameEvents(nightSkyData.calendar.events, new Date()),
+    [nightSkyData.calendar.events]
+  );
+  const publishNightSkyData = useCallback(() => {
+    nightSkyFrame.current?.contentWindow?.postMessage(
+      { type: NIGHT_SKY_MESSAGE_TYPE, events: frameEvents },
+      window.location.origin
+    );
+  }, [frameEvents]);
 
   useEffect(() => {
     document.documentElement.dataset.kystScreensaver = isIdle ? 'active' : 'inactive';
@@ -142,10 +157,12 @@ export function Screensaver() {
     staticNightSkyLoaded.current = true;
     if (frameLoadTimeout.current) clearTimeout(frameLoadTimeout.current);
     frameLoadTimeout.current = null;
+    publishNightSkyData();
   };
 
-  const nightSkyDomains = useMemo(() => new Set(['calendar']), []);
-  const nightSkyData = useDashboardData(nightSkyDomains);
+  useEffect(() => {
+    if (staticNightSkyLoaded.current) publishNightSkyData();
+  }, [publishNightSkyData]);
 
   // Intentional: idle activates the screensaver at any hour. Night/day only
   // selects the palette inside NightSky; it is not an activation gate.
@@ -159,6 +176,7 @@ export function Screensaver() {
     >
       {staticNightSkyAvailable && staticNightSkyListenerReady ? (
         <iframe
+          ref={nightSkyFrame}
           src="/screensaver/nightsky.html"
           title="KYST Night Sky screensaver"
           className="pointer-events-none h-full w-full border-0"
