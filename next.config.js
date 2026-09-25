@@ -16,6 +16,10 @@ const withPWA = require('next-pwa')({
   // kiosk that data outlived the session. Static assets are still handled by
   // next-pwa's precache; dynamic API data is intentionally never cached.
   runtimeCaching: [],
+  // Every public/ file is precached by default, past workbox's size cap. The
+  // kiosk wall's hologram (public/avatar/, a 16.6 MB GLB plus three.js) must
+  // not ride into every phone's service worker; the wall fetches it on demand.
+  publicExcludes: ['!noprecache/**/*', '!avatar/**/*'],
 });
 
 /** @type {import('next').NextConfig} */
