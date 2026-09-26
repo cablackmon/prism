@@ -85,62 +85,8 @@
      1.55899,
      -0.03
     ]
-   }
-  },
-  "C": {
-   "name": "three_quarter",
-   "blender_object": "LOOK01_ThreeQuarter_Bust",
-   "lens_mm": 85.0,
-   "sensor_width_mm": 36.0,
-   "sensor_height_mm": 24.0,
-   "sensor_fit": "AUTO",
-   "shift_x": 0.0,
-   "shift_y": 0.0,
-   "fov_x_deg": 23.9132,
-   "fov_y_deg": 16.0714,
-   "clip": [
-    0.1,
-    1000.0
-   ],
-   "resolution": [
-    1080,
-    1080
-   ],
-   "blender_zup": {
-    "position": [
-     0.64879,
-     -0.94561,
-     1.575
-    ],
-    "target": [
-     0.3536,
-     -0.56778,
-     1.55902
-    ],
-    "rotation_euler_xyz_deg": [
-     88.0909,
-     -0.0,
-     38.0
-    ]
    },
-   "three_yup": {
-    "position": [
-     0.64879,
-     1.575,
-     0.94561
-    ],
-    "quaternion_xyzw": [
-     -0.015752,
-     0.325523,
-     0.005424,
-     0.945387
-    ],
-    "target": [
-     0.3536,
-     1.55902,
-     0.56778
-    ]
-   }
+   "board_note": "NOX-11814 (Cameron 2026-09-25 on the live wall: \"Zoom in a little bit because her arms look like they're cut off. Try to get just a shoulder-up view.\"): the board keeps this camera's angle and lens, dollies it 0.13 m in along its view axis and shifts the lens to -0.04 (holo-avatar.js CLOSEUP_SHOULDERS_PUSH_IN_M / CLOSEUP_SHOULDERS_SHIFT_Y), so the frame runs from headroom above the hair to the sleeve caps, with no arms in frame. The values above are the Blender camera as exported and are unchanged."
   },
   "D": {
    "name": "full_body_bust",
@@ -5844,6 +5790,17 @@
    "reason": "no target in the GLB: these keys exist only on the render-hidden NX18_Candidate_Smile_Skin, whose effect reaches the rendered face through the Strict Regions chain and is baked into the NX19 / face morphs. They were listed with objects [] and max_delta_mm 0.0 before fix pass 2.",
    "warm_beat_smile": "NX19_Smile_Warm (6.588 mm, with NX19_Warm_Corner_Fairing) on LK16_Rendered_TwoRegion_Skin",
    "removed": "NOX-11771 fix pass 2, 2026-09-24"
+  },
+  "cameras": {
+   "names": [
+    "C"
+   ],
+   "C": {
+    "name": "three_quarter",
+    "blender_object": "LOOK01_ThreeQuarter_Bust"
+   },
+   "reason": "NOX-11814 (Cameron 2026-09-24: \"Three-quarter view is from the side, so that's not good\"): C sits 38 deg off the face axis but her gaze stays on A's axis, so from C she looks past the viewer and the face reads as a side view. Ask NOX only ever frames A (the device URL sets no avatarCam), so the preset is removed rather than re-aimed; ?avatarCam=C now falls back to A.",
+   "removed": "NOX-11814, 2026-09-25"
   }
  },
  "runtime_conventions": {
