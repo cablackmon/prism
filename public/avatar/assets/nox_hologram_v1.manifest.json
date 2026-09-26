@@ -86,7 +86,7 @@
      -0.03
     ]
    },
-   "board_note": "NOX-11814 (Cameron 2026-09-24: the close-up is a little too close; keep the angle, pull back to a bust): the board keeps this camera's angle and lens, dollies it 0.25 m back along its view axis and shifts the lens to -0.14 (holo-avatar.js CLOSEUP_BUST_PULLBACK_M / CLOSEUP_BUST_SHIFT_Y), so the frame runs from just above the hair to mid-chest (world y 1.20). The values above are the Blender camera as exported and are unchanged."
+   "board_note": "NOX-11814 (Cameron 2026-09-25 on the live wall: \"Zoom in a little bit because her arms look like they're cut off. Try to get just a shoulder-up view.\"): the board keeps this camera's angle and lens, dollies it 0.13 m in along its view axis and shifts the lens to -0.04 (holo-avatar.js CLOSEUP_SHOULDERS_PUSH_IN_M / CLOSEUP_SHOULDERS_SHIFT_Y), so the frame runs from headroom above the hair to the sleeve caps, with no arms in frame. The values above are the Blender camera as exported and are unchanged."
   },
   "D": {
    "name": "full_body_bust",
