@@ -19,6 +19,16 @@ const ASSETS = {
   draco: "/avatar/vendor/three/draco/",
 };
 
+// NOX-11814, Cameron 2026-09-24: "The close-up view is a little too close. ... that angle is pretty good. Just make
+// it a little further back so it just gives her bust: head and basically half of her chest, her shoulders, whatever
+// the normal thing is for a bust." Framing A keeps its angle and lens and moves straight back along its view axis by
+// this many metres. Pulling back alone keeps the frame centred near the eye line and piles the extra height into
+// headroom, so the lens shift (a fraction of the frame width, Blender's convention; the manifest's A is -0.09) moves
+// the window down without turning the camera. The frame then runs from a little headroom above the hair to mid-chest
+// (world y 1.20, where the particle targets already stop), with the eyes near the upper third.
+const CLOSEUP_BUST_PULLBACK_M = 0.25;
+const CLOSEUP_BUST_SHIFT_Y = -0.14;
+
 /* ------------------------------------------------------------------ hologram material (viewer, unchanged) */
 const HOLO_VERT = `
 varying vec3 vWorld; varying vec3 vNormalW; varying vec2 vUv;
@@ -340,7 +350,9 @@ export async function createHoloRenderer({ container, cameraKey = "A", reducedMo
   const speech = Core.createSpeech({ jawMax: guard.cap("Jaw") });
   const transition = Core.createTransition({ reducedMotion });
   const level = manifest.shader.level ?? 0.6;
-  const cam = manifest.cameras[cameraKey] || manifest.cameras.A;
+  // an unknown or removed framing (C, NOX-11814) is the close-up
+  const camKey = manifest.cameras[cameraKey] ? cameraKey : "A";
+  const cam = manifest.cameras[camKey];
 
   const scene = new THREE.Scene();
   const fxScene = new THREE.Scene();
@@ -438,6 +450,8 @@ export async function createHoloRenderer({ container, cameraKey = "A", reducedMo
      and shrinks only when there is no room beside the panel at all. */
   let viewW = 1, viewH = 1, frameW = 1, frameH = 1, frameCx = 0;
   const stillAspect = cam.resolution[0] / cam.resolution[1];
+  const closeup = cam.name === "closeup";
+  const shiftY = closeup ? CLOSEUP_BUST_SHIFT_Y : cam.shift_y;
   function frameCamera() {
     viewW = Math.max(1, container.clientWidth || innerWidth);
     viewH = Math.max(1, container.clientHeight || innerHeight);
@@ -453,6 +467,7 @@ export async function createHoloRenderer({ container, cameraKey = "A", reducedMo
     }
     camera.position.fromArray(cam.three_yup.position);
     camera.quaternion.fromArray(cam.three_yup.quaternion_xyzw);
+    if (closeup) camera.translateZ(CLOSEUP_BUST_PULLBACK_M);
     // Blender fits the sensor horizontally: match the horizontal fov across the still's frame
     const fovx = THREE.MathUtils.degToRad(cam.fov_x_deg);
     camera.fov = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(fovx / 2) / stillAspect));
@@ -462,7 +477,7 @@ export async function createHoloRenderer({ container, cameraKey = "A", reducedMo
     // the still is a centred window of a larger virtual frame; the lens shift is a fraction of the frame width
     camera.setViewOffset(frameW, frameH,
       -(frameCx - frameW / 2) + frameW * cam.shift_x,
-      -(viewH - frameH) / 2 - frameW * cam.shift_y,
+      -(viewH - frameH) / 2 - frameW * shiftY,
       viewW, viewH);
     camera.updateProjectionMatrix();
     camera.updateMatrixWorld(true);
@@ -652,7 +667,7 @@ export async function createHoloRenderer({ container, cameraKey = "A", reducedMo
         }
       }
       return {
-        phase: transition.phase, state: avatarState, running, frames, camera: cameraKey,
+        phase: transition.phase, state: avatarState, running, frames, camera: camKey,
         focus: +lastFrame.focus.toFixed(4), reveal: +lastFrame.reveal.toFixed(4),
         held,
         headYawDeg: held ? 0 : +(lastPose.yaw * 0.55).toFixed(2), headPitchDeg: held ? 0 : +(lastPose.pitch * 0.55).toFixed(2),
