@@ -162,7 +162,8 @@
    "window": null,
    "source_frame": 651,
    "note": "both lids closed, frame 651",
-   "runtime_driven": true
+   "runtime_driven": true,
+   "cap_note": "NOX-11841: cap stays 1.0. At full close the upper-lid liner tail folds into a small wing at the outer corners (the Phase 1 2.7 mm bake miss); it is there from 0.9 up, and any cap below 1.0 leaves a dark pupil sliver between the lids, which reads worse. Fully closed lasts 120 ms per blink"
   },
   {
    "name": "Jaw",
@@ -508,8 +509,9 @@
      "target": 0.99985
     }
    },
-   "runtime_driven": false,
-   "note": "value 1.0 equals the maximum the shipped performance reached"
+   "runtime_driven": true,
+   "note": "value 1.0 equals the maximum the shipped performance reached",
+   "runtime_note": "NOX-11841: speaking, a 0.4 beat at each sentence start; the warm smile, not a joy key (smile_rule caps untouched). Above ~0.45 it narrows the speaking mouth"
   },
   {
    "name": "NX19_Warm_Corner_Fairing",
@@ -536,8 +538,9 @@
      "target": 0.99985
     }
    },
-   "runtime_driven": false,
-   "note": "value 1.0 equals the maximum the shipped performance reached"
+   "runtime_driven": true,
+   "note": "value 1.0 equals the maximum the shipped performance reached",
+   "runtime_note": "NOX-11841: rides with NX19_Smile_Warm at the same weight"
   },
   {
    "name": "NX5_Performance_Brow_Asymmetric",
@@ -814,8 +817,9 @@
      "target": 0.47995
     }
    },
-   "runtime_driven": false,
-   "note": "value 1.0 equals the maximum the shipped performance reached"
+   "runtime_driven": true,
+   "note": "value 1.0 equals the maximum the shipped performance reached",
+   "runtime_note": "NOX-11841: thinking, 0.3, breathing down to 70%"
   },
   {
    "name": "NX5_Performance_Brow_Furrow",
@@ -953,8 +957,9 @@
      "target": 0.26543
     }
    },
-   "runtime_driven": false,
-   "note": "value 1.0 equals the maximum the shipped performance reached"
+   "runtime_driven": true,
+   "note": "value 1.0 equals the maximum the shipped performance reached",
+   "runtime_note": "NOX-11841: thinking, 0.4, breathing down to 70%"
   },
   {
    "name": "NX5_Performance_Brow_Surprise",
@@ -1092,8 +1097,9 @@
      "target": 0.64732
     }
    },
-   "runtime_driven": false,
-   "note": "value 1.0 equals the maximum the shipped performance reached"
+   "runtime_driven": true,
+   "note": "value 1.0 equals the maximum the shipped performance reached",
+   "runtime_note": "NOX-11841: listening, 0.4 (attentive)"
   },
   {
    "name": "NX5_Performance_Cheek_Lift",
@@ -5399,8 +5405,8 @@
   ],
   "speech_nod_deg": 2,
   "blink_interval_s": [
-   3,
-   7
+   2.5,
+   6
   ],
   "tunable": true,
   "source": "Cameron 2026-09-22 23:30 CDT: less body movement, head and neck must move",
@@ -5426,15 +5432,23 @@
    "speech": [
     "Jaw morph",
     "Press morph"
+   ],
+   "expression": [
+    "NX5_Performance_Brow_Surprise",
+    "NX5_Performance_Brow_Furrow",
+    "NX5_Performance_Brow_Concern",
+    "NX19_Smile_Warm",
+    "NX19_Warm_Corner_Fairing"
    ]
-  }
+  },
+  "blink_note": "NOX-11841 (Cameron 2026-09-25: she does not blink): 2.5-6 s in every state, lids eased shut, ~120 ms closed, one in eight a double; avatar.js BLINK_SHAPE"
  },
  "states": {
-  "idle": "head and neck idle yaw/pitch, slight spine sway, blink on the 3-7 s timer, mouth closed",
-  "listening": "idle plus a small forward head pitch and a slower, wider idle yaw (attentive)",
-  "thinking": "idle with the head held slightly off-axis and blink interval shortened",
-  "speaking": "Jaw and Press driven from the TTS audio analyser, speech nod on the head, idle sway continues, smile caps enforced",
-  "dissolve_out": "raise Fade Z0 and Z1 together until the figure is gone, then hide"
+  "idle": "head and neck idle yaw/pitch, slight spine sway, blink every 2.5-6 s, mouth closed, brows neutral",
+  "listening": "idle plus a small forward head pitch and a slower, wider idle yaw, and a slight Brow_Surprise lift (attentive)",
+  "thinking": "idle with the head held slightly off-axis and a low Brow_Furrow + Brow_Concern that breathes slowly",
+  "speaking": "Jaw and Press driven from the TTS audio analyser, speech nod on the head, idle sway continues, brows relaxed, an NX19_Smile_Warm beat at each sentence start, smile caps enforced",
+  "dissolve_out": "the face eases to neutral; raise Fade Z0 and Z1 together until the figure is gone, then hide"
  },
  "geometry": {
   "total_vertices": 468968,
