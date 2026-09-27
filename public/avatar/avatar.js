@@ -160,32 +160,104 @@
     };
   }
 
-  // The v2.3 blink shape as the viewer ported it: shut fast, open slower, on
-  // the manifest's interval. Thinking shortens the interval (manifest states).
-  const BLINK_SHAPE = { close: 0.07, hold: 0.045, open: 0.11 };
-  const THINKING_BLINK_SCALE = 0.6;
+  // NOX-11841, Cameron 2026-09-25 on the live wall: "She does not blink." The
+  // v2.3 blink was a 45 ms linear close. Here the lids ease shut, stay shut
+  // for about 120 ms and ease open a little slower, on the manifest's 2.5-6 s
+  // interval in every state; one blink in eight is a double. The value is a
+  // fraction of the renderer's Blink cap.
+  const BLINK_SHAPE = Object.freeze({ close: 0.07, hold: 0.12, open: 0.14, doubleGap: 0.12, doubleEvery: 8 });
 
   function createBlink(motion, random = Math.random) {
-    let next = 2;
+    const [lo, hi] = motion.blink_interval_s;
+    const interval = () => lo + random() * (hi - lo);
+    const { close, hold, open, doubleGap, doubleEvery } = BLINK_SHAPE;
+    let wait = interval();
     let t = -1;
+    let queued = 0;
     return {
-      step(state, dt, force = false) {
+      step(dt) {
+        dt = Math.max(0, dt);
         if (t < 0) {
-          next -= dt;
-          if (next > 0 && !force) return 0;
+          wait -= dt;
+          if (wait > 0) return 0;
           t = 0;
-          const scale = state === "thinking" ? THINKING_BLINK_SCALE : 1;
-          const [lo, hi] = motion.blink_interval_s;
-          next = (lo + random() * (hi - lo)) * scale;
+          // the second of a double is never itself doubled
+          if (queued > 0) queued -= 1; else queued = random() < 1 / doubleEvery ? 1 : 0;
           return 0;
         }
         t += dt;
-        const { close, hold, open } = BLINK_SHAPE;
-        if (t < close) return t / close;
+        if (t < close) return smooth(0, close, t);
         if (t < close + hold) return 1;
-        if (t < close + hold + open) return 1 - (t - close - hold) / open;
+        if (t < close + hold + open) return 1 - smooth(0, open, t - close - hold);
         t = -1;
+        wait = queued > 0 ? doubleGap : interval();
         return 0;
+      },
+    };
+  }
+
+  // NOX-11841 expressions bound to the voice state: "There are no facial
+  // expressions." Listening lifts the brows a little (attentive); thinking
+  // knits them, breathing slowly; speaking relaxes them and gives a warm smile
+  // beat at each sentence start; idle, unavailable and the exit are neutral.
+  // Weights are fractions of each morph's baked frame, and the smile guard
+  // clamps them again on write. Every target reaches the face through two
+  // cascaded lags, an S-shaped ease that settles in about half a second.
+  const EXPRESSION = Object.freeze({
+    listening: Object.freeze({ NX5_Performance_Brow_Surprise: 0.4 }),
+    thinking: Object.freeze({ NX5_Performance_Brow_Furrow: 0.4, NX5_Performance_Brow_Concern: 0.3 }),
+    smile: Object.freeze({ NX19_Smile_Warm: 0.4, NX19_Warm_Corner_Fairing: 0.4 }),
+  });
+  const FACE = Object.freeze({
+    easeSeconds: 0.12,    // per lag: 95% of a step in about 0.57 s
+    breathePeriodS: 4.5,  // thinking brows swell and ease on this slow cycle
+    breatheDepth: 0.3,    // down to 70% of the thinking target, never above it
+    sentenceGapS: 0.35,   // this long without voice, and the next voiced frame starts a sentence
+    beatSeconds: 0.9,     // the smile target holds this long, then eases back out
+    beatSpacingS: 2.5,    // a string of short sentences smiles at most this often
+  });
+  const EXPRESSION_KEYS = Object.freeze([...new Set([
+    ...Object.keys(EXPRESSION.listening), ...Object.keys(EXPRESSION.thinking), ...Object.keys(EXPRESSION.smile),
+  ])]);
+
+  function createExpression() {
+    const lag1 = Object.fromEntries(EXPRESSION_KEYS.map((key) => [key, 0]));
+    const face = { ...lag1 };
+    let breathe = 0;
+    let quiet = Infinity;
+    let beat = -1;
+    let sinceBeat = Infinity;
+    let lastState = null;
+    return {
+      step(state, dt, { levelDb = -Infinity, neutral = false } = {}) {
+        dt = Math.max(0, dt);
+        breathe += dt;
+        sinceBeat += dt;
+        // entering speaking, the first voiced frame is a sentence start
+        if (state !== lastState && state === "speaking") quiet = Infinity;
+        lastState = state;
+        const voiced = levelDb > SPEECH.gateDb;
+        // the analyser only carries answer audio. After an autoplay rejection the wall's tap-to-play retry plays
+        // the answer while the voice state is still "ready" (idle), and that answer smiles too.
+        const answering = state === "speaking" || state === "idle";
+        if (answering && voiced && quiet >= FACE.sentenceGapS && sinceBeat >= FACE.beatSpacingS) {
+          beat = 0;
+          sinceBeat = 0;
+        }
+        quiet = voiced ? 0 : quiet + dt;
+        if (beat >= 0) beat = beat + dt < FACE.beatSeconds && answering ? beat + dt : -1;
+        const target = neutral ? {} :
+          state === "listening" ? EXPRESSION.listening :
+          state === "thinking" ? EXPRESSION.thinking :
+          answering && beat >= 0 ? EXPRESSION.smile : {};
+        const swell = state === "thinking"
+          ? 1 - FACE.breatheDepth * (0.5 - 0.5 * Math.cos(2 * Math.PI * breathe / FACE.breathePeriodS)) : 1;
+        const k = 1 - Math.exp(-dt / FACE.easeSeconds);
+        for (const key of EXPRESSION_KEYS) {
+          lag1[key] += ((target[key] || 0) * swell - lag1[key]) * k;
+          face[key] += (lag1[key] - face[key]) * k;
+        }
+        return face;
       },
     };
   }
@@ -435,6 +507,9 @@
     AVATAR_STATE_FOR_VOICE,
     TRANSITION,
     SPEECH,
+    BLINK_SHAPE,
+    EXPRESSION,
+    FACE,
     MAX_DRIVEN_CAP,
     IDLE_DISMISS_MS,
     resolveAvatarMode,
@@ -443,6 +518,7 @@
     createMorphGuard,
     createMotion,
     createBlink,
+    createExpression,
     createSpeech,
     createTransition,
     createAvatarController,

@@ -345,6 +345,8 @@ export async function createHoloRenderer({ container, cameraKey = "A", reducedMo
   const guard = Core.createMorphGuard(manifest);
   const motion = Core.createMotion(manifest.motion);
   const blink = Core.createBlink(manifest.motion);
+  const blinkCap = guard.cap("Blink");
+  const expression = Core.createExpression();
   const speech = Core.createSpeech({ jawMax: guard.cap("Jaw") });
   const transition = Core.createTransition({ reducedMotion });
   const level = manifest.shader.level ?? 0.6;
@@ -540,6 +542,8 @@ export async function createHoloRenderer({ container, cameraKey = "A", reducedMo
   let avatarState = "idle";
   // proofs only: hold the bind pose (no idle, no blink) so a frame compares with the accepted stills
   let held = false;
+  // proofs only: fixed morph weights instead of the drive (still clamped by the guard)
+  let posed = null;
   let analyser = null;
   let wave = null;
   let levelScale = 1;
@@ -549,6 +553,7 @@ export async function createHoloRenderer({ container, cameraKey = "A", reducedMo
   let frames = 0;
   let lastPose = { yaw: 0, pitch: 0, sway: 0 };
   let lastMouth = { jaw: 0, press: 0, open: 0, levelDb: -Infinity, blink: 0 };
+  let lastFace = {};
   let lastFrame = { phase: "hidden", focus: 0, reveal: 0 };
   const euler = new THREE.Euler();
   const q = new THREE.Quaternion();
@@ -582,8 +587,12 @@ export async function createHoloRenderer({ container, cameraKey = "A", reducedMo
     const mouth = speech.step(analyser ? wave : null, dt);
     const pose = motion.step(avatarState, now, dt, mouth.jaw);
     for (const [bone, angles] of Object.entries(pose.bones)) rotBone(bone, held ? [0, 0, 0] : angles);
-    const blinkValue = held ? 0 : blink.step(avatarState, dt);
-    writeMorphs({ Jaw: mouth.jaw, Press: mouth.press, Blink: blinkValue });
+    const blinkValue = held ? 0 : blink.step(dt) * blinkCap;
+    // the exit dissolves a neutral face whatever the voice state was
+    const face = held ? {} : expression.step(avatarState, dt, { levelDb: mouth.levelDb, neutral: frame.phase === "exiting" || frame.phase === "hidden" });
+    writeMorphs(posed || { ...face, Jaw: mouth.jaw, Press: mouth.press, Blink: blinkValue });
+    // posed, readState reports the weights that were written, not the drive's
+    const { Jaw: posedJaw = 0, Press: posedPress = 0, Blink: posedBlink = 0, ...posedFace } = posed || {};
 
     // unavailable reads as a dimmer figure, eased
     levelScale += ((avatarState === "unavailable" ? 0.7 : 1) - levelScale) * (1 - Math.exp(-dt / 0.4));
@@ -610,7 +619,8 @@ export async function createHoloRenderer({ container, cameraKey = "A", reducedMo
     composer.render(dt);
     frames += 1;
     lastPose = pose;
-    lastMouth = { ...mouth, blink: blinkValue };
+    lastMouth = posed ? { ...mouth, jaw: +posedJaw || 0, press: +posedPress || 0, blink: +posedBlink || 0 } : { ...mouth, blink: blinkValue };
+    lastFace = posed ? posedFace : face;
     lastFrame = frame;
     if (frame.phase === "hidden") {
       running = false;
@@ -652,6 +662,7 @@ export async function createHoloRenderer({ container, cameraKey = "A", reducedMo
     },
     setState(state) { avatarState = state; },
     holdPose(value) { held = Boolean(value); },
+    poseMorphs(values) { posed = values ? { ...values } : null; },
     setSpeechAnalyser(node) {
       analyser = node;
       wave = node ? new Float32Array(node.fftSize) : null;
@@ -671,6 +682,9 @@ export async function createHoloRenderer({ container, cameraKey = "A", reducedMo
         headYawDeg: held ? 0 : +(lastPose.yaw * 0.55).toFixed(2), headPitchDeg: held ? 0 : +(lastPose.pitch * 0.55).toFixed(2),
         bodySwayDeg: held ? 0 : +lastPose.sway.toFixed(2),
         jaw: +lastMouth.jaw.toFixed(3), press: +lastMouth.press.toFixed(3), blink: +lastMouth.blink.toFixed(3),
+        // NOX-11841: the expression weights written this frame (before the guard's clamp)
+        face: Object.fromEntries(Object.entries(lastFace).map(([name, value]) => [name, +(+value || 0).toFixed(3)])),
+        posed: Boolean(posed),
         // the envelope behind jaw and press: frame RMS in dBFS (null when silent) and its 0..1 openness
         levelDb: Number.isFinite(lastMouth.levelDb) ? +lastMouth.levelDb.toFixed(1) : null, open: +lastMouth.open.toFixed(3),
         speechAttached: Boolean(analyser), nonZeroMorphs: nonZero,

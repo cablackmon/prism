@@ -42,7 +42,10 @@ test("all five wall voice states bind to an avatar state, and Done is not one of
 
 test("the smile guard lets only the manifest's driven morphs move, within their caps", () => {
   const guard = Avatar.createMorphGuard(manifest);
-  assert.deepEqual([...guard.driven].sort(), ["Blink", "Jaw", "Press"]);
+  assert.deepEqual([...guard.driven].sort(), [
+    "Blink", "Jaw", "NX19_Smile_Warm", "NX19_Warm_Corner_Fairing",
+    "NX5_Performance_Brow_Concern", "NX5_Performance_Brow_Furrow", "NX5_Performance_Brow_Surprise", "Press",
+  ]);
   const smileKeys = [
     ...Object.keys(manifest.smile_rule.clamp06_global_caps),
     ...Object.keys(manifest.smile_rule.clamp06_window_caps),
@@ -125,22 +128,194 @@ test("speech nods the head only while the jaw is open", () => {
   assert.ok(range(talking) > range(quiet));
 });
 
-test("blinks land on the manifest interval, and thinking blinks more often", () => {
-  const blinks = (state) => {
-    const blink = Avatar.createBlink(manifest.motion, () => 0.5);
-    let count = 0;
-    let wasOpen = true;
-    for (let t = 0; t < 120; t += 1 / 60) {
-      const v = blink.step(state, 1 / 60);
-      if (v >= 1 && wasOpen) count += 1;
-      wasOpen = v < 1;
+// A blink's frames at 60 fps: onsets, frames fully shut, and the gaps between blinks in seconds.
+function runBlink(random, seconds, dt = 1 / 60) {
+  const blink = Avatar.createBlink(manifest.motion, random);
+  const values = [];
+  for (let t = 0; t < seconds; t += dt) values.push(blink.step(dt));
+  const onsets = [];
+  const ends = [];
+  values.forEach((v, i) => {
+    if (v > 0 && !(values[i - 1] > 0)) onsets.push(i);
+    if (v === 0 && values[i - 1] > 0) ends.push(i);
+  });
+  const gaps = onsets.slice(1).map((onset, i) => (onset - ends[i]) * dt);
+  return { values, onsets, ends, gaps };
+}
+
+test("she blinks every 2.5-6 s whatever the state, eased shut, shut for about 120 ms (NOX-11841)", () => {
+  assert.deepEqual(manifest.motion.blink_interval_s, [2.5, 6]);
+  const { values, onsets, gaps } = runBlink(() => 0.5, 120);
+  // 0.5 draws 4.25 s every time and never a double
+  for (const gap of gaps) assert.ok(Math.abs(gap - 4.25) < 0.05, `gap ${gap}`);
+  assert.ok(onsets.length >= 25 && onsets.length <= 27, `${onsets.length} blinks in 120 s`);
+  for (const onset of onsets.slice(0, 4)) {
+    const blink = values.slice(onset, onset + 40);
+    const shut = blink.filter((v) => v === 1).length;
+    assert.ok(shut >= 6 && shut <= 8, `shut for ${shut} frames`);
+    // eased, not snapped: the first frame is barely closed, and the lids only close then open
+    assert.ok(blink[0] < 0.2, `first frame ${blink[0]}`);
+    const peak = blink.indexOf(1);
+    for (let i = 1; i < blink.length; i += 1) {
+      if (i <= peak) assert.ok(blink[i] >= blink[i - 1]); else assert.ok(blink[i] <= blink[i - 1]);
     }
-    return count;
-  };
-  const [lo, hi] = manifest.motion.blink_interval_s;
-  const idle = blinks("idle");
-  assert.ok(idle >= Math.floor(118 / hi) && idle <= Math.ceil(120 / lo), `idle blinked ${idle} times in 120 s`);
-  assert.ok(blinks("thinking") > idle);
+    const open = blink.findIndex((v, i) => i > peak && v === 0);
+    assert.ok(open * (1 / 60) >= 0.3 && open * (1 / 60) <= 0.36, `blink lasted ${open} frames`);
+  }
+  // the interval spans the manifest's range: draws alternate interval, double roll (0.9 = no double), interval...
+  const alternating = (interval) => { let i = 0; return () => (i++ % 2 === 0 ? interval : 0.9); };
+  assert.ok(runBlink(alternating(0), 40).gaps.every((gap) => Math.abs(gap - 2.5) < 0.05));
+  assert.ok(runBlink(alternating(0.9999), 40).gaps.every((gap) => Math.abs(gap - 6) < 0.05));
+  // a ragged frame clock (the Acer at 27 fps) still closes all the way
+  const slow = runBlink(() => 0.5, 30, 1 / 27);
+  assert.ok(slow.onsets.length >= 5 && Math.max(...slow.values) === 1);
+});
+
+test("one blink in eight is a double, and the second of a double is never doubled", () => {
+  // every roll a double: pairs 0.12 s apart, then the interval
+  const always = runBlink(() => 0, 30);
+  assert.ok(always.gaps.length >= 8);
+  always.gaps.forEach((gap, i) => {
+    const want = i % 2 === 0 ? Avatar.BLINK_SHAPE.doubleGap : manifest.motion.blink_interval_s[0];
+    // the onset frame itself still reads 0, so a measured gap runs up to two frames long
+    assert.ok(gap >= want && gap < want + 0.04, `gap ${i} = ${gap}, want ${want}`);
+  });
+  // a seeded stream: about one blink group in eight is a double
+  let seed = 11841;
+  const random = () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 2 ** 32);
+  const { gaps } = runBlink(random, 4000);
+  const doubles = gaps.filter((gap) => gap < 0.5).length;
+  const groups = gaps.length + 1 - doubles;
+  assert.ok(doubles / groups > 0.08 && doubles / groups < 0.17, `${doubles} doubles in ${groups} groups`);
+});
+
+// Expression weights at 60 fps for a list of [state, seconds, voiced?] steps.
+function runFace(steps, { dt = 1 / 60, face = Avatar.createExpression() } = {}) {
+  const out = [];
+  for (const [state, seconds, voiced = false, neutral = false] of steps) {
+    for (let t = 0; t < seconds - 1e-9; t += dt) {
+      const v = typeof voiced === "function" ? voiced(t) : voiced;
+      out.push({ state, t, ...face.step(state, dt, { levelDb: v ? -20 : -Infinity, neutral }) });
+    }
+  }
+  return out;
+}
+const BROWS = ["NX5_Performance_Brow_Surprise", "NX5_Performance_Brow_Furrow", "NX5_Performance_Brow_Concern"];
+const SMILE = ["NX19_Smile_Warm", "NX19_Warm_Corner_Fairing"];
+
+test("listening lifts the brows, thinking knits them and breathes, idle and unavailable are neutral (NOX-11841)", () => {
+  const settled = (state) => runFace([[state, 8]]).slice(-270);
+  const listening = settled("listening");
+  for (const f of listening) {
+    assert.ok(Math.abs(f.NX5_Performance_Brow_Surprise - 0.4) < 0.01);
+    for (const key of [...SMILE, "NX5_Performance_Brow_Furrow", "NX5_Performance_Brow_Concern"]) assert.ok(f[key] < 1e-3, `${key} ${f[key]}`);
+  }
+  const thinking = settled("thinking");
+  const furrow = thinking.map((f) => f.NX5_Performance_Brow_Furrow);
+  assert.ok(Math.max(...furrow) <= 0.4 + 1e-9 && Math.min(...furrow) >= 0.4 * 0.7 - 0.01, `furrow ${Math.min(...furrow)}..${Math.max(...furrow)}`);
+  assert.ok(Math.max(...furrow) - Math.min(...furrow) > 0.08, "thinking brows do not breathe");
+  assert.ok(Math.max(...thinking.map((f) => f.NX5_Performance_Brow_Concern)) > 0.25);
+  assert.ok(thinking.every((f) => f.NX5_Performance_Brow_Surprise < 1e-3 && f.NX19_Smile_Warm < 1e-3));
+  for (const state of ["idle", "unavailable"]) {
+    for (const f of runFace([["listening", 3], [state, 3]]).slice(-10)) for (const key of [...BROWS, ...SMILE]) assert.ok(f[key] < 1e-3, `${state} ${key} ${f[key]}`);
+  }
+});
+
+test("expressions ease in and out over 300-600 ms instead of snapping", () => {
+  const key = "NX5_Performance_Brow_Surprise";
+  for (const [from, to] of [["idle", "listening"], ["listening", "idle"], ["listening", "speaking"]]) {
+    const out = runFace([[from, 4], [to, 2]]).slice(240);
+    const start = runFace([[from, 4]]).at(-1)[key];
+    const end = out.at(-1)[key];
+    const reached = (share) => (out.findIndex((f) => Math.abs(f[key] - start) >= share * Math.abs(end - start)) + 1) / 60;
+    assert.ok(Math.abs(out[0][key] - start) < 0.05 * Math.abs(end - start), `${from}->${to}: the first frame moved ${out[0][key] - start} (a snap)`);
+    assert.ok(reached(0.95) >= 0.3 && reached(0.95) <= 0.6, `${from}->${to}: 95% after ${reached(0.95)} s`);
+  }
+  // thinking eases in the same way
+  const thinking = runFace([["idle", 2], ["thinking", 1]]).slice(120).map((f) => f.NX5_Performance_Brow_Furrow);
+  assert.ok(thinking[0] < 0.02 && thinking[35] > 0.25, `thinking furrow ${thinking[0]} then ${thinking[35]} at 0.6 s`);
+});
+
+test("speaking relaxes the brows and smiles warmly at each sentence start, not at every word", () => {
+  // a sentence, a 0.5 s pause, three more seconds of words with 0.2 s gaps, then a 0.5 s pause and a last sentence
+  const words = (t) => (t % 0.6) < 0.4;
+  const out = runFace([["thinking", 3], ["speaking", 2.2, words], ["speaking", 0.5], ["speaking", 3, words], ["speaking", 0.5], ["speaking", 2, words]]);
+  const speaking = out.filter((f) => f.state === "speaking");
+  const smile = speaking.map((f) => f.NX19_Smile_Warm);
+  let beats = 0;
+  smile.forEach((v, i) => { if (v > 0.2 && !(smile[i - 1] > 0.2)) beats += 1; });
+  assert.equal(beats, 3, "one beat per sentence start");
+  assert.ok(Math.max(...smile) > 0.35 && Math.max(...smile) <= 0.4 + 1e-9, `smile peaked at ${Math.max(...smile)}`);
+  for (const f of speaking) assert.equal(f.NX19_Warm_Corner_Fairing, f.NX19_Smile_Warm);
+  // the brows from thinking have relaxed a second in
+  for (const f of speaking.slice(60)) for (const key of BROWS) assert.ok(f[key] < 0.01, `${key} ${f[key]}`);
+  // and each beat eases back out to nothing between sentences
+  assert.ok(Math.min(...smile.slice(90, 150)) < 0.02, "the first beat never let go");
+  // short sentences back to back smile at most every beatSpacingS
+  const rapid = runFace([["speaking", 10, (t) => (t % 1) < 0.5]]).map((f) => f.NX19_Smile_Warm);
+  let rapidBeats = 0;
+  rapid.forEach((v, i) => { if (v > 0.2 && !(rapid[i - 1] > 0.2)) rapidBeats += 1; });
+  assert.ok(rapidBeats >= 3 && rapidBeats <= 4, `${rapidBeats} beats in 10 s of 1 s sentences`);
+  // one long sentence, 8 s of words with 0.2 s gaps and no pause: one beat, not one per spacing window
+  const long = runFace([["speaking", 8, words]]).map((f) => f.NX19_Smile_Warm);
+  let longBeats = 0;
+  long.forEach((v, i) => { if (v > 0.2 && !(long[i - 1] > 0.2)) longBeats += 1; });
+  assert.equal(longBeats, 1, "word gaps are not sentence starts");
+  // silence while speaking never smiles
+  assert.ok(runFace([["speaking", 4]]).every((f) => f.NX19_Smile_Warm === 0));
+  // an answer played by the tap-to-play retry after an autoplay rejection runs while the wall is "ready" (idle)
+  const retry = runFace([["thinking", 2], ["idle", 1], ["idle", 1.5, true]]).map((f) => f.NX19_Smile_Warm);
+  assert.ok(Math.max(...retry) > 0.3, `the retried answer peaked at ${Math.max(...retry)}`);
+  // but listening and thinking never smile, whatever the analyser carries
+  for (const state of ["listening", "thinking", "unavailable"]) {
+    assert.ok(runFace([[state, 3, (t) => (t % 1) < 0.5]]).every((f) => f.NX19_Smile_Warm === 0), `${state} smiled`);
+  }
+  // answer audio that lands a moment before the wall flips to speaking still opens on a smile
+  const early = runFace([["thinking", 2], ["thinking", 0.2, true], ["speaking", 1.5, true]]).map((f) => f.NX19_Smile_Warm);
+  assert.ok(Math.max(...early) > 0.3, `the first sentence after early audio peaked at ${Math.max(...early)}`);
+});
+
+test("the exit dissolves a neutral face, and no expression ever exceeds its target or the manifest cap", () => {
+  const out = runFace([["thinking", 3], ["thinking", 1.5, false, true]]);
+  for (const key of [...BROWS, ...SMILE]) assert.ok(out.at(-1)[key] < 0.005, `${key} ${out.at(-1)[key]} on the exit`);
+  const guard = Avatar.createMorphGuard(manifest);
+  const targets = { ...Avatar.EXPRESSION.listening, ...Avatar.EXPRESSION.thinking, ...Avatar.EXPRESSION.smile };
+  let seed = 7;
+  const random = () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 2 ** 32);
+  const states = ["idle", "listening", "thinking", "speaking", "unavailable"];
+  const steps = Array.from({ length: 200 }, () => [states[Math.floor(random() * 5)], 0.1 + random() * 1.5, () => random() < 0.6]);
+  for (const f of runFace(steps)) {
+    for (const [key, target] of Object.entries(targets)) {
+      assert.ok(f[key] >= 0 && f[key] <= target + 1e-9, `${key} ${f[key]} over ${target}`);
+      assert.ok(target <= guard.cap(key), `${key} target ${target} over the manifest cap ${guard.cap(key)}`);
+    }
+  }
+});
+
+test("every expression morph is driven by the manifest, is not a smile-rule key, and is in the GLB", () => {
+  const guard = Avatar.createMorphGuard(manifest);
+  const smileKeys = new Set([...Object.keys(manifest.smile_rule.clamp06_global_caps), ...Object.keys(manifest.smile_rule.clamp06_window_caps)]);
+  const glb = fs.readFileSync(path.join(__dirname, "../public/avatar/assets/nox_hologram_v1.glb"));
+  const gltf = JSON.parse(glb.subarray(20, 20 + glb.readUInt32LE(12)).toString("utf8"));
+  const inGlb = new Set(gltf.meshes.flatMap((mesh) => mesh.extras?.targetNames || []));
+  for (const key of ["Blink", ...BROWS, ...SMILE]) {
+    assert.ok(guard.driven.includes(key), `${key} not driven`);
+    assert.ok(!smileKeys.has(key), `${key} is a smile-rule key`);
+    assert.ok(inGlb.has(key), `${key} has no morph target in the GLB`);
+  }
+  assert.deepEqual(Object.keys(Avatar.EXPRESSION).sort(), ["listening", "smile", "thinking"]);
+});
+
+test("the renderer writes the blink, the expressions and the mouth through the guard every frame", () => {
+  const holo = fs.readFileSync(path.join(__dirname, "../public/avatar/holo-avatar.js"), "utf8");
+  assert.match(holo, /const blinkValue = held \? 0 : blink\.step\(dt\) \* blinkCap;/);
+  assert.match(holo, /const blinkCap = guard\.cap\("Blink"\);/);
+  assert.match(holo, /expression\.step\(avatarState, dt, \{ levelDb: mouth\.levelDb, neutral: frame\.phase === "exiting" \|\| frame\.phase === "hidden" \}\)/);
+  assert.match(holo, /writeMorphs\(posed \|\| \{ \.\.\.face, Jaw: mouth\.jaw, Press: mouth\.press, Blink: blinkValue \}\);/);
+  assert.match(holo, /influences\[index\] = guard\.value\(name, values\[name\]\);/);
+  // posed (proofs), readState reports the written weights
+  assert.match(holo, /lastFace = posed \? posedFace : face;/);
+  assert.match(holo, /lastMouth = posed \? \{ \.\.\.mouth, jaw: \+posedJaw \|\| 0, press: \+posedPress \|\| 0, blink: \+posedBlink \|\| 0 \}/);
 });
 
 // 60 fps frames of the analyser's last 1024 samples (48 kHz): a 180 Hz voice carrier whose level swings between
