@@ -237,16 +237,19 @@
         if (state !== lastState && state === "speaking") quiet = Infinity;
         lastState = state;
         const voiced = levelDb > SPEECH.gateDb;
-        if (state === "speaking" && voiced && quiet >= FACE.sentenceGapS && sinceBeat >= FACE.beatSpacingS) {
+        // the analyser only carries answer audio. After an autoplay rejection the wall's tap-to-play retry plays
+        // the answer while the voice state is still "ready" (idle), and that answer smiles too.
+        const answering = state === "speaking" || state === "idle";
+        if (answering && voiced && quiet >= FACE.sentenceGapS && sinceBeat >= FACE.beatSpacingS) {
           beat = 0;
           sinceBeat = 0;
         }
         quiet = voiced ? 0 : quiet + dt;
-        if (beat >= 0) beat = beat + dt < FACE.beatSeconds && state === "speaking" ? beat + dt : -1;
+        if (beat >= 0) beat = beat + dt < FACE.beatSeconds && answering ? beat + dt : -1;
         const target = neutral ? {} :
           state === "listening" ? EXPRESSION.listening :
           state === "thinking" ? EXPRESSION.thinking :
-          state === "speaking" && beat >= 0 ? EXPRESSION.smile : {};
+          answering && beat >= 0 ? EXPRESSION.smile : {};
         const swell = state === "thinking"
           ? 1 - FACE.breatheDepth * (0.5 - 0.5 * Math.cos(2 * Math.PI * breathe / FACE.breathePeriodS)) : 1;
         const k = 1 - Math.exp(-dt / FACE.easeSeconds);

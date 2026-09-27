@@ -263,6 +263,13 @@ test("speaking relaxes the brows and smiles warmly at each sentence start, not a
   assert.equal(longBeats, 1, "word gaps are not sentence starts");
   // silence while speaking never smiles
   assert.ok(runFace([["speaking", 4]]).every((f) => f.NX19_Smile_Warm === 0));
+  // an answer played by the tap-to-play retry after an autoplay rejection runs while the wall is "ready" (idle)
+  const retry = runFace([["thinking", 2], ["idle", 1], ["idle", 1.5, true]]).map((f) => f.NX19_Smile_Warm);
+  assert.ok(Math.max(...retry) > 0.3, `the retried answer peaked at ${Math.max(...retry)}`);
+  // but listening and thinking never smile, whatever the analyser carries
+  for (const state of ["listening", "thinking", "unavailable"]) {
+    assert.ok(runFace([[state, 3, (t) => (t % 1) < 0.5]]).every((f) => f.NX19_Smile_Warm === 0), `${state} smiled`);
+  }
   // answer audio that lands a moment before the wall flips to speaking still opens on a smile
   const early = runFace([["thinking", 2], ["thinking", 0.2, true], ["speaking", 1.5, true]]).map((f) => f.NX19_Smile_Warm);
   assert.ok(Math.max(...early) > 0.3, `the first sentence after early audio peaked at ${Math.max(...early)}`);
@@ -306,6 +313,9 @@ test("the renderer writes the blink, the expressions and the mouth through the g
   assert.match(holo, /expression\.step\(avatarState, dt, \{ levelDb: mouth\.levelDb, neutral: frame\.phase === "exiting" \|\| frame\.phase === "hidden" \}\)/);
   assert.match(holo, /writeMorphs\(posed \|\| \{ \.\.\.face, Jaw: mouth\.jaw, Press: mouth\.press, Blink: blinkValue \}\);/);
   assert.match(holo, /influences\[index\] = guard\.value\(name, values\[name\]\);/);
+  // posed (proofs), readState reports the written weights
+  assert.match(holo, /lastFace = posed \? posedFace : face;/);
+  assert.match(holo, /lastMouth = posed \? \{ \.\.\.mouth, jaw: \+posedJaw \|\| 0, press: \+posedPress \|\| 0, blink: \+posedBlink \|\| 0 \}/);
 });
 
 // 60 fps frames of the analyser's last 1024 samples (48 kHz): a 180 Hz voice carrier whose level swings between

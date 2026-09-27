@@ -591,6 +591,8 @@ export async function createHoloRenderer({ container, cameraKey = "A", reducedMo
     // the exit dissolves a neutral face whatever the voice state was
     const face = held ? {} : expression.step(avatarState, dt, { levelDb: mouth.levelDb, neutral: frame.phase === "exiting" || frame.phase === "hidden" });
     writeMorphs(posed || { ...face, Jaw: mouth.jaw, Press: mouth.press, Blink: blinkValue });
+    // posed, readState reports the weights that were written, not the drive's
+    const { Jaw: posedJaw = 0, Press: posedPress = 0, Blink: posedBlink = 0, ...posedFace } = posed || {};
 
     // unavailable reads as a dimmer figure, eased
     levelScale += ((avatarState === "unavailable" ? 0.7 : 1) - levelScale) * (1 - Math.exp(-dt / 0.4));
@@ -617,8 +619,8 @@ export async function createHoloRenderer({ container, cameraKey = "A", reducedMo
     composer.render(dt);
     frames += 1;
     lastPose = pose;
-    lastMouth = { ...mouth, blink: blinkValue };
-    lastFace = face;
+    lastMouth = posed ? { ...mouth, jaw: +posedJaw || 0, press: +posedPress || 0, blink: +posedBlink || 0 } : { ...mouth, blink: blinkValue };
+    lastFace = posed ? posedFace : face;
     lastFrame = frame;
     if (frame.phase === "hidden") {
       running = false;
@@ -681,7 +683,7 @@ export async function createHoloRenderer({ container, cameraKey = "A", reducedMo
         bodySwayDeg: held ? 0 : +lastPose.sway.toFixed(2),
         jaw: +lastMouth.jaw.toFixed(3), press: +lastMouth.press.toFixed(3), blink: +lastMouth.blink.toFixed(3),
         // NOX-11841: the expression weights written this frame (before the guard's clamp)
-        face: Object.fromEntries(Object.entries(lastFace).map(([name, value]) => [name, +value.toFixed(3)])),
+        face: Object.fromEntries(Object.entries(lastFace).map(([name, value]) => [name, +(+value || 0).toFixed(3)])),
         posed: Boolean(posed),
         // the envelope behind jaw and press: frame RMS in dBFS (null when silent) and its 0..1 openness
         levelDb: Number.isFinite(lastMouth.levelDb) ? +lastMouth.levelDb.toFixed(1) : null, open: +lastMouth.open.toFixed(3),
