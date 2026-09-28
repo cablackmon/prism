@@ -148,15 +148,17 @@ describe('Night Sky all-day events', () => {
     const lateSaturday = new Date('2026-08-29T23:30:00-07:00');
     const prefs = { timeFormat: '12h' as const, timeZone: 'America/Los_Angeles' };
     const sunday = event('sunday', '2026-08-30T08:00:00-07:00');
+    // Sunday 23:00 in Los Angeles is Monday 01:00 on the device.
+    const sundayLate = event('sunday-late', '2026-08-30T23:00:00-07:00');
     const monday = event('monday', '2026-08-31T08:00:00-07:00');
+    const saturdayAllDay = allDayEvent('saturday', '2026-08-29');
     expect(
-      tomorrowEvents([monday, sunday], lateSaturday, prefs.timeZone).map(({ id }) => id)
-    ).toEqual(['sunday']);
-    const framed = nightSkyFrameEvents([monday, sunday], lateSaturday, prefs);
+      tomorrowEvents([monday, sundayLate, sunday], lateSaturday, prefs.timeZone).map(({ id }) => id)
+    ).toEqual(['sunday', 'sunday-late']);
+    const framed = nightSkyFrameEvents([monday, sunday, saturdayAllDay], lateSaturday, prefs);
     expect(framed.find(({ comet }) => comet)!.id).toBe('sunday');
-    expect(
-      nightSkyEvents([allDayEvent('saturday', '2026-08-29')], lateSaturday, prefs.timeZone)
-    ).toHaveLength(1);
+    expect(framed.map(({ id }) => id)).toContain('saturday');
+    expect(nightSkyEvents([saturdayAllDay], lateSaturday, prefs.timeZone)).toHaveLength(1);
   });
 
   it("follows the board's 24-hour format and display timezone", () => {
