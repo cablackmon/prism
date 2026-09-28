@@ -1736,8 +1736,9 @@
       // The special comet sits in the emblem's foreground plane. Drawing it after
       // the emblem also prevents it from collapsing into the background starfield.
       drawLivingComet();
-      setCometLabelVisible(Boolean(cometLabelEvent &&
-        livingCometProgress >= 0 && livingCometOpacity > 0));
+      // Reduced motion has no comet flight, so its caption simply stays up.
+      setCometLabelVisible(Boolean(cometLabelEvent && (reducedMotion ||
+        (livingCometProgress >= 0 && livingCometOpacity > 0))));
 
       ctx.fillStyle = vignetteGradient;
       ctx.fillRect(0, 0, width, height);

@@ -1,6 +1,12 @@
 import { format } from 'date-fns';
 import type { CalendarEvent } from '@/types/calendar';
-import { eventStartsOnDisplayDay, isCalendarEventPast } from '@/lib/utils/timeFormat';
+import {
+  eventStartsOnDisplayDay,
+  formatDisplayTime,
+  isCalendarEventPast,
+  toDisplayDate,
+  type TimeFormat,
+} from '@/lib/utils/timeFormat';
 
 export const NIGHT_SKY_IDLE_SECONDS = 15 * 60;
 export const NIGHT_START_HOUR = 21;
@@ -46,9 +52,12 @@ export function isNightSkyNight(date: Date): boolean {
   return hour >= NIGHT_START_HOUR || hour < NIGHT_END_HOUR;
 }
 
-/** Milliseconds until the dimming next flips at NIGHT_START_HOUR or NIGHT_END_HOUR. */
-export function msUntilNightBoundary(date: Date): number {
-  const boundaries = [NIGHT_END_HOUR, NIGHT_START_HOUR].flatMap((hour) => [
+/** Local hours at which the sky changes: "tomorrow" moves at midnight, the dimming at the other two. */
+const NIGHT_SKY_BOUNDARY_HOURS = [0, NIGHT_END_HOUR, NIGHT_START_HOUR];
+
+/** Milliseconds until the next local midnight, NIGHT_END_HOUR or NIGHT_START_HOUR. */
+export function msUntilNightSkyBoundary(date: Date): number {
+  const boundaries = NIGHT_SKY_BOUNDARY_HOURS.flatMap((hour) => [
     new Date(date.getFullYear(), date.getMonth(), date.getDate(), hour),
     new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1, hour),
   ]);
@@ -87,18 +96,36 @@ export function truncateCometDescription(description = ''): string {
   return `${normalized.slice(0, COMET_DESCRIPTION_CHAR_LIMIT - 1).trimEnd()}…`;
 }
 
+export type NightSkyTimePrefs = { timeFormat: TimeFormat; timeZone?: string };
+
+/** An event's clock time in the board's format, or "All day" (never its storage instant). */
+export function eventClockLabel(
+  event: Pick<CalendarEvent, 'startTime' | 'allDay'>,
+  { timeFormat, timeZone }: NightSkyTimePrefs = { timeFormat: '12h' }
+): string {
+  return event.allDay ? 'All day' : formatDisplayTime(event.startTime, timeFormat, {}, timeZone);
+}
+
 /**
  * All-day events are stored at UTC midnight of their floating date, so their
  * weekday comes from the UTC date, never from the local instant.
  */
-export function cometTimeLabel(event: Pick<CalendarEvent, 'startTime' | 'allDay'>): string {
+export function cometTimeLabel(
+  event: Pick<CalendarEvent, 'startTime' | 'allDay'>,
+  prefs: NightSkyTimePrefs = { timeFormat: '12h' }
+): string {
   const start = event.startTime;
-  if (!event.allDay) return format(start, 'EEE h:mm a');
-  const day = new Date(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate());
-  return `${format(day, 'EEE')} · All day`;
+  const day = event.allDay
+    ? new Date(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate())
+    : toDisplayDate(start, prefs.timeZone);
+  return `${format(day, 'EEE')}${event.allDay ? ' · ' : ' '}${eventClockLabel(event, prefs)}`;
 }
 
-export function nightSkyFrameEvents(events: CalendarEvent[], now: Date): NightSkyFrameEvent[] {
+export function nightSkyFrameEvents(
+  events: CalendarEvent[],
+  now: Date,
+  prefs: NightSkyTimePrefs = { timeFormat: '12h' }
+): NightSkyFrameEvent[] {
   const upcoming = nightSkyEvents(events, now);
   const comet = tomorrowEvents(upcoming, now)[0] ?? upcoming[0];
   const framed = upcoming.slice(0, NIGHT_SKY_FRAME_EVENT_LIMIT);
@@ -111,7 +138,7 @@ export function nightSkyFrameEvents(events: CalendarEvent[], now: Date): NightSk
     description: truncateCometDescription(event.description),
     startTime: event.startTime.toISOString(),
     allDay: event.allDay,
-    when: cometTimeLabel(event),
+    when: cometTimeLabel(event, prefs),
     comet: event === comet,
     color: event.color,
     calendarId: event.calendarId,

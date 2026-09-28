@@ -2,7 +2,16 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CalendarEvent } from '@/types/calendar';
-import { auroraPalette, isNightSkyNight, moonPhase, nightSkyEvents, tomorrowEvents } from './nightSkyUtils';
+import { useTimeFormat } from '@/components/providers';
+import {
+  auroraPalette,
+  cometTimeLabel,
+  eventClockLabel,
+  isNightSkyNight,
+  moonPhase,
+  nightSkyEvents,
+  tomorrowEvents,
+} from './nightSkyUtils';
 
 type Props = { events: CalendarEvent[]; loading: boolean };
 
@@ -50,6 +59,8 @@ function paintMoon(
 
 export function NightSky({ events, loading }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const { timeFormat, displayTimezone } = useTimeFormat();
+  const timePrefs = { timeFormat, timeZone: displayTimezone };
   const [now, setNow] = useState(() => new Date());
   const upcoming = useMemo(() => nightSkyEvents(events, now), [events, now]);
   const tomorrow = useMemo(() => tomorrowEvents(events, now), [events, now]);
@@ -161,12 +172,12 @@ export function NightSky({ events, loading }: Props) {
       <div className="max-w-[38vw] border-l border-white/20 pl-7 text-right" aria-live="polite">
         <p className="text-sm uppercase tracking-[.35em] text-white/50">Next up</p>
         <p className="mt-3 text-[clamp(1.2rem,2.1vw,2.7rem)] font-light" style={{ color: next?.color || undefined }}>{loading ? 'Finding the next star…' : next ? next.title : 'The sky is clear'}</p>
-        {next && <p className="mt-2 text-[clamp(.9rem,1.1vw,1.35rem)] text-white/65">{next.startTime.toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' })}</p>}
+        {next && <p className="mt-2 text-[clamp(.9rem,1.1vw,1.35rem)] text-white/65">{cometTimeLabel(next, timePrefs)}</p>}
       </div>
     </div>
     {comet && <div className="pointer-events-none absolute left-1/2 top-[70%] -translate-x-1/2 rounded-full border border-white/15 bg-black/20 px-5 py-2 text-[clamp(.8rem,1vw,1.2rem)] font-light tracking-wide text-white/75 backdrop-blur-sm">
-      Tomorrow · <span style={{ color: comet.color }}>{comet.startTime.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} · {comet.title}</span>
+      Tomorrow · <span style={{ color: comet.color }}>{eventClockLabel(comet, timePrefs)} · {comet.title}</span>
     </div>}
-    {comet && <div className="sr-only">Tomorrow&apos;s first event: {comet.title} at {comet.startTime.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</div>}
+    {comet && <div className="sr-only">Tomorrow&apos;s first event: {comet.title}, {eventClockLabel(comet, timePrefs)}</div>}
   </div>;
 }

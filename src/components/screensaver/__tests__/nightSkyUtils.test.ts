@@ -6,10 +6,11 @@ import type { CalendarEvent } from '@/types/calendar';
 import {
   auroraPalette,
   cometTimeLabel,
+  eventClockLabel,
   isExpectedNightSkyFrameUrl,
   isExpectedNightSkyResponse,
   moonPhase,
-  msUntilNightBoundary,
+  msUntilNightSkyBoundary,
   NIGHT_SKY_FRAME_EVENT_LIMIT,
   nightSkyFrameEvents,
   nightSkyEvents,
@@ -131,6 +132,18 @@ describe('Night Sky all-day events', () => {
   it('labels an all-day event by its own date with no invented time', () => {
     expect(cometTimeLabel(allDayEvent('fair', '2026-08-30'))).toBe('Sun · All day');
     expect(cometTimeLabel(event('game', '2026-08-30T15:30:00-05:00'))).toBe('Sun 3:30 PM');
+    expect(eventClockLabel(allDayEvent('fair', '2026-08-30'))).toBe('All day');
+  });
+
+  it("follows the board's 24-hour format and display timezone", () => {
+    const game = event('game', '2026-08-30T23:30:00-05:00');
+    expect(cometTimeLabel(game, { timeFormat: '24h' })).toBe('Sun 23:30');
+    expect(cometTimeLabel(game, { timeFormat: '24h', timeZone: 'America/New_York' })).toBe(
+      'Mon 00:30'
+    );
+    expect(eventClockLabel(game, { timeFormat: '24h', timeZone: 'UTC' })).toBe('04:30');
+    const [framed] = nightSkyFrameEvents([game], now, { timeFormat: '24h' });
+    expect(framed!.when).toBe('Sun 23:30');
   });
 
   it('carries the all-day flag and label into the frame payload', () => {
@@ -155,16 +168,18 @@ describe('Night Sky all-day events', () => {
 describe('Night Sky dimming clock', () => {
   const at = (hour: number, minute = 0) => new Date(2026, 7, 29, hour, minute);
 
-  it('counts down to the next 21:00 or 06:00 boundary', () => {
-    expect(msUntilNightBoundary(at(20, 59))).toBe(60000);
-    expect(msUntilNightBoundary(at(21))).toBe(9 * 3600000);
-    expect(msUntilNightBoundary(at(5))).toBe(3600000);
-    expect(msUntilNightBoundary(at(12))).toBe(9 * 3600000);
+  it('counts down to the next midnight, 06:00 or 21:00 boundary', () => {
+    expect(msUntilNightSkyBoundary(at(20, 59))).toBe(60000);
+    expect(msUntilNightSkyBoundary(at(21))).toBe(3 * 3600000);
+    expect(msUntilNightSkyBoundary(at(23, 30))).toBe(30 * 60000);
+    expect(msUntilNightSkyBoundary(at(0))).toBe(6 * 3600000);
+    expect(msUntilNightSkyBoundary(at(5))).toBe(3600000);
+    expect(msUntilNightSkyBoundary(at(12))).toBe(9 * 3600000);
   });
 
   it('follows the wall clock across a daylight-saving change', () => {
-    // Central time falls back at 02:00 on 2026-11-01, so 22:00 to 06:00 is 9 hours.
-    expect(msUntilNightBoundary(new Date(2026, 9, 31, 22))).toBe(9 * 3600000);
+    // Central time falls back at 02:00 on 2026-11-01, so midnight to 06:00 is 7 hours.
+    expect(msUntilNightSkyBoundary(new Date(2026, 10, 1, 0))).toBe(7 * 3600000);
   });
 });
 

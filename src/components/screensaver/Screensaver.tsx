@@ -10,13 +10,14 @@ import { buildWidgetProps } from '@/components/dashboard/useWidgetProps';
 import { GRID_COLS } from '@/lib/constants/grid';
 import { CssGridDisplay } from '@/components/layout/grid/CssGridDisplay';
 import { CalendarPrefsScopeContext } from '@/lib/hooks/useCalendarWidgetPrefs';
+import { useTimeFormat } from '@/components/providers';
 import { loadScreensaverLayout } from './screensaverStorage';
 import { NightSky } from './NightSky';
 import {
   isExpectedNightSkyFrameUrl,
   isExpectedNightSkyResponse,
   isNightSkyNight,
-  msUntilNightBoundary,
+  msUntilNightSkyBoundary,
   nightSkyFrameEvents,
   NIGHT_SKY_IDLE_SECONDS,
   NIGHT_SKY_MESSAGE_TYPE,
@@ -57,14 +58,19 @@ export function Screensaver() {
   const staticNightSkyLoaded = useRef(false);
   const nightSkyDomains = useMemo(() => new Set(['calendar']), []);
   const nightSkyData = useDashboardData(nightSkyDomains);
-  // Advances at each 21:00/06:00 boundary so an idle session re-dims the frame
-  // and re-picks "tomorrow" without waiting for a wake and reload.
+  const { timeFormat, displayTimezone } = useTimeFormat();
+  // Advances at midnight, 06:00 and 21:00 so an idle session re-picks
+  // "tomorrow" and re-dims the frame without waiting for a wake and reload.
   const [nightSkyClock, setNightSkyClock] = useState(() => Date.now());
   const frameEvents = useMemo(
-    () => nightSkyFrameEvents(nightSkyData.calendar.events, new Date()),
+    () =>
+      nightSkyFrameEvents(nightSkyData.calendar.events, new Date(), {
+        timeFormat,
+        timeZone: displayTimezone,
+      }),
     // nightSkyClock is a trigger: "tomorrow" moves at the boundary it marks.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [nightSkyData.calendar.events, nightSkyClock]
+    [nightSkyData.calendar.events, nightSkyClock, timeFormat, displayTimezone]
   );
   const nightDim = isNightSkyNight(new Date(nightSkyClock));
   const publishNightSkyData = useCallback(() => {
@@ -79,7 +85,7 @@ export function Screensaver() {
     let timer: ReturnType<typeof setTimeout>;
     const tick = () => {
       setNightSkyClock(Date.now());
-      timer = setTimeout(tick, msUntilNightBoundary(new Date()) + 1_000);
+      timer = setTimeout(tick, msUntilNightSkyBoundary(new Date()) + 1_000);
     };
     tick();
     return () => clearTimeout(timer);
