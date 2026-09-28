@@ -1,4 +1,6 @@
+import { format } from 'date-fns';
 import type { CalendarEvent } from '@/types/calendar';
+import { eventStartsOnDisplayDay, isCalendarEventPast } from '@/lib/utils/timeFormat';
 
 export const NIGHT_SKY_IDLE_SECONDS = 15 * 60;
 export const NIGHT_START_HOUR = 21;
@@ -6,12 +8,18 @@ export const NIGHT_END_HOUR = 6;
 export const NIGHT_SKY_WINDOW_DAYS = 14;
 export const NIGHT_SKY_MESSAGE_TYPE = 'kyst:nightsky-data';
 export const COMET_DESCRIPTION_CHAR_LIMIT = 60;
+export const NIGHT_SKY_FRAME_EVENT_LIMIT = 24;
 
 export type NightSkyFrameEvent = {
   id: string;
   title: string;
   description: string;
   startTime: string;
+  allDay: boolean;
+  /** Preformatted comet time, so the frame never re-derives all-day dates. */
+  when: string;
+  /** The one event the comet label announces: tomorrow's first, else the next. */
+  comet: boolean;
   color: string;
   calendarId: string;
 };
@@ -38,6 +46,17 @@ export function isNightSkyNight(date: Date): boolean {
   return hour >= NIGHT_START_HOUR || hour < NIGHT_END_HOUR;
 }
 
+/** Milliseconds until the dimming next flips at NIGHT_START_HOUR or NIGHT_END_HOUR. */
+export function msUntilNightBoundary(date: Date): number {
+  const boundaries = [NIGHT_END_HOUR, NIGHT_START_HOUR].flatMap((hour) => [
+    new Date(date.getFullYear(), date.getMonth(), date.getDate(), hour),
+    new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1, hour),
+  ]);
+  return Math.min(
+    ...boundaries.map((boundary) => boundary.getTime() - date.getTime()).filter((ms) => ms > 0)
+  );
+}
+
 export function moonPhase(date: Date): { age: number; illumination: number; waxing: boolean } {
   const synodicMonth = 29.530588853;
   const knownNewMoon = Date.UTC(2000, 0, 6, 18, 14);
@@ -54,7 +73,11 @@ export function nightSkyEvents(events: CalendarEvent[], now: Date) {
   const end = new Date(now);
   end.setDate(end.getDate() + NIGHT_SKY_WINDOW_DAYS);
   return events
-    .filter((event) => event.endTime >= now && event.startTime <= end)
+    .filter(
+      (event) =>
+        !isCalendarEventPast(event.startTime, event.endTime, event.allDay, now) &&
+        event.startTime <= end
+    )
     .sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
 }
 
@@ -64,24 +87,41 @@ export function truncateCometDescription(description = ''): string {
   return `${normalized.slice(0, COMET_DESCRIPTION_CHAR_LIMIT - 1).trimEnd()}…`;
 }
 
+/**
+ * All-day events are stored at UTC midnight of their floating date, so their
+ * weekday comes from the UTC date, never from the local instant.
+ */
+export function cometTimeLabel(event: Pick<CalendarEvent, 'startTime' | 'allDay'>): string {
+  const start = event.startTime;
+  if (!event.allDay) return format(start, 'EEE h:mm a');
+  const day = new Date(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate());
+  return `${format(day, 'EEE')} · All day`;
+}
+
 export function nightSkyFrameEvents(events: CalendarEvent[], now: Date): NightSkyFrameEvent[] {
-  return nightSkyEvents(events, now)
-    .slice(0, 24)
-    .map((event) => ({
-      id: event.id,
-      title: event.title,
-      description: truncateCometDescription(event.description),
-      startTime: event.startTime.toISOString(),
-      color: event.color,
-      calendarId: event.calendarId,
-    }));
+  const upcoming = nightSkyEvents(events, now);
+  const comet = tomorrowEvents(upcoming, now)[0] ?? upcoming[0];
+  const framed = upcoming.slice(0, NIGHT_SKY_FRAME_EVENT_LIMIT);
+  // The comet event is the latest of the set whenever it misses the cut, so
+  // taking the last slot keeps the payload in start order.
+  if (comet && !framed.includes(comet)) framed[framed.length - 1] = comet;
+  return framed.map((event) => ({
+    id: event.id,
+    title: event.title,
+    description: truncateCometDescription(event.description),
+    startTime: event.startTime.toISOString(),
+    allDay: event.allDay,
+    when: cometTimeLabel(event),
+    comet: event === comet,
+    color: event.color,
+    calendarId: event.calendarId,
+  }));
 }
 
 export function tomorrowEvents(events: CalendarEvent[], now: Date) {
-  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-  const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2);
+  const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
   return events
-    .filter((event) => event.startTime >= start && event.startTime < end)
+    .filter((event) => eventStartsOnDisplayDay(event.startTime, event.allDay, tomorrow))
     .sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
 }
 

@@ -15,6 +15,8 @@ import { NightSky } from './NightSky';
 import {
   isExpectedNightSkyFrameUrl,
   isExpectedNightSkyResponse,
+  isNightSkyNight,
+  msUntilNightBoundary,
   nightSkyFrameEvents,
   NIGHT_SKY_IDLE_SECONDS,
   NIGHT_SKY_MESSAGE_TYPE,
@@ -55,16 +57,33 @@ export function Screensaver() {
   const staticNightSkyLoaded = useRef(false);
   const nightSkyDomains = useMemo(() => new Set(['calendar']), []);
   const nightSkyData = useDashboardData(nightSkyDomains);
+  // Advances at each 21:00/06:00 boundary so an idle session re-dims the frame
+  // and re-picks "tomorrow" without waiting for a wake and reload.
+  const [nightSkyClock, setNightSkyClock] = useState(() => Date.now());
   const frameEvents = useMemo(
     () => nightSkyFrameEvents(nightSkyData.calendar.events, new Date()),
-    [nightSkyData.calendar.events]
+    // nightSkyClock is a trigger: "tomorrow" moves at the boundary it marks.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [nightSkyData.calendar.events, nightSkyClock]
   );
+  const nightDim = isNightSkyNight(new Date(nightSkyClock));
   const publishNightSkyData = useCallback(() => {
     nightSkyFrame.current?.contentWindow?.postMessage(
-      { type: NIGHT_SKY_MESSAGE_TYPE, events: frameEvents },
+      { type: NIGHT_SKY_MESSAGE_TYPE, events: frameEvents, nightDim },
       window.location.origin
     );
-  }, [frameEvents]);
+  }, [frameEvents, nightDim]);
+
+  useEffect(() => {
+    if (!isIdle) return;
+    let timer: ReturnType<typeof setTimeout>;
+    const tick = () => {
+      setNightSkyClock(Date.now());
+      timer = setTimeout(tick, msUntilNightBoundary(new Date()) + 1_000);
+    };
+    tick();
+    return () => clearTimeout(timer);
+  }, [isIdle]);
 
   useEffect(() => {
     document.documentElement.dataset.kystScreensaver = isIdle ? 'active' : 'inactive';

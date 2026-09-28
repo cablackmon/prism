@@ -1,9 +1,16 @@
+// The board runs in Central time. All-day events are stored at UTC midnight,
+// which only lands on the previous local day west of UTC, so pin the zone.
+process.env.TZ = 'America/Chicago';
+
 import type { CalendarEvent } from '@/types/calendar';
 import {
   auroraPalette,
+  cometTimeLabel,
   isExpectedNightSkyFrameUrl,
   isExpectedNightSkyResponse,
   moonPhase,
+  msUntilNightBoundary,
+  NIGHT_SKY_FRAME_EVENT_LIMIT,
   nightSkyFrameEvents,
   nightSkyEvents,
   truncateCometDescription,
@@ -20,6 +27,12 @@ const event = (id: string, start: string, description?: string): CalendarEvent =
   color: '#3b82f6',
   calendarName: 'Family',
   calendarId: 'family',
+});
+
+const allDayEvent = (id: string, date: string): CalendarEvent => ({
+  ...event(id, `${date}T00:00:00Z`),
+  endTime: new Date(new Date(`${date}T00:00:00Z`).getTime() + 86400000),
+  allDay: true,
 });
 
 describe('Night Sky schedule model', () => {
@@ -81,6 +94,77 @@ describe('Night Sky schedule model', () => {
     expect(result.startTime).toBe('2026-08-29T18:00:00.000Z');
     expect(result.description).toHaveLength(60);
     expect(result.description).toBe(`${'B'.repeat(59)}…`);
+  });
+
+  it("keeps tomorrow's comet event when today alone fills the payload", () => {
+    const today = Array.from({ length: 30 }, (_, index) =>
+      event(`today-${index}`, new Date(now.getTime() + (index + 1) * 60000).toISOString())
+    );
+    const result = nightSkyFrameEvents(
+      [...today, event('tomorrow', '2026-08-30T09:00:00-05:00')],
+      now
+    );
+
+    expect(result).toHaveLength(NIGHT_SKY_FRAME_EVENT_LIMIT);
+    expect(result.filter(({ comet }) => comet).map(({ id }) => id)).toEqual(['tomorrow']);
+    expect(result[result.length - 1]!.id).toBe('tomorrow');
+    expect(result.map(({ id }) => id).slice(0, -1)).toEqual(
+      today.slice(0, NIGHT_SKY_FRAME_EVENT_LIMIT - 1).map(({ id }) => id)
+    );
+  });
+
+  it('falls back to the next event for the comet when tomorrow is empty', () => {
+    const result = nightSkyFrameEvents(
+      [event('later', '2026-09-01T10:00:00-05:00'), event('next', '2026-08-29T13:00:00-05:00')],
+      now
+    );
+    expect(result.map(({ id, comet }) => [id, comet])).toEqual([
+      ['next', true],
+      ['later', false],
+    ]);
+  });
+});
+
+describe('Night Sky all-day events', () => {
+  const now = new Date('2026-08-29T12:00:00-05:00');
+
+  it('labels an all-day event by its own date with no invented time', () => {
+    expect(cometTimeLabel(allDayEvent('fair', '2026-08-30'))).toBe('Sun · All day');
+    expect(cometTimeLabel(event('game', '2026-08-30T15:30:00-05:00'))).toBe('Sun 3:30 PM');
+  });
+
+  it('carries the all-day flag and label into the frame payload', () => {
+    const [result] = nightSkyFrameEvents([allDayEvent('fair', '2026-08-30')], now);
+    expect(result).toMatchObject({ id: 'fair', allDay: true, when: 'Sun · All day', comet: true });
+  });
+
+  it("finds tomorrow's all-day event although it starts the previous local evening", () => {
+    const result = tomorrowEvents(
+      [allDayEvent('today', '2026-08-29'), allDayEvent('fair', '2026-08-30')],
+      now
+    );
+    expect(result.map(({ id }) => id)).toEqual(['fair']);
+  });
+
+  it("keeps today's all-day event after its UTC end has passed locally", () => {
+    const evening = new Date('2026-08-29T20:00:00-05:00');
+    expect(nightSkyEvents([allDayEvent('today', '2026-08-29')], evening)).toHaveLength(1);
+  });
+});
+
+describe('Night Sky dimming clock', () => {
+  const at = (hour: number, minute = 0) => new Date(2026, 7, 29, hour, minute);
+
+  it('counts down to the next 21:00 or 06:00 boundary', () => {
+    expect(msUntilNightBoundary(at(20, 59))).toBe(60000);
+    expect(msUntilNightBoundary(at(21))).toBe(9 * 3600000);
+    expect(msUntilNightBoundary(at(5))).toBe(3600000);
+    expect(msUntilNightBoundary(at(12))).toBe(9 * 3600000);
+  });
+
+  it('follows the wall clock across a daylight-saving change', () => {
+    // Central time falls back at 02:00 on 2026-11-01, so 22:00 to 06:00 is 9 hours.
+    expect(msUntilNightBoundary(new Date(2026, 9, 31, 22))).toBe(9 * 3600000);
   });
 });
 

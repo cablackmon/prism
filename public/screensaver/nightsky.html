@@ -268,10 +268,18 @@
     const hideLivingComet = query.get('hideComet') === '1';
     if (query.has('debug')) document.body.classList.add('show-debug');
     const forcedPalette = query.get('nightSkyMode');
-    const localHour = new Date().getHours();
-    const nightDim = forcedPalette === 'night' ||
-      (forcedPalette !== 'day' && (localHour >= 21 || localHour < 6));
-    document.body.classList.toggle('night-dim', nightDim);
+    // The board parent owns dimming once it speaks (it re-sends at 21:00 and
+    // 06:00). Until then, or when opened standalone, re-read the local clock.
+    let parentNightDim = null;
+    function updateNightDim() {
+      const hour = new Date().getHours();
+      const nightDim = forcedPalette === 'night' ||
+        (forcedPalette !== 'day' && (parentNightDim !== null
+          ? parentNightDim : hour >= 21 || hour < 6));
+      document.body.classList.toggle('night-dim', nightDim);
+    }
+    updateNightDim();
+    setInterval(updateNightDim, 60000);
 
     const COMET_SCHEDULE_STORAGE_KEY = 'prism-nightsky-comet-anchor-v1';
     function loadProductionCometSchedule(nowMs = Date.now()) {
@@ -426,6 +434,7 @@
           SYMBOL_RENDER.cropWidth, SYMBOL_RENDER.cropHeight,
           0, 0, emblemTexture.width, emblemTexture.height);
         emblemImageReady = true;
+        requestStaticRedraw();
       };
       emblemImage.onerror = () => loadEmblemImage(index + 1);
       emblemImage.src = emblemImageCandidates[index];
@@ -503,11 +512,12 @@
         return;
       }
       const start = new Date(cometLabelEvent.startTime);
-      cometLabelTimeNode.textContent = Number.isNaN(start.getTime())
-        ? 'Next light'
-        : start.toLocaleString([], {
-            weekday: 'short', hour: 'numeric', minute: '2-digit'
-          });
+      cometLabelTimeNode.textContent = cometLabelEvent.when ||
+        (Number.isNaN(start.getTime())
+          ? 'Next light'
+          : start.toLocaleString([], {
+              weekday: 'short', hour: 'numeric', minute: '2-digit'
+            }));
       cometLabelTitleNode.textContent = cometLabelEvent.title;
       const excerpt = cometLabelEvent.description.replace(/\s+/g, ' ').trim().slice(0, 60);
       cometLabelDescriptionNode.textContent = excerpt ? ' — ' + excerpt : '';
@@ -522,17 +532,19 @@
         title: String(item.title || 'Untitled event').slice(0, 180),
         description: String(item.description || '').slice(0, 60),
         startTime: String(item.startTime || ''),
+        when: String(item.when || '').slice(0, 40),
+        comet: item.comet === true,
         color: safeEventColor(String(item.color || ''))
       })).filter((item) => item.id && Number.isFinite(new Date(item.startTime).getTime()));
       eventConstellations = buildEventConstellations(events);
-      const now = new Date();
-      const tomorrowStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-      const tomorrowEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2);
-      cometLabelEvent = events.find((item) => {
-        const start = new Date(item.startTime);
-        return start >= tomorrowStart && start < tomorrowEnd;
-      }) || events[0] || null;
+      // The parent picks the comet event with the board's all-day rules.
+      cometLabelEvent = events.find((item) => item.comet) || events[0] || null;
       updateCometLabel();
+      if (typeof message.data.nightDim === 'boolean') {
+        parentNightDim = message.data.nightDim;
+        updateNightDim();
+      }
+      requestStaticRedraw();
       window.__NIGHTSKY_EVENT_DATA = {
         eventCount: events.length,
         constellationCount: eventConstellations.length,
@@ -1802,6 +1814,18 @@
         };
       }
       if (!reducedMotion) requestAnimationFrame(frame);
+    }
+
+    // Reduced motion paints once, but the events and the emblem texture both
+    // arrive after that first frame. Repaint when either lands.
+    let staticRedrawQueued = false;
+    function requestStaticRedraw() {
+      if (!reducedMotion || staticRedrawQueued) return;
+      staticRedrawQueued = true;
+      requestAnimationFrame((now) => {
+        staticRedrawQueued = false;
+        frame(now);
+      });
     }
 
     addEventListener('resize', () => {
