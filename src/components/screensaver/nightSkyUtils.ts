@@ -78,20 +78,21 @@ export function moonPhase(date: Date): { age: number; illumination: number; waxi
   };
 }
 
-export function nightSkyEvents(events: CalendarEvent[], now: Date) {
+export function nightSkyEvents(events: CalendarEvent[], now: Date, timeZone?: string) {
   const end = new Date(now);
   end.setDate(end.getDate() + NIGHT_SKY_WINDOW_DAYS);
   return events
     .filter(
       (event) =>
-        !isCalendarEventPast(event.startTime, event.endTime, event.allDay, now) &&
+        !isCalendarEventPast(event.startTime, event.endTime, event.allDay, now, timeZone) &&
         event.startTime <= end
     )
     .sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
 }
 
-export function truncateCometDescription(description = ''): string {
-  const normalized = description.replace(/\s+/g, ' ').trim();
+// The events API sends `description: null` for events without one.
+export function truncateCometDescription(description?: string | null): string {
+  const normalized = (description ?? '').replace(/\s+/g, ' ').trim();
   if (normalized.length <= COMET_DESCRIPTION_CHAR_LIMIT) return normalized;
   return `${normalized.slice(0, COMET_DESCRIPTION_CHAR_LIMIT - 1).trimEnd()}…`;
 }
@@ -126,8 +127,8 @@ export function nightSkyFrameEvents(
   now: Date,
   prefs: NightSkyTimePrefs = { timeFormat: '12h' }
 ): NightSkyFrameEvent[] {
-  const upcoming = nightSkyEvents(events, now);
-  const comet = tomorrowEvents(upcoming, now)[0] ?? upcoming[0];
+  const upcoming = nightSkyEvents(events, now, prefs.timeZone);
+  const comet = tomorrowEvents(upcoming, now, prefs.timeZone)[0] ?? upcoming[0];
   const framed = upcoming.slice(0, NIGHT_SKY_FRAME_EVENT_LIMIT);
   // The comet event is the latest of the set whenever it misses the cut, so
   // taking the last slot keeps the payload in start order.
@@ -145,10 +146,12 @@ export function nightSkyFrameEvents(
   }));
 }
 
-export function tomorrowEvents(events: CalendarEvent[], now: Date) {
-  const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+/** Events starting on the household's next day, in the display timezone when one is set. */
+export function tomorrowEvents(events: CalendarEvent[], now: Date, timeZone?: string) {
+  const today = toDisplayDate(now, timeZone);
+  const tomorrow = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
   return events
-    .filter((event) => eventStartsOnDisplayDay(event.startTime, event.allDay, tomorrow))
+    .filter((event) => eventStartsOnDisplayDay(event.startTime, event.allDay, tomorrow, timeZone))
     .sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
 }
 

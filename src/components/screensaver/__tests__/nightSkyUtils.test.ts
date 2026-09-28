@@ -75,6 +75,14 @@ describe('Night Sky schedule model', () => {
     expect(moonPhase(new Date('2000-01-21T12:36:00Z')).illumination).toBeCloseTo(1, 2);
   });
 
+  it('treats a null description from the events API as empty', () => {
+    expect(truncateCometDescription(null)).toBe('');
+    const nullDescription = { ...event('next', '2026-08-29T13:00:00-05:00'), description: null };
+    expect(
+      nightSkyFrameEvents([nullDescription as unknown as CalendarEvent], now)[0]!.description
+    ).toBe('');
+  });
+
   it('collapses whitespace and caps comet descriptions at sixty characters', () => {
     expect(truncateCometDescription('  Pack   the telescope  ')).toBe('Pack the telescope');
     const result = truncateCometDescription('A'.repeat(80));
@@ -133,6 +141,22 @@ describe('Night Sky all-day events', () => {
     expect(cometTimeLabel(allDayEvent('fair', '2026-08-30'))).toBe('Sun · All day');
     expect(cometTimeLabel(event('game', '2026-08-30T15:30:00-05:00'))).toBe('Sun 3:30 PM');
     expect(eventClockLabel(allDayEvent('fair', '2026-08-30'))).toBe('All day');
+  });
+
+  it("picks tomorrow and today's all-day events on the household's display day", () => {
+    // 23:30 Saturday in Los Angeles is already Sunday on this Central-time device.
+    const lateSaturday = new Date('2026-08-29T23:30:00-07:00');
+    const prefs = { timeFormat: '12h' as const, timeZone: 'America/Los_Angeles' };
+    const sunday = event('sunday', '2026-08-30T08:00:00-07:00');
+    const monday = event('monday', '2026-08-31T08:00:00-07:00');
+    expect(
+      tomorrowEvents([monday, sunday], lateSaturday, prefs.timeZone).map(({ id }) => id)
+    ).toEqual(['sunday']);
+    const framed = nightSkyFrameEvents([monday, sunday], lateSaturday, prefs);
+    expect(framed.find(({ comet }) => comet)!.id).toBe('sunday');
+    expect(
+      nightSkyEvents([allDayEvent('saturday', '2026-08-29')], lateSaturday, prefs.timeZone)
+    ).toHaveLength(1);
   });
 
   it("follows the board's 24-hour format and display timezone", () => {

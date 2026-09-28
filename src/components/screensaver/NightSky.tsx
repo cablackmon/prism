@@ -62,8 +62,14 @@ export function NightSky({ events, loading }: Props) {
   const { timeFormat, displayTimezone } = useTimeFormat();
   const timePrefs = { timeFormat, timeZone: displayTimezone };
   const [now, setNow] = useState(() => new Date());
-  const upcoming = useMemo(() => nightSkyEvents(events, now), [events, now]);
-  const tomorrow = useMemo(() => tomorrowEvents(events, now), [events, now]);
+  const upcoming = useMemo(
+    () => nightSkyEvents(events, now, displayTimezone),
+    [events, now, displayTimezone]
+  );
+  const tomorrow = useMemo(
+    () => tomorrowEvents(events, now, displayTimezone),
+    [events, now, displayTimezone]
+  );
   const comet = tomorrow[0];
   const night = isNightSkyNight(now);
 
