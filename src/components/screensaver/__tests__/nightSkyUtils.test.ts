@@ -203,6 +203,37 @@ describe('Night Sky dimming clock', () => {
     expect(msUntilNightSkyBoundary(at(12))).toBe(9 * 3600000);
   });
 
+  describe('with a display zone west of the device (Los Angeles on a Central device)', () => {
+    const la = 'America/Los_Angeles';
+
+    it('ticks at display-zone midnight when it comes before a device boundary', () => {
+      // 01:10 Central is 23:10 in LA: LA midnight is 50 minutes away, device 06:00 is 4h50m away.
+      expect(msUntilNightSkyBoundary(at(1, 10))).toBe(290 * 60000);
+      expect(msUntilNightSkyBoundary(at(1, 10), la)).toBe(50 * 60000);
+      expect(msUntilNightSkyBoundary(at(0, 30), la)).toBe(90 * 60000);
+    });
+
+    it('keeps the device boundaries when they come first', () => {
+      expect(msUntilNightSkyBoundary(at(20, 59), la)).toBe(60000);
+      expect(msUntilNightSkyBoundary(at(22), la)).toBe(2 * 3600000);
+      expect(msUntilNightSkyBoundary(at(5), la)).toBe(3600000);
+    });
+
+    it('moves the comet to the next LA day on the display-zone tick', () => {
+      const events = [event('sat', '2026-08-29T18:00:00Z'), event('sun', '2026-08-30T18:00:00Z')];
+      const cometAt = (now: Date) =>
+        nightSkyFrameEvents(events, now, { timeFormat: '24h', timeZone: la }).find(
+          ({ comet }) => comet
+        )?.id;
+      const beforeTick = at(1, 10);
+      const afterTick = new Date(
+        beforeTick.getTime() + msUntilNightSkyBoundary(beforeTick, la) + 1000
+      );
+      expect(cometAt(beforeTick)).toBe('sat');
+      expect(cometAt(afterTick)).toBe('sun');
+    });
+  });
+
   it('follows the wall clock across a daylight-saving change', () => {
     // Central time falls back at 02:00 on 2026-11-01, so midnight to 06:00 is 7 hours.
     expect(msUntilNightSkyBoundary(new Date(2026, 10, 1, 0))).toBe(7 * 3600000);

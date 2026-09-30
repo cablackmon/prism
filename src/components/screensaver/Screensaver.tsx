@@ -59,7 +59,7 @@ export function Screensaver() {
   const nightSkyDomains = useMemo(() => new Set(['calendar']), []);
   const nightSkyData = useDashboardData(nightSkyDomains);
   const { timeFormat, displayTimezone } = useTimeFormat();
-  // Advances at midnight, 06:00 and 21:00 so an idle session re-picks
+  // Advances at device midnight, 06:00 and 21:00 and at display-zone midnight so an idle session re-picks
   // "tomorrow" and re-dims the frame without waiting for a wake and reload.
   const [nightSkyClock, setNightSkyClock] = useState(() => Date.now());
   const frameEvents = useMemo(
@@ -85,11 +85,11 @@ export function Screensaver() {
     let timer: ReturnType<typeof setTimeout>;
     const tick = () => {
       setNightSkyClock(Date.now());
-      timer = setTimeout(tick, msUntilNightSkyBoundary(new Date()) + 1_000);
+      timer = setTimeout(tick, msUntilNightSkyBoundary(new Date(), displayTimezone) + 1_000);
     };
     tick();
     return () => clearTimeout(timer);
-  }, [isIdle]);
+  }, [isIdle, displayTimezone]);
 
   useEffect(() => {
     document.documentElement.dataset.kystScreensaver = isIdle ? 'active' : 'inactive';
