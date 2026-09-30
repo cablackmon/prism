@@ -1,6 +1,3 @@
-// The board runs in Central time. All-day events are stored at UTC midnight,
-// which only lands on the previous local day west of UTC, so pin the zone.
-process.env.TZ = 'America/Chicago';
 
 import type { CalendarEvent } from '@/types/calendar';
 import {
@@ -201,6 +198,54 @@ describe('Night Sky dimming clock', () => {
     expect(msUntilNightSkyBoundary(at(0))).toBe(6 * 3600000);
     expect(msUntilNightSkyBoundary(at(5))).toBe(3600000);
     expect(msUntilNightSkyBoundary(at(12))).toBe(9 * 3600000);
+  });
+
+  describe('with a display zone west of the device (Los Angeles on a Central device)', () => {
+    const la = 'America/Los_Angeles';
+
+    it('ticks at display-zone midnight when it comes before a device boundary', () => {
+      // 01:10 Central is 23:10 in LA: LA midnight is 50 minutes away, device 06:00 is 4h50m away.
+      expect(msUntilNightSkyBoundary(at(1, 10))).toBe(290 * 60000);
+      expect(msUntilNightSkyBoundary(at(1, 10), la)).toBe(50 * 60000);
+      expect(msUntilNightSkyBoundary(at(0, 30), la)).toBe(90 * 60000);
+    });
+
+    it('keeps the device boundaries when they come first', () => {
+      expect(msUntilNightSkyBoundary(at(20, 59), la)).toBe(60000);
+      expect(msUntilNightSkyBoundary(at(22), la)).toBe(2 * 3600000);
+      expect(msUntilNightSkyBoundary(at(5), la)).toBe(3600000);
+    });
+
+    it('moves the comet to the next LA day on the display-zone tick', () => {
+      const events = [event('sat', '2026-08-29T18:00:00Z'), event('sun', '2026-08-30T18:00:00Z')];
+      const cometAt = (now: Date) =>
+        nightSkyFrameEvents(events, now, { timeFormat: '24h', timeZone: la }).find(
+          ({ comet }) => comet
+        )?.id;
+      const beforeTick = at(1, 10);
+      const afterTick = new Date(
+        beforeTick.getTime() + msUntilNightSkyBoundary(beforeTick, la) + 1000
+      );
+      expect(cometAt(beforeTick)).toBe('sat');
+      expect(cometAt(afterTick)).toBe('sun');
+    });
+  });
+
+  it('reaches display-zone midnight on a day that loses an hour in that zone', () => {
+    // Nuuk springs forward at 01:00Z on 2026-03-29, so its 2026-03-28 is 23 hours long.
+    const nuuk = 'America/Nuuk';
+    const events = [
+      event('sat', '2026-03-28T20:00:00Z'),
+      event('sun', '2026-03-29T12:00:00Z'),
+    ];
+    const cometAt = (now: Date) =>
+      nightSkyFrameEvents(events, now, { timeFormat: '24h', timeZone: nuuk }).find(
+        ({ comet }) => comet
+      )?.id;
+    const beforeTick = new Date('2026-03-28T23:30:00Z');
+    const tick = msUntilNightSkyBoundary(beforeTick, nuuk);
+    expect(tick).toBe(90 * 60000);
+    expect(cometAt(new Date(beforeTick.getTime() + tick + 1000))).toBe('sun');
   });
 
   it('follows the wall clock across a daylight-saving change', () => {

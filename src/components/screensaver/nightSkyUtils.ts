@@ -2,6 +2,7 @@ import { format } from 'date-fns';
 import type { CalendarEvent } from '@/types/calendar';
 import {
   eventStartsOnDisplayDay,
+  fromDisplayDateTime,
   formatDisplayTime,
   isCalendarEventPast,
   toDisplayDate,
@@ -55,15 +56,24 @@ export function isNightSkyNight(date: Date): boolean {
 /** Local hours at which the sky changes: "tomorrow" moves at midnight, the dimming at the other two. */
 const NIGHT_SKY_BOUNDARY_HOURS = [0, NIGHT_END_HOUR, NIGHT_START_HOUR];
 
-/** Milliseconds until the next local midnight, NIGHT_END_HOUR or NIGHT_START_HOUR. */
-export function msUntilNightSkyBoundary(date: Date): number {
+/**
+ * Milliseconds until the next device-local midnight, NIGHT_END_HOUR or NIGHT_START_HOUR,
+ * or the next midnight in `timeZone` (the display zone) when that comes first.
+ */
+export function msUntilNightSkyBoundary(date: Date, timeZone?: string): number {
   const boundaries = NIGHT_SKY_BOUNDARY_HOURS.flatMap((hour) => [
     new Date(date.getFullYear(), date.getMonth(), date.getDate(), hour),
     new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1, hour),
-  ]);
-  return Math.min(
-    ...boundaries.map((boundary) => boundary.getTime() - date.getTime()).filter((ms) => ms > 0)
-  );
+  ]).map((boundary) => boundary.getTime() - date.getTime());
+  if (timeZone) {
+    // Resolve the next display-zone midnight to a real instant: that day can be 23 or 25 hours long.
+    const nextDay = toDisplayDate(date, timeZone);
+    nextDay.setDate(nextDay.getDate() + 1);
+    boundaries.push(
+      fromDisplayDateTime(format(nextDay, 'yyyy-MM-dd'), '00:00', timeZone).getTime() - date.getTime()
+    );
+  }
+  return Math.min(...boundaries.filter((ms) => ms > 0));
 }
 
 export function moonPhase(date: Date): { age: number; illumination: number; waxing: boolean } {
