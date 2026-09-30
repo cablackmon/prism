@@ -1,6 +1,3 @@
-// The board runs in Central time. All-day events are stored at UTC midnight,
-// which only lands on the previous local day west of UTC, so pin the zone.
-process.env.TZ = 'America/Chicago';
 
 import type { CalendarEvent } from '@/types/calendar';
 import {
@@ -232,6 +229,23 @@ describe('Night Sky dimming clock', () => {
       expect(cometAt(beforeTick)).toBe('sat');
       expect(cometAt(afterTick)).toBe('sun');
     });
+  });
+
+  it('reaches display-zone midnight on a day that loses an hour in that zone', () => {
+    // Nuuk springs forward at 01:00Z on 2026-03-29, so its 2026-03-28 is 23 hours long.
+    const nuuk = 'America/Nuuk';
+    const events = [
+      event('sat', '2026-03-28T20:00:00Z'),
+      event('sun', '2026-03-29T12:00:00Z'),
+    ];
+    const cometAt = (now: Date) =>
+      nightSkyFrameEvents(events, now, { timeFormat: '24h', timeZone: nuuk }).find(
+        ({ comet }) => comet
+      )?.id;
+    const beforeTick = new Date('2026-03-28T23:30:00Z');
+    const tick = msUntilNightSkyBoundary(beforeTick, nuuk);
+    expect(tick).toBe(90 * 60000);
+    expect(cometAt(new Date(beforeTick.getTime() + tick + 1000))).toBe('sun');
   });
 
   it('follows the wall clock across a daylight-saving change', () => {

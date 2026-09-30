@@ -2,6 +2,7 @@ import { format } from 'date-fns';
 import type { CalendarEvent } from '@/types/calendar';
 import {
   eventStartsOnDisplayDay,
+  fromDisplayDateTime,
   formatDisplayTime,
   isCalendarEventPast,
   toDisplayDate,
@@ -65,9 +66,11 @@ export function msUntilNightSkyBoundary(date: Date, timeZone?: string): number {
     new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1, hour),
   ]).map((boundary) => boundary.getTime() - date.getTime());
   if (timeZone) {
-    const wall = toDisplayDate(date, timeZone);
+    // Resolve the next display-zone midnight to a real instant: that day can be 23 or 25 hours long.
+    const nextDay = toDisplayDate(date, timeZone);
+    nextDay.setDate(nextDay.getDate() + 1);
     boundaries.push(
-      new Date(wall.getFullYear(), wall.getMonth(), wall.getDate() + 1).getTime() - wall.getTime()
+      fromDisplayDateTime(format(nextDay, 'yyyy-MM-dd'), '00:00', timeZone).getTime() - date.getTime()
     );
   }
   return Math.min(...boundaries.filter((ms) => ms > 0));
