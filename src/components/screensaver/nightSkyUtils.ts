@@ -2,7 +2,7 @@ import { format } from 'date-fns';
 import type { CalendarEvent } from '@/types/calendar';
 import {
   eventStartsOnDisplayDay,
-  fromDisplayDateTime,
+  getDisplayDateKey,
   formatDisplayTime,
   isCalendarEventPast,
   toDisplayDate,
@@ -57,6 +57,24 @@ export function isNightSkyNight(date: Date): boolean {
 const NIGHT_SKY_BOUNDARY_HOURS = [0, NIGHT_END_HOUR, NIGHT_START_HOUR];
 
 /**
+ * Milliseconds until the first instant whose date in `timeZone` differs from `date`'s.
+ * Searched rather than computed from a "00:00" wall time, which a zone that skips
+ * midnight (e.g. Asia/Beirut) never shows, and which the day can be 23 or 25 hours before.
+ */
+function msUntilDisplayDateChange(date: Date, timeZone: string): number {
+  const startKey = getDisplayDateKey(date, timeZone);
+  let low = 0;
+  let high = 48 * 3600000;
+  if (getDisplayDateKey(date.getTime() + high, timeZone) === startKey) return Infinity;
+  while (high - low > 1) {
+    const mid = Math.floor((low + high) / 2);
+    if (getDisplayDateKey(date.getTime() + mid, timeZone) === startKey) low = mid;
+    else high = mid;
+  }
+  return high;
+}
+
+/**
  * Milliseconds until the next device-local midnight, NIGHT_END_HOUR or NIGHT_START_HOUR,
  * or the next midnight in `timeZone` (the display zone) when that comes first.
  */
@@ -65,14 +83,7 @@ export function msUntilNightSkyBoundary(date: Date, timeZone?: string): number {
     new Date(date.getFullYear(), date.getMonth(), date.getDate(), hour),
     new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1, hour),
   ]).map((boundary) => boundary.getTime() - date.getTime());
-  if (timeZone) {
-    // Resolve the next display-zone midnight to a real instant: that day can be 23 or 25 hours long.
-    const nextDay = toDisplayDate(date, timeZone);
-    nextDay.setDate(nextDay.getDate() + 1);
-    boundaries.push(
-      fromDisplayDateTime(format(nextDay, 'yyyy-MM-dd'), '00:00', timeZone).getTime() - date.getTime()
-    );
-  }
+  if (timeZone) boundaries.push(msUntilDisplayDateChange(date, timeZone));
   return Math.min(...boundaries.filter((ms) => ms > 0));
 }
 
