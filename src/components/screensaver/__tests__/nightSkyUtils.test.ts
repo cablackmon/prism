@@ -248,6 +248,24 @@ describe('Night Sky dimming clock', () => {
     expect(cometAt(new Date(beforeTick.getTime() + tick + 1000))).toBe('sun');
   });
 
+  it('waits for the real date change in a zone that skips midnight', () => {
+    // Beirut jumps from 23:59:59 on 2026-03-28 straight to 01:00 on 03-29, at 22:00Z.
+    const beirut = 'Asia/Beirut';
+    const events = [
+      event('sun', '2026-03-29T12:00:00Z'),
+      event('mon', '2026-03-30T12:00:00Z'),
+    ];
+    const cometAt = (now: Date) =>
+      nightSkyFrameEvents(events, now, { timeFormat: '24h', timeZone: beirut }).find(
+        ({ comet }) => comet
+      )?.id;
+    const beforeTick = new Date('2026-03-28T20:30:00Z');
+    const tick = msUntilNightSkyBoundary(beforeTick, beirut);
+    expect(tick).toBe(90 * 60000);
+    expect(cometAt(new Date(beforeTick.getTime() + tick - 1000))).toBe('sun');
+    expect(cometAt(new Date(beforeTick.getTime() + tick + 1000))).toBe('mon');
+  });
+
   it('follows the wall clock across a daylight-saving change', () => {
     // Central time falls back at 02:00 on 2026-11-01, so midnight to 06:00 is 7 hours.
     expect(msUntilNightSkyBoundary(new Date(2026, 10, 1, 0))).toBe(7 * 3600000);
