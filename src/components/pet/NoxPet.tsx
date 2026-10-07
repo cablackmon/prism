@@ -55,10 +55,13 @@ async function loadAssets(): Promise<PetAssets | null> {
   }
 }
 
+const PAUSE_ATTRS = ['data-kyst-screensaver', 'data-kyst-away', 'data-kyst-babysitter'];
+const FIXED_CHROME = 'nav.fixed, aside.fixed';
+
 function navInsets(): { bottom: number; left: number } {
   let bottom = 0;
   let left = 0;
-  document.querySelectorAll('nav.fixed').forEach((nav) => {
+  document.querySelectorAll(FIXED_CHROME).forEach((nav) => {
     const rect = nav.getBoundingClientRect();
     if (rect.height <= 0 || rect.width <= 0) return;
     const onScreen = rect.right > 1 && rect.left < window.innerWidth - 1 && rect.bottom > 1 && rect.top < window.innerHeight - 1;
@@ -83,12 +86,15 @@ export function NoxPet() {
   const [reduced, setReduced] = useState(false);
   const [supported, setSupported] = useState(true);
   const [insets, setInsets] = useState({ bottom: 0, left: 0 });
+  const [failed, setFailed] = useState(false);
+  const [ready, setReady] = useState(false);
 
   const layerRef = useRef<HTMLDivElement>(null);
   const moverRef = useRef<HTMLDivElement>(null);
   const bobRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const triggerRef = useRef<() => void>(() => {});
+  const relayoutRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     setSupported(supportsVp9Alpha());
@@ -96,15 +102,30 @@ export function NoxPet() {
     const sync = () => setReduced(mq.matches);
     sync();
     mq.addEventListener('change', sync);
+    const refreshInsets = () => {
+      const next = navInsets();
+      setInsets((cur) => (cur.bottom === next.bottom && cur.left === next.left ? cur : next));
+    };
     const onResize = () => {
       setSize(petSizeFor(window.innerHeight));
-      setInsets(navInsets());
+      refreshInsets();
+      relayoutRef.current();
+    };
+    const onTransitionEnd = (e: TransitionEvent) => {
+      if (e.target instanceof Element && e.target.closest(FIXED_CHROME)) refreshInsets();
     };
     onResize();
     window.addEventListener('resize', onResize);
+    document.addEventListener('transitionend', onTransitionEnd, true);
+    // The nav mounts after the pet and swaps with orientation without a resize event.
+    const insetTimer = setInterval(() => {
+      if (!document.hidden) refreshInsets();
+    }, 1000);
     return () => {
+      clearInterval(insetTimer);
       mq.removeEventListener('change', sync);
       window.removeEventListener('resize', onResize);
+      document.removeEventListener('transitionend', onTransitionEnd, true);
     };
   }, []);
 
@@ -127,11 +148,11 @@ export function NoxPet() {
       width: PET_STAGE.videoWidth * s,
       height: PET_STAGE.videoHeight * s,
       drop: petFeetDrop(assets.walk, size),
-      hit: { left: bx * s, top: by * s, width: bw * s, height: bh * s },
+      hit: { left: bx * s, top: Math.max(0, (by - PET_STAGE.cropY) * s), width: bw * s, height: bh * s },
     };
   }, [assets, size]);
 
-  const active = Boolean(wanted && supported && assets && geometry);
+  const active = Boolean(wanted && supported && assets && geometry && !failed);
 
   const geometryRef = useRef({ size, meta: assets?.walk ?? null });
   geometryRef.current = { size, meta: assets?.walk ?? null };
@@ -160,6 +181,7 @@ export function NoxPet() {
     startWalk(state, performance.now(), bounds0, rand);
 
     let raf = 0;
+    let wakeTimer: ReturnType<typeof setTimeout> | null = null;
     let last = 0;
     let running = false;
     let actionTimer: ReturnType<typeof setTimeout> | null = null;
@@ -170,9 +192,21 @@ export function NoxPet() {
     const paint = () => {
       mover.style.transform = `translate3d(${state.x.toFixed(2)}px,0,0) scaleX(${state.direction})`;
     };
+    const relayout = () => {
+      const b = bounds();
+      state.x = Math.max(b.min, Math.min(b.max, state.x));
+      paint();
+    };
+    relayoutRef.current = relayout;
+
     const setSrc = (url: string, loop: boolean) => {
       if (!video.src.endsWith(url)) video.src = url;
       video.loop = loop;
+    };
+    const play = () => {
+      void video.play().catch((err: unknown) => {
+        if (err instanceof DOMException && err.name === 'NotSupportedError') setFailed(true);
+      });
     };
     const holdStanding = () => {
       heldFrame = true;
@@ -183,32 +217,79 @@ export function NoxPet() {
     const playWalk = () => {
       heldFrame = false;
       setSrc(walkUrl, true);
-      void video.play().catch(() => {});
+      play();
     };
     const showIdle = () => {
       if (hasClip('idle')) {
         heldFrame = false;
         setSrc(clipUrl('idle'), true);
-        void video.play().catch(() => {});
+        play();
       } else {
         holdStanding();
       }
     };
+    const stopFrames = () => {
+      cancelAnimationFrame(raf);
+      raf = 0;
+      if (wakeTimer) clearTimeout(wakeTimer);
+      wakeTimer = null;
+    };
+    const loop = (now: number) => {
+      raf = 0;
+      if (!running) return;
+      const b = bounds();
+      if (state.x > b.max) state.x = b.max;
+      if (state.x < b.min) state.x = b.min;
+      const result = stepPet(state, now, last, petSpeed(meta, geometryRef.current.size), b, rand);
+      last = now;
+      if (result.modeChanged) applyMode();
+      paint();
+      if (state.mode === 'walk') raf = requestAnimationFrame(loop);
+      else scheduleWake();
+    };
+    // Only a walking pet needs per-frame work; idle sleeps until its timer ends, actions are timer-driven.
+    const scheduleWake = () => {
+      if (!running || state.mode !== 'idle') return;
+      if (wakeTimer) clearTimeout(wakeTimer);
+      wakeTimer = setTimeout(() => {
+        wakeTimer = null;
+        if (!running) return;
+        last = performance.now();
+        raf = requestAnimationFrame(loop);
+      }, Math.max(0, state.modeUntil - performance.now()));
+    };
+    const resumeFrames = () => {
+      stopFrames();
+      if (state.mode === 'walk') {
+        last = performance.now();
+        raf = requestAnimationFrame(loop);
+      } else {
+        scheduleWake();
+      }
+    };
+    const applyMode = () => {
+      if (state.mode === 'walk') playWalk();
+      else if (state.mode === 'idle') showIdle();
+    };
+
     const endAction = () => {
       actionTimer = null;
       bob.removeAttribute('data-nox-pet-action');
       state.mode = 'idle';
       state.modeUntil = performance.now() + 1500;
-      showIdle();
+      if (running) {
+        showIdle();
+        resumeFrames();
+      }
     };
     const runAction = (name: ActionName) => {
-      if (state.mode === 'action' || !running) return;
+      if (state.mode === 'action' || !running || reduced) return;
+      stopFrames();
       state.mode = 'action';
-      bob.setAttribute('data-nox-pet-action', name);
       if (hasClip(name)) {
         heldFrame = false;
         setSrc(clipUrl(name), false);
-        void video.play().catch(() => {});
+        play();
         actionTimer = setTimeout(endAction, ACTION_MS[name] + 2000);
         video.onended = () => {
           video.onended = null;
@@ -216,6 +297,7 @@ export function NoxPet() {
           endAction();
         };
       } else {
+        bob.setAttribute('data-nox-pet-action', name);
         if (name === 'dance') playWalk();
         else holdStanding();
         actionTimer = setTimeout(endAction, ACTION_MS[name]);
@@ -227,33 +309,15 @@ export function NoxPet() {
       runAction(name);
     };
 
-    const applyMode = () => {
-      if (state.mode === 'walk') playWalk();
-      else if (state.mode === 'idle') showIdle();
+    const shouldRun = () => {
+      if (document.hidden) return false;
+      const d = document.documentElement.dataset;
+      return d.kystScreensaver !== 'active' && d.kystAway === undefined && d.kystBabysitter === undefined;
     };
-
-    const tick = (now: number) => {
-      if (!running) return;
-      const b = bounds();
-      if (state.x > b.max) state.x = b.max;
-      if (state.x < b.min) state.x = b.min;
-      const result = stepPet(state, now, last, petSpeed(meta, geometryRef.current.size), b, rand);
-      last = now;
-      if (result.modeChanged) {
-        applyMode();
-        setInsets(navInsets());
-      }
-      paint();
-      raf = requestAnimationFrame(tick);
-    };
-
-    const shouldRun = () =>
-      !document.hidden && document.documentElement.dataset.kystScreensaver !== 'active';
     const sync = () => {
       const want = shouldRun();
       if (want && !running) {
         running = true;
-        last = performance.now();
         if (reduced) {
           holdStanding();
           state.x = bounds().max - 24;
@@ -262,39 +326,64 @@ export function NoxPet() {
         }
         if (state.mode === 'action') playWalk();
         else applyMode();
-        raf = requestAnimationFrame(tick);
+        resumeFrames();
       } else if (!want && running) {
         running = false;
-        cancelAnimationFrame(raf);
+        stopFrames();
+        if (actionTimer) clearTimeout(actionTimer);
+        actionTimer = null;
+        video.onended = null;
+        bob.removeAttribute('data-nox-pet-action');
+        if (state.mode === 'action') {
+          state.mode = 'idle';
+          state.modeUntil = performance.now() + 500;
+        }
         video.pause();
       }
     };
 
     const onLoaded = () => {
       video.style.opacity = '1';
+      setReady(true);
       if (heldFrame) video.currentTime = IDLE_FRAME_S;
     };
+    const onError = () => {
+      if (video.src.endsWith(walkUrl)) {
+        setFailed(true);
+      } else if (state.mode === 'action') {
+        if (actionTimer) clearTimeout(actionTimer);
+        endAction();
+      }
+    };
     video.addEventListener('loadeddata', onLoaded);
+    video.addEventListener('error', onError);
     document.addEventListener('visibilitychange', sync);
     const observer = new MutationObserver(sync);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-kyst-screensaver'] });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: PAUSE_ATTRS });
     paint();
     sync();
 
     return () => {
       running = false;
-      cancelAnimationFrame(raf);
+      stopFrames();
       if (actionTimer) clearTimeout(actionTimer);
       video.onended = null;
       triggerRef.current = () => {};
+      relayoutRef.current = () => {};
       video.removeEventListener('loadeddata', onLoaded);
+      video.removeEventListener('error', onError);
       document.removeEventListener('visibilitychange', sync);
       observer.disconnect();
       video.pause();
       video.removeAttribute('src');
       video.load();
+      setReady(false);
     };
   }, [active, assets, reduced]);
+
+  useEffect(() => {
+    relayoutRef.current();
+  }, [size, insets.left]);
 
   const onTap = useCallback(() => triggerRef.current(), []);
 
@@ -310,7 +399,7 @@ export function NoxPet() {
         right: 'env(safe-area-inset-right, 0px)',
         bottom: `calc(env(safe-area-inset-bottom, 0px) + ${insets.bottom - geometry.drop}px)`,
         height: geometry.height,
-        transition: 'bottom 300ms ease-out, left 300ms ease-out',
+        transition: 'bottom 300ms ease-out',
       }}
     >
       <div
@@ -336,7 +425,7 @@ export function NoxPet() {
             tabIndex={-1}
             aria-label="Nox, the family pet. Tap to wave or dance."
             data-testid="nox-pet-figure"
-            disabled={reduced}
+            disabled={reduced || !ready}
             onMouseDown={(e) => e.preventDefault()}
             onClick={onTap}
             style={{
@@ -345,7 +434,7 @@ export function NoxPet() {
               top: geometry.hit.top,
               width: geometry.hit.width,
               height: geometry.hit.height,
-              pointerEvents: reduced ? 'none' : 'auto',
+              pointerEvents: reduced || !ready ? 'none' : 'auto',
               background: 'transparent',
               border: 0,
               padding: 0,

@@ -48,6 +48,14 @@ export function AwayModeOverlay() {
     return () => clearInterval(timer);
   }, [isAway, photos.length, pinnedId, photoInterval]);
 
+  useEffect(() => {
+    if (!isAway) return;
+    document.documentElement.dataset.kystAway = 'active';
+    return () => {
+      delete document.documentElement.dataset.kystAway;
+    };
+  }, [isAway]);
+
   // Fade in effect
   useEffect(() => {
     if (isAway) {
