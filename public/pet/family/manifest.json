@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "id": "family",
+  "audience": "family",
+  "lineage": "family_v9",
+  "locked_by": "Cameron 2026-10-06 23:13 CDT, DM msg 35200, chose v9",
+  "source": "projects/nox-face/art/clips/pet/outfits/family/ (copied 2026-10-07 for NOX-12098)",
+  "stage": {
+    "cropY": 86,
+    "videoWidth": 1080,
+    "videoHeight": 1766,
+    "figureHeight": 1736.2
+  },
+  "sets": {
+    "small": "small/"
+  },
+  "clips": [
+    "walk"
+  ],
+  "files": {
+    "small/walk.webm": {
+      "bytes": 1304456,
+      "sha256": "e889cf3f1275ee46fd0f2f3fb7d364487a65f8097136f4cf8c4eaf6f52292308"
+    },
+    "small/walk.json": {
+      "bytes": 220,
+      "sha256": "06c8c76826b5a53344886d30f64735741deb84be44c000476736ce6ebfe36e9c"
+    }
+  },
+  "pending": "idle, wave, dance, laugh matted Family WebMs are not delivered yet. Add each to small/ with a <name>.json (same fields as walk.json), then list the name in clips. Until then the overlay uses the Family walk clip itself (held on a standing frame, hop, in-place step). Never substitute the Street clips.",
+  "not_shipped": "full-size set (walk.webm 2,728,359 bytes, sha256 6e8dff36...) is not shipped: the figure is clamped to 88-200 CSS px, so the 0.6-scale set (1060px tall) stays above 1 video px per device px up to a 5.8x pixel ratio."
+}
