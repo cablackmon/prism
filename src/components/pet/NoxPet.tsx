@@ -90,6 +90,7 @@ export function NoxPet() {
   const [insets, setInsets] = useState({ bottom: 0, left: 0 });
   const [failed, setFailed] = useState(false);
   const [ready, setReady] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
 
   const layerRef = useRef<HTMLDivElement>(null);
   const moverRef = useRef<HTMLDivElement>(null);
@@ -134,13 +135,17 @@ export function NoxPet() {
   useEffect(() => {
     if (!wanted || !supported || assets) return;
     let cancelled = false;
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
     void loadAssets().then((a) => {
-      if (!cancelled && a) setAssets(a);
+      if (cancelled) return;
+      if (a) setAssets(a);
+      else retryTimer = setTimeout(() => setLoadAttempt((n) => n + 1), Math.min(60_000, 5_000 * 2 ** loadAttempt));
     });
     return () => {
       cancelled = true;
+      if (retryTimer) clearTimeout(retryTimer);
     };
-  }, [wanted, supported, assets]);
+  }, [wanted, supported, assets, loadAttempt]);
 
   const geometry = useMemo(() => {
     if (!assets) return null;
@@ -284,8 +289,8 @@ export function NoxPet() {
         resumeFrames();
       }
     };
-    const runAction = (name: ActionName) => {
-      if (state.mode === 'action' || !running || reduced) return;
+    const runAction = (name: ActionName): boolean => {
+      if (state.mode === 'action' || !running || reduced) return false;
       stopFrames();
       state.mode = 'action';
       if (hasClip(name)) {
@@ -304,11 +309,10 @@ export function NoxPet() {
         else holdStanding();
         actionTimer = setTimeout(endAction, ACTION_MS[name]);
       }
+      return true;
     };
     triggerRef.current = () => {
-      const name = nextAction;
-      nextAction = nextAction === 'wave' ? 'dance' : 'wave';
-      runAction(name);
+      if (runAction(nextAction)) nextAction = nextAction === 'wave' ? 'dance' : 'wave';
     };
 
     const shouldRun = () => {
@@ -399,7 +403,7 @@ export function NoxPet() {
       style={{
         left: `calc(env(safe-area-inset-left, 0px) + ${insets.left}px)`,
         right: 'env(safe-area-inset-right, 0px)',
-        bottom: `calc(env(safe-area-inset-bottom, 0px) + ${insets.bottom - geometry.drop}px)`,
+        bottom: `calc(max(env(safe-area-inset-bottom, 0px), ${insets.bottom}px) - ${geometry.drop}px)`,
         height: geometry.height,
         transition: 'bottom 300ms ease-out',
       }}
