@@ -1,0 +1,14 @@
+{
+  "file": "dance.webm",
+  "frames": 145,
+  "fps": 24,
+  "duration": 6.042,
+  "loop": false,
+  "facing": "right",
+  "box": [
+    242.2,
+    99.8,
+    813.0,
+    1836.8
+  ]
+}

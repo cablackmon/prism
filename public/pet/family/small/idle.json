@@ -1,0 +1,14 @@
+{
+  "file": "idle.webm",
+  "frames": 145,
+  "fps": 24,
+  "duration": 6.042,
+  "loop": true,
+  "facing": "right",
+  "box": [
+    237.8,
+    108.0,
+    814.5,
+    1836.8
+  ]
+}

@@ -22,6 +22,8 @@ const PET_ROOT = '/pet/family/';
 const SET_DIR = 'small/';
 const IDLE_FRAME_S = 28 / 24;
 const ACTION_MS = { wave: 1800, dance: 3600 } as const;
+// Real clip lengths (126 and 145 frames at 24 fps); the ended event drives the normal exit, this is the stall guard.
+const CLIP_MS = { wave: 5250, dance: 6042 } as const;
 type ActionName = keyof typeof ACTION_MS;
 
 type PetAssets = {
@@ -290,7 +292,7 @@ export function NoxPet() {
         heldFrame = false;
         setSrc(clipUrl(name), false);
         play();
-        actionTimer = setTimeout(endAction, ACTION_MS[name] + 2000);
+        actionTimer = setTimeout(endAction, CLIP_MS[name] + 2000);
         video.onended = () => {
           video.onended = null;
           if (actionTimer) clearTimeout(actionTimer);

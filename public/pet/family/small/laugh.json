@@ -1,0 +1,14 @@
+{
+  "file": "laugh.webm",
+  "frames": 126,
+  "fps": 24,
+  "duration": 5.25,
+  "loop": false,
+  "facing": "right",
+  "box": [
+    242.2,
+    104.2,
+    810.8,
+    1836.8
+  ]
+}
