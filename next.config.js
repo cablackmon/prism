@@ -19,7 +19,8 @@ const withPWA = require('next-pwa')({
   // Every public/ file is precached by default, past workbox's size cap. The
   // kiosk wall's hologram (public/avatar/, a 16.6 MB GLB plus three.js) must
   // not ride into every phone's service worker; the wall fetches it on demand.
-  publicExcludes: ['!noprecache/**/*', '!avatar/**/*'],
+  // public/pet/ (about 5.7 MB of Nox pet clips) is the same: fetched only when the pet runs.
+  publicExcludes: ['!noprecache/**/*', '!avatar/**/*', '!pet/**/*'],
 });
 
 /** @type {import('next').NextConfig} */

@@ -26,6 +26,11 @@ const VoiceAssistantOverlay = dynamic(
   { ssr: false }
 );
 
+const NoxPet = dynamic(
+  () => import('@/components/pet/NoxPet').then((m) => ({ default: m.NoxPet })),
+  { ssr: false }
+);
+
 export function LazyOverlays() {
   return (
     <>
@@ -33,6 +38,7 @@ export function LazyOverlays() {
       <AwayModeOverlay />
       <Screensaver />
       <VoiceAssistantOverlay />
+      <NoxPet />
     </>
   );
 }

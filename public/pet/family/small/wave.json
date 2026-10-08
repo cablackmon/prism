@@ -1,0 +1,14 @@
+{
+  "file": "wave.webm",
+  "frames": 126,
+  "fps": 24,
+  "duration": 5.25,
+  "loop": false,
+  "facing": "right",
+  "box": [
+    145.5,
+    105.0,
+    814.5,
+    1838.2
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "file": "walk.webm",
+  "frames": 114,
+  "fps": 24,
+  "duration": 4.75,
+  "loop": true,
+  "facing": "right",
+  "box": [
+    63.0,
+    110.2,
+    939.0,
+    1731.0
+  ],
+  "groundY": 1828.5,
+  "strideStagePx": 1110.6
+}

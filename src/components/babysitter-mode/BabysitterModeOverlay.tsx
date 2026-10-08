@@ -49,6 +49,14 @@ export function BabysitterModeOverlay() {
   const [visible, setVisible] = useState(false);
   const [showExitModal, setShowExitModal] = useState(false);
 
+  useEffect(() => {
+    if (!isActive) return;
+    document.documentElement.dataset.kystBabysitter = 'active';
+    return () => {
+      delete document.documentElement.dataset.kystBabysitter;
+    };
+  }, [isActive]);
+
   // Fade in effect
   useEffect(() => {
     if (isActive) {

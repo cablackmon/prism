@@ -17,6 +17,7 @@ import { useScreensaverTimeout } from '@/lib/hooks/useScreensaverTimeout';
 import { useAutoHideUI } from '@/lib/hooks/useAutoHideUI';
 import { useAwayModeTimeout } from '@/lib/hooks/useAwayModeTimeout';
 import { usePerformanceMode } from '@/lib/hooks/usePerformanceMode';
+import { useNoxPetSetting } from '@/lib/hooks/useNoxPetSetting';
 
 function getCurrentMonthNum(): number {
   return new Date().getMonth() + 1;
@@ -174,6 +175,8 @@ export function DisplaySection() {
       <SectionDivider label="Wallpaper & Display" />
 
       <PerformanceModeCard />
+
+      <NoxPetCard />
 
       <WallpaperSettingsCard />
 
@@ -436,6 +439,41 @@ function PerformanceModeCard() {
           <Switch
             checked={enabled}
             onCheckedChange={setEnabled}
+          />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function NoxPetCard() {
+  const { enabled, setEnabled } = useNoxPetSetting();
+  const [failed, setFailed] = useState(false);
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Nox pet</CardTitle>
+        <CardDescription>
+          A small Nox who walks along the bottom of the board on every household screen
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <label htmlFor="nox-pet-toggle" className="text-sm font-medium">Show the Nox pet</label>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Tap her to wave or dance. She never opens chat or the microphone; use Ask NOX for that. Screens set to reduce motion show her standing still.
+            </p>
+            {failed && (
+              <p role="alert" className="text-xs text-destructive mt-1">
+                Could not save. Only a parent can change this setting.
+              </p>
+            )}
+          </div>
+          <Switch
+            id="nox-pet-toggle"
+            checked={enabled}
+            onCheckedChange={async (checked) => setFailed(!(await setEnabled(checked)))}
           />
         </div>
       </CardContent>

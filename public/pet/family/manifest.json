@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "id": "family",
+  "audience": "family",
+  "lineage": "family_v9",
+  "locked_by": "Cameron 2026-10-06 23:13 CDT, DM msg 35200, chose v9",
+  "source": "projects/nox-face/art/clips/pet/outfits/family/ (walk copied 2026-10-07; idle/wave/dance/laugh copied 2026-10-08 from main NOX hash-pinned accepted-family-v9, NOX-12111 verifier 131/131)",
+  "stage": {
+    "cropY": 86,
+    "videoWidth": 1080,
+    "videoHeight": 1766,
+    "figureHeight": 1736.2
+  },
+  "sets": {
+    "small": "small/"
+  },
+  "clips": [
+    "walk",
+    "idle",
+    "wave",
+    "dance",
+    "laugh"
+  ],
+  "files": {
+    "small/walk.webm": {
+      "bytes": 1304456,
+      "sha256": "e889cf3f1275ee46fd0f2f3fb7d364487a65f8097136f4cf8c4eaf6f52292308"
+    },
+    "small/walk.json": {
+      "bytes": 220,
+      "sha256": "06c8c76826b5a53344886d30f64735741deb84be44c000476736ce6ebfe36e9c"
+    },
+    "small/idle.webm": {
+      "bytes": 711485,
+      "sha256": "d8c7197d66b8552293a624979c27b9f1dc768c004fa87be5c68af6c5b9dc3f7a"
+    },
+    "small/idle.json": {
+      "bytes": 174,
+      "sha256": "7d1db1b5889f73ccdf503fa1ee7c6ee3410726047d0649ec7799280cf9730610"
+    },
+    "small/wave.webm": {
+      "bytes": 754591,
+      "sha256": "cb2912903ca49fa33189fc4c6c356ced678f769488a80b4d74baf78ad85e7efc"
+    },
+    "small/wave.json": {
+      "bytes": 174,
+      "sha256": "41818ead13013b94d13e65945b6044d2df153e7a3e01cf0fda527834145da4ee"
+    },
+    "small/dance.webm": {
+      "bytes": 1897017,
+      "sha256": "cb805d4bb5f25c1f7cb0a1be3dc04083bc44d65b5336e8968c49cc48b0eb073d"
+    },
+    "small/dance.json": {
+      "bytes": 175,
+      "sha256": "0fd9862b0b33cf1d1399e0153ac04f838dd72cca408c2356d70be955e061654b"
+    },
+    "small/laugh.webm": {
+      "bytes": 1058319,
+      "sha256": "de631814388e64ea5d1924f23b25e2fa8d1d60e54df4960d01bf883752508cb9"
+    },
+    "small/laugh.json": {
+      "bytes": 175,
+      "sha256": "9558a1b06ac03cb758a538dbd6f37db4c6a2e1acc11248793e0d0764221f6b6c"
+    }
+  },
+  "not_shipped": "full-size set (walk.webm 2,728,359 bytes, sha256 6e8dff36...) is not shipped: the figure is clamped to 88-200 CSS px, so the 0.6-scale set (1060px tall) stays above 1 video px per device px up to a 5.8x pixel ratio.",
+  "lineageDetail": {
+    "plate_sha256": "dd8de12dac6665e4cd66e10105ccf0a1cd915fd8536444ae88013916c73f8b4c",
+    "source_sha256_prefix": {
+      "idle": "005876f2ea34a007",
+      "wave": "0cf71dd02e62e4ad",
+      "dance": "960de8830cb083db",
+      "laugh": "365511af3971cde5"
+    },
+    "note": "Original Kling take1 files; wave/laugh retimed 121->126 frames by the original pipeline. No Street or Family v1 asset."
+  },
+  "note": "laugh ships but is not triggered by the board (tap = wave or dance only). listening/thinking were accepted upstream but are not shipped."
+}
