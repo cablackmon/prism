@@ -90,7 +90,8 @@
   #holo-avatar[data-mode="holo"] { opacity:var(--holo-overlay,0); transition:none; }
   #holo-avatar .holo-canvas { position:absolute; inset:0; width:100%; height:100%; display:block; }
   #holo-avatar .holo-still { position:absolute; left:50%; top:max(16px,env(safe-area-inset-top)); transform:translateX(-50%);
-                             width:min(86vw,62vh); height:auto; }
+                             height:calc(100vh - 2 * max(16px,env(safe-area-inset-top))); max-width:86vw; width:auto;
+                             object-fit:contain; }
   /* NOX avatar clips (Family v9, the Nox Face / Nox Pet look), stood on the floor of the board's free column. */
   #holo-avatar .nox-stage { position:absolute; top:0; bottom:0; left:0; right:0; overflow:hidden; pointer-events:none; }
   #holo-avatar .nox-clip { position:absolute; left:50%; bottom:0; height:94vh; width:auto; transform:translateX(-50%);
@@ -103,7 +104,7 @@
     #chat-panel { right:14px; bottom:max(102px,calc(env(safe-area-inset-bottom) + 102px));
                   width:calc(100vw - 28px); max-height:64vh; }
     #voice-status { display:none; }
-    #holo-avatar .holo-still { width:min(86vw,46vh); }
+    #holo-avatar .holo-still { height:46vh; }
   }
 </style>
 </head>

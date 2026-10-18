@@ -58,18 +58,27 @@ export async function createNoxRenderer({ container, reserveRightPx = 0, reduced
     return element;
   }
 
+  // The outgoing clip stays up until the incoming one has a decoded frame, so
+  // NOX never blanks mid-turn while a clip is still loading.
   function play(name) {
     const next = video(name);
-    const previous = playing ? videos.get(playing) : null;
+    const previous = [...videos.values()].find((element) => element !== next && element.classList.contains("active"));
     playing = name;
     next.loop = LOOPED.has(name);
+    // read before the rewind: a seek can drop readyState without a new loadeddata
+    const hasFrame = next.readyState >= 2;
     try { next.currentTime = 0; } catch { /* not seekable yet; it starts from 0 anyway */ }
     next.play()?.catch?.(() => {});
-    next.classList.add("active");
-    if (previous && previous !== next) {
-      previous.classList.remove("active");
-      setTimeout(() => { if (playing !== previous.dataset.clip) previous.pause(); }, FADE_MS + 40);
-    }
+    const swap = () => {
+      if (playing !== name) return;
+      next.classList.add("active");
+      if (previous) {
+        previous.classList.remove("active");
+        setTimeout(() => { if (playing !== previous.dataset.clip) previous.pause(); }, FADE_MS + 40);
+      }
+    };
+    if (hasFrame) swap();
+    else for (const type of ["loadeddata", "playing"]) next.addEventListener(type, swap, { once: true });
   }
 
   function nextForState() {
@@ -96,9 +105,8 @@ export async function createNoxRenderer({ container, reserveRightPx = 0, reduced
     first.addEventListener("loadeddata", () => done(resolve), { once: true });
     first.addEventListener("error", () => done(reject, new Error("nox_clip_error")), { once: true });
   });
-  // warm the clips the first open reaches for, so the greeting has no stall
-  video(GREETING);
-  video("listening");
+  // warm every clip a first voice turn reaches for, so no state change stalls
+  for (const name of [GREETING, "listening", "thinking", ...CLIPS_FOR_STATE.speaking]) video(name);
   container.appendChild(stage);
 
   return {
