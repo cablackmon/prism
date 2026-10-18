@@ -9,21 +9,25 @@ const Avatar = require("../public/avatar/avatar.js");
 const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, "../public/avatar/assets/nox_hologram_v1.manifest.json"), "utf8"));
 const wall = fs.readFileSync(path.join(__dirname, "../public/wall.html"), "utf8");
 
-test("the avatar is on by default, ?avatarMode=off turns it off, and a phone or a GPU that cannot draw it gets the still", () => {
+test("the NOX clip avatar is on by default, ?avatarMode=holo brings back the hologram, ?avatarMode=off turns it off, and a phone gets the still", () => {
   let probes = 0;
   const probe = () => { probes += 1; return true; };
-  assert.equal(Avatar.DEFAULT_MODE, "holo");
-  assert.equal(Avatar.resolveAvatarMode({ search: "", viewportWidth: 3840, holoGpu: probe }), "holo");
-  assert.equal(Avatar.resolveAvatarMode({ search: "?avatarMode=nonsense", viewportWidth: 3840, holoGpu: probe }), "holo");
+  assert.equal(Avatar.DEFAULT_MODE, "nox");
+  assert.equal(Avatar.resolveAvatarMode({ search: "", viewportWidth: 3840, holoGpu: probe }), "nox");
+  assert.equal(Avatar.resolveAvatarMode({ search: "?avatarMode=nonsense", viewportWidth: 3840, holoGpu: probe }), "nox");
   assert.equal(Avatar.resolveAvatarMode({ search: "", viewportWidth: 390, holoGpu: probe }), "still");
-  assert.equal(Avatar.resolveAvatarMode({ search: "", viewportWidth: 3840, holoGpu: () => false }), "still");
-  probes = 0;
+  // the clips are plain video, so a GPU that cannot draw the hologram still gets them
+  assert.equal(Avatar.resolveAvatarMode({ search: "", viewportWidth: 3840, holoGpu: () => false }), "nox");
+  assert.equal(probes, 0, "the clip avatar must not create a WebGL probe context");
   assert.equal(Avatar.resolveAvatarMode({ search: "?avatarMode=off", viewportWidth: 3840, holoGpu: probe }), "off");
   assert.equal(Avatar.resolveAvatarMode({ search: "", defaultMode: "off", holoGpu: probe }), "off");
   assert.equal(probes, 0, "a flag-off wall must not create a WebGL probe context");
+  assert.equal(Avatar.resolveAvatarMode({ search: "", defaultMode: "holo", viewportWidth: 3840, holoGpu: probe }), "holo");
+  assert.equal(Avatar.resolveAvatarMode({ search: "", defaultMode: "holo", viewportWidth: 3840, holoGpu: () => false }), "still");
   assert.equal(Avatar.resolveAvatarMode({ search: "?avatarMode=holo", viewportWidth: 3840, holoGpu: probe }), "holo");
   assert.equal(Avatar.resolveAvatarMode({ search: "?avatarMode=holo", viewportWidth: 390, holoGpu: probe }), "still");
   assert.equal(Avatar.resolveAvatarMode({ search: "?avatarMode=holo", viewportWidth: 3840, holoGpu: () => false }), "still");
+  assert.equal(Avatar.resolveAvatarMode({ search: "?avatarMode=nox", viewportWidth: 390, holoGpu: probe }), "still");
   assert.equal(Avatar.resolveAvatarMode({ search: "?avatarMode=still", viewportWidth: 3840, holoGpu: probe }), "still");
   assert.equal(Avatar.resolveAvatarMode({ search: "?avatarMode=off", defaultMode: "holo", holoGpu: probe }), "off");
 });
@@ -816,7 +820,7 @@ test("WebGL2 without renderable half-float targets gets the still, not a hologra
   assert.equal(Avatar.canRenderHolo(lying.gl), false, "an incomplete half-float framebuffer passed the probe");
   // and resolveAvatarMode turns that answer into the still on a kiosk-sized screen
   const probe = () => Avatar.canRenderHolo(fakeGl().gl);
-  assert.equal(Avatar.resolveAvatarMode({ search: "", viewportWidth: 3840, holoGpu: probe }), "still");
+  assert.equal(Avatar.resolveAvatarMode({ search: "?avatarMode=holo", viewportWidth: 3840, holoGpu: probe }), "still");
   assert.match(wall, /holoGpu: \(\) => \{ try \{ return KystAvatar\.canRenderHolo\(document\.createElement\("canvas"\)\.getContext\("webgl2"\)\); \}/);
 });
 

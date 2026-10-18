@@ -11,17 +11,24 @@
 
   // On by default once main NOX approved the flip (NOX-11769). ?avatarMode=off
   // is the per-URL kill switch and restores the pre-avatar wall exactly.
-  const DEFAULT_MODE = "holo";
+  // Default is now "nox": the Nox Face / Nox Pet Family v9 clips (Cameron
+  // 2026-10-18, option A). ?avatarMode=holo still brings back the 3D hologram.
+  const DEFAULT_MODE = "nox";
   // wall.html's own phone breakpoint. A phone gets the static still, never the
-  // 16.6 MB GLB (plan open question 2, default "still").
+  // 16.6 MB GLB or the clip set (plan open question 2, default "still").
   const PHONE_MAX_WIDTH = 520;
-  const REQUESTABLE_MODES = new Set(["off", "holo", "still"]);
+  const REQUESTABLE_MODES = new Set(["off", "nox", "holo", "still"]);
+  // modes that draw through a loaded renderer rather than the still image
+  const RENDERER_MODES = new Set(["nox", "holo"]);
+  const STILL_SRC = "/avatar/nox/nox_family_v9_still.jpg";
 
   function resolveAvatarMode({ search = "", defaultMode = DEFAULT_MODE, viewportWidth = Infinity, holoGpu = true } = {}) {
     const requested = new URLSearchParams(search).get("avatarMode");
     const mode = REQUESTABLE_MODES.has(requested) ? requested : defaultMode;
     if (mode === "off") return "off";
     if (mode === "still" || viewportWidth <= PHONE_MAX_WIDTH) return "still";
+    // the clips are plain <video>, so only the hologram needs the GPU probe
+    if (mode === "nox") return "nox";
     // a function, so a flag-off wall never creates a probe context
     if (!(typeof holoGpu === "function" ? holoGpu() : holoGpu)) return "still";
     return "holo";
@@ -398,7 +405,7 @@
   const IDLE_DISMISS_MS = 60_000;
 
   function createAvatarController({ mode, root, loadRenderer, onDismiss = () => {}, setTimer = setTimeout, clearTimer = clearTimeout, idleDismissMs = IDLE_DISMISS_MS } = {}) {
-    if (mode !== "holo" && mode !== "still") {
+    if (!RENDERER_MODES.has(mode) && mode !== "still") {
       return { mode: "off", wantsSpeech: false, open() {}, close() {}, setVoiceState() {}, attachSpeechAnalyser() {} };
     }
     let current = mode;
@@ -415,12 +422,12 @@
         const img = root.ownerDocument.createElement("img");
         img.className = "holo-still";
         img.alt = "";
-        img.src = "/avatar/assets/nox_hologram_v1_still_A.jpg";
+        img.src = STILL_SRC;
         root.appendChild(img);
       }
     }
 
-    // A renderer that cannot start (no WebGL2 context, GLB fetch failure)
+    // A renderer that cannot start (no WebGL2 context, GLB or clip fetch failure)
     // degrades to the still instead of leaving an empty overlay.
     // The overlay is only unhidden once there is something to draw: a holo
     // overlay shown while the GLB still loads is invisible but full screen,
@@ -435,7 +442,7 @@
       renderer?.enter();
     }
 
-    const ready = current === "holo" && loadRenderer
+    const ready = RENDERER_MODES.has(current) && loadRenderer
       ? Promise.resolve().then(loadRenderer).then((created) => {
         renderer = created;
         renderer.setState(avatarStateFor(voiceState));
@@ -474,7 +481,7 @@
       idleTimer = null;
       root.classList.remove("open");
       if (root.hidden) return;
-      if (renderer && current === "holo") {
+      if (renderer && RENDERER_MODES.has(current)) {
         renderer.exit().then(() => { if (!isOpen) root.hidden = true; });
       } else {
         hideTimer = setTimer(() => { if (!isOpen) root.hidden = true; }, 500);
@@ -503,6 +510,7 @@
 
   return {
     DEFAULT_MODE,
+    STILL_SRC,
     PHONE_MAX_WIDTH,
     AVATAR_STATE_FOR_VOICE,
     TRANSITION,
