@@ -606,6 +606,8 @@
     });
 
     hitbox.addEventListener("click", () => { if (!failed) onTap(); });
+    // a tap on the bubble puts it away, so a long answer never sits over the board's own buttons
+    bubble.addEventListener("click", hideBubble);
 
     return {
       get mode() { return failed ? "off" : "nox"; },

@@ -376,6 +376,8 @@ const avatar = avatarPresentation === "pet" ? KystAvatar.createPetController({
   // a tap on the hologram is Done, the same as the chat close button
   onDismiss: () => setChatOpen(false),
 });
+// clips that cannot load hand the wall back its pre-avatar look, the status pill beside the mic included
+avatar.ready?.then(() => { document.body.dataset.avatarPresentation = avatar.presentation; });
 
 let pendingStreamTicketId = null;
 let streamConnect = null;

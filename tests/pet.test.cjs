@@ -266,9 +266,26 @@ test("pet: clips that cannot load hide her and hand the wall back its chat panel
     assert.equal(taps, 0);
     p.controller.setVoiceState("listening", "Listening… tap to stop");
     assert.equal(p.bubble.hidden, true);
+    // the wall follows her presentation, so the status pill beside the mic comes back
+    assert.match(wall, /\navatar\.ready\?\.then\(\(\) => \{ document\.body\.dataset\.avatarPresentation = avatar\.presentation; \}\);\n/);
   } finally {
     console.warn = warn;
   }
+});
+
+test("pet: a tap on her bubble puts it away and cancels its fade", async () => {
+  const p = pet();
+  await p.controller.ready;
+  p.controller.reveal();
+  p.controller.setVoiceState("listening", "Listening… tap to stop");
+  p.controller.showTurn("hi", "Hello! A long answer that covers the corner of the board.");
+  p.controller.setVoiceState("ready", "Tap to ask NOX");
+  assert.equal(p.bubble.hidden, false);
+  assert.equal(p.t.timers.size, 1);
+  p.bubble.click();
+  assert.equal(p.bubble.hidden, true);
+  assert.equal(p.bubble.classList.contains("open"), false);
+  assert.equal(p.t.timers.size, 0, "the fade timer outlived the bubble");
 });
 
 test("the overlay controller answers the pet hooks as no-ops", () => {
