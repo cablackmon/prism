@@ -829,7 +829,7 @@ test("the wall wires the avatar to the voice states, the mic, Done and the share
   assert.ok(wall.indexOf('<script src="/avatar/avatar.js"></script>') > wall.indexOf('<script src="/voice-streaming.js"></script>'));
   assert.match(wall, /<div id="holo-avatar" aria-hidden="true" hidden><\/div>/);
   const setVoiceState = wall.match(/function setVoiceState\(state, label\) \{[\s\S]*?\n\}/)?.[0] || "";
-  assert.match(setVoiceState, /avatar\.setVoiceState\(state\);\n\}$/);
+  assert.match(setVoiceState, /avatar\.setVoiceState\(state, label\);\n\}$/);
   const micClick = wall.match(/mic\.addEventListener\("click", \(\) => \{[\s\S]*?\n\}\);/)?.[0] || "";
   assert.match(micClick, /setChatOpen\(true\);\n  avatar\.open\(\);/);
   assert.match(wall, /\n  onDismiss: \(\) => setChatOpen\(false\),\n/, "a tap on the hologram must close the chat too");

@@ -34,6 +34,20 @@
     return "holo";
   }
 
+  // Where the clip avatar lives (Cameron 2026-10-18, NOX 1: "make it a nox pet instead of opening the face
+  // page"). "pet" stands her in the corner of the board all day and answers inline; "overlay" is the
+  // full-screen #holo-avatar from PR #31. Only the clip avatar has a pet body, so holo, still and off keep
+  // the overlay exactly as before. wall.html's window.KYST_AVATAR_MODE is the one-line rollback, and
+  // ?avatarPresentation= overrides it per URL.
+  const DEFAULT_PRESENTATION = "pet";
+  const PRESENTATIONS = new Set(["pet", "overlay"]);
+
+  function resolveAvatarPresentation({ mode, flag, search = "" } = {}) {
+    const requested = new URLSearchParams(search).get("avatarPresentation");
+    const chosen = PRESENTATIONS.has(requested) ? requested : PRESENTATIONS.has(flag) ? flag : DEFAULT_PRESENTATION;
+    return mode === "nox" && chosen === "pet" ? "pet" : "overlay";
+  }
+
   // WebGL2 alone is not enough: the glow pass and its composer render into
   // HalfFloatType targets, which only EXT_color_buffer_float or
   // EXT_color_buffer_half_float make renderable. Without one the composer
@@ -406,7 +420,10 @@
 
   function createAvatarController({ mode, root, loadRenderer, onDismiss = () => {}, setTimer = setTimeout, clearTimer = clearTimeout, idleDismissMs = IDLE_DISMISS_MS } = {}) {
     if (!RENDERER_MODES.has(mode) && mode !== "still") {
-      return { mode: "off", wantsSpeech: false, open() {}, close() {}, setVoiceState() {}, attachSpeechAnalyser() {} };
+      return {
+        mode: "off", presentation: "off", wantsSpeech: false,
+        open() {}, close() {}, setVoiceState() {}, attachSpeechAnalyser() {}, reveal() {}, showTurn() {},
+      };
     }
     let current = mode;
     let isOpen = false;
@@ -492,6 +509,7 @@
 
     return {
       get mode() { return current; },
+      presentation: "overlay",
       wantsSpeech: mode === "holo",
       ready,
       open,
@@ -505,11 +523,129 @@
         analyser = node;
         renderer?.setSpeechAnalyser(node);
       },
+      // the pet's hooks; the overlay keeps its own chat panel
+      reveal() {},
+      showTurn() {},
+    };
+  }
+
+  // The resident pet: the same clip renderer as the overlay, mounted in a small box in the corner of the
+  // board. It never opens #holo-avatar. A tap on her is the mic's own tap (onTap), so the wall's mic and
+  // turn handlers run unchanged; the controller only shows what they report. Her bubble beside her head
+  // says "Listening…" and "Thinking…", then shows what was heard and the answer as it streams, and fades a
+  // little after the turn ends. A renderer that cannot start hides her and reports presentation "off", so
+  // the wall falls back to its chat panel, the pre-avatar wall.
+  const PET_STATUS = Object.freeze({ listening: "Listening…", thinking: "Thinking…" });
+  const PET_READY_LABEL = "Tap to ask NOX";
+  const PET_BUBBLE_LINGER_MS = 20_000;
+
+  function createPetController({
+    root, bubble, bubbleText, hitbox, loadRenderer, onTap = () => {},
+    setTimer = setTimeout, clearTimer = clearTimeout, lingerMs = PET_BUBBLE_LINGER_MS,
+  } = {}) {
+    let renderer = null;
+    let failed = false;
+    let revealed = false;
+    let voiceState = "ready";
+    let label = "";
+    let transcript = "";
+    let answer = "";
+    let lingerTimer = null;
+    root.dataset.state = voiceState;
+
+    function say(kind, text) {
+      bubble.dataset.kind = kind;
+      bubbleText.textContent = text;
+      bubble.hidden = false;
+      bubble.classList.add("open");
+      // a long answer keeps its newest words in view as it streams; a finger can scroll back up
+      bubbleText.scrollTop = bubbleText.scrollHeight;
+    }
+
+    function hideBubble() {
+      clearTimer(lingerTimer);
+      lingerTimer = null;
+      bubble.classList.remove("open");
+      bubble.hidden = true;
+    }
+
+    function render() {
+      clearTimer(lingerTimer);
+      lingerTimer = null;
+      if (failed || !revealed) return hideBubble();
+      const settled = voiceState === "ready" || voiceState === "unavailable";
+      // an error or a hint from the wall ("I didn't hear anything…") wins over a stale answer
+      if (settled && label && label !== PET_READY_LABEL) say("status", label);
+      else if (answer) say("nox", answer);
+      else if (voiceState === "listening" || voiceState === "thinking") {
+        if (transcript) say("you", transcript); else say("status", PET_STATUS[voiceState]);
+      } else if (voiceState === "speaking" && transcript) say("you", transcript);
+      else return hideBubble();
+      if (settled) lingerTimer = setTimer(hideBubble, lingerMs);
+    }
+
+    function show() {
+      root.hidden = false;
+      // one frame hidden first, so the fade-in runs
+      root.getBoundingClientRect?.();
+      root.classList.add("open");
+      renderer.enter();
+    }
+
+    const ready = Promise.resolve().then(loadRenderer).then((created) => {
+      renderer = created;
+      renderer.setState(avatarStateFor(voiceState));
+      if (revealed) show();
+      return renderer;
+    }).catch((error) => {
+      console.warn("kyst_pet_renderer_failed", error?.message || String(error));
+      failed = true;
+      root.hidden = true;
+      hideBubble();
+      return null;
+    });
+
+    hitbox.addEventListener("click", () => { if (!failed) onTap(); });
+    // a tap on the bubble puts it away, so a long answer never sits over the board's own buttons
+    bubble.addEventListener("click", hideBubble);
+
+    return {
+      get mode() { return failed ? "off" : "nox"; },
+      get presentation() { return failed ? "off" : "pet"; },
+      wantsSpeech: false,
+      ready,
+      // she is resident: the mic's open() and the chat close's close() never move her
+      open() {},
+      close() { hideBubble(); },
+      // the board's start tap; she waves once here, so the wave is not spent behind the start card
+      reveal() {
+        if (revealed) return;
+        revealed = true;
+        if (renderer) show();
+      },
+      setVoiceState(state, nextLabel = "") {
+        // a new question starts a clean bubble
+        if (state === "listening" && voiceState !== "listening") { transcript = ""; answer = ""; }
+        voiceState = state;
+        label = nextLabel || "";
+        root.dataset.state = state;
+        renderer?.setState(avatarStateFor(state));
+        render();
+      },
+      showTurn(nextTranscript, nextAnswer) {
+        transcript = nextTranscript || "";
+        answer = nextAnswer || "";
+        render();
+      },
+      attachSpeechAnalyser() {},
     };
   }
 
   return {
     DEFAULT_MODE,
+    DEFAULT_PRESENTATION,
+    PET_STATUS,
+    PET_BUBBLE_LINGER_MS,
     STILL_SRC,
     PHONE_MAX_WIDTH,
     AVATAR_STATE_FOR_VOICE,
@@ -521,6 +657,7 @@
     MAX_DRIVEN_CAP,
     IDLE_DISMISS_MS,
     resolveAvatarMode,
+    resolveAvatarPresentation,
     canRenderHolo,
     avatarStateFor,
     createMorphGuard,
@@ -530,6 +667,7 @@
     createSpeech,
     createTransition,
     createAvatarController,
+    createPetController,
     smooth,
   };
 });
