@@ -91,6 +91,11 @@
   #holo-avatar .holo-canvas { position:absolute; inset:0; width:100%; height:100%; display:block; }
   #holo-avatar .holo-still { position:absolute; left:50%; top:max(16px,env(safe-area-inset-top)); transform:translateX(-50%);
                              width:min(86vw,62vh); height:auto; }
+  /* NOX avatar clips (Family v9, the Nox Face / Nox Pet look), stood on the floor of the board's free column. */
+  #holo-avatar .nox-stage { position:absolute; top:0; bottom:0; left:0; right:0; overflow:hidden; pointer-events:none; }
+  #holo-avatar .nox-clip { position:absolute; left:50%; bottom:0; height:94vh; width:auto; transform:translateX(-50%);
+                           opacity:0; transition:opacity .28s ease; }
+  #holo-avatar .nox-clip.active { opacity:1; }
   @media (prefers-reduced-motion:reduce) { #holo-avatar { transition-duration:.01s; } }
   @keyframes pulse { 50% { transform:scale(1.07); box-shadow:0 10px 38px rgba(212,60,86,.62); } }
   @keyframes pulseDot { 50% { transform:scale(1.35); opacity:.62; } }
@@ -268,23 +273,33 @@ let streamingRequest = false;
 const resampleState = {};
 const chatTurns = new Map();
 
-// NOX hologram avatar (NOX-11769). On by default; ?avatarMode=off (or =still)
-// overrides it. Flag off, the controller is inert and the wall behaves exactly as before.
+// NOX avatar (NOX-11769, swapped to the Nox Face / Nox Pet clips 2026-10-18). On by default;
+// ?avatarMode=off (or =still) overrides it, ?avatarMode=holo brings back the 3D hologram.
+// Flag off, the controller is inert and the wall behaves exactly as before.
 const avatarRoot = document.getElementById("holo-avatar");
+const avatarMode = KystAvatar.resolveAvatarMode({
+  search: window.location.search,
+  viewportWidth: window.innerWidth,
+  holoGpu: () => { try { return KystAvatar.canRenderHolo(document.createElement("canvas").getContext("webgl2")); } catch { return false; } },
+});
+// the open chat panel's column: #chat-panel's 410 px plus its 22 px margin and a 24 px gap
+const avatarReserveRightPx = window.innerWidth > 520 ? 456 : 0;
+const avatarReducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches || false;
 const avatar = KystAvatar.createAvatarController({
-  mode: KystAvatar.resolveAvatarMode({
-    search: window.location.search,
-    viewportWidth: window.innerWidth,
-    holoGpu: () => { try { return KystAvatar.canRenderHolo(document.createElement("canvas").getContext("webgl2")); } catch { return false; } },
-  }),
+  mode: avatarMode,
   root: avatarRoot,
-  loadRenderer: () => import("/avatar/holo-avatar.js").then((module) => module.createHoloRenderer({
-    container: avatarRoot,
-    cameraKey: new URLSearchParams(window.location.search).get("avatarCam") || "A",
-    // the open chat panel's column: #chat-panel's 410 px plus its 22 px margin and a 24 px gap
-    reserveRightPx: window.innerWidth > 520 ? 456 : 0,
-    reducedMotion: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches || false,
-  })),
+  loadRenderer: () => (avatarMode === "nox"
+    ? import("/avatar/nox-avatar.js").then((module) => module.createNoxRenderer({
+      container: avatarRoot,
+      reserveRightPx: avatarReserveRightPx,
+      reducedMotion: avatarReducedMotion,
+    }))
+    : import("/avatar/holo-avatar.js").then((module) => module.createHoloRenderer({
+      container: avatarRoot,
+      cameraKey: new URLSearchParams(window.location.search).get("avatarCam") || "A",
+      reserveRightPx: avatarReserveRightPx,
+      reducedMotion: avatarReducedMotion,
+    }))),
   // a tap on the hologram is Done, the same as the chat close button
   onDismiss: () => setChatOpen(false),
 });
