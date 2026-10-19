@@ -355,6 +355,15 @@ const avatarPresentation = KystAvatar.resolveAvatarPresentation({
   mode: avatarMode, flag: window.KYST_AVATAR_MODE, search: window.location.search,
 });
 document.body.dataset.avatarPresentation = avatarPresentation;
+// The board hides its own floating mic while the wall is set to pet (src/lib/voice/wallPresentation.ts).
+// It gets the presentation the wall was set to, not the live one: if her clips fail the wall falls back
+// to "off" and its own mic returns at the same spot, so the board's mic stays hidden instead of peeking
+// out behind it. Sent on every frame load and whenever the board asks.
+function sendBoardPresentation() {
+  boardFrame.contentWindow?.postMessage({ type:"kyst-wall-avatar-presentation", presentation: avatarPresentation }, proxyOrigin);
+}
+boardFrame.addEventListener("load", sendBoardPresentation);
+sendBoardPresentation(); // in case the board loaded and asked before this script ran
 const petRoot = document.getElementById("nox-pet");
 const avatar = avatarPresentation === "pet" ? KystAvatar.createPetController({
   root: petRoot,
@@ -964,6 +973,10 @@ document.addEventListener("keydown", (event) => {
 window.addEventListener("message", async (event) => {
   if (event.origin !== "https://kyst-wall-proxy.fly.dev" || event.source !== boardFrame.contentWindow) return;
   const message = event.data || {};
+  if (message.type === "kyst-wall-avatar-presentation-request") {
+    sendBoardPresentation();
+    return;
+  }
   if (message.type === "kyst-voice-bridge-ready") {
     bridgeReady = true;
     // Only a tap already waiting on a ticket re-requests one: a board reload

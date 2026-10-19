@@ -9,6 +9,7 @@ import {
   type ResampleState,
   type VoiceStreamEvent,
 } from '@/lib/voice/KystVoiceStreamClient';
+import { shouldHideVoiceLauncher, useWallAvatarPresentation } from '@/lib/voice/wallPresentation';
 
 type Phase = 'idle' | 'connecting' | 'listening' | 'thinking' | 'speaking' | 'error';
 type VoiceEvent = {
@@ -119,6 +120,7 @@ export function VoiceAssistantOverlay() {
   const [transcript, setTranscript] = useState('');
   const [answer, setAnswer] = useState('');
   const [error, setError] = useState('');
+  const wallPresentation = useWallAvatarPresentation();
   const phaseRef = useRef<Phase>('idle');
   const owner = useRef<'tap' | 'wake' | null>(null);
   const requestId = useRef<string | null>(null);
@@ -462,6 +464,9 @@ export function VoiceAssistantOverlay() {
   };
 
   const active = phase !== 'idle';
+  // On the kiosk wall in pet mode you tap NOX herself, so only this floating
+  // button goes. The panel above still shows for a turn started any other way.
+  const hideLauncher = shouldHideVoiceLauncher(wallPresentation);
   const label =
     phase === 'listening'
       ? 'Stop and send voice question'
@@ -552,26 +557,28 @@ export function VoiceAssistantOverlay() {
         </section>
       )}
 
-      <button
-        type="button"
-        onClick={() => void beginCapture('tap')}
-        aria-label={label}
-        aria-pressed={phase === 'listening'}
-        className="relative grid h-16 w-16 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground shadow-xl transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-95 motion-reduce:transition-none"
-      >
-        {phase === 'listening' && (
-          <span
-            aria-hidden="true"
-            className="absolute inset-0 animate-ping rounded-full bg-primary/40 motion-reduce:animate-none"
-            style={{ transform: `scale(${1 + level * 0.25})` }}
-          />
-        )}
-        {phase === 'listening' ? (
-          <Square className="relative h-5 w-5 fill-current" aria-hidden="true" />
-        ) : (
-          <Mic className="relative h-7 w-7" aria-hidden="true" />
-        )}
-      </button>
+      {!hideLauncher && (
+        <button
+          type="button"
+          onClick={() => void beginCapture('tap')}
+          aria-label={label}
+          aria-pressed={phase === 'listening'}
+          className="relative grid h-16 w-16 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground shadow-xl transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-95 motion-reduce:transition-none"
+        >
+          {phase === 'listening' && (
+            <span
+              aria-hidden="true"
+              className="absolute inset-0 animate-ping rounded-full bg-primary/40 motion-reduce:animate-none"
+              style={{ transform: `scale(${1 + level * 0.25})` }}
+            />
+          )}
+          {phase === 'listening' ? (
+            <Square className="relative h-5 w-5 fill-current" aria-hidden="true" />
+          ) : (
+            <Mic className="relative h-7 w-7" aria-hidden="true" />
+          )}
+        </button>
+      )}
     </div>
   );
 }
