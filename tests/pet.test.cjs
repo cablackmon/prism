@@ -28,9 +28,15 @@ class FakeElement {
     };
     this.ownerDocument = { createElement: () => new FakeElement() };
     this.attributes = {};
+    this.style = {};
+    this.captured = new Set();
   }
   addEventListener(type, fn) { (this.listeners[type] ||= []).push(fn); }
   click() { for (const fn of this.listeners.click || []) fn(); }
+  fire(type, event = {}) { for (const fn of this.listeners[type] || []) fn(event); return event; }
+  setPointerCapture(id) { this.captured.add(id); }
+  releasePointerCapture(id) { this.captured.delete(id); }
+  getBoundingClientRect() { return { left: 0, top: 0, width: 0, height: 0 }; }
   appendChild(child) { this.children.push(child); }
   querySelector(selector) { return this.children.find((c) => `.${c.className}` === selector) || null; }
   setAttribute(name, value) { this.attributes[name] = value; }
@@ -58,12 +64,55 @@ function fakeRenderer() {
   };
 }
 
-function pet({ loadRenderer, onTap } = {}) {
+function fakeStorage(entries = {}) {
+  const map = new Map(Object.entries(entries));
+  return {
+    map,
+    getItem: (k) => (map.has(k) ? map.get(k) : null),
+    setItem: (k, v) => map.set(k, String(v)),
+    removeItem: (k) => map.delete(k),
+  };
+}
+
+// Her box as the browser lays it out: 300x490 px, standing in her CSS corner (50 px in from the right, on
+// the floor) until avatar.js gives her an inline left/top.
+const PET_W = 300;
+const PET_H = 490;
+function layOut(root, view) {
+  root.getBoundingClientRect = () => {
+    const left = root.style.left ? parseFloat(root.style.left) : view.width - 50 - PET_W;
+    const top = root.style.top ? parseFloat(root.style.top) : view.height - PET_H;
+    return { left, top, width: PET_W, height: PET_H, right: left + PET_W, bottom: top + PET_H };
+  };
+}
+
+function pet({ loadRenderer, onTap, storage = fakeStorage(), view = { width: 2560, height: 1440 } } = {}) {
   const els = { root: new FakeElement(), bubble: new FakeElement(), bubbleText: new FakeElement(), hitbox: new FakeElement() };
+  layOut(els.root, view);
   const renderer = fakeRenderer();
   const t = fakeTimers();
-  const controller = Avatar.createPetController({ ...els, loadRenderer: loadRenderer || (() => renderer), onTap, ...t });
-  return { controller, renderer, t, ...els };
+  const clock = { now: 1000 };
+  const win = new FakeElement();
+  const controller = Avatar.createPetController({
+    ...els, loadRenderer: loadRenderer || (() => renderer), onTap, ...t,
+    storage, viewport: () => view, now: () => clock.now, win,
+  });
+  return { controller, renderer, t, clock, storage, view, win, ...els };
+}
+
+// one finger: down, any moves, up; each step advances the clock by `stepMs`
+function press(p, points, { id = 1, pointerType = "touch", stepMs = 30, upAfterMs } = {}) {
+  const [first, ...rest] = points;
+  p.hitbox.fire("pointerdown", { pointerId: id, pointerType, button: 0, clientX: first[0], clientY: first[1] });
+  for (const [x, y] of rest) {
+    p.clock.now += stepMs;
+    p.hitbox.fire("pointermove", { pointerId: id, pointerType, clientX: x, clientY: y });
+  }
+  p.clock.now += upAfterMs ?? stepMs;
+  const last = points.at(-1);
+  p.hitbox.fire("pointerup", { pointerId: id, pointerType, button: 0, clientX: last[0], clientY: last[1] });
+  // the browser's follow-up click for a pointer tap carries detail 1
+  p.hitbox.fire("click", { detail: 1 });
 }
 
 test("pet is the default presentation for the clip avatar; the overlay flag and the URL bring back the overlay", () => {
@@ -115,10 +164,16 @@ function wallTap({ presentation }) {
   const holoRoot = new FakeElement();
   const log = [];
   const els = { root: new FakeElement(), bubble: new FakeElement(), bubbleText: new FakeElement(), hitbox: new FakeElement() };
+  const view = { width: 2560, height: 1440 };
+  layOut(els.root, view);
   const renderer = fakeRenderer();
   const overlayRenderer = fakeRenderer();
+  const clock = { now: 1000 };
   const avatar = presentation === "pet"
-    ? Avatar.createPetController({ ...els, loadRenderer: () => renderer, onTap: () => mic.click(), ...fakeTimers() })
+    ? Avatar.createPetController({
+      ...els, loadRenderer: () => renderer, onTap: () => mic.click(), ...fakeTimers(),
+      storage: fakeStorage(), viewport: () => view, now: () => clock.now, win: null,
+    })
     : Avatar.createAvatarController({ mode: "nox", root: holoRoot, loadRenderer: () => overlayRenderer, ...fakeTimers() });
   const context = vm.createContext({
     mic, chatPanel, avatar,
@@ -127,10 +182,10 @@ function wallTap({ presentation }) {
     stopRecording: () => log.push("stopRecording"),
     cancelActiveVoice: () => log.push("cancel"),
     recorder: null, pendingPlaybackRequestId: null, activeRequestId: null,
-    progressiveAudio: {}, voiceAudio: {},
+    progressiveAudio: {}, voiceAudio: {}, playAnswerHint: () => "",
   });
   vm.runInContext(`${setChatOpen}\n${micClick}`, context);
-  return { avatar, els, mic, chatPanel, holoRoot, log, renderer, overlayRenderer };
+  return { avatar, els, mic, chatPanel, holoRoot, log, renderer, overlayRenderer, clock, ...els };
 }
 
 test("pet: a tap on her starts listening inline and never opens the full-screen overlay or the chat panel", async () => {
@@ -300,4 +355,247 @@ test("the overlay controller answers the pet hooks as no-ops", () => {
   off.reveal();
   off.showTurn("a", "b");
   off.setVoiceState("listening", "Listening… tap to stop");
+});
+
+// Follow-up (Cameron 2026-10-18 19:02, NOX 1): no voice buttons beside her, and hold-and-move to drag her.
+
+test("pet mode hides the whole voice cluster (mic and status pill); the mic stays in the DOM for her tap", () => {
+  // the cluster is exactly the status pill and the mic; the mic is also the stop control while listening
+  const cluster = wall.match(/<div id="voice" hidden>([\s\S]*?)\n<\/div>/)?.[1] || "";
+  assert.deepEqual([...cluster.matchAll(/id="([\w-]+)"/g)].map((m) => m[1]), ["voice-status", "mic"]);
+  assert.match(wall, /\n  body\[data-avatar-presentation="pet"\] #voice \{ display:none; \}\n/);
+  // nothing else hides the cluster by presentation, so overlay (and "off") shows it exactly as before
+  assert.equal((wall.match(/data-avatar-presentation=[^\]]*\][^{]*#(voice|mic|voice-status)\b/g) || []).length, 1);
+  assert.doesNotMatch(wall, /data-avatar-presentation="pet"\] #voice-status/);
+  assert.match(wall, /\ndocument\.body\.dataset\.avatarPresentation = avatarPresentation;\n/);
+  // her tap is still the mic's click handler, on a mic that is hidden but present
+  assert.match(wall, /<button id="mic" type="button" aria-label="Ask NOX" title="Ask NOX">/);
+  assert.match(wall, /\n  onTap: \(\) => mic\.click\(\),\n/);
+  // a touch on her drags instead of scrolling or zooming the page
+  assert.match(wall, /#nox-pet-hit \{[^}]*touch-action:none;/);
+});
+
+test("the body follows each presentation: pet hides the cluster, overlay and a failed pet show it", async () => {
+  const readyLine = wall.match(/\navatar\.ready\?\.then\(\(\) => \{[^\n]*\}\);\n/)?.[0];
+  assert.ok(readyLine);
+  const run = async (avatar, initial) => {
+    const document = { body: { dataset: { avatarPresentation: initial } } };
+    vm.runInContext(readyLine, vm.createContext({ avatar, document }));
+    await avatar.ready;
+    await Promise.resolve();
+    return document.body.dataset.avatarPresentation;
+  };
+  assert.equal(await run(pet().controller, "pet"), "pet");
+  const overlay = Avatar.createAvatarController({ mode: "nox", root: new FakeElement(), loadRenderer: () => fakeRenderer(), ...fakeTimers() });
+  assert.equal(await run(overlay, "overlay"), "overlay");
+  const warn = console.warn;
+  console.warn = () => {};
+  try {
+    const failed = pet({ loadRenderer: () => Promise.reject(new Error("nox_clip_error")) }).controller;
+    // "off" no longer matches the pet rule, so the mic and the pill come back
+    assert.equal(await run(failed, "pet"), "off");
+  } finally {
+    console.warn = warn;
+  }
+});
+
+test("drag: a tap that stays under the threshold asks, once, through the mic handler", async () => {
+  const w = wallTap({ presentation: "pet" });
+  await w.avatar.ready;
+  w.avatar.reveal();
+  press(w, [[1500, 1200], [1505, 1204], [1497, 1206]]);
+  assert.deepEqual(w.log, ["activity", "beginRecording"], "the follow-up click asked a second time");
+  assert.equal(w.root.style.left, "", "a tap moved her");
+  assert.equal(w.root.classList.contains("dragging"), false);
+  // her pointer was captured on the press and let go on release
+  assert.equal(w.hitbox.captured.size, 0);
+});
+
+test("drag: moving past the threshold drags her, the bubble follows, and nothing listens", async () => {
+  let taps = 0;
+  const p = pet({ onTap: () => { taps += 1; } });
+  await p.controller.ready;
+  p.controller.reveal();
+  p.controller.setVoiceState("ready", "I didn't hear anything. Tap to try again.");
+  const stateCalls = p.renderer.calls.length;
+  const start = p.root.getBoundingClientRect();
+  p.hitbox.fire("pointerdown", { pointerId: 7, pointerType: "touch", button: 0, clientX: 2400, clientY: 1200 });
+  assert.equal(p.hitbox.captured.has(7), true, "the press did not capture the pointer");
+  p.hitbox.fire("pointermove", { pointerId: 7, clientX: 2394, clientY: 1196 });
+  assert.equal(p.root.style.left, "", "she moved before the threshold");
+  p.hitbox.fire("pointermove", { pointerId: 7, clientX: 1900, clientY: 900 });
+  assert.equal(p.root.classList.contains("dragging"), true);
+  assert.deepEqual([p.root.style.left, p.root.style.top], [`${start.left - 500}px`, `${start.top - 300}px`]);
+  assert.deepEqual([p.root.style.right, p.root.style.bottom], ["auto", "auto"]);
+  // the bubble hangs off her head at her new spot
+  assert.equal(p.bubble.style.top, `${start.top - 300 + PET_H * 0.03}px`);
+  assert.equal(p.bubble.style.right, `${p.view.width - (start.left - 500 + PET_W * 0.26)}px`);
+  // a pointer that is not hers does not move her
+  p.hitbox.fire("pointermove", { pointerId: 8, clientX: 100, clientY: 100 });
+  assert.equal(p.root.style.left, `${start.left - 500}px`);
+  p.clock.now += 3000;
+  p.hitbox.fire("pointerup", { pointerId: 7, clientX: 1900, clientY: 900 });
+  p.hitbox.fire("click", { detail: 1 });
+  assert.equal(taps, 0, "a drag asked NOX");
+  assert.equal(p.root.classList.contains("dragging"), false);
+  // her clip was never told to change while she was carried
+  assert.equal(p.renderer.calls.length, stateCalls);
+  assert.equal(p.controller.presentation, "pet");
+});
+
+test("drag: the drop spot is saved as fractions of her room and restored after a reload at another size", async () => {
+  const storage = fakeStorage();
+  const p = pet({ storage });
+  await p.controller.ready;
+  p.controller.reveal();
+  const start = p.root.getBoundingClientRect();
+  press(p, [[2400, 1200], [2400 - 1130, 1200 - 475]]);
+  const left = start.left - 1130;
+  const top = start.top - 475;
+  assert.deepEqual([p.root.style.left, p.root.style.top], [`${left}px`, `${top}px`]);
+  const saved = JSON.parse(storage.getItem(Avatar.PET_POSITION_KEY));
+  assert.equal(Avatar.PET_POSITION_KEY, "kyst.noxPet.pos.v1");
+  assert.ok(Math.abs(saved.x - left / (2560 - PET_W)) < 1e-9);
+  assert.ok(Math.abs(saved.y - top / (1440 - PET_H)) < 1e-9);
+  // the 03:00 reload on the same wall
+  const same = pet({ storage });
+  await same.controller.ready;
+  assert.equal(same.root.style.left, undefined, "she was placed while still hidden behind the start card");
+  same.controller.reveal();
+  assert.deepEqual([same.root.style.left, same.root.style.top], [`${left}px`, `${top}px`]);
+  // the same spot on a 1920x1080 screen, as the same share of her room
+  const small = pet({ storage, view: { width: 1920, height: 1080 } });
+  await small.controller.ready;
+  small.controller.reveal();
+  assert.ok(Math.abs(parseFloat(small.root.style.left) - saved.x * (1920 - PET_W)) < 1e-6);
+  assert.ok(Math.abs(parseFloat(small.root.style.top) - saved.y * (1080 - PET_H)) < 1e-6);
+  // nothing saved, or a broken entry: her CSS corner, bottom-right
+  for (const entry of [{}, { [Avatar.PET_POSITION_KEY]: "{not json" }, { [Avatar.PET_POSITION_KEY]: '{"x":"a"}' }]) {
+    const fresh = pet({ storage: fakeStorage(entry) });
+    await fresh.controller.ready;
+    fresh.controller.reveal();
+    assert.deepEqual([fresh.root.style.left, fresh.root.style.top, fresh.root.style.right], ["", "", ""]);
+  }
+});
+
+test("drag: she is clamped inside the viewport on drop and on resize", async () => {
+  const storage = fakeStorage();
+  const p = pet({ storage });
+  await p.controller.ready;
+  p.controller.reveal();
+  // flung far past the top-left corner
+  press(p, [[2400, 1200], [-3000, -3000]]);
+  assert.deepEqual([p.root.style.left, p.root.style.top], ["0px", "0px"]);
+  assert.deepEqual(JSON.parse(storage.getItem(Avatar.PET_POSITION_KEY)), { x: 0, y: 0 });
+  // and past the bottom-right
+  press(p, [[200, 200], [9000, 9000]]);
+  assert.deepEqual([p.root.style.left, p.root.style.top], [`${2560 - PET_W}px`, `${1440 - PET_H}px`]);
+  assert.deepEqual(JSON.parse(storage.getItem(Avatar.PET_POSITION_KEY)), { x: 1, y: 1 });
+  // a smaller window keeps her on screen at the same share of her room
+  p.view.width = 1280;
+  p.view.height = 720;
+  p.win.fire("resize");
+  assert.deepEqual([p.root.style.left, p.root.style.top], [`${1280 - PET_W}px`, `${720 - PET_H}px`]);
+  // a stored value outside 0..1 is clamped too
+  const odd = pet({ storage: fakeStorage({ [Avatar.PET_POSITION_KEY]: '{"x":-4,"y":7}' }) });
+  await odd.controller.ready;
+  odd.controller.reveal();
+  assert.deepEqual([odd.root.style.left, odd.root.style.top], ["0px", `${1440 - PET_H}px`]);
+});
+
+test("drag: a long still press does nothing; holding her still for 2 s sends her home", async () => {
+  let taps = 0;
+  const storage = fakeStorage();
+  const p = pet({ storage, onTap: () => { taps += 1; } });
+  await p.controller.ready;
+  p.controller.reveal();
+  press(p, [[2400, 1200], [600, 300]]);
+  assert.ok(storage.getItem(Avatar.PET_POSITION_KEY));
+  // 0.8 s still: not a tap, not a move, not a reset
+  press(p, [[700, 400]], { upAfterMs: 800 });
+  assert.equal(taps, 0, "a long press asked NOX");
+  assert.ok(storage.getItem(Avatar.PET_POSITION_KEY));
+  assert.equal(p.t.timers.size, 0, "the reset hold outlived the press");
+  // hold still past 2 s: she goes back to her corner while still held, and the release does not ask
+  p.hitbox.fire("pointerdown", { pointerId: 3, pointerType: "touch", button: 0, clientX: 700, clientY: 400 });
+  assert.equal(Avatar.PET_RESET_HOLD_MS, 2000);
+  p.clock.now += 2000;
+  p.t.fire(Avatar.PET_RESET_HOLD_MS);
+  assert.equal(storage.getItem(Avatar.PET_POSITION_KEY), null);
+  assert.deepEqual([p.root.style.left, p.root.style.top, p.root.style.right, p.root.style.bottom], ["", "", "", ""]);
+  // a wobble after the reset does not pick her up again
+  p.hitbox.fire("pointermove", { pointerId: 3, clientX: 900, clientY: 600 });
+  assert.equal(p.root.style.left, "");
+  p.hitbox.fire("pointerup", { pointerId: 3, clientX: 900, clientY: 600 });
+  p.hitbox.fire("click", { detail: 1 });
+  assert.equal(taps, 0);
+  // a drag cancels the reset hold
+  p.hitbox.fire("pointerdown", { pointerId: 4, pointerType: "touch", button: 0, clientX: 2400, clientY: 1200 });
+  p.hitbox.fire("pointermove", { pointerId: 4, clientX: 2000, clientY: 1000 });
+  assert.equal(p.t.timers.size, 0);
+  p.hitbox.fire("pointerup", { pointerId: 4, clientX: 2000, clientY: 1000 });
+});
+
+test("drag: right-click and the long-press menu do nothing; only her tap box starts a drag; a failed pet ignores presses", async () => {
+  let taps = 0;
+  const p = pet({ onTap: () => { taps += 1; } });
+  await p.controller.ready;
+  p.controller.reveal();
+  p.hitbox.fire("pointerdown", { pointerId: 1, pointerType: "mouse", button: 2, clientX: 2400, clientY: 1200 });
+  p.hitbox.fire("pointermove", { pointerId: 1, clientX: 1000, clientY: 1000 });
+  p.hitbox.fire("pointerup", { pointerId: 1, clientX: 1000, clientY: 1000 });
+  assert.equal(p.root.style.left, "");
+  assert.equal(taps, 0);
+  let prevented = false;
+  p.hitbox.fire("contextmenu", { preventDefault: () => { prevented = true; } });
+  assert.equal(prevented, true);
+  // a mouse press with the main button drags the same as a finger
+  press(p, [[2400, 1200], [2000, 1000]], { pointerType: "mouse" });
+  assert.equal(p.root.style.left, `${2560 - 50 - PET_W - 400}px`);
+  // the bubble and her box around the figure have no press handlers at all
+  assert.equal(p.bubble.listeners.pointerdown, undefined);
+  assert.equal(p.root.listeners.pointerdown, undefined);
+  // a pointercancel mid-drag leaves her where she got to and saves it
+  p.hitbox.fire("pointerdown", { pointerId: 9, pointerType: "touch", button: 0, clientX: 1500, clientY: 1000 });
+  p.hitbox.fire("pointermove", { pointerId: 9, clientX: 1400, clientY: 1000 });
+  p.hitbox.fire("pointercancel", { pointerId: 9 });
+  assert.equal(p.root.style.left, `${2560 - 50 - PET_W - 500}px`);
+  assert.ok(p.storage.getItem(Avatar.PET_POSITION_KEY));
+  assert.equal(taps, 0);
+  const warn = console.warn;
+  console.warn = () => {};
+  try {
+    const broken = pet({ loadRenderer: () => { throw new Error("nox_clip_error"); }, onTap: () => { taps += 1; } });
+    await broken.controller.ready;
+    press(broken, [[100, 100]]);
+    assert.equal(taps, 0);
+    assert.equal(broken.hitbox.captured.size, 0);
+  } finally {
+    console.warn = warn;
+  }
+});
+
+test("drag: near the left edge her bubble flips to her right; back in her corner it hangs on her left", async () => {
+  const p = pet();
+  await p.controller.ready;
+  p.controller.reveal();
+  p.controller.setVoiceState("listening", "Listening… tap to stop");
+  assert.equal(p.bubble.dataset.side, "left");
+  // her CSS corner: the stylesheet places the bubble, no inline position
+  assert.deepEqual([p.bubble.style.left, p.bubble.style.right, p.bubble.style.top], ["", "", ""]);
+  press(p, [[2400, 1200], [-3000, 1200]]);
+  assert.equal(p.root.style.left, "0px");
+  assert.equal(p.bubble.dataset.side, "right");
+  assert.deepEqual([p.bubble.style.left, p.bubble.style.right], [`${PET_W * 0.74}px`, "auto"]);
+  // the middle of the board has room on her left again
+  press(p, [[100, 1200], [1200, 1200]]);
+  assert.equal(p.bubble.dataset.side, "left");
+  assert.equal(p.bubble.style.left, "auto");
+  // the flip follows her while she is carried, not only on drop
+  p.hitbox.fire("pointerdown", { pointerId: 5, pointerType: "touch", button: 0, clientX: 1300, clientY: 1200 });
+  p.hitbox.fire("pointermove", { pointerId: 5, clientX: 0, clientY: 1200 });
+  assert.equal(p.bubble.dataset.side, "right");
+  p.hitbox.fire("pointerup", { pointerId: 5, clientX: 0, clientY: 1200 });
+  // the CSS tail flips with it
+  assert.match(wall, /#nox-pet-bubble\[data-side="right"\]::after \{ right:auto; left:-19px;/);
 });
