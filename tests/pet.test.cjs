@@ -392,6 +392,8 @@ test("the wall tells the board its presentation on every frame load and when ask
   // defined after the presentation is resolved, before anything can use it
   assert.ok(wall.indexOf("const avatarPresentation = ") < wall.indexOf("function sendBoardPresentation()"));
   assert.match(wall, /\nboardFrame\.addEventListener\("load", sendBoardPresentation\);\n/);
+  // and once now, for a board that loaded and asked before this script ran (review nit 1)
+  assert.match(wall, /\nsendBoardPresentation\(\); \/\/ in case the board loaded and asked before this script ran\n/);
   // the board's request is answered inside the listener that already checks the proxy origin and the board window
   const listener = wall.match(/window\.addEventListener\("message", async \(event\) => \{\n([\s\S]*?)\n  if \(message\.type === "kyst-voice-bridge-ready"\)/)?.[1] || "";
   assert.match(listener, /if \(event\.origin !== "https:\/\/kyst-wall-proxy\.fly\.dev" \|\| event\.source !== boardFrame\.contentWindow\) return;/);

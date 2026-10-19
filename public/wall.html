@@ -363,6 +363,7 @@ function sendBoardPresentation() {
   boardFrame.contentWindow?.postMessage({ type:"kyst-wall-avatar-presentation", presentation: avatarPresentation }, proxyOrigin);
 }
 boardFrame.addEventListener("load", sendBoardPresentation);
+sendBoardPresentation(); // in case the board loaded and asked before this script ran
 const petRoot = document.getElementById("nox-pet");
 const avatar = avatarPresentation === "pet" ? KystAvatar.createPetController({
   root: petRoot,
