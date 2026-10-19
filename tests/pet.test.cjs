@@ -411,6 +411,43 @@ test("drag: a tap that stays under the threshold asks, once, through the mic han
   assert.equal(w.hitbox.captured.size, 0);
 });
 
+test("drag: the threshold is Chrome's own 15 px tap slop; a 14 px wobble still asks, 16 px is a drag", async () => {
+  assert.equal(Avatar.PET_DRAG_THRESHOLD_PX, 15);
+  let taps = 0;
+  const p = pet({ onTap: () => { taps += 1; } });
+  await p.controller.ready;
+  p.controller.reveal();
+  press(p, [[2400, 1200], [2414, 1200]]);
+  assert.equal(taps, 1, "a 14 px finger wobble did not ask");
+  assert.equal(p.root.style.left, "", "a 14 px wobble moved her");
+  press(p, [[2400, 1200], [2416, 1200]]);
+  assert.equal(taps, 1, "a 16 px move asked NOX");
+  // she followed the finger 16 px right of her corner
+  assert.equal(p.root.style.left, `${2560 - 50 - PET_W + 16}px`);
+});
+
+test("drag: a lost pointer capture with no pointerup ends the press, so the next tap still asks", async () => {
+  let taps = 0;
+  const p = pet({ onTap: () => { taps += 1; } });
+  await p.controller.ready;
+  p.controller.reveal();
+  p.hitbox.fire("pointerdown", { pointerId: 2, pointerType: "touch", button: 0, clientX: 2400, clientY: 1200 });
+  p.hitbox.fire("lostpointercapture", { pointerId: 2 });
+  assert.equal(p.t.timers.size, 0, "the reset hold outlived the lost press");
+  press(p, [[2400, 1200]], { id: 3 });
+  assert.equal(taps, 1, "a stale press swallowed the next tap");
+  // mid-drag it keeps her where she got to, like a pointercancel
+  p.hitbox.fire("pointerdown", { pointerId: 4, pointerType: "touch", button: 0, clientX: 2400, clientY: 1200 });
+  p.hitbox.fire("pointermove", { pointerId: 4, clientX: 2000, clientY: 1200 });
+  p.hitbox.fire("lostpointercapture", { pointerId: 4 });
+  assert.equal(p.root.classList.contains("dragging"), false);
+  assert.ok(p.storage.getItem(Avatar.PET_POSITION_KEY));
+  // the lostpointercapture that follows a normal pointerup changes nothing
+  press(p, [[2000, 1200]], { id: 5 });
+  p.hitbox.fire("lostpointercapture", { pointerId: 5 });
+  assert.equal(taps, 2);
+});
+
 test("drag: moving past the threshold drags her, the bubble follows, and nothing listens", async () => {
   let taps = 0;
   const p = pet({ onTap: () => { taps += 1; } });

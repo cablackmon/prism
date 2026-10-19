@@ -543,7 +543,10 @@
   // inside PET_TAP_MS without that travel is a tap; a longer still press does nothing, and holding her still
   // for PET_RESET_HOLD_MS sends her back to her corner. (Not a double tap: the first tap of a double tap would
   // already have started listening and the second would stop it.)
-  const PET_DRAG_THRESHOLD_PX = 10;
+  // 15 CSS px is Chrome's own touch slop for a tap on Windows (ui/events/gesture_detection
+  // max_touch_move_in_pixels_for_click_, Aura default), about 4 mm on the Acer's 32" 4K panel at 1.5x, so
+  // any press Chrome would call a tap also asks NOX
+  const PET_DRAG_THRESHOLD_PX = 15;
   const PET_TAP_MS = 500;
   const PET_RESET_HOLD_MS = 2000;
   // where she was dropped, as fractions (0..1) of the room she can move in across and down the viewport, so
@@ -757,7 +760,7 @@
         onTap();
       }
     });
-    hitbox.addEventListener("pointercancel", (event) => {
+    function abandonPress(event) {
       if (!press || event.pointerId !== press.id) return;
       const ended = endPress();
       if (!ended.dragging) return;
@@ -766,7 +769,11 @@
       position = placeAt(box.left, box.top);
       writePosition();
       placeBubble();
-    });
+    }
+    hitbox.addEventListener("pointercancel", abandonPress);
+    // capture lost with no pointerup (her box hidden or detached mid-press) ends the press as well, so a
+    // stale press can never swallow every later tap while the mic is hidden; after a pointerup it is a no-op
+    hitbox.addEventListener("lostpointercapture", abandonPress);
     // a long press is not a right-click menu on a touch screen
     hitbox.addEventListener("contextmenu", (event) => event.preventDefault());
     // A pointer tap is decided on pointerup above, so its follow-up click (detail >= 1) is ignored; a
