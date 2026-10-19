@@ -538,10 +538,41 @@
   const PET_STATUS = Object.freeze({ listening: "Listening…", thinking: "Thinking…" });
   const PET_READY_LABEL = "Tap to ask NOX";
   const PET_BUBBLE_LINGER_MS = 20_000;
+  // Drag to move (Cameron 2026-10-18, NOX 1: "hold your finger on it and then move the pet around"). A press
+  // is a drag only once the pointer travels past PET_DRAG_THRESHOLD_PX, so a plain tap still asks. A release
+  // inside PET_TAP_MS without that travel is a tap; a longer still press does nothing, and holding her still
+  // for PET_RESET_HOLD_MS sends her back to her corner. (Not a double tap: the first tap of a double tap would
+  // already have started listening and the second would stop it.)
+  // 15 CSS px is Chrome's own touch slop for a tap on Windows (ui/events/gesture_detection
+  // max_touch_move_in_pixels_for_click_, Aura default), about 4 mm on the Acer's 32" 4K panel at 1.5x, so
+  // any press Chrome would call a tap also asks NOX
+  const PET_DRAG_THRESHOLD_PX = 15;
+  const PET_TAP_MS = 500;
+  const PET_RESET_HOLD_MS = 2000;
+  // where she was dropped, as fractions (0..1) of the room she can move in across and down the viewport, so
+  // a dropped spot survives the 03:00 reload and a new resolution; no entry = her bottom-right corner
+  const PET_POSITION_KEY = "kyst.noxPet.pos.v1";
+  // the bubble hangs off her head on her left; it flips to her right when her left has no room for it.
+  // Her figure is about 18-80% of her box; the bubble's tail sits at 26% (left side) or 74% (right side).
+  const PET_BUBBLE_MAX_PX = 560;
+  const PET_BUBBLE_MAX_VW = 0.36;
+
+  function defaultPetStorage() {
+    try { return globalThis.localStorage || null; } catch { return null; }
+  }
+
+  function defaultPetViewport() {
+    return { width: globalThis.innerWidth || 0, height: globalThis.innerHeight || 0 };
+  }
+
+  function clamp01(value) {
+    return Math.min(1, Math.max(0, value));
+  }
 
   function createPetController({
     root, bubble, bubbleText, hitbox, loadRenderer, onTap = () => {},
     setTimer = setTimeout, clearTimer = clearTimeout, lingerMs = PET_BUBBLE_LINGER_MS,
+    storage = defaultPetStorage(), viewport = defaultPetViewport, now = () => Date.now(), win = globalThis,
   } = {}) {
     let renderer = null;
     let failed = false;
@@ -551,13 +582,85 @@
     let transcript = "";
     let answer = "";
     let lingerTimer = null;
+    let press = null;
+    let position = readPosition();
+    // true once avatar.js stands her with an inline left/top (a drag in progress, or a saved spot)
+    let placed = false;
     root.dataset.state = voiceState;
+
+    function readPosition() {
+      try {
+        const saved = JSON.parse(storage?.getItem(PET_POSITION_KEY) || "null");
+        if (Number.isFinite(saved?.x) && Number.isFinite(saved?.y)) return { x: clamp01(saved.x), y: clamp01(saved.y) };
+      } catch { /* a bad entry is her corner */ }
+      return null;
+    }
+
+    function writePosition() {
+      try {
+        if (position) storage?.setItem(PET_POSITION_KEY, JSON.stringify(position));
+        else storage?.removeItem(PET_POSITION_KEY);
+      } catch { /* storage full or blocked: she still moves, she just forgets on reload */ }
+    }
+
+    // her box in px, and how far it can travel inside the viewport
+    function room() {
+      const box = root.getBoundingClientRect();
+      const view = viewport();
+      return { box, view, freeX: Math.max(0, view.width - box.width), freeY: Math.max(0, view.height - box.height) };
+    }
+
+    function placeAt(left, top) {
+      const { freeX, freeY } = room();
+      const x = Math.min(freeX, Math.max(0, left));
+      const y = Math.min(freeY, Math.max(0, top));
+      Object.assign(root.style, { left: `${x}px`, top: `${y}px`, right: "auto", bottom: "auto" });
+      placed = true;
+      return { x: freeX ? x / freeX : 0, y: freeY ? y / freeY : 0 };
+    }
+
+    // a saved spot is replayed against today's viewport; none leaves her where the CSS stands her
+    function applyPosition() {
+      if (root.hidden) return;
+      if (position) {
+        const { freeX, freeY } = room();
+        placeAt(position.x * freeX, position.y * freeY);
+      } else {
+        Object.assign(root.style, { left: "", top: "", right: "", bottom: "" });
+        placed = false;
+      }
+      placeBubble();
+    }
+
+    function placeBubble() {
+      if (root.hidden) return;
+      const { box, view } = room();
+      const maxBubble = Math.min(PET_BUBBLE_MAX_PX, view.width * PET_BUBBLE_MAX_VW);
+      const leftRoom = box.left + box.width * 0.26;
+      const rightRoom = view.width - (box.left + box.width * 0.74);
+      const side = leftRoom >= maxBubble || leftRoom >= rightRoom ? "left" : "right";
+      bubble.dataset.side = side;
+      if (!placed && side === "left") {
+        Object.assign(bubble.style, { left: "", right: "", top: "" });
+        return;
+      }
+      Object.assign(bubble.style, side === "left"
+        ? { left: "auto", right: `${view.width - leftRoom}px`, top: `${box.top + box.height * 0.03}px` }
+        : { left: `${view.width - rightRoom}px`, right: "auto", top: `${box.top + box.height * 0.03}px` });
+    }
+
+    function resetPosition() {
+      position = null;
+      writePosition();
+      applyPosition();
+    }
 
     function say(kind, text) {
       bubble.dataset.kind = kind;
       bubbleText.textContent = text;
       bubble.hidden = false;
       bubble.classList.add("open");
+      placeBubble();
       // a long answer keeps its newest words in view as it streams; a finger can scroll back up
       bubbleText.scrollTop = bubbleText.scrollHeight;
     }
@@ -586,8 +689,8 @@
 
     function show() {
       root.hidden = false;
-      // one frame hidden first, so the fade-in runs
-      root.getBoundingClientRect?.();
+      // one frame hidden first, so the fade-in runs; her box has a size from here on
+      applyPosition();
       root.classList.add("open");
       renderer.enter();
     }
@@ -605,9 +708,81 @@
       return null;
     });
 
-    hitbox.addEventListener("click", () => { if (!failed) onTap(); });
+    function endPress() {
+      if (!press) return null;
+      const ended = press;
+      press = null;
+      clearTimer(ended.resetTimer);
+      root.classList.remove("dragging");
+      try { hitbox.releasePointerCapture?.(ended.id); } catch { /* already released */ }
+      return ended;
+    }
+
+    // Only her tap box takes the press, so a drag never starts from the bubble or the board around her.
+    hitbox.addEventListener("pointerdown", (event) => {
+      if (failed || press || (event.pointerType === "mouse" && event.button !== 0)) return;
+      const { box } = room();
+      press = {
+        id: event.pointerId, x: event.clientX, y: event.clientY, left: box.left, top: box.top,
+        at: now(), dragging: false, reset: false,
+        resetTimer: setTimer(() => {
+          if (!press || press.dragging) return;
+          press.reset = true;
+          resetPosition();
+        }, PET_RESET_HOLD_MS),
+      };
+      // she keeps the pointer even when a fast finger leaves her box
+      try { hitbox.setPointerCapture?.(event.pointerId); } catch { /* the pointer is already gone */ }
+    });
+    hitbox.addEventListener("pointermove", (event) => {
+      if (!press || event.pointerId !== press.id || press.reset) return;
+      const dx = event.clientX - press.x;
+      const dy = event.clientY - press.y;
+      if (!press.dragging) {
+        if (Math.hypot(dx, dy) <= PET_DRAG_THRESHOLD_PX) return;
+        press.dragging = true;
+        clearTimer(press.resetTimer);
+        root.classList.add("dragging");
+      }
+      // she follows the pointer; her clip keeps playing and the bubble comes with her
+      placeAt(press.left + dx, press.top + dy);
+      placeBubble();
+    });
+    hitbox.addEventListener("pointerup", (event) => {
+      if (!press || event.pointerId !== press.id) return;
+      const ended = endPress();
+      if (ended.dragging) {
+        const { box } = room();
+        position = placeAt(box.left, box.top);
+        writePosition();
+        placeBubble();
+      } else if (!ended.reset && now() - ended.at <= PET_TAP_MS) {
+        onTap();
+      }
+    });
+    function abandonPress(event) {
+      if (!press || event.pointerId !== press.id) return;
+      const ended = endPress();
+      if (!ended.dragging) return;
+      // the browser took the pointer mid-drag: she stays where she got to
+      const { box } = room();
+      position = placeAt(box.left, box.top);
+      writePosition();
+      placeBubble();
+    }
+    hitbox.addEventListener("pointercancel", abandonPress);
+    // capture lost with no pointerup (her box hidden or detached mid-press) ends the press as well, so a
+    // stale press can never swallow every later tap while the mic is hidden; after a pointerup it is a no-op
+    hitbox.addEventListener("lostpointercapture", abandonPress);
+    // a long press is not a right-click menu on a touch screen
+    hitbox.addEventListener("contextmenu", (event) => event.preventDefault());
+    // A pointer tap is decided on pointerup above, so its follow-up click (detail >= 1) is ignored; a
+    // keyboard Enter or Space on the focused button, and a scripted click(), arrive with detail 0 and ask.
+    hitbox.addEventListener("click", (event) => { if (!failed && !event?.detail) onTap(); });
     // a tap on the bubble puts it away, so a long answer never sits over the board's own buttons
     bubble.addEventListener("click", hideBubble);
+    // a new window size replays the saved spot, so she is never left off screen
+    win?.addEventListener?.("resize", () => { if (!press) applyPosition(); });
 
     return {
       get mode() { return failed ? "off" : "nox"; },
@@ -646,6 +821,10 @@
     DEFAULT_PRESENTATION,
     PET_STATUS,
     PET_BUBBLE_LINGER_MS,
+    PET_DRAG_THRESHOLD_PX,
+    PET_TAP_MS,
+    PET_RESET_HOLD_MS,
+    PET_POSITION_KEY,
     STILL_SRC,
     PHONE_MAX_WIDTH,
     AVATAR_STATE_FOR_VOICE,

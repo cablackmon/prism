@@ -98,13 +98,15 @@
                            opacity:0; transition:opacity .28s ease; }
   #holo-avatar .nox-clip.active { opacity:1; }
   /* NOX as a resident pet (Cameron 2026-10-18): the same Family v9 clips standing in the bottom-right
-     corner, just left of the mic, instead of the full-screen overlay. --nox-pet-height tunes her size; the
+     corner instead of the full-screen overlay. --nox-pet-height tunes her size; the
      box keeps the clips' 1080:1766 shape. Only her tap box takes touches; the rest of her box lets them
-     through to the board. Her tap box ends 110 px from the right edge, clear of the mic column. */
+     through to the board. Press and move her to drag her anywhere (avatar.js places her with inline
+     left/top and remembers the spot); with no saved spot she stands here, 110 px in from the right edge. */
   :root { --nox-pet-height:34vh; --nox-pet-width:calc(var(--nox-pet-height) * 1080 / 1766);
           --nox-pet-right:calc(110px - var(--nox-pet-width) * .2); --nox-pet-cyan:#36d6ff; }
   #nox-pet { position:fixed; right:var(--nox-pet-right); bottom:0; z-index:7; width:var(--nox-pet-width);
-             height:var(--nox-pet-height); pointer-events:none; opacity:0; transition:opacity .45s ease; }
+             height:var(--nox-pet-height); pointer-events:none; opacity:0; transition:opacity .45s ease;
+             touch-action:none; }
   #nox-pet.open { opacity:1; }
   #nox-pet .nox-stage { position:absolute; inset:0; overflow:visible; pointer-events:none;
                         transition:filter .3s ease; }
@@ -117,27 +119,34 @@
   #nox-pet[data-state="thinking"] .nox-stage { animation:petThink 1.4s ease-in-out infinite; }
   /* her head and torso; the figure fills about 16-75% of the clip's width */
   #nox-pet-hit { position:absolute; left:18%; right:20%; top:0; bottom:0; z-index:1; padding:0; border:0;
-                 background:transparent; cursor:pointer; pointer-events:auto; touch-action:manipulation;
-                 -webkit-tap-highlight-color:transparent; }
+                 background:transparent; cursor:pointer; pointer-events:auto; touch-action:none;
+                 -webkit-tap-highlight-color:transparent; -webkit-touch-callout:none; user-select:none;
+                 -webkit-user-select:none; }
+  #nox-pet.dragging #nox-pet-hit { cursor:grabbing; }
   #nox-pet-hit:focus-visible { outline:3px solid #eef3ff; outline-offset:3px; border-radius:24px; }
-  #nox-pet-bubble { position:fixed; z-index:7; top:calc(100vh - var(--nox-pet-height) * .97);
+  #nox-pet-bubble { --nox-bubble-bg:rgba(255,255,255,.96); position:fixed; z-index:7;
+                    top:calc(100vh - var(--nox-pet-height) * .97);
                     right:calc(var(--nox-pet-right) + var(--nox-pet-width) * .74);
                     width:max-content; max-width:min(560px,36vw); box-sizing:border-box; padding:14px 18px;
-                    border-radius:20px; color:#1a1622; background:rgba(255,255,255,.96);
+                    border-radius:20px; color:#1a1622; background:var(--nox-bubble-bg);
                     box-shadow:0 10px 30px rgba(0,0,0,.36); font:500 22px/1.38 ui-sans-serif,-apple-system,sans-serif;
                     opacity:0; transition:opacity .2s ease; }
   #nox-pet-bubble.open { opacity:1; }
   #nox-pet-bubble::after { content:""; position:absolute; top:22px; right:-19px; border:10px solid transparent;
-                           border-left-color:rgba(255,255,255,.96); }
-  #nox-pet-bubble[data-kind="you"] { color:#e8f9ff; background:rgba(26,22,34,.92); }
-  #nox-pet-bubble[data-kind="you"]::after { border-left-color:rgba(26,22,34,.92); }
-  #nox-pet-bubble[data-kind="status"] { color:var(--nox-pet-cyan); background:rgba(26,22,34,.88); font-weight:700; }
-  #nox-pet-bubble[data-kind="status"]::after { border-left-color:rgba(26,22,34,.88); }
+                           border-left-color:var(--nox-bubble-bg); }
+  /* near the left edge the bubble hangs on her right, its tail pointing back at her head */
+  #nox-pet-bubble[data-side="right"]::after { right:auto; left:-19px; border-left-color:transparent;
+                                              border-right-color:var(--nox-bubble-bg); }
+  #nox-pet-bubble[data-kind="you"] { --nox-bubble-bg:rgba(26,22,34,.92); color:#e8f9ff; }
+  #nox-pet-bubble[data-kind="status"] { --nox-bubble-bg:rgba(26,22,34,.88); color:var(--nox-pet-cyan); font-weight:700; }
   /* long answers scroll inside the bubble, never past her feet */
   #nox-pet-text { max-height:calc(var(--nox-pet-height) * .86 - 28px); overflow-y:auto; overscroll-behavior:contain;
                   white-space:pre-wrap; overflow-wrap:anywhere; scrollbar-width:thin; }
-  /* her bubble carries the voice status, so the pill beside the mic would only sit on her feet */
-  body[data-avatar-presentation="pet"] #voice-status { display:none; }
+  /* Pet mode (Cameron 2026-10-18: "we're not gonna need the voice buttons... you can just tap the pet"):
+     the whole voice cluster goes, the status pill and the mic. Her bubble carries the status and a tap on
+     her is a click on the mic, which stays in the DOM. A pet whose clips fail sets the presentation to
+     "off", so the mic and the pill come back and the board always keeps a way to ask. */
+  body[data-avatar-presentation="pet"] #voice { display:none; }
   @keyframes petThink { 50% { filter:drop-shadow(0 0 12px rgba(255,201,79,.75)); } }
   @media (prefers-reduced-motion:reduce) {
     #holo-avatar { transition-duration:.01s; }
@@ -376,8 +385,12 @@ const avatar = avatarPresentation === "pet" ? KystAvatar.createPetController({
   // a tap on the hologram is Done, the same as the chat close button
   onDismiss: () => setChatOpen(false),
 });
-// clips that cannot load hand the wall back its pre-avatar look, the status pill beside the mic included
+// clips that cannot load hand the wall back its pre-avatar look, the mic and its status pill included
 avatar.ready?.then(() => { document.body.dataset.avatarPresentation = avatar.presentation; });
+// in pet mode the mic is out of sight, so a blocked answer asks for a tap on her instead
+function playAnswerHint() {
+  return avatar.presentation === "pet" ? "Tap NOX once to play the answer." : "Tap the mic once to play the answer.";
+}
 
 let pendingStreamTicketId = null;
 let streamConnect = null;
@@ -928,7 +941,7 @@ mic.addEventListener("click", () => {
     pendingPlaybackRequestId = null;
     progressiveAudio.elementRunning().then(() => voiceAudio.play()).catch(() => {
       pendingPlaybackRequestId = activeRequestId;
-      setVoiceState("ready", "Tap the mic once to play the answer.");
+      setVoiceState("ready", playAnswerHint());
     });
   }
   else if (activeRequestId) {
@@ -1015,7 +1028,7 @@ window.addEventListener("message", async (event) => {
     } catch {
       if (activeRequestId !== requestId) return;
       pendingPlaybackRequestId = requestId;
-      setVoiceState("ready", "Tap the mic once to play the answer.");
+      setVoiceState("ready", playAnswerHint());
     }
   }
 });
