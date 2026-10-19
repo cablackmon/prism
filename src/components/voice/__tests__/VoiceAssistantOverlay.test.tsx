@@ -358,9 +358,7 @@ describe('VoiceAssistantOverlay accessibility and turn controls', () => {
       .spyOn(globalThis.crypto, 'randomUUID')
       .mockReturnValue('6f9619ff-8b86-d011-b42d-00cf4fc964ff');
     installCaptureMocks();
-    jest
-      .spyOn(PcmPlaybackQueue.prototype, 'push')
-      .mockRejectedValue(new Error('playback failed'));
+    jest.spyOn(PcmPlaybackQueue.prototype, 'push').mockRejectedValue(new Error('playback failed'));
 
     render(<VoiceAssistantOverlay />);
     fireEvent.click(screen.getByRole('button', { name: 'Ask NOX by voice' }));
@@ -699,5 +697,93 @@ describe('PcmPlaybackQueue', () => {
     await pushing;
     expect(finished).toHaveBeenCalledTimes(1);
     queue.close();
+  });
+});
+
+describe('VoiceAssistantOverlay on the kiosk wall', () => {
+  const WALL_ORIGIN = 'https://kyst-board.fly.dev';
+  let restoreParent: (() => void) | null = null;
+
+  function frameInWall() {
+    const wall = { postMessage: jest.fn() };
+    const descriptor = Object.getOwnPropertyDescriptor(window, 'parent');
+    Object.defineProperty(window, 'parent', { configurable: true, get: () => wall });
+    restoreParent = () => {
+      if (descriptor) Object.defineProperty(window, 'parent', descriptor);
+      else delete (window as { parent?: unknown }).parent;
+    };
+    return wall;
+  }
+
+  function wallSays(presentation: string, origin = WALL_ORIGIN) {
+    const event = new MessageEvent('message', {
+      data: { type: 'kyst-wall-avatar-presentation', presentation },
+      origin,
+    });
+    Object.defineProperty(event, 'source', { value: window.parent });
+    act(() => {
+      window.dispatchEvent(event);
+    });
+  }
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  afterEach(() => {
+    restoreParent?.();
+    restoreParent = null;
+    jest.restoreAllMocks();
+  });
+
+  it('keeps the mic button when the board runs on its own', () => {
+    render(<VoiceAssistantOverlay />);
+    expect(screen.getByRole('button', { name: 'Ask NOX by voice' })).toBeTruthy();
+  });
+
+  it('drops only the mic button while the wall stands NOX in the corner as a pet', () => {
+    const wall = frameInWall();
+    render(<VoiceAssistantOverlay />);
+    expect(wall.postMessage).toHaveBeenCalledWith(
+      { type: 'kyst-wall-avatar-presentation-request' },
+      WALL_ORIGIN
+    );
+    // until the wall answers, the button stays, so a wall that never answers loses nothing
+    expect(screen.getByRole('button', { name: 'Ask NOX by voice' })).toBeTruthy();
+
+    wallSays('pet');
+    expect(screen.queryByRole('button', { name: 'Ask NOX by voice' })).toBeNull();
+    expect(document.querySelector('[data-screensaver-keep]')).not.toBeNull();
+  });
+
+  it('shows the mic button for the overlay wall and for a frame at another origin', () => {
+    frameInWall();
+    render(<VoiceAssistantOverlay />);
+    wallSays('pet', 'https://evil.example');
+    expect(screen.getByRole('button', { name: 'Ask NOX by voice' })).toBeTruthy();
+    wallSays('pet');
+    expect(screen.queryByRole('button', { name: 'Ask NOX by voice' })).toBeNull();
+    wallSays('overlay');
+    expect(screen.getByRole('button', { name: 'Ask NOX by voice' })).toBeTruthy();
+  });
+
+  it('still shows a voice turn started another way while the button is hidden', async () => {
+    frameInWall();
+    render(<VoiceAssistantOverlay />);
+    wallSays('pet');
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent('prism:voice-assistant', {
+          detail: { owner: 'wake', error: 'The microphone is unavailable.' },
+        })
+      );
+    });
+    expect(screen.getByRole('status').textContent).toContain('The microphone is unavailable.');
+    expect(screen.queryByRole('button', { name: 'Ask NOX by voice' })).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close voice assistant' }));
+    await waitFor(() => expect(screen.queryByRole('status')).toBeNull());
+    expect(cancelTurn).toHaveBeenCalledWith('dismissed');
+    expect(screen.queryByRole('button', { name: 'Ask NOX by voice' })).toBeNull();
   });
 });

@@ -375,6 +375,29 @@ test("pet mode hides the whole voice cluster (mic and status pill); the mic stay
   assert.match(wall, /#nox-pet-hit \{[^}]*touch-action:none;/);
 });
 
+test("the wall tells the board its presentation on every frame load and when asked, so the board can drop its own mic", () => {
+  const fn = wall.match(/\nfunction sendBoardPresentation\(\) \{\n[\s\S]*?\n\}\n/)?.[0] || "";
+  assert.ok(fn, "sendBoardPresentation is defined");
+  // it sends the presentation the wall was set to, never avatar.presentation, so a failed pet ("off") keeps the
+  // board's mic hidden behind the wall's own mic, which comes back at the same spot
+  assert.doesNotMatch(fn, /avatar\.presentation/);
+  const sent = [];
+  const boardFrame = { contentWindow: { postMessage: (data, origin) => sent.push({ data, origin }) } };
+  new Function("boardFrame", "proxyOrigin", "avatarPresentation", `${fn}; sendBoardPresentation();`)(
+    boardFrame, "https://kyst-wall-proxy.fly.dev", "pet");
+  assert.deepEqual(sent, [{
+    data: { type: "kyst-wall-avatar-presentation", presentation: "pet" },
+    origin: "https://kyst-wall-proxy.fly.dev",
+  }]);
+  // defined after the presentation is resolved, before anything can use it
+  assert.ok(wall.indexOf("const avatarPresentation = ") < wall.indexOf("function sendBoardPresentation()"));
+  assert.match(wall, /\nboardFrame\.addEventListener\("load", sendBoardPresentation\);\n/);
+  // the board's request is answered inside the listener that already checks the proxy origin and the board window
+  const listener = wall.match(/window\.addEventListener\("message", async \(event\) => \{\n([\s\S]*?)\n  if \(message\.type === "kyst-voice-bridge-ready"\)/)?.[1] || "";
+  assert.match(listener, /if \(event\.origin !== "https:\/\/kyst-wall-proxy\.fly\.dev" \|\| event\.source !== boardFrame\.contentWindow\) return;/);
+  assert.match(listener, /if \(message\.type === "kyst-wall-avatar-presentation-request"\) \{\n    sendBoardPresentation\(\);\n    return;\n  \}/);
+});
+
 test("the body follows each presentation: pet hides the cluster, overlay and a failed pet show it", async () => {
   const readyLine = wall.match(/\navatar\.ready\?\.then\(\(\) => \{[^\n]*\}\);\n/)?.[0];
   assert.ok(readyLine);
