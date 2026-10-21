@@ -1,0 +1,9 @@
+{
+  "extends": "../../../tsconfig.json",
+  "compilerOptions": {
+    "incremental": false,
+    "types": ["node", "jest"]
+  },
+  "include": ["./burn4-store.ts", "./burn4-birthdays.test.ts"],
+  "exclude": []
+}
