@@ -315,6 +315,37 @@ test('individual count limits are inclusive when matching work is empty', () => 
   assert.equal(groupPhotosByTrip(fixture([], [trip('a', pins)])).groups.length, 1);
 });
 
+test('repeated long pin evidence is rejected during bounded accumulation', () => {
+  const pins = Array.from({ length: 300 }, (_, index) => pin(`pin-${index}-${'x'.repeat(800)}`));
+  const photos = Array.from({ length: 200 }, (_, index) => photo(`photo-${index}`));
+  const input = fixture(photos, [trip('trip-a', pins)]);
+  assert.ok(Buffer.byteLength(JSON.stringify(input)) < 300000);
+  assert.ok(photos.length * pins.length < PHOTO_TRIP_LIMITS.comparisons);
+  assert.throws(() => groupPhotosByTrip(input), /manifest exceeds the conservative output byte budget/);
+});
+
+test('CLI output-budget failure has controlled status and no partial manifest', async () => {
+  const pins = Array.from({ length: 300 }, (_, index) => pin(`pin-${index}-${'x'.repeat(800)}`));
+  const photos = Array.from({ length: 200 }, (_, index) => photo(`photo-${index}`));
+  const result = await invoke(JSON.stringify(fixture(photos, [trip('trip-a', pins)])));
+  assert.deepEqual(result, {
+    code: 1, stdout: '', stderr: 'photo-trip-group: manifest exceeds the conservative output byte budget.\n',
+  });
+});
+
+test('overlap trip-ID expansion is included in the manifest budget', () => {
+  const trips = Array.from({ length: 20 }, (_, index) => trip(`trip-${index}-${'x'.repeat(9000)}`));
+  const photos = Array.from({ length: 200 }, (_, index) => photo(`photo-${index}`));
+  assert.throws(() => groupPhotosByTrip(fixture(photos, trips)), /conservative output byte budget/);
+});
+
+test('large group labels and ungrouped IDs are budgeted without serializing the result', () => {
+  const name = 'x'.repeat(Math.floor(PHOTO_TRIP_LIMITS.manifestBytes / 6) + 1);
+  assert.throws(() => groupPhotosByTrip(fixture([], [{ ...trip(), name }])), /conservative output byte budget/);
+  const photos = Array.from({ length: 200 }, (_, index) => ({ id: `photo-${index}-${'x'.repeat(30000)}` }));
+  assert.throws(() => groupPhotosByTrip(fixture(photos, [])), /conservative output byte budget/);
+});
+
 test('CLI writes exactly one deterministic JSON value and trailing newline', async () => {
   const result = await invoke(JSON.stringify(fixture()));
   assert.equal(result.code, 0);

@@ -9,6 +9,7 @@ export const PHOTO_TRIP_LIMITS = Object.freeze({
   trips: 1000,
   pins: 10000,
   comparisons: 10000000,
+  manifestBytes: 32 * 1024 * 1024,
 });
 
 /** @typedef {{latitude: number, longitude: number}} Coordinates */
@@ -149,6 +150,19 @@ function distanceKm(a, b) {
   return 2 * 6371 * Math.asin(Math.sqrt(Math.min(1, Math.max(0, intermediate))));
 }
 
+/** Reserve a conservative upper bound for pretty-printed JSON before creating records.
+ * A UTF-16 code unit needs at most six JSON UTF-8 bytes (including lone surrogates).
+ * Record overhead covers fixed keys, punctuation, numeric values and indentation.
+ * Charging at least 256 bytes per record also bounds result object/array growth.
+ * @param {{remaining: number}} budget @param {number} overhead @param {...string} values
+ */
+function reserveManifest(budget, overhead, ...values) {
+  let bytes = overhead;
+  for (const value of values) bytes += 6 * value.length;
+  if (bytes > budget.remaining) throw new InputError('manifest exceeds the conservative output byte budget.');
+  budget.remaining -= bytes;
+}
+
 /** Build whole-trip photo albums from explicit JSON-like data only.
  * Timestamps, visit dates and other metadata never affect membership or order.
  * A photo can occur in every nearby trip, once per trip with all matching pins.
@@ -156,9 +170,12 @@ function distanceKm(a, b) {
  */
 export function groupPhotosByTrip(input) {
   const { radiusKm, photos, trips } = validate(input);
-  const tripGroups = trips.map((trip) => ({
-    trip, group: { tripId: trip.id, name: trip.name, photos: /** @type {GroupedPhoto[]} */ ([]) },
-  }));
+  const budget = { remaining: PHOTO_TRIP_LIMITS.manifestBytes };
+  reserveManifest(budget, 512);
+  const tripGroups = trips.map((trip) => {
+    reserveManifest(budget, 256, trip.id, trip.name);
+    return { trip, group: { tripId: trip.id, name: trip.name, photos: /** @type {GroupedPhoto[]} */ ([]) } };
+  });
   /** @type {Overlap[]} */
   const overlaps = [];
   /** @type {UngroupedPhoto[]} */
@@ -166,6 +183,7 @@ export function groupPhotosByTrip(input) {
 
   for (const photo of photos) {
     if (photo.gps.kind !== 'ready') {
+      reserveManifest(budget, 256, photo.id);
       ungrouped.push({ photoId: photo.id, reason: photo.gps.kind });
       continue;
     }
@@ -175,15 +193,26 @@ export function groupPhotosByTrip(input) {
       const matchedPins = [];
       for (const pin of trip.pins) {
         const distance = distanceKm(photo.gps, pin);
-        if (distance <= radiusKm) matchedPins.push({ pinId: pin.id, distanceKm: Number(distance.toFixed(6)) });
+        if (distance <= radiusKm) {
+          if (matchedPins.length === 0) reserveManifest(budget, 256, photo.id);
+          reserveManifest(budget, 256, pin.id);
+          matchedPins.push({ pinId: pin.id, distanceKm: Number(distance.toFixed(6)) });
+        }
       }
       if (matchedPins.length > 0) {
         group.photos.push({ photoId: photo.id, matchedPins });
         tripIds.push(trip.id);
       }
     }
-    if (tripIds.length === 0) ungrouped.push({ photoId: photo.id, reason: 'no-nearby-trip' });
-    if (tripIds.length > 1) overlaps.push({ photoId: photo.id, tripIds });
+    if (tripIds.length === 0) {
+      reserveManifest(budget, 256, photo.id);
+      ungrouped.push({ photoId: photo.id, reason: 'no-nearby-trip' });
+    }
+    if (tripIds.length > 1) {
+      reserveManifest(budget, 256, photo.id);
+      for (const tripId of tripIds) reserveManifest(budget, 32, tripId);
+      overlaps.push({ photoId: photo.id, tripIds });
+    }
   }
   return { schemaVersion: 1, radiusKm, groups: tripGroups.map(({ group }) => group), overlaps, ungrouped };
 }
