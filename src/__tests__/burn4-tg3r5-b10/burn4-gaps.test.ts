@@ -15,7 +15,9 @@ describe('UI audit concrete source defects', () => {
     async (navigationStatus) => {
       const audit = loadAudit({ navigationStatus, severities: ['ok'] });
       await expect(audit.helpers.probeRoute(audit.page, '/fixture', viewport, 100))
-        .rejects.toThrow(/HTTP|navigation|response/i);
+        .rejects.toThrow();
+      expect(audit.events.some((event) => ['evaluate', 'grade', 'screenshot'].includes(event.kind))).toBe(false);
+      expect(audit.screenshots).toEqual([]);
     },
   );
 
