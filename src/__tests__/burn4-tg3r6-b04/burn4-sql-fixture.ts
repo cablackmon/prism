@@ -1,6 +1,14 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { PGlite } from '@electric-sql/pglite';
+import { createRequire } from 'node:module';
+
+export type SqlDatabase = {
+  exec(sql: string): Promise<unknown>;
+  query<Row = Record<string, unknown>>(sql: string, params?: unknown[]): Promise<{ rows: Row[] }>;
+  close(): Promise<void>;
+};
+
+const loadRuntime = createRequire(__filename);
 
 export const migrations = [
   '0015_dismissed_events.sql',
@@ -24,11 +32,12 @@ export const ids = {
 } as const;
 
 // No URL or data directory: the PostgreSQL engine lives only in this process.
-export function createDatabase(): PGlite {
-  return new PGlite();
+export function createDatabase(): SqlDatabase {
+  const runtime = loadRuntime('@electric-sql/pglite') as { PGlite: new () => SqlDatabase };
+  return new runtime.PGlite();
 }
 
-export async function resetDatabase(db: PGlite): Promise<void> {
+export async function resetDatabase(db: SqlDatabase): Promise<void> {
   await db.exec(`
     DROP SCHEMA IF EXISTS shadow CASCADE;
     DROP SCHEMA public CASCADE;
@@ -42,16 +51,16 @@ export async function resetDatabase(db: PGlite): Promise<void> {
   `);
 }
 
-export async function applyMigration(db: PGlite, migration: Migration): Promise<void> {
+export async function applyMigration(db: SqlDatabase, migration: Migration): Promise<void> {
   const sql = readFileSync(resolve(__dirname, '../../../drizzle', migration), 'utf8');
   await db.exec(sql);
 }
 
-export async function applyAll(db: PGlite): Promise<void> {
+export async function applyAll(db: SqlDatabase): Promise<void> {
   for (const migration of migrations) await applyMigration(db, migration);
 }
 
-export async function seedSources(db: PGlite): Promise<void> {
+export async function seedSources(db: SqlDatabase): Promise<void> {
   for (const table of ['calendar_sources', 'photo_sources', 'task_sources']) {
     await db.query(`INSERT INTO ${table} (id) VALUES ($1), ($2)`, [ids.sourceA, ids.sourceB]);
   }
@@ -99,7 +108,7 @@ export const tombstones: readonly Tombstone[] = [
 ];
 
 export async function insertTombstone(
-  db: PGlite,
+  db: SqlDatabase,
   spec: Tombstone,
   source: string | null = ids.sourceA,
   remote: string | null = 'remote-item',
@@ -110,7 +119,7 @@ export async function insertTombstone(
   );
 }
 
-export async function countRows(db: PGlite, table: string): Promise<number> {
+export async function countRows(db: SqlDatabase, table: string): Promise<number> {
   const result = await db.query<{ count: number }>(`SELECT count(*)::int AS count FROM ${table}`);
   const row = result.rows[0];
   if (!row) throw new Error(`Expected a count from ${table}`);

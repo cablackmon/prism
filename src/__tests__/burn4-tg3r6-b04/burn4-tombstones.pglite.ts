@@ -1,5 +1,4 @@
 /** @jest-environment node */
-import type { PGlite } from '@electric-sql/pglite';
 import {
   applyMigration,
   countRows,
@@ -9,11 +8,12 @@ import {
   resetDatabase,
   seedSources,
   tombstones,
+  type SqlDatabase,
 } from './burn4-sql-fixture';
 
 jest.setTimeout(60_000);
 
-let db: PGlite;
+let db: SqlDatabase;
 beforeAll(() => { db = createDatabase(); });
 afterAll(async () => { await db.close(); });
 beforeEach(async () => { await resetDatabase(db); await seedSources(db); });

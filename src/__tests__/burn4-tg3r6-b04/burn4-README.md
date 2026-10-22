@@ -23,12 +23,22 @@ npm ci --prefix src/__tests__/burn4-tg3r6-b04 --cache /tmp/burn4-tg3r6-b04-npm-c
 The run used the same command with the lane cache at `/home/cameronblackmon/burn-lanes/codex-tg3r6/state/npm-cache`. Root development dependencies must already be installed. Run only these two files, in one process:
 
 ```sh
-node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand --runTestsByPath src/__tests__/burn4-tg3r6-b04/burn4-tombstones.test.ts src/__tests__/burn4-tg3r6-b04/burn4-event-task-upgrades.test.ts
+node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand --testMatch '**/burn4-tg3r6-b04/burn4-*.pglite.ts' --runTestsByPath src/__tests__/burn4-tg3r6-b04/burn4-tombstones.pglite.ts src/__tests__/burn4-tg3r6-b04/burn4-event-task-upgrades.pglite.ts
 node node_modules/typescript/bin/tsc -p src/__tests__/burn4-tg3r6-b04/burn4-tsconfig.json
-node node_modules/eslint/bin/eslint.js src/__tests__/burn4-tg3r6-b04/burn4-sql-fixture.ts src/__tests__/burn4-tg3r6-b04/burn4-tombstones.test.ts src/__tests__/burn4-tg3r6-b04/burn4-event-task-upgrades.test.ts --max-warnings=0
+node node_modules/eslint/bin/eslint.js src/__tests__/burn4-tg3r6-b04/burn4-sql-fixture.ts src/__tests__/burn4-tg3r6-b04/burn4-tombstones.pglite.ts src/__tests__/burn4-tg3r6-b04/burn4-event-task-upgrades.pglite.ts --max-warnings=0
 ```
 
-The VM modules flag lets PGlite load its WebAssembly runtime through Jest. It does not start an external service. Typechecking is strict and limited to this package. Lint is limited to the three authored TypeScript files.
+The `.pglite.ts` filenames keep these opt-in tests outside the root Jest discovery pattern. The fixture loads its optional runtime with createRequire and describes only the query, exec and close methods it uses. There are no static imports or type imports from the private dependency, so normal repository typechecking can inspect these files before that dependency is installed. A strict typecheck of copied source files with no child runtime package also passes.
+
+The explicit testMatch override selects only this package after its separate dependency install. The VM modules flag lets PGlite load its WebAssembly runtime through Jest. It does not start an external service. Typechecking is strict and limited to this package. Lint is limited to the three authored TypeScript files.
+
+Confirm that the normal root configuration excludes both paths without executing any test:
+
+```sh
+node node_modules/jest/bin/jest.js --runInBand --listTests --json --runTestsByPath src/__tests__/burn4-tg3r6-b04/burn4-tombstones.pglite.ts src/__tests__/burn4-tg3r6-b04/burn4-event-task-upgrades.pglite.ts
+```
+
+The expected listing is `[]`. No root config or normal CI dependency install needs to change.
 
 ## KNOWN GAP list
 
