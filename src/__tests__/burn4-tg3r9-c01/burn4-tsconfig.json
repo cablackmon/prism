@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ES2022", "module": "CommonJS", "moduleResolution": "Node",
+    "strict": true, "noEmit": true, "incremental": false, "skipLibCheck": true,
+    "isolatedModules": true, "esModuleInterop": true, "jsx": "react-jsx",
+    "types": ["node", "jest", "react", "react-dom"],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"]
+  },
+  "files": [
+    "../../lib/burn4-all-day-recurrence.ts",
+    "../../components/calendar/burn4-all-day-recurrence-builder.tsx",
+    "../../app/calendar/recurrence/page.tsx",
+    "burn4-fixtures.ts", "burn4-model.test.ts", "burn4-calendar.test.ts",
+    "burn4-builder.test.tsx", "burn4-download.test.tsx"
+  ]
+}
