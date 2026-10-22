@@ -202,6 +202,102 @@ describe('reversible responsive font scale session', () => {
     expect(f.session.refresh().ok).toBe(false);
     expect(f.target.style.fontSize).toBe('18px');
   });
+  test('reader disposal fences the outer continuation and restores the original baseline', () => {
+    const f = sessionFixture('18px', 'important');
+    f.session.setScale(125);
+    f.read.mockImplementationOnce(() => { f.session.dispose(); return '18px'; });
+    expect(f.session.setScale(150)).toEqual({ ok: false, error: 'The font-size operation was superseded.' });
+    expect(f.target.style.fontSize).toBe('18px');
+    expect(f.target.style.getPropertyPriority('font-size')).toBe('important');
+    expect(f.stop).toHaveBeenCalledTimes(1);
+  });
+  test('newer Auto issued by a reader supersedes the outer command', () => {
+    const f = sessionFixture();
+    f.session.setScale(125);
+    f.read.mockImplementationOnce(() => { f.session.setScale(null); return '16px'; });
+    expect(f.session.setScale(150).ok).toBe(false);
+    expect(f.target.style.fontSize).toBe('');
+    f.emit();
+    expect(f.target.style.fontSize).toBe('');
+    f.session.dispose();
+  });
+  test('reader can dispose and acquire a replacement owner without an old finally write', () => {
+    const f = sessionFixture();
+    let replacement: ReturnType<typeof createFontScaleSession> | undefined;
+    f.read.mockImplementationOnce(() => {
+      f.session.dispose();
+      replacement = createFontScaleSession({ target: f.target, readComputedFontSize: () => '20px' });
+      replacement.setScale(200);
+      return '16px';
+    });
+    expect(f.session.setScale(150).ok).toBe(false);
+    expect(f.target.style.fontSize).toBe('40px');
+    f.session.dispose();
+    expect(f.target.style.fontSize).toBe('40px');
+    replacement?.dispose();
+    expect(f.target.style.fontSize).toBe('');
+  });
+  test('outside edit from a reader survives temporary restoration and later passive refresh', () => {
+    const f = sessionFixture();
+    f.session.setScale(125);
+    f.read.mockImplementationOnce(() => { f.target.style.fontSize = '19px'; return '16px'; });
+    expect(f.session.setScale(150)).toEqual({ ok: false, error: 'The font-size target changed during measurement.' });
+    expect(f.target.style.fontSize).toBe('19px');
+    expect(f.session.refresh()).toMatchObject({ status: 'yielded' });
+    f.session.dispose();
+    expect(f.target.style.fontSize).toBe('19px');
+  });
+  test('newer explicit custom command wins during an older measurement', () => {
+    const f = sessionFixture();
+    f.session.setScale(125);
+    f.read.mockImplementationOnce(() => {
+      expect(f.session.setScale(200).ok).toBe(true);
+      return '16px';
+    });
+    expect(f.session.setScale(150).ok).toBe(false);
+    expect(f.target.style.fontSize).toBe('32px');
+    f.session.setScale(null);
+    expect(f.target.style.fontSize).toBe('');
+    f.session.dispose();
+  });
+  test('a failed nested custom command leaves the prior stable style rather than a temporary baseline', () => {
+    const f = sessionFixture();
+    f.session.setScale(125);
+    f.read.mockImplementationOnce(() => {
+      f.read.mockImplementationOnce(() => { throw new Error('nested measurement failure'); });
+      expect(f.session.setScale(200).ok).toBe(false);
+      return '16px';
+    });
+    expect(f.session.setScale(150).ok).toBe(false);
+    expect(f.target.style.fontSize).toBe('20px');
+    f.session.refresh();
+    expect(f.target.style.fontSize).toBe('20px');
+    f.session.dispose();
+  });
+  test('a saved baseline listener fired by the reader cannot recurse into another measurement', () => {
+    const f = sessionFixture();
+    f.session.setScale(125);
+    f.read.mockClear();
+    f.read.mockImplementationOnce(() => {
+      f.emit();
+      expect(f.session.refresh()).toEqual({ ok: false, error: 'A font-size measurement is already running.' });
+      return '16px';
+    });
+    expect(f.session.setScale(150).ok).toBe(true);
+    expect(f.read).toHaveBeenCalledTimes(1);
+    expect(f.target.style.fontSize).toBe('24px');
+    f.session.dispose();
+  });
+  test('an invalid nested command cannot cancel an otherwise valid application', () => {
+    const f = sessionFixture();
+    f.read.mockImplementationOnce(() => {
+      expect(f.session.setScale('invalid').ok).toBe(false);
+      return '16px';
+    });
+    expect(f.session.setScale(150).ok).toBe(true);
+    expect(f.target.style.fontSize).toBe('24px');
+    f.session.dispose();
+  });
   test('subscription construction failure releases target reservation', () => {
     const target = document.createElement('div');
     expect(() => createFontScaleSession({ target, readComputedFontSize: () => '16px', subscribeBaselineChanges() { throw new Error('subscribe'); } })).toThrow('subscribe');
@@ -266,6 +362,34 @@ describe('explicit browser adapter', () => {
     expect(target.style.getPropertyPriority('font-size')).toBe('important');
     session.dispose();
     expect(target.style.fontSize).toBe('18px');
+  });
+  test('disposal attempts every listener removal after one fails and releases the target owner', () => {
+    const target = document.createElement('div');
+    const f = viewFixture(target);
+    const attempts: string[] = [];
+    const matchMedia = f.view.matchMedia!;
+    f.view.matchMedia = (query) => {
+      const media = matchMedia(query);
+      media.removeEventListener = () => {
+        attempts.push(query);
+        if (query === '(pointer: coarse)') throw new Error('synthetic removal failure');
+        f.media.get(query)?.clear();
+      };
+      return media;
+    };
+    f.view.removeEventListener = () => { attempts.push('resize'); f.resize.clear(); };
+    const session = createDocumentFontScaleSession(target, f.view);
+    session.setScale(150);
+    expect(() => session.dispose()).toThrow('synthetic removal failure');
+    expect(attempts).toEqual(['(pointer: coarse)', '(pointer: fine)', 'resize']);
+    expect(f.activeCount()).toBe(1);
+    expect(target.style.fontSize).toBe('');
+    session.dispose();
+    expect(attempts).toHaveLength(3);
+    const next = createFontScaleSession({ target, readComputedFontSize: () => '16px' });
+    next.setScale(200);
+    expect(target.style.fontSize).toBe('32px');
+    next.dispose();
   });
   test('uses the actual DOM computed-style reader against restored baseline', () => {
     const target = document.createElement('div');

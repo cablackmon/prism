@@ -55,6 +55,15 @@ export function createFontScaleSession(options: FontScaleSessionOptions): FontSc
   let disposed = false;
   let scale: FontScaleValue = null;
   let unsubscribe: (() => void) | undefined;
+  let operation = 0;
+  type Measurement = { before: InlineSize; temporary: InlineSize };
+  let measurement: Measurement | null = null;
+
+  // A deliberate nested command starts from stable state, never a reader's
+  // temporary baseline. An unrecognized outside write is left in place.
+  const settleTemporary = (): void => {
+    if (measurement && same(readInline(), measurement.temporary)) writeInline(measurement.before);
+  };
 
   const observeOutsideWrite = (): void => {
     const current = readInline();
@@ -65,24 +74,44 @@ export function createFontScaleSession(options: FontScaleSessionOptions): FontSc
     }
   };
   const apply = (nextScale: number): FontScaleOutcome => {
+    const attempt = operation;
     const before = readInline();
-    let pixels: number;
+    const frame = { before, temporary: baseline };
+    const parentMeasurement = measurement;
+    let pixels = 0;
+    let failed = false;
+    let outsideWrite = false;
+    const isCurrent = (): boolean =>
+      !disposed && owners.get(target) === owner && operation === attempt;
+    measurement = frame;
     try {
-      writeInline(baseline);
+      writeInline(frame.temporary);
       const computed = readComputedFontSize();
-      if (!/^(?:\d+(?:\.\d*)?|\.\d+)px$/.test(computed)) {
-        return { ok: false, error: 'The device font size could not be measured.' };
-      }
-      pixels = Number(computed.slice(0, -2));
-      if (!Number.isFinite(pixels) || pixels <= 0 || pixels > 1024) {
-        return { ok: false, error: 'The device font size could not be measured.' };
+      if (!/^(?:\d+(?:\.\d*)?|\.\d+)px$/.test(computed)) failed = true;
+      else {
+        pixels = Number(computed.slice(0, -2));
+        if (!Number.isFinite(pixels) || pixels <= 0 || pixels > 1024) failed = true;
       }
     } catch {
-      return { ok: false, error: 'The device font size could not be measured.' };
+      failed = true;
     } finally {
-      // Measurement must not strand the temporary baseline, including on errors.
-      writeInline(before);
+      if (measurement === frame) measurement = parentMeasurement;
+      // A host reader may dispose, issue a newer command, acquire a replacement
+      // owner or write its own style. None grants this old frame a later write.
+      if (isCurrent()) {
+        const current = readInline();
+        if (same(current, frame.temporary)) writeInline(before);
+        else {
+          baseline = current;
+          ownsStyle = false;
+          yielded = true;
+          outsideWrite = true;
+        }
+      }
     }
+    if (!isCurrent()) return { ok: false, error: 'The font-size operation was superseded.' };
+    if (outsideWrite) return { ok: false, error: 'The font-size target changed during measurement.' };
+    if (failed) return { ok: false, error: 'The device font size could not be measured.' };
     const scaled = Math.round(pixels * nextScale / 100 * 1e6) / 1e6;
     if (scaled <= 0) return { ok: false, error: 'The device font size could not be measured.' };
     writeInline({ value: `${scaled}px`, priority: 'important' });
@@ -94,6 +123,8 @@ export function createFontScaleSession(options: FontScaleSessionOptions): FontSc
   };
   const refresh = (): FontScaleOutcome => {
     if (disposed) return { ok: false, error: 'The font-size session is disposed.' };
+    if (measurement) return { ok: false, error: 'A font-size measurement is already running.' };
+    operation++;
     observeOutsideWrite();
     if (yielded) return { ok: true, status: 'yielded', scale };
     if (scale === null) return { ok: true, status: 'auto', scale };
@@ -104,6 +135,8 @@ export function createFontScaleSession(options: FontScaleSessionOptions): FontSc
       if (disposed) return { ok: false, error: 'The font-size session is disposed.' };
       const parsed = parseFontScale(value);
       if (!parsed.ok) return parsed;
+      settleTemporary();
+      operation++;
       observeOutsideWrite();
       if (!ownsStyle) baseline = readInline();
       if (parsed.value === null) {
@@ -118,7 +151,9 @@ export function createFontScaleSession(options: FontScaleSessionOptions): FontSc
     refresh,
     dispose() {
       if (disposed) return;
+      settleTemporary();
       disposed = true;
+      operation++;
       try {
         if (ownsStyle && same(readInline(), expected)) writeInline(baseline);
       } finally {
@@ -156,7 +191,15 @@ export function createDocumentFontScaleSession(
     subscribeBaselineChanges(listener) {
       const cleanups: Array<() => void> = [];
       const stop = (): void => {
-        for (const cleanup of cleanups.splice(0).reverse()) cleanup();
+        let firstFailure: unknown;
+        let failed = false;
+        for (const cleanup of cleanups.splice(0).reverse()) {
+          try { cleanup(); } catch (error) {
+            if (!failed) firstFailure = error;
+            failed = true;
+          }
+        }
+        if (failed) throw firstFailure;
       };
       try {
         view.addEventListener('resize', listener);
@@ -173,7 +216,7 @@ export function createDocumentFontScaleSession(
           }
         }
       } catch (error) {
-        stop();
+        try { stop(); } catch { /* Every removal was attempted; preserve the setup failure. */ }
         throw error;
       }
       return stop;
