@@ -97,7 +97,7 @@ export function Burn4SpeechInputPanel({
     const mutation = typeof Mutation === 'function' ? new Mutation(schedule) : null;
     mutation?.observe(target.ownerDocument.documentElement, {
       subtree: true, childList: true, attributes: true,
-      attributeFilter: ['disabled', 'readonly', 'type', 'contenteditable', 'aria-disabled', 'inert'],
+      attributeFilter: ['disabled', 'readonly', 'type', 'contenteditable', 'aria-disabled', 'aria-readonly', 'hidden', 'inert'],
     });
     return () => {
       cancelled = true;

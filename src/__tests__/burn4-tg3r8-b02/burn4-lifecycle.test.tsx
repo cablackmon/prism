@@ -67,7 +67,10 @@ test('observes both target and panel and cleans every observer, listener and que
   const mutation = mutationInstances[0];
   expect(resize?.observe).toHaveBeenCalledWith(target);
   expect(resize?.observe).toHaveBeenCalledWith(screen.getByRole('region'));
-  expect(mutation?.observe).toHaveBeenCalledWith(document.documentElement, expect.objectContaining({ childList: true, subtree: true }));
+  expect(mutation?.observe).toHaveBeenCalledWith(document.documentElement, expect.objectContaining({
+    childList: true, subtree: true, attributes: true,
+    attributeFilter: expect.arrayContaining(['disabled', 'readonly', 'type', 'contenteditable', 'aria-disabled', 'aria-readonly', 'hidden', 'inert']),
+  }));
   fireEvent.resize(window);
   expect(frames.size).toBe(1);
   const callback = Array.from(frames.values())[0];

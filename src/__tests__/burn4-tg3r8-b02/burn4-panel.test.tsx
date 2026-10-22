@@ -1,5 +1,5 @@
 import React from 'react';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { Burn4SpeechInputPanel } from '../../components/input/Burn4SpeechInputPanel';
 import { makeTarget, panelProps } from './burn4-fixtures';
 
@@ -144,4 +144,35 @@ test('invalid languages and session IDs render value-free errors with no speech 
   expect(screen.queryByRole('button')).toBeNull();
   rerender(<Burn4SpeechInputPanel {...props} activeSessionId={'x'.repeat(129)} />);
   expect(screen.getByRole('alert').textContent).toBe('Speech session is not configured correctly.');
+});
+
+test.each([
+  ['hidden', false], ['aria-readonly', false], ['hidden', true], ['aria-readonly', true],
+] as const)('real mutation delivery suppresses %s privacy changes on ancestor=%s', async (attribute, ancestor) => {
+  const pending = new Map<number, FrameRequestCallback>();
+  let sequence = 0;
+  const request = jest.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+    pending.set(++sequence, callback);
+    return sequence;
+  });
+  const cancel = jest.spyOn(window, 'cancelAnimationFrame').mockImplementation((id) => { pending.delete(id); });
+  const target = makeTarget();
+  const wrapper = document.createElement('div');
+  document.body.append(wrapper);
+  wrapper.append(target);
+  try {
+    render(<Burn4SpeechInputPanel {...panelProps(target)} />);
+    expect(screen.getByRole('status')).toBeDefined();
+    await act(async () => {
+      (ancestor ? wrapper : target).setAttribute(attribute, attribute === 'hidden' ? '' : 'true');
+      await Promise.resolve();
+    });
+    const frames = Array.from(pending.values());
+    pending.clear();
+    act(() => { for (const frame of frames) frame(0); });
+    expect(screen.queryByRole('status')).toBeNull();
+    expect(document.querySelector('[data-burn4-speech-panel]')).toBeNull();
+  } finally {
+    cleanup(); request.mockRestore(); cancel.mockRestore();
+  }
 });
