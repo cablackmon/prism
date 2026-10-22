@@ -1,0 +1,11 @@
+{
+  "extends": "../../../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "strict": true,
+    "incremental": false,
+    "plugins": []
+  },
+  "include": ["./burn4-cli-harness.ts", "./burn4-cli-input.test.ts", "./burn4-cli-aggregation.test.ts"],
+  "exclude": ["../../../node_modules"]
+}
