@@ -7,16 +7,7 @@ module.exports = {
   setupFilesAfterEnv: [],
   transform: {
     '^.+\\.ts$': ['ts-jest', {
-      tsconfig: {
-        target: 'ES2022',
-        module: 'commonjs',
-        moduleResolution: 'node',
-        strict: true,
-        noUncheckedIndexedAccess: true,
-        esModuleInterop: true,
-        types: ['node', 'jest'],
-        skipLibCheck: true,
-      },
+      tsconfig: '<rootDir>/src/__tests__/burn4-tg3r8-b01/burn4-tsconfig.json',
       diagnostics: true,
     }],
   },
