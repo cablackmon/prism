@@ -1,0 +1,11 @@
+{
+  "extends": "../../../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "strict": true,
+    "incremental": false,
+    "plugins": []
+  },
+  "include": ["./burn4-scanner-fixtures.ts", "./burn4-scan-examples.test.ts"],
+  "exclude": ["../../../node_modules"]
+}
