@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "strict": true,
+    "isolatedModules": true,
+    "noUncheckedIndexedAccess": true,
+    "esModuleInterop": true,
+    "types": ["node", "jest"],
+    "skipLibCheck": true,
+    "noEmit": true,
+    "checkJs": true,
+    "allowJs": true
+  },
+  "files": [
+    "burn4-harness.ts",
+    "burn4-modes.test.ts",
+    "burn4-settings.test.ts",
+    "burn4-known-gaps.ts",
+    "burn4-inverse.ts",
+    "burn4-jest.config.cjs",
+    "burn4-eslint.config.mjs"
+  ]
+}
