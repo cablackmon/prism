@@ -1,0 +1,15 @@
+{
+  "extends": "../../../tsconfig.json",
+  "compilerOptions": {
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "types": ["node", "jest"],
+    "strict": true,
+    "noEmit": true,
+    "incremental": false,
+    "allowJs": false,
+    "plugins": []
+  },
+  "include": ["./burn4-demo-reset-fixture.ts", "./burn4-demo-reset.test.ts"],
+  "exclude": ["../../../node_modules"]
+}
