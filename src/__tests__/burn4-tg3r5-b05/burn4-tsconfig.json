@@ -1,0 +1,10 @@
+{
+  "extends": "../../../tsconfig.json",
+  "compilerOptions": {
+    "incremental": false,
+    "types": ["node", "jest"],
+    "plugins": []
+  },
+  "include": ["./burn4-*.ts", "../../../e2e/helpers/ui-detectors.ts"],
+  "exclude": ["../../../node_modules"]
+}
