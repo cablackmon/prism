@@ -123,7 +123,7 @@ and import safety. Tests use synthetic data and local temporary files only.
 import it. Native test filenames stay outside default root Jest discovery.
 
 ```sh
-node --test --test-concurrency=1 src/__tests__/burn4-tg3r7-c01/burn4-planner.test.mjs src/__tests__/burn4-tg3r7-c01/burn4-validation.test.mjs src/__tests__/burn4-tg3r7-c01/burn4-calendar.test.mjs src/__tests__/burn4-tg3r7-c01/burn4-cli.test.mjs
+node --test --test-reporter=tap --test-concurrency=1 src/__tests__/burn4-tg3r7-c01/burn4-planner.test.mjs src/__tests__/burn4-tg3r7-c01/burn4-validation.test.mjs src/__tests__/burn4-tg3r7-c01/burn4-calendar.test.mjs src/__tests__/burn4-tg3r7-c01/burn4-cli.test.mjs
 node node_modules/eslint/bin/eslint.js scripts/burn4-chore-anchor-preview.mjs src/__tests__/burn4-tg3r7-c01/burn4-*.mjs --max-warnings 0
 node node_modules/typescript/bin/tsc --project src/__tests__/burn4-tg3r7-c01/burn4-tsconfig.json --pretty false
 ```
