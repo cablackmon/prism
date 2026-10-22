@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ES2022", "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "commonjs", "moduleResolution": "node", "jsx": "react-jsx",
+    "strict": true, "noUncheckedIndexedAccess": true, "esModuleInterop": true,
+    "types": ["node", "jest"], "skipLibCheck": true, "noEmit": true
+  },
+  "files": [
+    "../../components/input/Burn4SpeechInputPanel.tsx",
+    "../../components/input/burn4SpeechInputPanelModel.ts",
+    "burn4-model.test.ts", "burn4-panel.test.tsx", "burn4-lifecycle.test.tsx",
+    "burn4-accessibility.test.tsx", "burn4-fixtures.ts"
+  ],
+  "include": []
+}
