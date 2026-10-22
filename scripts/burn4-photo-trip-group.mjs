@@ -5,6 +5,7 @@ import { TextDecoder } from 'node:util';
 /** Explicit offline resource limits, not production capacity claims. */
 export const PHOTO_TRIP_LIMITS = Object.freeze({
   inputBytes: 8 * 1024 * 1024,
+  inputChunks: 16384,
   photos: 100000,
   trips: 1000,
   pins: 10000,
@@ -220,15 +221,19 @@ export function groupPhotosByTrip(input) {
 /** @param {AsyncIterable<Uint8Array>} input @returns {Promise<unknown>} */
 async function readJson(input) {
   let bytes = 0;
-  /** @type {Buffer[]} */
-  const chunks = [];
+  let chunks = 0;
+  // One bounded allocation avoids per-fragment retained buffers and metadata.
+  const buffer = Buffer.alloc(PHOTO_TRIP_LIMITS.inputBytes);
   for await (const chunk of input) {
+    chunks += 1;
+    if (chunks > PHOTO_TRIP_LIMITS.inputChunks) throw new InputError('input exceeds the chunk limit.');
+    if (chunk.byteLength === 0) continue;
+    if (chunk.byteLength > PHOTO_TRIP_LIMITS.inputBytes - bytes) throw new InputError('input exceeds the byte limit.');
+    buffer.set(chunk, bytes);
     bytes += chunk.byteLength;
-    if (bytes > PHOTO_TRIP_LIMITS.inputBytes) throw new InputError('input exceeds the byte limit.');
-    chunks.push(Buffer.from(chunk));
   }
   try {
-    const text = new TextDecoder('utf-8', { fatal: true }).decode(Buffer.concat(chunks));
+    const text = new TextDecoder('utf-8', { fatal: true }).decode(buffer.subarray(0, bytes));
     return /** @type {unknown} */ (JSON.parse(text));
   } catch {
     throw new InputError('input must be one valid UTF-8 JSON value.');
@@ -243,7 +248,7 @@ export async function runPhotoTripCli(io, args = []) {
     if (args.length === 1 && args[0] === '--help') {
       io.writeOutput('Usage: node scripts/burn4-photo-trip-group.mjs < input.json\n' +
         'Input: {schemaVersion:1, radiusKm?:50, photos:[{id,latitude?,longitude?}], trips:[{id,name,pins:[{id,latitude,longitude}]}]}\n' +
-        'Outputs GPS-based trip albums; timestamps are unused. Input is limited to 8 MiB.\n');
+        'Outputs GPS-based trip albums; timestamps are unused. Input is limited to 8 MiB and 16384 chunks.\n');
       return 0;
     }
     if (args.length > 0) throw new InputError('unsupported arguments; use --help or provide JSON on stdin.');

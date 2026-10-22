@@ -409,6 +409,62 @@ test('CLI byte overflow stops its iterator and produces no partial manifest', as
   assert.deepEqual(errors, ['photo-trip-group: input exceeds the byte limit.\n']);
 });
 
+test('CLI ignores empty input fragments while preserving the valid JSON bytes', async () => {
+  const empty = new Uint8Array(0);
+  const result = await invokeChunks([
+    ...Array.from({ length: 512 }, () => empty),
+    Buffer.from(JSON.stringify(fixture())),
+    ...Array.from({ length: 512 }, () => empty),
+  ]);
+  assert.equal(result.code, 0);
+  assert.equal(result.stderr, '');
+  assert.deepEqual(JSON.parse(result.stdout), groupPhotosByTrip(fixture()));
+});
+
+test('CLI chunk work overflow is bounded even when every fragment is empty', async () => {
+  let closed = false;
+  let reads = 0;
+  /** @type {string[]} */
+  const output = [];
+  /** @type {string[]} */
+  const errors = [];
+  const empty = new Uint8Array(0);
+  async function* input() {
+    try {
+      for (let index = 0; index <= PHOTO_TRIP_LIMITS.inputChunks; index += 1) {
+        reads += 1;
+        yield empty;
+      }
+      assert.fail('reader consumed beyond the declared chunk cap');
+      yield Buffer.from(JSON.stringify(fixture()));
+    } finally {
+      closed = true;
+    }
+  }
+  const code = await runPhotoTripCli({ input: input(), writeOutput: (text) => { output.push(text); }, writeError: (text) => { errors.push(text); } });
+  assert.equal(code, 1);
+  assert.equal(closed, true);
+  assert.equal(reads, PHOTO_TRIP_LIMITS.inputChunks + 1);
+  assert.deepEqual(output, []);
+  assert.deepEqual(errors, ['photo-trip-group: input exceeds the chunk limit.\n']);
+});
+
+test('CLI permits the exact chunk cap using tiny nonempty fragments', async () => {
+  const bytes = Buffer.from(JSON.stringify(fixture([], [])).padEnd(PHOTO_TRIP_LIMITS.inputChunks, ' '));
+  /** @type {string[]} */
+  const output = [];
+  /** @type {string[]} */
+  const errors = [];
+  const code = await runPhotoTripCli({
+    input: (async function* () { for (const byte of bytes) yield Uint8Array.of(byte); })(),
+    writeOutput: (text) => { output.push(text); },
+    writeError: (text) => { errors.push(text); },
+  });
+  assert.equal(code, 0);
+  assert.deepEqual(errors, []);
+  assert.deepEqual(JSON.parse(output.join('')), groupPhotosByTrip(fixture([], [])));
+});
+
 test('CLI read failures report generic error without underlying details', async () => {
   /** @type {string[]} */
   const errors = [];
