@@ -1,0 +1,16 @@
+{
+  "extends": "../../../tsconfig.json",
+  "compilerOptions": {
+    "strict": true,
+    "noEmit": true,
+    "incremental": false,
+    "types": ["jest", "node"]
+  },
+  "include": [
+    "./burn4-scale-ingredient.test.ts",
+    "./burn4-meal-date.test.ts",
+    "../../lib/utils/scaleIngredient.ts",
+    "../../lib/utils/mealDate.ts"
+  ],
+  "exclude": ["../../../node_modules"]
+}
