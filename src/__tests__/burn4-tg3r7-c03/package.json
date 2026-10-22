@@ -1,0 +1,7 @@
+{
+  "name": "prism-burn4-tg3r7-c03-fresh-schema",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Explicit offline full fresh-schema PostgreSQL behavior tests",
+  "dependencies": { "@electric-sql/pglite": "0.5.11" }
+}
