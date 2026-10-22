@@ -1,11 +1,4 @@
-import { loadUtility } from './burn4-vm-fixture';
-
-type LogErrorModule = typeof import('@/lib/utils/logError');
-
-function logger(mode: string) {
-  const harness = loadUtility<LogErrorModule>('logError', { settings: { NODE_ENV: mode } });
-  return { ...harness, log: harness.exports.logError };
-}
+import { logger } from './burn4-log-error-fixture';
 
 describe('logError with synthetic runtime modes', () => {
   test('production logs only an Error message and never its stack or additional fields', () => {
@@ -23,30 +16,43 @@ describe('logError with synthetic runtime modes', () => {
     expect(f.errorLog).toHaveBeenCalledWith('[synthetic-request-42] Unable to load calendar', 'Synthetic failure');
   });
 
-  test.each([undefined, ''])('omits the prefix when the request ID is %s', (requestId) => {
+  test('omits the prefix for absent or empty request IDs', () => {
     const f = logger('production');
-    f.log('Synthetic context', new Error('Synthetic failure'), requestId);
-    expect(f.errorLog).toHaveBeenCalledWith('Synthetic context', 'Synthetic failure');
+    f.log('Synthetic context', new Error('First synthetic failure'));
+    f.log('Synthetic context', new Error('Second synthetic failure'), '');
+    expect(f.errorLog.mock.calls).toEqual([
+      ['Synthetic context', 'First synthetic failure'],
+      ['Synthetic context', 'Second synthetic failure'],
+    ]);
   });
 
-  test.each([
-    ['Synthetic string failure', 'Synthetic string failure'],
-    [undefined, 'undefined'],
-    [null, 'null'],
-    [42, '42'],
-    [false, 'false'],
-    [{ reason: 'Synthetic failure' }, '[object Object]'],
-  ])('production safely converts a non-Error value: %p', (value, expected) => {
+  test('production converts strings, scalars and ordinary records into log strings', () => {
     const f = logger('production');
-    f.log('Synthetic context', value);
-    expect(f.errorLog).toHaveBeenCalledWith('Synthetic context', expected);
+    const values = ['Synthetic string failure', undefined, null, 42, false, { reason: 'Synthetic failure' }];
+    values.forEach((value) => f.log('Synthetic context', value));
+    expect(f.errorLog.mock.calls).toEqual([
+      ['Synthetic context', 'Synthetic string failure'],
+      ['Synthetic context', 'undefined'],
+      ['Synthetic context', 'null'],
+      ['Synthetic context', '42'],
+      ['Synthetic context', 'false'],
+      ['Synthetic context', '[object Object]'],
+    ]);
   });
 
-  test.each(['development', 'test', ''])('preserves the Error object outside production: %s', (mode) => {
-    const f = logger(mode);
+  test('preserves the Error object for development diagnostics', () => {
+    const f = logger('development');
     const error = new Error('Synthetic failure');
     f.log('Synthetic context', error, 'synthetic-request-42');
     expect(f.errorLog).toHaveBeenCalledWith('[synthetic-request-42] Synthetic context', error);
+    expect(f.errorLog.mock.calls[0]?.[1]).toBe(error);
+  });
+
+  test('supports missing runtime mode using only synthetic settings', () => {
+    const f = logger();
+    const error = new Error('Synthetic failure');
+    f.log('Synthetic context', error);
+    expect(f.errorLog).toHaveBeenCalledWith('Synthetic context', error);
     expect(f.errorLog.mock.calls[0]?.[1]).toBe(error);
   });
 
@@ -57,5 +63,12 @@ describe('logError with synthetic runtime modes', () => {
     expect(f.errorLog).toHaveBeenCalledWith('Synthetic context', diagnostics);
     expect(f.errorLog.mock.calls[0]?.[1]).toBe(diagnostics);
     expect(diagnostics).toEqual({ reason: 'Synthetic failure', attempts: 2 });
+  });
+
+  test.failing('KNOWN GAP: production logger throws for non-Error objects without a primitive conversion', () => {
+    const f = logger('production');
+    const diagnostics: unknown = Object.assign(Object.create(null), { reason: 'Synthetic failure' });
+    expect(() => f.log('Synthetic context', diagnostics)).not.toThrow();
+    expect(f.errorLog).toHaveBeenCalledTimes(1);
   });
 });

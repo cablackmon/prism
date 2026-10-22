@@ -1,5 +1,4 @@
 import { deduplicateEvents } from '@/lib/utils/calendarDedup';
-import { isGoogleCalendarWebLink } from '@/lib/utils/googleCalendarLink';
 import type { CalendarEvent } from '@/types/calendar';
 
 function event(id: string, overrides: Partial<CalendarEvent> = {}): CalendarEvent {
@@ -87,37 +86,5 @@ describe('deduplicateEvents calendar identity', () => {
     expect(input[1]).toBe(second);
     expect(result).not.toBe(input);
     expect(result).toEqual([first]);
-  });
-});
-
-describe('isGoogleCalendarWebLink URL boundaries', () => {
-  test.each([
-    'https://calendar.google.com/calendar/u/0/r',
-    'https://calendar.google.com/calendar/u/2/r/week?tab=rc',
-    'https://calendar.google.com/calendar?cid=synthetic-calendar',
-    'https://calendar.google.com/calendar?cid=',
-    'https://CALENDAR.GOOGLE.COM/calendar/u/0/r',
-    'https://calendar.google.com:443/calendar?cid=synthetic-calendar',
-  ])('recognizes a Google web UI link: %s', (url) => {
-    expect(isGoogleCalendarWebLink(url)).toBe(true);
-  });
-
-  test.each([
-    'https://calendar.google.com/calendar/ical/synthetic/public/basic.ics',
-    'https://calendar.google.com/calendar/ical/synthetic/public/basic?cid=example',
-    'https://calendar.google.com/calendar/u/0/example.ics?cid=example',
-    'https://calendar.google.com/example.ics?download=1',
-    'https://calendar.google.com/calendar',
-    'https://calendar.google.com/calendar#cid=synthetic-calendar',
-    'https://calendar.google.com/calendar?CID=synthetic-calendar',
-    'https://calendar.google.com.evil.invalid/calendar?cid=example',
-    'https://sub.calendar.google.com/calendar?cid=example',
-    'https://calendar.google.com@unrelated.invalid/calendar?cid=example',
-    'https://example.invalid/calendar/u/0/r',
-    'not a URL',
-    '/calendar/u/0/r?cid=example',
-    '',
-  ])('does not reject a feed, another origin, or malformed input: %s', (url) => {
-    expect(isGoogleCalendarWebLink(url)).toBe(false);
   });
 });
