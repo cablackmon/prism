@@ -160,7 +160,12 @@ export function WeekendVisitHistory(props: WeekendVisitHistoryProps) {
     const next = appendVisit(host.journal, visit, catalog);
     if (next.status === 'replayed') { saved(); return; }
     if (next.status !== 'added') {
-      // A missing target/conflict is a definitive inability to append, not a retarget.
+      // A failed local rebase does not resolve an earlier uncertain host commit.
+      // Retain its original identity and cancellation/edit guard until truth is known.
+      if (next.status === 'invalid' && active.current?.phase === 'uncertain') {
+        setError(issueError(next.issues));
+        return;
+      }
       active.current = null;
       setAttempt(null);
       setError(issueError(next.issues));

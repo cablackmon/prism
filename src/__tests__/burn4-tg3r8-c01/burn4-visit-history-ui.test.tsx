@@ -340,7 +340,9 @@ test('uncertain retry with missing original place reports conflict without retar
   expect(createVisitId).toHaveBeenCalledTimes(1);
   expect(screen.getByRole('alert').textContent).toContain('original place is no longer available');
   expect(notes().value).toBe('Original notes');
-  expect(screen.getByText(/Draft for a/)).toBeTruthy();
+  expect(screen.getByText(/Pending visit for a/)).toBeTruthy();
+  expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Cancel' }).disabled).toBe(true);
+  expect(date().disabled).toBe(true);
 });
 
 test('invalid supplied date and oversized place label cannot fabricate a default or unbounded title', async () => {
