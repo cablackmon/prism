@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "strict": true,
+    "noEmit": true,
+    "incremental": false,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "types": ["node", "jest"],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"]
+  },
+  "files": [
+    "../../app/api/shopping-items/batch/route.ts",
+    "burn4-app-contracts.d.ts",
+    "burn4-db-fixture.ts",
+    "burn4-harness.ts",
+    "burn4-route.test.ts",
+    "burn4-db-contract.test.ts"
+  ]
+}
