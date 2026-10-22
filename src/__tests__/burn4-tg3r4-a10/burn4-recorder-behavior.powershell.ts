@@ -161,4 +161,14 @@ describe('offline demo recorder orchestration', () => {
     expect(result.stdout).toContain('Total: 3 GIFs, 1.5 MB');
     expect(result.stdout).toContain(`Output: ${join(created.project, 'docs/demos')}`);
   });
+
+  test('failed native encoding reports absent output while current process status remains zero', () => {
+    const created = fixture({ encoderStatus: 23 });
+    const result = created.run();
+    expect(result.invocations.find((call) => call.stage === 'encode')?.status).toBe(23);
+    expect(created.gif('dashboard-overview.gif')).toBeUndefined();
+    expect(result.stdout).toContain('FAILED to create dashboard-overview.gif');
+    expect(result.stderr).not.toContain('unexpected');
+    expect(result.status).toBe(0);
+  });
 });

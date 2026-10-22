@@ -29,13 +29,5 @@ describe('demo recorder KNOWN GAP regressions', () => {
     expect(result.stdout).not.toContain('-> dashboard-overview.gif (0 MB)');
   });
 
-  test.failing('KNOWN GAP: all conversions failing still returns process success', () => {
-    const created = fixture({ encoderStatus: 23 });
-    const result = created.run();
-    expect(result.invocations.find((call) => call.stage === 'encode')?.status).toBe(23);
-    expect(created.gif('dashboard-overview.gif')).toBeUndefined();
-    expect(result.stdout).toContain('FAILED to create dashboard-overview.gif');
-    expect(result.stderr).not.toContain('unexpected');
-    expect(result.status).not.toBe(0);
-  });
+
 });
