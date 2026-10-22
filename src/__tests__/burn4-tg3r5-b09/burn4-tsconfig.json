@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "target": "ES2022", "module": "NodeNext", "moduleResolution": "NodeNext",
+    "strict": true, "isolatedModules": true, "noEmit": true, "allowJs": true, "checkJs": true,
+    "esModuleInterop": true, "skipLibCheck": true, "incremental": false,
+    "types": ["node", "jest"]
+  },
+  "include": ["../../../scripts/burn4-display-auth-audit.mjs", "./burn4-*.ts", "./burn4-*.mjs"]
+}
