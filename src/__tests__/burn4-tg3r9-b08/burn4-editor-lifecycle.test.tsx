@@ -156,3 +156,33 @@ describe('host and component lifetimes', () => {
     expect(disabled('Move Clock')).toBe(false);
   });
 });
+
+
+test('suspended host rendering cannot leak an uncommitted snapshot into Reload latest', async () => {
+  const gate = deferred();
+  let ready = false;
+  const changed = { ...changePixelRect(fixture(), 'clock', 'move', 40, 0), revision: 5 };
+  function Gate({ revision }: { revision: number }) {
+    if (revision === 5 && !ready) throw gate.promise;
+    return null;
+  }
+  function Host() {
+    const [snapshot, setSnapshot] = React.useState(fixture);
+    return <><button type="button" onClick={() => React.startTransition(() => setSnapshot(changed))}>Stage host update</button>
+      <React.Suspense fallback={<p>Replacement is waiting.</p>}>
+        <Burn4FreeformLayoutEditor snapshot={snapshot} onCommit={() => undefined} />
+        <Gate revision={snapshot.revision} />
+      </React.Suspense></>;
+  }
+  render(<Host />); edit(); expect(x()).toBe('101');
+  await settle(() => { fireEvent.click(screen.getByRole('button', { name: 'Stage host update' })); });
+  expect(x()).toBe('101'); expect(screen.queryByText('Replacement is waiting.')).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Reload latest' }));
+  expect(x()).toBe('100');
+  edit(); expect(x()).toBe('101');
+  await settle(() => { ready = true; gate.resolve(); });
+  expect(screen.getByRole('status').textContent).toMatch(/layout changed/);
+  expect(x()).toBe('101');
+  fireEvent.click(screen.getByRole('button', { name: 'Reload latest' }));
+  expect(x()).toBe('140');
+});

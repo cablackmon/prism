@@ -29,7 +29,7 @@ Saving creates a deeply frozen `{ expectedRevision, candidate }`, where candidat
 
 While a command is submitting, awaiting acknowledgement or rejected, edits remain locked. Retrying sends the same command and candidate object identities. An exact host acknowledgement wins even if the callback is pending or later rejects. Callback settlement after acknowledgement, explicit Reload latest, a layout identity change or unmount is ignored.
 
-A changed snapshot at the same or an older revision conflicts. A newer noncandidate snapshot conflicts when there is a draft, unapplied input or an uncertain command. Conflict remains until explicit Reload latest, even if a matching candidate later appears. Reload adopts the latest valid supplied snapshot and discards the local command view. It cannot cancel an already issued host write. A clean editor accepts a newer host snapshot. Invalid host data displays an error and disposes the previous editor. A changed layout identity starts a separate editor lifetime.
+A changed snapshot at the same or an older revision conflicts. A newer noncandidate snapshot conflicts when there is a draft, unapplied input or an uncertain command. Conflict remains until explicit Reload latest, even if a matching candidate later appears. Reload adopts the latest valid supplied snapshot and discards the local command view. It cannot cancel an already issued host write. A clean editor accepts a newer host snapshot. Invalid host data displays an error and disposes the previous editor. A changed layout identity starts a separate editor lifetime. Reload only reads host snapshots published by a committed layout effect; a suspended concurrent render cannot change what the still-visible editor adopts. A focused Suspense/startTransition regression checks both speculative and subsequently committed host states.
 
 The host owns globally meaningful request IDs, replay protection, authorization and durable storage. Retaining a command object inside this mount does not establish global exactly-once behavior or persistence. The revision limit prevents overflow. A host requiring remount-safe retries must retain its own command ledger.
 
@@ -45,7 +45,7 @@ timeout 180s node --max-old-space-size=1024 node_modules/eslint/bin/eslint.js --
 
 The explicit owned TypeScript config includes both runtime files, all tests and both executable configs. Node16 resolution supports the ESLint parser package's exported types; isolatedModules is enabled for ts-jest. Jest uses the explicit owned config path, empty setup arrays and no root preset. Lint has no root configuration lookup.
 
-Counts: 112 ordinary passing cases across three focused suites; zero failed, skipped or expected-failure cases. Strict scoped types and focused lint pass with zero lint warnings. Tests are synthetic offline fixtures and jsdom, with no application services, database, environment values, network or real family data. Every runtime export has behavior coverage. Known gaps: none in this new code. Needs-decision: none within this package.
+Counts: 113 ordinary passing cases across three focused suites; zero failed, skipped or expected-failure cases. Strict scoped types and focused lint pass with zero lint warnings. Tests are synthetic offline fixtures and jsdom, with no application services, database, environment values, network or real family data. Every runtime export has behavior coverage. Known gaps: none in this new code. Needs-decision: none within this package.
 
 ## Limits
 

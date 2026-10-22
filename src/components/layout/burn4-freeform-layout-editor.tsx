@@ -33,7 +33,6 @@ function Editor({ host, onCommit }: { host: PixelLayout; onCommit: Burn4Freeform
   const gesture = useRef<Gesture | null>(null);
   const epoch = useRef(0);
   const hostRef = useRef(host);
-  hostRef.current = host;
   const update = (next: State) => { current.current = next; setState(next); };
   const release = () => {
     const active = gesture.current;
@@ -45,6 +44,8 @@ function Editor({ host, onCommit }: { host: PixelLayout; onCommit: Burn4Freeform
   useLayoutEffect(() => () => { epoch.current++; release(); }, []);
   const hostKey = JSON.stringify(host);
   useLayoutEffect(() => {
+    // Publish only committed props. Suspended renders must not affect visible controls.
+    hostRef.current = host;
     const s = current.current;
     const editing = s.draft.items.find(entry => entry.id === selected);
     const unapplied = Boolean(editing && (['x', 'y', 'width', 'height'] as const).some(name => fields[name] !== String(editing[name])));
