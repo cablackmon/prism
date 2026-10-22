@@ -1,0 +1,19 @@
+.burn4-reader { height: 100dvh; overflow: auto; padding: 2rem; max-width: 60rem; margin: auto; }
+.burn4-reader button, .burn4-reader select { padding: .5rem; margin: .5rem; border: 1px solid currentColor; border-radius: .25rem; }
+.burn4-reader button:disabled { opacity: .5; }
+.burn4-reader h1, .burn4-reader h2 { font-size: 1.75rem; font-weight: bold; margin: 1rem 0; }
+.burn4-reader h3 { font-size: 1.25rem; font-weight: bold; margin: 1rem 0; }
+.burn4-reader h4, .burn4-reader dt { font-weight: bold; }
+.burn4-reader li { margin: .5rem 0; }
+.burn4-reader-lines { white-space: pre-wrap; overflow-wrap: anywhere; }
+.burn4-reader [role="alert"] { border: 1px solid currentColor; padding: 1rem; }
+.burn4-reader button:focus-visible, .burn4-reader select:focus-visible, .burn4-reader a:focus-visible { outline: 3px solid currentColor; outline-offset: 3px; }
+
+@media print {
+  body:has([data-burn4-recipe-reader]) { overflow: visible !important; height: auto !important; min-height: 0 !important; background: white !important; color: black !important; }
+  body:has([data-burn4-recipe-reader]) *:not(:has([data-burn4-recipe-reader])):not([data-burn4-recipe-reader]):not([data-burn4-recipe-reader] *) { display: none !important; }
+  [data-burn4-recipe-reader] [data-burn4-reader-controls] { display: none !important; }
+  .burn4-reader { height: auto; overflow: visible; max-width: none; padding: 0; margin: 0; color: black; background: white; }
+  .burn4-reader h2, .burn4-reader h3, .burn4-reader h4 { break-after: avoid; }
+  .burn4-reader li { break-inside: avoid; }
+}

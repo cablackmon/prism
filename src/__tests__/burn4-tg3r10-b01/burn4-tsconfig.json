@@ -1,0 +1,8 @@
+{
+  "compilerOptions": {
+    "target": "ES2022", "module": "commonjs", "moduleResolution": "node", "jsx": "react-jsx",
+    "strict": true, "esModuleInterop": true, "skipLibCheck": true, "noEmit": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"], "types": ["node", "jest"]
+  },
+  "files": ["../../lib/burn4-recipe-reader.ts", "../../components/recipes/burn4-recipe-reader.tsx", "../../app/recipes/read/page.tsx", "burn4-fixtures.ts", "burn4-model.test.ts", "burn4-ui.test.tsx", "burn4-setup.ts"]
+}
