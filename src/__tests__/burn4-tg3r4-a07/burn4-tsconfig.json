@@ -1,0 +1,35 @@
+{
+  "extends": "../../../tsconfig.json",
+  "compilerOptions": {
+    "incremental": false,
+    "noEmit": true,
+    "strict": true,
+    "jsx": "react-jsx",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "baseUrl": "../../..",
+    "paths": {
+      "@/i18n/messages/en.json": [
+        "./src/__tests__/burn4-tg3r4-a07/burn4-catalog.json"
+      ],
+      "@/*": [
+        "./src/*"
+      ]
+    },
+    "types": [
+      "node",
+      "jest",
+      "react",
+      "react-dom"
+    ]
+  },
+  "include": [
+    "./*.ts",
+    "./*.tsx",
+    "./*.json",
+    "../../test-utils/nextIntlMock.tsx"
+  ],
+  "exclude": [
+    "../../../node_modules"
+  ]
+}

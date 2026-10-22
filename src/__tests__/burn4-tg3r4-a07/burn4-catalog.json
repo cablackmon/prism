@@ -1,0 +1,30 @@
+{
+  "rootLabel": "Shared board",
+  "rootEmpty": "",
+  "rootCount": 7,
+  "rootObject": {
+    "child": "Nested root"
+  },
+  "common": {
+    "heading": "Shared schedule",
+    "empty": "",
+    "greeting": "Hello {name}",
+    "repeated": "{name} meets {name}",
+    "summary": "{person}: {count} items, active={active}",
+    "values": "Value={value}",
+    "leftover": "Hello {name}, code {code}",
+    "spacing": " {value} ",
+    "number": 42,
+    "object": {
+      "child": "Nested content"
+    },
+    "nav": {
+      "calendar": "Calendar",
+      "tasks": "Tasks"
+    },
+    "icu": "{count, plural, one {item} other {items}}"
+  },
+  "other": {
+    "heading": "Other heading"
+  }
+}
