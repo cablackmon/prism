@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "lib": ["ES2022", "DOM"],
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "incremental": false,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "types": ["node", "jest", "react", "react-dom"]
+  },
+  "files": [
+    "../../lib/burn4-shopping-attribution.ts",
+    "../../components/shopping/burn4-shopping-attribution.tsx",
+    "burn4-fixtures.ts",
+    "burn4-model.test.ts",
+    "burn4-ui.test.tsx"
+  ]
+}
