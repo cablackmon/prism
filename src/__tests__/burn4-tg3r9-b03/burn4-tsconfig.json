@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "isolatedModules": true,
+    "incremental": false,
+    "skipLibCheck": true,
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "types": ["node"]
+  },
+  "files": [
+    "../../../scripts/burn4-trip-route-geometry.mjs",
+    "burn4-test-helpers.mjs",
+    "burn4-geometry.test.mjs",
+    "burn4-validation.test.mjs",
+    "burn4-cli.test.mjs",
+    "burn4-eslint.config.mjs"
+  ]
+}
