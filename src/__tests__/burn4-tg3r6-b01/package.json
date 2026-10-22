@@ -1,0 +1,9 @@
+{
+  "name": "prism-burn4-tg3r6-b01-travel-migrations",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Offline embedded PostgreSQL coverage of travel migrations",
+  "dependencies": {
+    "@electric-sql/pglite": "0.5.11"
+  }
+}
