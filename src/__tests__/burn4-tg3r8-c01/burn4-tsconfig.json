@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "target": "ES2022", "module": "commonjs", "moduleResolution": "node", "jsx": "react-jsx",
+    "strict": true, "noUncheckedIndexedAccess": true, "esModuleInterop": true,
+    "noEmit": true, "types": ["node", "jest", "react"], "lib": ["ES2022", "DOM"]
+  },
+  "files": [
+    "../../lib/burn4-weekend-visit-history.ts",
+    "../../components/weekend/burn4-visit-history.tsx",
+    "burn4-visit-history.test.ts", "burn4-visit-history-ui.test.tsx"
+  ]
+}
