@@ -87,7 +87,9 @@ external stream; the script cannot retract bytes already accepted by it.
 - Each logical leg becomes a LineString or, for an interior crossing, a
   two-part MultiLineString. Every part has two coordinates and a longitude
   jump at most 180 degrees. Paired split endpoints have equal latitude and
-  opposite 180-degree representations of the same meridian.
+  opposite 180-degree representations of the same meridian. Computed crossing
+  latitude is clamped to the original endpoint interval to prevent roundoff
+  beyond the poles.
 - Exactly 180-degree ties retain the input direction. Boundary endpoints may
   change between +180 and -180 to stay on the adjacent map edge. Splitting
   creates no zero-length fragments. An originally coincident logical leg
@@ -132,10 +134,10 @@ timeout 180s node --max-old-space-size=1024 node_modules/eslint/bin/eslint.js --
 
 All tests use synthetic data and inert I/O or temporary `/tmp` files removed
 in `finally`. Direct-entry child processes use an empty environment. Tests
-cover numeric vectors, boundary and tie policy, 2,000 seeded invariant probes,
+cover numeric vectors, boundary and tie policy, 4,000 seeded invariant probes,
 route/loop/hub identity and order, validation and aggregate expansion limits,
 byte/chunk boundaries, failures, Unicode, import silence, read-only file
-behavior and a real closed stdout pipe. Test count is 108 ordinary passes,
+behavior and a real closed stdout pipe. Test count is 111 ordinary passes,
 zero failures, skipped tests or expected-failure cases.
 
 KNOWN GAP: None in the new runtime. The existing production globe

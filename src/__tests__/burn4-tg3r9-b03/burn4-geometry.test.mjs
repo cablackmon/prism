@@ -65,6 +65,35 @@ test('tiny rounding-scale crossing has finite interior fragments', () => {
   assert.equal(geometry.type, 'MultiLineString');
 });
 
+for (const latitude of [90, -90]) {
+  test(`regression: equal ${latitude}-degree pole endpoints cannot overshoot geographic bounds`, () => {
+    const geometry = splitAntimeridianLeg([150.5022, latitude], [-105.8302, latitude]);
+    assert.equal(geometry.type, 'MultiLineString');
+    if (geometry.type === 'MultiLineString') {
+      assert.equal(geometry.coordinates[0]?.[1]?.[1], latitude);
+      assert.equal(geometry.coordinates[1]?.[0]?.[1], latitude);
+    }
+    assertGeometry(geometry);
+  });
+}
+
+test('seeded equal and near-pole endpoints keep crossing latitude inside original interval', () => {
+  let seed = 419;
+  const next = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 2 ** 32; };
+  for (let index = 0; index < 2000; index += 1) {
+    const firstLatitude = index % 2 ? 90 : -90;
+    const lastLatitude = index % 3 ? firstLatitude : firstLatitude * (1 - next() * 1e-10);
+    const geometry = splitAntimeridianLeg([1 + next() * 178, firstLatitude], [-179 + next() * 100, lastLatitude]);
+    assertGeometry(geometry);
+    if (geometry.type === 'MultiLineString') {
+      const crossing = geometry.coordinates[0]?.[1]?.[1];
+      assert.ok(crossing !== undefined);
+      assert.ok(crossing >= Math.min(firstLatitude, lastLatitude));
+      assert.ok(crossing <= Math.max(firstLatitude, lastLatitude));
+    }
+  }
+});
+
 test('seeded geometry vectors satisfy map-consumer invariants and reverse symmetrically', () => {
   let state = 37;
   const next = () => { state = (state * 1664525 + 1013904223) >>> 0; return state / 2 ** 32; };

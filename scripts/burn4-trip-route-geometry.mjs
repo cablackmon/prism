@@ -84,8 +84,12 @@ export function splitAntimeridianLeg(start, end) {
   const unwrappedEnd = last[0] + (delta > 180 ? -360 : 360);
   const boundary = delta > 180 ? -180 : 180;
   const fraction = (boundary - first[0]) / (unwrappedEnd - first[0]);
-  // The weighted form avoids cancellation near the input latitude extremes.
-  const crossingLatitude = first[1] * (1 - fraction) + last[1] * fraction;
+  // Roundoff in a convex combination can exceed equal pole endpoints by an
+  // ulp. Keep the result inside the original latitude interval.
+  const crossingLatitude = Math.max(
+    Math.min(first[1], last[1]),
+    Math.min(Math.max(first[1], last[1]), first[1] * (1 - fraction) + last[1] * fraction),
+  );
   return {
     type: 'MultiLineString',
     coordinates: [
