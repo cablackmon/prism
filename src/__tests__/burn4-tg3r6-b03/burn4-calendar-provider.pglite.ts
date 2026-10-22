@@ -9,11 +9,11 @@ import {
   resetFixtures,
   source,
 } from './burn4-calendar-fixture';
-import type { JsonObject } from './burn4-calendar-fixture';
+import type { CalendarDatabase, JsonObject } from './burn4-calendar-fixture';
 
 jest.setTimeout(60_000);
 
-let db: PGlite;
+let db: CalendarDatabase;
 
 beforeAll(async () => {
   db = new PGlite();

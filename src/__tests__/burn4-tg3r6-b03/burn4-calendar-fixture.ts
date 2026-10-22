@@ -1,6 +1,22 @@
 import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
-import { PGlite } from '@electric-sql/pglite';
+
+export type CalendarDatabase = {
+  waitReady: Promise<void>;
+  exec(sql: string): Promise<unknown>;
+  query<T = Record<string, unknown>>(
+    sql: string,
+    params?: unknown[],
+  ): Promise<{ rows: T[] }>;
+  close(): Promise<void>;
+};
+
+// Load the opt-in runtime locally without adding it to root type resolution.
+const runtime = createRequire(__filename)('@electric-sql/pglite') as {
+  PGlite: new () => CalendarDatabase;
+};
+export const PGlite = runtime.PGlite;
 
 export const migrationNames = [
   '0009_calendar_ical_url.sql',
@@ -48,11 +64,11 @@ const migrationText = Object.fromEntries(
   ]),
 ) as Record<MigrationName, string>;
 
-export async function migrate(db: PGlite, name: MigrationName): Promise<void> {
+export async function migrate(db: CalendarDatabase, name: MigrationName): Promise<void> {
   await db.exec(migrationText[name]);
 }
 
-export async function resetFixtures(db: PGlite): Promise<void> {
+export async function resetFixtures(db: CalendarDatabase): Promise<void> {
   await db.exec(`
     DROP SCHEMA public CASCADE;
     CREATE SCHEMA public;
@@ -79,7 +95,7 @@ export async function resetFixtures(db: PGlite): Promise<void> {
   `);
 }
 
-export async function insertSource(db: PGlite, input: SourceInput = {}): Promise<void> {
+export async function insertSource(db: CalendarDatabase, input: SourceInput = {}): Promise<void> {
   await db.query(
     `INSERT INTO calendar_sources
        (id, provider, source_calendar_id, display_name,
@@ -96,7 +112,7 @@ export async function insertSource(db: PGlite, input: SourceInput = {}): Promise
   );
 }
 
-export async function source(db: PGlite, id = 1): Promise<SourceRow> {
+export async function source(db: CalendarDatabase, id = 1): Promise<SourceRow> {
   const result = await db.query<SourceRow>(
     `SELECT id, provider, source_calendar_id, display_name,
             dashboard_calendar_name, sync_errors, provider_config
@@ -107,5 +123,3 @@ export async function source(db: PGlite, id = 1): Promise<SourceRow> {
   if (!row) throw new Error(`Missing synthetic calendar source ${id}`);
   return row;
 }
-
-export { PGlite };
