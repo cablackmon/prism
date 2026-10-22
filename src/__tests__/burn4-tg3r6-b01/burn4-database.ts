@@ -1,6 +1,16 @@
-import { PGlite } from '@electric-sql/pglite';
 import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
+
+type FixtureDatabase = {
+  exec(sql: string): Promise<unknown>;
+  query<T>(sql: string, params?: unknown[]): Promise<{ rows: T[] }>;
+  close(): Promise<void>;
+};
+
+const { PGlite } = createRequire(__filename)('@electric-sql/pglite') as {
+  PGlite: new () => FixtureDatabase;
+};
 
 const migrationNames = [
   '0001_travel_map.sql',
