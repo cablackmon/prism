@@ -1,0 +1,11 @@
+{
+  "extends": "../../../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "strict": true,
+    "incremental": false,
+    "types": ["jest", "node"]
+  },
+  "include": ["./burn4-*.ts"],
+  "exclude": ["../../../node_modules"]
+}
