@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "jsx": "react-jsx",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "incremental": false,
+    "types": ["node", "jest", "react", "react-dom"],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"]
+  },
+  "files": [
+    "../../app/weekend/map/page.tsx",
+    "../../app/weekend/map/burn4-regional-map.tsx",
+    "../../app/weekend/map/burn4-geography.ts",
+    "burn4-geography.test.ts",
+    "burn4-regional-map.test.tsx"
+  ]
+}
