@@ -124,7 +124,7 @@ timeout 180s node --max-old-space-size=1024 node_modules/eslint/bin/eslint.js --
 git diff --check
 ```
 
-Expected: 184 ordinary tests across four files, zero skips or expected failures.
+Expected: 186 ordinary tests across four files, zero skips or expected failures.
 Strict source-inclusive types use actual public ICAL declarations, without
 ambient replacements. Own Jest/TypeScript/ESLint configs avoid root discovery.
 

@@ -174,3 +174,18 @@ test('a completed flag with an unchanged last candidate cannot conceal premature
   } } as unknown as ICAL.RecurIterator);
   expect(() => previewEvent(event({ ending: { mode: 'until', until: '2026-12-31' } }))).toThrow('Unable to preview');
 });
+
+test.each([
+  [{ year: 10000, month: 99, day: NaN, isDate: true }, true],
+  [{ year: 10000, month: 1, day: 1, isDate: true }, false],
+] as const)('distinguishes malformed future calendar fields from a valid range overflow: %j', (future, invalid) => {
+  let calls = 0;
+  jest.spyOn(ICAL.Recur.prototype, 'iterator').mockReturnValue({ next() {
+    return calls++ ? future : ICAL.Time.fromDateString('9999-01-01');
+  } } as unknown as ICAL.RecurIterator);
+  const input = event({ frequency: 'YEARLY', startDate: '9999-01-01', ending: { mode: 'never' } });
+  if (invalid) expect(() => previewEvent(input)).toThrow('Unable to preview');
+  else expect(previewEvent(input)).toEqual({
+    rows: [{ startDate: '9999-01-01', endExclusive: '9999-01-02' }], stop: 'date-limit',
+  });
+});
