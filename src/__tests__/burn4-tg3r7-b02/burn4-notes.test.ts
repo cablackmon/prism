@@ -11,7 +11,8 @@ const titles = [
 
 describe('calendar notes workflows in an isolated date-keyed store', () => {
   test.each(titles)('%s', async title => {
-    const unrelated = { date: '2026-12-30', content: 'Unrelated synthetic note' };
+    const unrelated = { date: '2000-01-01', content: 'Unrelated synthetic note' };
+    expect(unrelated.date).not.toBe(today);
     const scenario = new Scenario('calendar-notes', { notes: [unrelated] });
     await scenario.run(title);
     expect(scenario.authLog).toEqual(['discover', 'login', 'logout']);
