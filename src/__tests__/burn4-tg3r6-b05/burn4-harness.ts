@@ -1,8 +1,29 @@
 import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
-import { PGlite } from '@electric-sql/pglite';
 
-export { PGlite };
+type QueryResult<Row> = { rows: Row[] };
+type SqlExecutor = {
+  query<Row = Record<string, unknown>>(sql: string, params?: unknown[]): Promise<QueryResult<Row>>;
+  exec(sql: string): Promise<unknown>;
+};
+
+export type MemoryDatabase = SqlExecutor & {
+  waitReady: Promise<void>;
+  close(): Promise<void>;
+  transaction<Result>(callback: (tx: SqlExecutor) => Promise<Result>): Promise<Result>;
+};
+
+export function openDatabase(): MemoryDatabase {
+  // Resolve the optional runtime only when these explicit engine tests execute.
+  const engineModule: unknown = createRequire(__filename)('@electric-sql/pglite');
+  if (engineModule === null || typeof engineModule !== 'object'
+    || !('PGlite' in engineModule) || typeof engineModule.PGlite !== 'function') {
+    throw new Error('The package-local PGlite runtime does not expose its constructor');
+  }
+  const Engine = engineModule.PGlite as new () => MemoryDatabase;
+  return new Engine();
+}
 
 const root = resolve(__dirname, '../../..');
 const photoSQL = readFileSync(
@@ -16,7 +37,7 @@ export function id(ordinal: number): string {
   return `00000000-0000-4000-8000-${ordinal.toString(16).padStart(12, '0')}`;
 }
 
-export async function resetFixture(db: PGlite): Promise<void> {
+export async function resetFixture(db: MemoryDatabase): Promise<void> {
   await db.exec(`
     SET search_path TO public;
     DROP SCHEMA IF EXISTS fixture_shadow CASCADE;
@@ -29,16 +50,16 @@ export async function resetFixture(db: PGlite): Promise<void> {
   `);
 }
 
-export async function applyPhotos(db: Pick<PGlite, 'exec'>): Promise<void> {
+export async function applyPhotos(db: Pick<SqlExecutor, 'exec'>): Promise<void> {
   await db.exec(photoSQL);
 }
 
-export async function applyRecipes(db: Pick<PGlite, 'exec'>): Promise<void> {
+export async function applyRecipes(db: Pick<SqlExecutor, 'exec'>): Promise<void> {
   await db.exec(recipeSQL);
 }
 
 export async function addSource(
-  db: PGlite, ordinal: number, createdBy: string | null = null,
+  db: MemoryDatabase, ordinal: number, createdBy: string | null = null,
 ): Promise<string> {
   const sourceId = id(ordinal);
   await db.query(`
@@ -49,7 +70,7 @@ export async function addSource(
 }
 
 export async function addRecipe(
-  db: PGlite, ordinal: number, sourceId: string | null = null,
+  db: MemoryDatabase, ordinal: number, sourceId: string | null = null,
   externalId: string | null = null, updatedAt: string | null = null,
 ): Promise<string> {
   const recipeId = id(ordinal);

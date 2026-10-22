@@ -1,12 +1,12 @@
 /** @jest-environment node */
-import { PGlite, applyPhotos, id, resetFixture } from './burn4-harness';
+import { type MemoryDatabase, applyPhotos, id, openDatabase, resetFixture } from './burn4-harness';
 
 jest.setTimeout(30000);
 
 describe('0012 photo priority and duplicate identity migration', () => {
-  let db: PGlite;
+  let db: MemoryDatabase;
 
-  beforeAll(async () => { db = new PGlite(); await db.waitReady; });
+  beforeAll(async () => { db = openDatabase(); await db.waitReady; });
   beforeEach(async () => { await resetFixture(db); });
   afterAll(async () => { await db.close(); });
 

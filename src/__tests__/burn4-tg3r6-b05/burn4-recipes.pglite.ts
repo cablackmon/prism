@@ -1,12 +1,12 @@
 /** @jest-environment node */
-import { PGlite, addRecipe, addSource, applyRecipes, id, resetFixture } from './burn4-harness';
+import { type MemoryDatabase, addRecipe, addSource, applyRecipes, id, openDatabase, resetFixture } from './burn4-harness';
 
 jest.setTimeout(30000);
 
 describe('0014 recipe source identity and lifecycle migration', () => {
-  let db: PGlite;
+  let db: MemoryDatabase;
 
-  beforeAll(async () => { db = new PGlite(); await db.waitReady; });
+  beforeAll(async () => { db = openDatabase(); await db.waitReady; });
   beforeEach(async () => { await resetFixture(db); });
   afterAll(async () => { await db.close(); });
 

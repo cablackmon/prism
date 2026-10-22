@@ -17,14 +17,28 @@ can point to any disposable local directory.
 
 ```sh
 npm ci --prefix src/__tests__/burn4-tg3r6-b05 --cache /tmp/burn4-pglite-cache --ignore-scripts --no-audit --no-fund
-node --experimental-vm-modules --max-old-space-size=768 node_modules/jest/bin/jest.js --runInBand --runTestsByPath src/__tests__/burn4-tg3r6-b05/burn4-photo.test.ts src/__tests__/burn4-tg3r6-b05/burn4-recipes.test.ts
+node --experimental-vm-modules --max-old-space-size=768 node_modules/jest/bin/jest.js --runInBand --testMatch '**/burn4-tg3r6-b05/burn4-*.pglite.ts' --runTestsByPath src/__tests__/burn4-tg3r6-b05/burn4-photo.pglite.ts src/__tests__/burn4-tg3r6-b05/burn4-recipes.pglite.ts
 node node_modules/typescript/bin/tsc --project src/__tests__/burn4-tg3r6-b05/burn4-tsconfig.json
-node node_modules/eslint/bin/eslint.js src/__tests__/burn4-tg3r6-b05/burn4-harness.ts src/__tests__/burn4-tg3r6-b05/burn4-photo.test.ts src/__tests__/burn4-tg3r6-b05/burn4-recipes.test.ts src/__tests__/burn4-tg3r6-b05/burn4-gap-inversion.cjs --max-warnings 0
+node node_modules/eslint/bin/eslint.js src/__tests__/burn4-tg3r6-b05/burn4-harness.ts src/__tests__/burn4-tg3r6-b05/burn4-photo.pglite.ts src/__tests__/burn4-tg3r6-b05/burn4-recipes.pglite.ts src/__tests__/burn4-tg3r6-b05/burn4-gap-inversion.cjs --max-warnings 0
 ```
 
 Jest needs `--experimental-vm-modules` for the engine's dynamic import. The
-package uses the existing root Jest configuration, explicit paths and in-band
-execution. It never invokes Playwright or discovers another test suite.
+package uses the existing root Jest configuration with an explicit test pattern,
+explicit paths and in-band execution. The `.pglite.ts` files stay outside normal
+root Jest discovery; the opt-in command supplies their required engine flags.
+It never invokes Playwright or discovers another test suite.
+The harness resolves the optional runtime through package-local `createRequire`
+only when a test opens an engine. Its small strict TypeScript interface covers
+the operations used here without statically importing optional runtime types.
+The package's scoped typecheck also passes when its child dependencies are absent.
+
+Default-discovery exclusion can be checked without running any suite:
+
+```sh
+node node_modules/jest/bin/jest.js --runInBand --listTests --runTestsByPath src/__tests__/burn4-tg3r6-b05/burn4-photo.pglite.ts src/__tests__/burn4-tg3r6-b05/burn4-recipes.pglite.ts --json
+```
+
+The result is `[]`. The explicit engine command above runs all 50 cases.
 
 ## Contracts exercised
 
@@ -64,7 +78,7 @@ expected-failure case unexpectedly pass and fail the normal run.
 To repeat the direct inverse proof without changing any file, run:
 
 ```sh
-node --experimental-vm-modules --max-old-space-size=768 node_modules/jest/bin/jest.js --runInBand --runTestsByPath src/__tests__/burn4-tg3r6-b05/burn4-recipes.test.ts --testNamePattern 'KNOWN GAP' --setupFilesAfterEnv ./src/__tests__/burn4-tg3r6-b05/burn4-gap-inversion.cjs
+node --experimental-vm-modules --max-old-space-size=768 node_modules/jest/bin/jest.js --runInBand --testMatch '**/burn4-tg3r6-b05/burn4-*.pglite.ts' --runTestsByPath src/__tests__/burn4-tg3r6-b05/burn4-recipes.pglite.ts --testNamePattern 'KNOWN GAP' --setupFilesAfterEnv ./src/__tests__/burn4-tg3r6-b05/burn4-gap-inversion.cjs
 ```
 
 This command intentionally exits 1 with one failure showing expected
