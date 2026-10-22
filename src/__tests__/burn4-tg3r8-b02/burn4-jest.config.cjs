@@ -7,10 +7,9 @@ module.exports = {
   setupFiles: [],
   setupFilesAfterEnv: [],
   transform: {
-    '^.+\\.tsx?$': ['ts-jest', { tsconfig: {
-      target: 'ES2022', module: 'commonjs', moduleResolution: 'node', jsx: 'react-jsx',
-      strict: true, noUncheckedIndexedAccess: true, esModuleInterop: true,
-      types: ['node', 'jest'], skipLibCheck: true,
-    }, diagnostics: true }],
+    '^.+\\.tsx?$': ['ts-jest', {
+      tsconfig: '<rootDir>/src/__tests__/burn4-tg3r8-b02/burn4-tsconfig.json',
+      diagnostics: true,
+    }],
   },
 };
