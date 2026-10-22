@@ -288,6 +288,31 @@ describe('reversible responsive font scale session', () => {
     expect(f.target.style.fontSize).toBe('24px');
     f.session.dispose();
   });
+  test('multiple newer reader commands cannot revive an older temporary measurement frame', () => {
+    const f = sessionFixture();
+    f.session.setScale(125);
+    f.read.mockImplementationOnce(() => {
+      f.session.setScale(null);
+      expect(f.target.style.fontSize).toBe('');
+      expect(f.session.setScale(200).ok).toBe(true);
+      return '16px';
+    });
+    expect(f.session.setScale(150).ok).toBe(false);
+    expect(f.target.style.fontSize).toBe('32px');
+    f.session.dispose();
+    expect(f.target.style.fontSize).toBe('');
+  });
+  test('Auto followed by disposal inside a reader never restores the old override', () => {
+    const f = sessionFixture();
+    f.session.setScale(125);
+    f.read.mockImplementationOnce(() => {
+      f.session.setScale(null);
+      f.session.dispose();
+      return '16px';
+    });
+    expect(f.session.setScale(150).ok).toBe(false);
+    expect(f.target.style.fontSize).toBe('');
+  });
   test('an invalid nested command cannot cancel an otherwise valid application', () => {
     const f = sessionFixture();
     f.read.mockImplementationOnce(() => {

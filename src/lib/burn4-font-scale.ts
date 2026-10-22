@@ -56,13 +56,15 @@ export function createFontScaleSession(options: FontScaleSessionOptions): FontSc
   let scale: FontScaleValue = null;
   let unsubscribe: (() => void) | undefined;
   let operation = 0;
-  type Measurement = { before: InlineSize; temporary: InlineSize };
+  type Measurement = { before: InlineSize; temporary: InlineSize; operation: number };
   let measurement: Measurement | null = null;
 
   // A deliberate nested command starts from stable state, never a reader's
   // temporary baseline. An unrecognized outside write is left in place.
   const settleTemporary = (): void => {
-    if (measurement && same(readInline(), measurement.temporary)) writeInline(measurement.before);
+    if (measurement && measurement.operation === operation && same(readInline(), measurement.temporary)) {
+      writeInline(measurement.before);
+    }
   };
 
   const observeOutsideWrite = (): void => {
@@ -76,7 +78,7 @@ export function createFontScaleSession(options: FontScaleSessionOptions): FontSc
   const apply = (nextScale: number): FontScaleOutcome => {
     const attempt = operation;
     const before = readInline();
-    const frame = { before, temporary: baseline };
+    const frame = { before, temporary: baseline, operation: attempt };
     const parentMeasurement = measurement;
     let pixels = 0;
     let failed = false;
