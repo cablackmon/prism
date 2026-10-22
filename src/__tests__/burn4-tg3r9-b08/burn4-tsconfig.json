@@ -1,0 +1,36 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noEmit": true,
+    "incremental": false,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "allowJs": true,
+    "checkJs": true,
+    "types": [
+      "node",
+      "jest",
+      "react",
+      "react-dom"
+    ],
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ]
+  },
+  "files": [
+    "../../lib/burn4-freeform-layout.ts",
+    "../../components/layout/burn4-freeform-layout-editor.tsx",
+    "burn4-geometry.test.ts",
+    "burn4-editor.test.tsx",
+    "burn4-editor-lifecycle.test.tsx",
+    "burn4-jest.config.cjs",
+    "burn4-eslint.config.mjs"
+  ]
+}
