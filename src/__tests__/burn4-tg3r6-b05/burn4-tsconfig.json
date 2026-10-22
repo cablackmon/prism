@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "incremental": false,
+    "types": ["node", "jest"]
+  },
+  "include": ["./burn4-harness.ts", "./burn4-photo.test.ts", "./burn4-recipes.test.ts", "./burn4-gap-inversion.cjs"]
+}
