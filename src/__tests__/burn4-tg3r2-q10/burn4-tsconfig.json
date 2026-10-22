@@ -1,0 +1,10 @@
+{
+  "extends": "../../../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "strict": true,
+    "incremental": false
+  },
+  "include": ["./*.ts", "./*.tsx", "../../lib/hooks/useViewportSize.ts"],
+  "exclude": []
+}
