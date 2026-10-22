@@ -1,0 +1,12 @@
+{
+  "extends": "../../../tsconfig.json",
+  "compilerOptions": {
+    "incremental": false,
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "noEmit": true,
+    "types": ["node", "jest"]
+  },
+  "include": ["./burn4-*.ts"],
+  "exclude": []
+}
