@@ -1,0 +1,9 @@
+{
+  "name": "burn4-tg3r6-b02-meal-migration-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Offline embedded PostgreSQL fixtures for meal date and item time migrations",
+  "dependencies": {
+    "@electric-sql/pglite": "0.5.11"
+  }
+}
