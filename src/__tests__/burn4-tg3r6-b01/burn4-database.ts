@@ -40,7 +40,9 @@ export async function reset(): Promise<void> {
 
 export async function migrate(first = 1, last = 6): Promise<void> {
   for (let index = first - 1; index < last; index += 1) {
-    const sql = readFileSync(resolve(__dirname, '../../..', 'drizzle', migrationNames[index]), 'utf8');
+    const migration = migrationNames[index];
+    if (migration === undefined) throw new Error('Unsupported fixture migration index');
+    const sql = readFileSync(resolve(__dirname, '../../..', 'drizzle', migration), 'utf8');
     await db.exec(sql);
   }
 }
@@ -57,6 +59,7 @@ export async function addPin(value: number): Promise<void> {
 export async function count(table: string): Promise<number> {
   const allowed = ['users', 'photos', 'travel_pins', 'travel_pin_photos', 'travel_trips', 'weekend_places', 'weekend_visits'];
   if (!allowed.includes(table)) throw new Error('Unsupported fixture table');
-  const result = await rows<{ count: number }>(`SELECT count(*)::int AS count FROM ${table}`);
-  return result[0].count;
+  const [record] = await rows<{ count: number }>(`SELECT count(*)::int AS count FROM ${table}`);
+  if (record === undefined) throw new Error('Expected one fixture aggregate row');
+  return record.count;
 }

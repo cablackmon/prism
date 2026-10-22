@@ -50,14 +50,17 @@ describe('0001 travel map', () => {
     await migrate(1, 1);
     const pins = await rows<{ id: string; created_at: Date; updated_at: Date }>(
       "INSERT INTO travel_pins (name, latitude, longitude) VALUES ('Fixture A', 1, 2), ('Fixture B', 3, 4) RETURNING id, created_at, updated_at");
-    expect(pins[0].id).toMatch(/^[0-9a-f-]{36}$/);
-    expect(pins[1].id).not.toBe(pins[0].id);
+    const [first, second] = pins;
+    if (first === undefined || second === undefined) throw new Error('Expected two generated fixture pins');
+    expect(pins).toHaveLength(2);
+    expect(first.id).toMatch(/^[0-9a-f-]{36}$/);
+    expect(second.id).not.toBe(first.id);
     for (const pin of pins) {
       expect(pin.created_at).toBeInstanceOf(Date);
       expect(pin.updated_at).toEqual(pin.created_at);
     }
     await db.query('INSERT INTO photos VALUES ($1)', [id(10)]);
-    expect(await rows('INSERT INTO travel_pin_photos (pin_id, photo_id) VALUES ($1, $2) RETURNING linked_manually, created_at IS NOT NULL AS stamped', [pins[0].id, id(10)]))
+    expect(await rows('INSERT INTO travel_pin_photos (pin_id, photo_id) VALUES ($1, $2) RETURNING linked_manually, created_at IS NOT NULL AS stamped', [first.id, id(10)]))
       .toEqual([{ linked_manually: false, stamped: true }]);
   });
 
