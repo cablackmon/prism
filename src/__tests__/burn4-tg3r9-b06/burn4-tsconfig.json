@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "incremental": false,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "types": ["node", "jest", "react", "react-dom"]
+  },
+  "files": [
+    "../../lib/burn4-contact-directory.ts",
+    "../../components/contacts/burn4-contact-directory.tsx",
+    "burn4-contact-directory.test.ts",
+    "burn4-contact-directory-ui.test.tsx"
+  ],
+  "include": [],
+  "exclude": []
+}
