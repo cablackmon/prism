@@ -1,0 +1,9 @@
+{
+  "name": "burn4-prism-recipe-photo-migrations",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Offline behavior tests for unchanged recipe and photo migrations",
+  "dependencies": {
+    "@electric-sql/pglite": "0.5.11"
+  }
+}
