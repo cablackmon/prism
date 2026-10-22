@@ -1,0 +1,12 @@
+{
+  "extends": "../../../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "strict": true,
+    "incremental": false,
+    "types": ["node", "jest"],
+    "plugins": []
+  },
+  "include": ["./burn4-emoji-vm.ts", "./burn4-emoji-assets.test.ts"],
+  "exclude": ["../../../node_modules"]
+}
