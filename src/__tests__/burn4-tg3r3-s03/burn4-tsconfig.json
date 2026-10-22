@@ -1,0 +1,10 @@
+{
+  "extends": "../../../tsconfig.json",
+  "compilerOptions": {
+    "incremental": false,
+    "types": ["node", "jest"],
+    "noEmit": true
+  },
+  "include": ["./burn4-restore-harness.ts", "./burn4-restore.test.ts"],
+  "exclude": []
+}
