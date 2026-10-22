@@ -1,8 +1,25 @@
 /** @jest-environment node */
 
 import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
-import { PGlite } from '@electric-sql/pglite';
+
+type EmbeddedPostgres = {
+  waitReady: Promise<void>;
+  exec(sql: string): Promise<unknown>;
+  query<Row = Record<string, unknown>>(
+    sql: string,
+    params?: unknown[]
+  ): Promise<{ rows: Row[] }>;
+  close(): Promise<void>;
+};
+
+type EmbeddedPostgresModule = {
+  PGlite: new () => EmbeddedPostgres;
+};
+
+// This optional runtime is loaded only by the explicitly selected SQL suite.
+const requireFromPackage = createRequire(resolve(__dirname, 'package.json'));
 
 const itemTimeSql = readFileSync(
   resolve(__dirname, '../../..', 'drizzle/0007_calendar_item_times.sql'),
@@ -31,9 +48,10 @@ const weekdays = [
   'saturday',
 ] as const;
 
-let db: PGlite;
+let db: EmbeddedPostgres;
 
 beforeAll(async () => {
+  const { PGlite } = requireFromPackage('@electric-sql/pglite') as EmbeddedPostgresModule;
   db = new PGlite();
   await db.waitReady;
 }, 30000);

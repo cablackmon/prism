@@ -12,19 +12,21 @@ From the repository root, install the package-local test dependency without life
 npm ci --prefix src/__tests__/burn4-tg3r6-b02 --cache /home/cameronblackmon/burn-lanes/codex-tg3r6/state/npm-cache --ignore-scripts --no-audit --no-fund
 ```
 
-Run only this package's test file:
+The `.pglite.ts` filename keeps this optional suite outside default Jest discovery. It needs the explicit test-match override, package-local dependency, and VM flag. Run only this package's test file:
 
 ```sh
-node --experimental-vm-modules --max-old-space-size=768 node_modules/jest/bin/jest.js --runInBand --runTestsByPath src/__tests__/burn4-tg3r6-b02/burn4-meal-migrations.test.ts
+node --experimental-vm-modules --max-old-space-size=768 node_modules/jest/bin/jest.js --runInBand --testMatch '**/burn4-tg3r6-b02/burn4-*.pglite.ts' --runTestsByPath src/__tests__/burn4-tg3r6-b02/burn4-meal-migrations.pglite.ts
 ```
 
 The Node flag allows PGlite's local dynamic imports in Jest's VM. All database state stays in memory. A fresh checkout also needs the repository's existing development dependencies installed with lifecycle scripts disabled.
+
+The test loads PGlite through `createRequire` inside setup and uses a strict structural interface for the four database operations it calls. Default repository typechecking can check the test without resolving the optional package. Explicit execution still loads the pinned real runtime and fails if it is absent.
 
 Run the scoped strict typecheck and lint:
 
 ```sh
 node node_modules/typescript/bin/tsc -p src/__tests__/burn4-tg3r6-b02/burn4-tsconfig.json
-node node_modules/eslint/bin/eslint.js src/__tests__/burn4-tg3r6-b02/burn4-meal-migrations.test.ts --max-warnings 0
+node node_modules/eslint/bin/eslint.js src/__tests__/burn4-tg3r6-b02/burn4-meal-migrations.pglite.ts --max-warnings 0
 ```
 
 Results: 51 ordinary passes, 0 KNOWN GAP expected failures, 0 skipped. Scoped typecheck and lint pass. KNOWN GAP list: none confirmed. Needs-decision list: none.
