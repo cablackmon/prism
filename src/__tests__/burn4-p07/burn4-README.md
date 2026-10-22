@@ -1,80 +1,88 @@
-# Mealie and barcode integration contracts
+# OAuth profile and redirect helper coverage
 
-This package exercises every runtime export in `src/lib/integrations/mealie.ts`
-and `src/lib/integrations/product-lookup.ts` through their public interfaces.
-It adds tests and a focused TypeScript configuration only.
+Plan revision 2 covers these current master sources without changing them:
 
-The Mealie tests use the actual URL validator with explicit production and
-allowlist options, a mocked `safeFetch`, and invented recipe and meal-plan data.
-The barcode tests mock global fetch and the Redis client factory. Fake timers
-control provider deadlines. No provider, Redis server, database, deployment
-configuration, environment value, or real family data is used.
+- `src/lib/integrations/oauth-userinfo.ts`
+- `src/lib/integrations/oauthSetupRedirect.ts`
+- `src/lib/integrations/kroger/redirect.ts`
+- `src/lib/utils/googleRedirectSupport.ts`
+
+The tested master SHA is `5452b7c6cef8f9b3d9b5e936c748822e2a28535a`.
+Every runtime export receives behavior coverage. All provider fetches and
+logging are mocked. The setup helper is read unchanged from the source tree,
+transpiled, and evaluated in a fresh VM with an invented `process.env` object
+and a mocked `NextResponse.redirect`. It never imports the source into the host
+process or reads host environment values. Other redirect tests use local
+Request objects. No provider, database, Redis server, deployment, or real family
+data is used.
 
 ## Run from the repository root
 
 ```sh
-node node_modules/jest/bin/jest.js --runInBand --runTestsByPath src/__tests__/burn4-p07/burn4-mealie.test.ts src/__tests__/burn4-p07/burn4-product-lookup.test.ts
-node node_modules/eslint/bin/eslint.js src/__tests__/burn4-p07/burn4-mealie.test.ts src/__tests__/burn4-p07/burn4-product-lookup.test.ts
+node node_modules/jest/bin/jest.js --runInBand --runTestsByPath src/__tests__/burn4-p07/burn4-oauth-userinfo.test.ts src/__tests__/burn4-p07/burn4-oauth-redirects.test.ts src/__tests__/burn4-p07/burn4-google-redirect-support.test.ts
+node node_modules/eslint/bin/eslint.js src/__tests__/burn4-p07/burn4-oauth-userinfo.test.ts src/__tests__/burn4-p07/burn4-oauth-redirects.test.ts src/__tests__/burn4-p07/burn4-google-redirect-support.test.ts
 node node_modules/typescript/bin/tsc --project src/__tests__/burn4-p07/burn4-tsconfig.json --pretty false
 ```
 
-For focused coverage, add these arguments to the Jest command:
+Optional focused coverage arguments for the Jest command:
 
 ```sh
---coverage --collectCoverageFrom=src/lib/integrations/mealie.ts --collectCoverageFrom=src/lib/integrations/product-lookup.ts --coverageDirectory=/tmp/prism-burn4-p07-coverage
+--coverage --collectCoverageFrom=src/lib/integrations/oauth-userinfo.ts --collectCoverageFrom=src/lib/integrations/kroger/redirect.ts --collectCoverageFrom=src/lib/utils/googleRedirectSupport.ts --coverageDirectory=/tmp/prism-burn4-p07-coverage
 ```
 
 ## Behavior covered
 
-- Connection status and transport errors, authentication headers, base URL
-  cleanup, URL rejection before requests, and the public safety error class.
-- Recipe mapping, ingredient headings, instruction titles, missing fields,
-  supported duration formats, servings, update timestamps, links, image URLs,
-  and preservation of provider objects.
-- Recipe and meal-plan pagination, encoded slugs, untrusted next-link handling,
-  1000 recipe and 2000 meal-plan limits, 200-page guards, invalid rows, HTTP and
-  JSON failures, single recipe failures, and collection recovery after a failed
-  detail request.
-- Barcode provider priority, missing and malformed product data, category and
-  brand mapping, HTTP and JSON failures, transport rejection, timeouts, late
-  responses, seven-day cache writes, and unavailable or failing Redis clients.
+- All three account-email helpers: provider endpoint selection, authorization
+  headers, lowercasing, missing fields, rejected HTTP responses, malformed
+  payloads, transport errors, JSON errors, and nonfatal logging. Microsoft mail
+  priority and the userPrincipalName fallback also receive direct coverage.
+- Setup configuration precedence, default origin, isolation between loaded
+  configurations, provider-specific banner parameters and anchors, response
+  delegation, framework failures, and missing-configuration error recognition.
+- Kroger request origin fallback, proxy header precedence, independent protocol
+  override, ports, IPv6 hosts, case-insensitive headers, and request preservation.
+- Additional Google redirect boundaries absent from the existing
+  `src/lib/utils/__tests__/googleRedirectSupport.test.ts`: IPv6 loopback,
+  nonloopback IPv6, remaining private hostname suffixes, internationalized
+  hostname parsing, and nonweb protocols. Existing ordinary public-host, LAN,
+  null-origin, and invalid-origin cases were read and are not duplicated here.
 
 ## Validation evidence
 
-The focused run contains 75 tests: 68 ordinary passing tests and 7 named
-`test.failing` cases. There are no skipped tests. Jest reports all 75 as passed
-because the seven expected failures still reproduce their defects. Focused
-ESLint and TypeScript checks pass without diagnostics.
+The focused run has 82 tests: 73 ordinary passing cases and 9 named
+`test.failing` instances, with zero skipped. The expected failures cover five
+defect types below. Jest reports 82 passed because those defects still
+reproduce. Every gap instance was also run as an ordinary test and failed at
+its intended assertion. Raw assertion proofs are retained in the lane state;
+temporary probe copies are not part of this package.
 
-Measured coverage, including the defect probes, is 100% of statements, lines,
-and functions in both modules. Branch coverage is 94.68% for Mealie and 100% for
-barcode lookup, or 95.90% combined. This is focused coverage, not a full-suite
-or application build result.
+Focused ESLint and scoped TypeScript both pass without diagnostics. No full
+suite, application build, or live-service checks were run.
 
-Each defect probe was also run temporarily as an ordinary test and failed for
-the specific behavior below. The temporary audit files and generated reports
-are excluded from this package.
+The profile and Kroger modules have 100% statements, lines, functions, and
+branches in the focused coverage run. The additional Google edge cases cover
+85% statements, 92.85% lines, 100% functions, and 75% branches. The new tests
+alone do not repeat all existing Google coverage. Combined metrics for those
+three directly imported modules are 95% statements, 98.03% lines, 100%
+functions, and 92% branches, including defect probes. The VM-executed setup
+module is outside Jest instrumentation and has no numeric coverage claim.
 
 ## KNOWN GAP defects
 
-1. Invalid Mealie `updatedAt` strings become `Invalid Date` values, which can
-   reach timestamp persistence, instead of a missing timestamp.
-2. Mealie ISO durations containing only seconds are read as minutes. The
-   `PT120S` probe produces 120 minutes instead of 2 minutes.
-3. A null row in a Mealie recipe-list page throws while reading `slug` and
-   aborts the whole import, including otherwise valid rows.
-4. A whitespace-only Open Food Facts product name becomes an empty name and
-   prevents fallback to a usable UPCitemdb product.
-5. Barcode classification only considers the first Open Food Facts category.
-   A generic `en:foods` tag hides a later specific `en:milk` tag.
-6. Completed barcode provider requests leave their three-second timeout
-   handles pending.
-7. The barcode provider timeout covers fetch but excludes response-body JSON
-   loading. A stalled body blocks the fallback provider indefinitely.
+1. Google, Gmail, and Microsoft profile helpers return a whitespace-only email
+   as a connected-account address instead of returning null. Three probes.
+2. A trailing slash in the configured setup base creates `//settings` instead
+   of `/settings`. One probe.
+3. Comma-separated proxy host and protocol chains produce an invalid Kroger
+   callback URL instead of using the original public origin. One probe.
+4. Google browser OAuth detection accepts nonweb loopback schemes because the
+   loopback check runs before protocol rejection. FTP and WebSocket probes.
+5. A trailing DNS dot lets private `.local` and `.internal` hosts pass Google
+   browser OAuth detection. Two probes.
 
-The tests assert the desired behavior for these defects. Production sources
-are unchanged.
+Each expected-failure test asserts the desired correct behavior. Production
+sources are unchanged.
 
 ## Needs decision
 
-None. This draft records defects for later review and does not fix them.
+None. Defect fixes are outside this coverage package.

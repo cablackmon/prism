@@ -4,6 +4,6 @@
     "incremental": false,
     "types": ["jest", "node"]
   },
-  "include": ["./burn4-mealie.test.ts", "./burn4-product-lookup.test.ts"],
+  "include": ["./burn4-*.test.ts"],
   "exclude": ["../../../node_modules"]
 }
