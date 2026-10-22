@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noEmit": true,
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "types": ["node"]
+  },
+  "files": [
+    "../../../scripts/burn4-gift-wish-reconcile.mjs",
+    "burn4-gift-wish-reconcile.test.mjs",
+    "burn4-gift-wish-contract.test.mjs",
+    "burn4-gift-wish-fixtures.mjs"
+  ]
+}
