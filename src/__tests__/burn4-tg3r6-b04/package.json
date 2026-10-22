@@ -1,0 +1,9 @@
+{
+  "name": "burn4-tg3r6-b04-sync-migration-tests",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Offline PostgreSQL tests for sync tombstone and deletion-review migrations",
+  "dependencies": {
+    "@electric-sql/pglite": "0.5.11"
+  }
+}
