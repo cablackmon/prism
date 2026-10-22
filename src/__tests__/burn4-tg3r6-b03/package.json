@@ -1,0 +1,9 @@
+{
+  "name": "burn4-tg3r6-calendar-provider-migrations",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Offline calendar migration fixtures with embedded PostgreSQL",
+  "dependencies": {
+    "@electric-sql/pglite": "0.5.11"
+  }
+}
