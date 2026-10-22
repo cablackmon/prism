@@ -28,6 +28,6 @@ KNOWN GAP list, five defects represented by eleven cases:
 
 Each expected-failure case contains one intended behavior assertion. A temporary untracked probe replaces `test.failing` with `test` and runs only that probe file. All eleven cases fail at the intended document or rejection assertion. Lane evidence is retained under `state/s08/gap-probe-results.json`, `state/s08/gap-probe.log` and `state/s08/gap-probe-evidence.md`; the temporary probe file is removed.
 
-Needs-decision list:
+Accepted numeric version strings include lower versions under the existing helper behavior. Monotonic-version policy is outside this coverage scope.
 
-- Decide whether the helper should reject a requested version lower than the current version. The existing helper permits downgrades; this package does not impose a monotonic-version rule.
+Needs-decision list: None.
