@@ -1,0 +1,28 @@
+{
+  "asOf": "2026-10-21",
+  "through": "2026-10-24",
+  "chores": [
+    {
+      "id": "example-dishes",
+      "title": "Example dishes",
+      "enabled": true,
+      "state": "outstanding",
+      "nextDue": "2026-10-20",
+      "frequency": "daily",
+      "nextDueTime": "18:00",
+      "noInterveningCompletion": true
+    },
+    {
+      "id": "example-pending",
+      "title": "Example waiting for approval",
+      "enabled": true,
+      "state": "pending-approval"
+    },
+    {
+      "id": "example-paused",
+      "title": "Example paused chore",
+      "enabled": false,
+      "state": "outstanding"
+    }
+  ]
+}
