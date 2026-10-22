@@ -1,68 +1,68 @@
-# Birthday merge and CardDAV offline coverage
+# Local recipe images and audit lifecycle
 
-This package exercises every exported runtime function in
-`src/lib/services/birthday-merge.ts` and
-`src/lib/services/carddav-birthday-sync.ts`.
+Plan revision 2. These tests exercise the unchanged current master source at
+`5452b7c6cef8f9b3d9b5e936c748822e2a28535a` in:
+
+- `src/lib/services/recipe-image-storage.ts`: `saveRecipeImage`,
+  `deleteRecipeImage`, and `getRecipeImagePath`.
+- `src/lib/services/auditLog.ts`: `logActivity`.
+- `src/lib/services/auditCleanup.ts`: `cleanupOldAuditLogs`.
+
+There were no dedicated tests for these services. Existing route tests replace
+the audit helpers with mocks, so they do not exercise this implementation.
 
 Run only this package from the repository root:
 
 ```sh
-node node_modules/jest/bin/jest.js --runInBand --runTestsByPath src/__tests__/burn4-p03/burn4-birthdays.test.ts
-node node_modules/eslint/bin/eslint.js src/__tests__/burn4-p03/burn4-store.ts src/__tests__/burn4-p03/burn4-birthdays.test.ts
+node node_modules/jest/bin/jest.js --runInBand --runTestsByPath src/__tests__/burn4-p03/burn4-images.test.ts src/__tests__/burn4-p03/burn4-audit.test.ts
+node node_modules/eslint/bin/eslint.js src/__tests__/burn4-p03/burn4-fakes.ts src/__tests__/burn4-p03/burn4-images.test.ts src/__tests__/burn4-p03/burn4-audit.test.ts
 node node_modules/typescript/bin/tsc --project src/__tests__/burn4-p03/burn4-tsconfig.json
 ```
 
-To collect coverage for just these two service modules:
+For focused coverage, append these flags to the Jest command:
 
 ```sh
-node node_modules/jest/bin/jest.js --runInBand --runTestsByPath src/__tests__/burn4-p03/burn4-birthdays.test.ts --coverage --collectCoverageFrom=src/lib/services/birthday-merge.ts --collectCoverageFrom=src/lib/services/carddav-birthday-sync.ts
+--coverage --collectCoverageFrom=src/lib/services/recipe-image-storage.ts --collectCoverageFrom=src/lib/services/auditLog.ts --collectCoverageFrom=src/lib/services/auditCleanup.ts
 ```
 
-The suite contains 57 cases: 55 ordinary passing cases and two named
-`test.failing` cases asserting desired behavior for known defects. There are no
-skipped tests. Focused ESLint and the package TypeScript project pass.
+Validation: 31 total cases, consisting of 30 ordinary passing cases and one named
+expected failure. No skipped cases. Focused ESLint and package typecheck pass.
+Statements, lines, functions, and branches measure 100% in the three target
+modules. This is service orchestration coverage; it does not test native JPEG
+encoding, actual disk behavior, or an actual database.
 
-Birthday cases cover insert and unique-key conflict persistence, event-type and
-month/day boundaries, leap-day sentinel upgrades, case and punctuation handling,
-whole-token prefix identity, distinct surnames, year preference, provenance-only
-no-ops, manual authority, metadata preservation, idempotency, and database failures.
+Image tests use pure fake filesystem and sharp modules. They verify the original
+buffer and orientation/resize/JPEG transform order, await directory creation,
+replace only the selected file, preserve neighbors, return a stable filename,
+resolve local paths without I/O, propagate guard/mkdir/decode/write errors, and
+handle existing and absent file deletion. The path guard is a mocked excluded
+dependency; tests verify delegation before effects without claiming guard
+implementation coverage. The filesystem fake never writes an actual file.
 
-CardDAV cases cover source opt-in filtering, empty accounts, server/user account
-identity, deduplication across calendars, account fan-out, incomplete configuration,
-decryption failures, provider failures, birthday write failures, independent runs,
-and imports through the actual birthday merge function. A successful duplicate
-counts as a processed contact even though it does not change the database.
+Audit tests use deferred fake insert promises to verify that `logActivity`
+returns before persistence completes, reports asynchronous failures, keeps
+independent event payloads, and supplies nullable optional fields. Frozen inputs
+check that the service does not mutate callers' values. Cleanup uses a real
+Drizzle less-than predicate against a mocked minimal audit table and an
+in-memory persistence model. Fake time verifies the exact 30-day millisecond
+boundary, future entries, idempotency, cutoff recomputation, and failure recovery.
+The excluded real schema and database client never load at runtime.
 
-The in-memory database uses the real schema and Drizzle SQL compilation. It
-applies the selected event type and date parameters, preserves unspecified
-columns on updates, and enforces the real `(name, eventType)` conflict key. It
-rejects unsupported query shapes. The fake does not model transactions,
-concurrency, PostgreSQL date validation, or external network behavior. All provider
-and decryption effects are mocked; global fetch rejects unexpected network calls.
-All records and account markers are synthetic.
-
-Measured coverage is 100% of statements, lines, and functions in both services.
-Branch coverage is 100% in birthday merge and 94.44% in CardDAV sync. The remaining
-CardDAV branch is the null provider-config fallback, which a real opted-in-source
-query filters out before iteration. Tests do not force an impossible query result
-just to cover that fallback.
+No host environment values are read or changed. No native sharp library,
+external provider, hosted database, or network service is used. Only the explicit
+package files are run, never the whole suite.
 
 ## KNOWN GAP
 
-- Same-name date conflicts overwrite authoritative manual birthdays. Candidate
-  selection is limited to the incoming month/day. A manually entered same-name
-  birthday on another day is missed, then `onConflictDoUpdate` replaces its date
-  and stamps sync provenance. The expected-failure test asserts the original
-  manual row remains unchanged.
-- Non-ASCII names collapse to the same empty identity. The ASCII-only normalization
-  strips both `李明` and `王芳` to an empty string, so distinct people sharing a date
-  are treated as one exact match. The expected-failure test asserts both people
-  remain present.
-
-Each expected-failure assertion was also run temporarily as an ordinary test.
-Both failed on the documented persisted-row mismatch, without mock or import
-errors. The temporary probe was removed after verification.
+- Image deletion suppresses permission failures and leaves the file behind.
+  `deleteRecipeImage` catches every unlink error even though its comment only
+  describes absent files. With an existing image and `EACCES`, callers see a
+  successful deletion while the image remains stored. The named expected-failure
+  test asserts that the permission error reaches the caller. It was also run as
+  an ordinary test; its saved probe log shows the rejection assertion fails
+  because the function resolves. The temporary probe file was removed.
 
 ## Needs decision
 
-None. This package adds tests only and leaves production fixes for review.
+None. This package adds tests only; the documented production defect remains
+available for a separate reviewed fix.

@@ -4,6 +4,6 @@
     "incremental": false,
     "types": ["node", "jest"]
   },
-  "include": ["./burn4-store.ts", "./burn4-birthdays.test.ts"],
+  "include": ["./burn4-fakes.ts", "./burn4-images.test.ts", "./burn4-audit.test.ts"],
   "exclude": []
 }
