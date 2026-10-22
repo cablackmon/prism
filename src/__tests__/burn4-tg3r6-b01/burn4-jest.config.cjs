@@ -1,7 +1,7 @@
 module.exports = {
   rootDir: '../../..',
   testEnvironment: 'node',
-  testMatch: ['<rootDir>/src/__tests__/burn4-tg3r6-b01/burn4-*.test.ts'],
+  testMatch: ['<rootDir>/src/__tests__/burn4-tg3r6-b01/burn4-*.pglite.ts'],
   transform: {
     '^.+\\.ts$': ['ts-jest', {
       tsconfig: '<rootDir>/src/__tests__/burn4-tg3r6-b01/burn4-tsconfig.json',

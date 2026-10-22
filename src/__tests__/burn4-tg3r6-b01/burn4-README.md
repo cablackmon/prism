@@ -10,13 +10,22 @@ Run from the repository root with Node 24 or later and the repository developmen
 
 ```sh
 npm ci --prefix src/__tests__/burn4-tg3r6-b01 --cache /home/cameronblackmon/burn-lanes/codex-tg3r6/state/npm-cache --ignore-scripts --no-audit --no-fund
-node --experimental-vm-modules node_modules/jest/bin/jest.js --config src/__tests__/burn4-tg3r6-b01/burn4-jest.config.cjs --runInBand --runTestsByPath src/__tests__/burn4-tg3r6-b01/burn4-travel.test.ts
+node --experimental-vm-modules node_modules/jest/bin/jest.js --config src/__tests__/burn4-tg3r6-b01/burn4-jest.config.cjs --runInBand --runTestsByPath src/__tests__/burn4-tg3r6-b01/burn4-travel.pglite.ts
 node_modules/.bin/tsc -p src/__tests__/burn4-tg3r6-b01/burn4-tsconfig.json
 node_modules/.bin/eslint src/__tests__/burn4-tg3r6-b01/burn4-*.ts --max-warnings 0
 node --check src/__tests__/burn4-tg3r6-b01/burn4-jest.config.cjs
 ```
 
 Node's VM module CLI flag is required for PGlite's dynamic import under Jest. No environment setting is needed. Run only this explicit test file in band. The strict TypeScript check covers the actual test, fixture and probe code, including PGlite query types; it does not claim to typecheck SQL or the whole application. Focused ESLint covers the four TypeScript files, and `node --check` checks the Jest configuration syntax. Root dependencies and PGlite are downloaded during installation; test execution is offline.
+
+The `burn4-*.pglite.ts` suffix keeps these opt-in tests outside normal root Jest discovery, which uses `.test.ts` and `.test.tsx`. The package config explicitly selects the PGlite suffix. Verify both discovery boundaries without running any other tests:
+
+```sh
+node node_modules/jest/bin/jest.js --config jest.config.js --runInBand --listTests --json --runTestsByPath src/__tests__/burn4-tg3r6-b01/burn4-travel.pglite.ts
+node node_modules/jest/bin/jest.js --config src/__tests__/burn4-tg3r6-b01/burn4-jest.config.cjs --runInBand --listTests --json --runTestsByPath src/__tests__/burn4-tg3r6-b01/burn4-travel.pglite.ts
+```
+
+The root command returns an empty array; the package command lists only this PGlite file. Ordinary CI does not need the private dependency or runtime flag for discovery.
 
 ## Result and known gap
 
