@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES2022", "module": "CommonJS", "moduleResolution": "Node",
+    "lib": ["ES2022", "DOM"], "jsx": "react-jsx", "esModuleInterop": true,
+    "strict": true, "noUncheckedIndexedAccess": true, "noEmit": true,
+    "incremental": false, "isolatedModules": true, "skipLibCheck": true,
+    "types": ["node", "jest", "react", "react-dom"]
+  },
+  "files": [
+    "../../lib/burn4-recurring-task.ts",
+    "../../components/tasks/burn4-recurring-task-completion.tsx",
+    "burn4-fixtures.ts", "burn4-model.test.ts", "burn4-completion-ui.test.tsx"
+  ]
+}
