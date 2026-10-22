@@ -56,8 +56,7 @@ function CompletionSession(props: WeeklyTaskCompletionProps): React.ReactElement
   } catch { /* Invalid or exhausted input has no completion control. */ }
   const task = current?.tasks.find(row => row.id === props.taskId);
   const acknowledged = !!pending && isWeeklyTaskAcknowledged(current, pending.request.snapshot, pending.request.command);
-  const conflict = !!pending && !acknowledged && (terminal.current !== 'none' || !current || JSON.stringify(current) !== JSON.stringify(pending.base));
-  terminal.current = acknowledged ? 'saved' : conflict ? 'conflict' : 'none';
+  const conflict = !!pending && !acknowledged && (phase === 'saved' || phase === 'conflict' || !current || JSON.stringify(current) !== JSON.stringify(pending.base));
 
   useEffect(() => {
     live.current = true;
@@ -65,6 +64,9 @@ function CompletionSession(props: WeeklyTaskCompletionProps): React.ReactElement
   }, []);
 
   useEffect(() => {
+    // Only a committed render may fence host settlement. Suspended or abandoned
+    // candidate renders must not publish acknowledgement into the visible UI.
+    terminal.current = acknowledged ? 'saved' : conflict ? 'conflict' : 'none';
     if (acknowledged) { setPhase('saved'); setError(false); }
     else if (conflict) { setPhase('conflict'); setError(false); }
   }, [acknowledged, conflict]);
@@ -135,7 +137,7 @@ function CompletionSession(props: WeeklyTaskCompletionProps): React.ReactElement
     <h2 id={labelId}>Complete weekly task</h2>
     {task && <p>{task.title}</p>}
     {message && <p role="status" aria-live="polite" tabIndex={-1} ref={status}>{message}</p>}
-    {error && <p role="alert">The operation could not be confirmed. Check the supplied task state or retry the same operation.</p>}
+    {error && !acknowledged && !conflict && <p role="alert">The operation could not be confirmed. Check the supplied task state or retry the same operation.</p>}
     {!pending && (!current || !task || (!task.completed && !nextDate)) && <p role="alert">A valid local task with a supported next weekly date is required.</p>}
     {!pending && task?.completed && <p>This task is already complete.</p>}
     {!pending && nextDate && <>

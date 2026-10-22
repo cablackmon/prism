@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense, startTransition, useState } from 'react';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { WeeklyTaskCompletion, type WeeklyTaskCommitRequest, type WeeklyTaskCompletionProps } from '../../components/tasks/burn4-recurring-task-completion';
 import { completeWeeklyTask } from '../../lib/burn4-recurring-task';
@@ -291,4 +291,65 @@ test('reentrant retry clicks cannot create concurrent host calls', async () => {
   view.rerender(<WeeklyTaskCompletion {...initial} onCommit={reentrant} />);
   fireEvent.click(screen.getByRole('button', { name: 'Retry same operation' }));
   expect(reentrant).toHaveBeenCalledTimes(1);
+});
+
+
+function suspendedHost(): {
+  work: ReturnType<typeof deferred>;
+  observation: { request: WeeklyTaskCommitRequest | null; suspendedRenders: number };
+  update: (snapshot: WeeklyTaskCompletionProps['snapshot'], block: boolean) => void;
+} {
+  const work = deferred();
+  const observation = { request: null as WeeklyTaskCommitRequest | null, suspendedRenders: 0 };
+  const never = new Promise<never>(() => undefined);
+  type State = { snapshot: WeeklyTaskCompletionProps['snapshot']; block: boolean };
+  let updateHost: React.Dispatch<React.SetStateAction<State>> | null = null;
+  function Gate({ block }: { block: boolean }): null {
+    if (block) { observation.suspendedRenders++; throw never; }
+    return null;
+  }
+  function Host(): React.ReactElement {
+    const [state, update] = useState<State>({ snapshot: weeklySnapshot(), block: false });
+    updateHost = update;
+    return <Suspense fallback={<p>Uncommitted replacement view</p>}>
+      <WeeklyTaskCompletion {...props({ snapshot: state.snapshot, onCommit: request => {
+        observation.request = request;
+        return work.promise;
+      } })} />
+      <Gate block={state.block} />
+    </Suspense>;
+  }
+  render(<Host />);
+  submit();
+  return { work, observation, update(snapshot, block) {
+    if (!updateHost) throw new Error('missing synthetic host updater');
+    updateHost({ snapshot, block });
+  } };
+}
+
+test('a suspended uncommitted acknowledgement cannot suppress the committed rejection retry', async () => {
+  const host = suspendedHost();
+  const request = host.observation.request;
+  if (!request) throw new Error('missing synthetic submission');
+  await act(async () => { startTransition(() => host.update(request.snapshot, true)); });
+  expect(host.observation.suspendedRenders).toBeGreaterThan(0);
+  expect(screen.queryByText('Uncommitted replacement view')).toBeNull();
+  expect(screen.getByRole('status').textContent).toBe('Sending completion to the host.');
+  await act(async () => { host.work.reject(); await Promise.resolve(); });
+  expect(screen.getByRole('button', { name: 'Retry same operation' })).toBeDefined();
+  expect(screen.getByRole('alert')).toBeDefined();
+});
+
+test('abandoning a suspended acknowledgement does not create a sticky committed conflict', async () => {
+  const host = suspendedHost();
+  const request = host.observation.request;
+  if (!request) throw new Error('missing synthetic submission');
+  await act(async () => { startTransition(() => host.update(request.snapshot, true)); });
+  expect(host.observation.suspendedRenders).toBeGreaterThan(0);
+  expect(screen.getByRole('status').textContent).toBe('Sending completion to the host.');
+  await act(async () => { host.update(weeklySnapshot(), false); });
+  expect(screen.getByRole('status').textContent).toBe('Sending completion to the host.');
+  expect(screen.queryByRole('button', { name: 'Reload current task' })).toBeNull();
+  await act(async () => { host.work.resolve(); await Promise.resolve(); });
+  expect(screen.getByRole('status').textContent).toContain('Waiting for the host');
 });
