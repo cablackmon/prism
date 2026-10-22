@@ -1,0 +1,38 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noEmit": true,
+    "incremental": false,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "types": [
+      "node",
+      "jest",
+      "react",
+      "react-dom"
+    ],
+    "allowJs": true,
+    "checkJs": true
+  },
+  "files": [
+    "../../lib/burn4-font-scale.ts",
+    "../../components/accessibility/burn4-font-scale-controls.tsx",
+    "burn4-fixtures.ts",
+    "burn4-font-scale-model.test.ts",
+    "burn4-font-scale-session.test.ts",
+    "burn4-font-scale-controls.test.tsx",
+    "burn4-font-scale-ssr.test.tsx",
+    "burn4-jest.config.cjs",
+    "burn4-eslint.config.mjs"
+  ]
+}
