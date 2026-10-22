@@ -1,0 +1,28 @@
+# Accessible global font scaling
+
+This standalone setting supplies controlled React controls, a lifecycle boundary, and a reversible DOM adapter for the global font-scale override described in docs/planning.md:73 and docs/features/MOBILE.md:154-168. Current application code has per-dashboard layout zoom. This change does not modify or wire the existing Appearance screen.
+
+The host supplies an authorized root HTMLElement, its Window capabilities, and controlled scale state. A scale is null for responsive Auto, or an integer percentage from 50 through 200 inclusive. That range matches the existing layout validation boundary. The controls propose values through onChange. The host value stays authoritative if it declines a proposal. The sample inherits the font size actually applied by its host.
+
+The core createFontScaleSession API also accepts a font-size reader and baseline-change subscription, making its effects testable without browser services. createDocumentFontScaleSession installs resize and fine/coarse pointer listeners on the supplied view. Each measurement temporarily restores the unscaled baseline inline value and priority, reads its computed pixel size, and restores the last style even when measurement fails. A successful application sets an important inline font-size. Repeated updates never compound. Auto and disposal restore the baseline value and priority, including an absent property. Computed baselines must be positive finite pixel values at most 1024px, with a positive result at six-decimal pixel precision.
+
+One active session reserves each target. Separate targets are independent. A passive refresh detects an outside inline value or priority change, yields, and retains that change. A deliberate setScale may reclaim the target, using the outside inline value as the new baseline. Cleanup writes only when the last owned value and priority still match. Disposal fences saved callbacks and releases ownership. An external writer setting exactly the same inline value and priority is indistinguishable from no write.
+
+Burn4FontScaleControls provides native grouped Auto/Custom controls, a labeled percentage field, associated error/help text, current output, reset, sample text and 44px minimum touch targets. Burn4FontScaleBoundary manages an explicit target/session during effects, including target replacement and React StrictMode. It is inert when target or view is absent, and can server-render without window or document.
+
+Run from this package worktree with the shared node_modules temporarily linked:
+
+```sh
+timeout 180s node --max-old-space-size=1024 node_modules/jest/bin/jest.js --config src/__tests__/burn4-tg3r9-b05/burn4-jest.config.cjs --runInBand --no-cache --runTestsByPath src/__tests__/burn4-tg3r9-b05/burn4-font-scale-model.test.ts src/__tests__/burn4-tg3r9-b05/burn4-font-scale-session.test.ts src/__tests__/burn4-tg3r9-b05/burn4-font-scale-controls.test.tsx src/__tests__/burn4-tg3r9-b05/burn4-font-scale-ssr.test.tsx
+timeout 180s node --max-old-space-size=1024 node_modules/typescript/bin/tsc --project src/__tests__/burn4-tg3r9-b05/burn4-tsconfig.json --noEmit --incremental false
+timeout 180s node --max-old-space-size=1024 node_modules/eslint/bin/eslint.js --no-config-lookup --config src/__tests__/burn4-tg3r9-b05/burn4-eslint.config.mjs --max-warnings=0 src/lib/burn4-font-scale.ts src/components/accessibility/burn4-font-scale-controls.tsx src/__tests__/burn4-tg3r9-b05/burn4-fixtures.ts src/__tests__/burn4-tg3r9-b05/burn4-font-scale-model.test.ts src/__tests__/burn4-tg3r9-b05/burn4-font-scale-session.test.ts src/__tests__/burn4-tg3r9-b05/burn4-font-scale-controls.test.tsx src/__tests__/burn4-tg3r9-b05/burn4-font-scale-ssr.test.tsx src/__tests__/burn4-tg3r9-b05/burn4-eslint.config.mjs src/__tests__/burn4-tg3r9-b05/burn4-jest.config.cjs
+```
+
+Validation: 98 ordinary passing cases across four explicit suites, zero expected failures, failures or skipped cases. Strict scoped TypeScript with noUncheckedIndexedAccess and focused lint pass. Jest names this package's own TypeScript config by path. No root test setup, source alias, application module or whole suite is loaded.
+
+Coverage includes input boundaries; documented responsive baselines; repeated measurements; actual DOM computed style; throws during temporary baseline measurement; priority restoration; external writes; duplicate ownership; responsive events; disposal; controlled host refusal/acceptance; associated errors; independent controls; disabled interaction; target replacement; StrictMode; and Node-environment server rendering.
+
+KNOWN GAP list: None found in the new code.
+Needs-decision list: None within standalone scope.
+
+Limits: No current application wiring, persisted preference, settings API, authentication or authorization. The host decides whether this global size composes with existing per-layout zoom and supplies the proper root/view pair. Changes to font CSS that do not cause resize or pointer events require an explicit refresh. DOM comparison cannot detect an identical outside write. jsdom and synthetic event sources do not prove visual layout, real browser media behavior, physical keyboard activation, touch, assistive technology, or device compatibility. No full application/suite pass or upstream issue completion is claimed.
